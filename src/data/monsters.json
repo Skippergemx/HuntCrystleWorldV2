@@ -1,0 +1,82 @@
+[
+    {
+        "id": "goblin",
+        "name": "Forest Goblin",
+        "hp": 30,
+        "str": 3,
+        "agi": 4,
+        "dex": 6,
+        "xp": 25,
+        "loot": 20
+    },
+    {
+        "id": "wolf",
+        "name": "Crystal Wolf",
+        "hp": 65,
+        "str": 12,
+        "agi": 15,
+        "dex": 12,
+        "xp": 55,
+        "loot": 45
+    },
+    {
+        "id": "golem",
+        "name": "Obsidian Sentinel",
+        "hp": 180,
+        "str": 30,
+        "agi": 2,
+        "dex": 8,
+        "xp": 140,
+        "loot": 110
+    },
+    {
+        "id": "slime",
+        "name": "Toxic Slime",
+        "hp": 45,
+        "str": 5,
+        "agi": 2,
+        "dex": 10,
+        "xp": 35,
+        "loot": 30
+    },
+    {
+        "id": "skeleton",
+        "name": "Skeletal Warrior",
+        "hp": 85,
+        "str": 15,
+        "agi": 8,
+        "dex": 10,
+        "xp": 70,
+        "loot": 60
+    },
+    {
+        "id": "harpy",
+        "name": "Wind Harpy",
+        "hp": 60,
+        "str": 10,
+        "agi": 25,
+        "dex": 15,
+        "xp": 65,
+        "loot": 50
+    },
+    {
+        "id": "drake",
+        "name": "Ember Drake",
+        "hp": 250,
+        "str": 40,
+        "agi": 15,
+        "dex": 20,
+        "xp": 200,
+        "loot": 180
+    },
+    {
+        "id": "wraith",
+        "name": "Shadow Wraith",
+        "hp": 120,
+        "str": 25,
+        "agi": 20,
+        "dex": 30,
+        "xp": 150,
+        "loot": 130
+    }
+]
