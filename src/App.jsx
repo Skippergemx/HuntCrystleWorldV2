@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
@@ -50,7 +51,8 @@ const BOSS = {
   agi: 70,
   dex: 85,
   critChance: 0.25,
-  recipeDropChance: 0.15
+  recipeDropChance: 0.15,
+  taunts: ["I am the final obstacle!", "Your journey ends here.", "Kneel before the Core!"]
 };
 
 const TAVERN_MATES = [
@@ -89,16 +91,21 @@ const App = () => {
   const [showDefeatedWindow, setShowDefeatedWindow] = useState(false);
   const [autoTimeLeft, setAutoTimeLeft] = useState(0);
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
+  const [currentTaunt, setCurrentTaunt] = useState("");
+  const [currentMissTaunt, setCurrentMissTaunt] = useState("");
+  const [missTimeLeft, setMissTimeLeft] = useState(0);
 
   const playerRef = useRef(null);
   const enemyRef = useRef(null);
   const stunRef = useRef(0);
+  const missRef = useRef(0);
 
   useEffect(() => {
     playerRef.current = player;
     enemyRef.current = enemy;
     stunRef.current = stunTimeLeft;
-  }, [player, enemy, stunTimeLeft]);
+    missRef.current = missTimeLeft;
+  }, [player, enemy, stunTimeLeft, missTimeLeft]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -140,6 +147,7 @@ const App = () => {
         setPenaltyRemaining(diff > 0 ? diff : 0);
       }
       setStunTimeLeft(prev => Math.max(0, prev - 0.1));
+      setMissTimeLeft(prev => Math.max(0, prev - 0.1));
       if (playerRef.current?.autoUntil) {
         const diff = Math.ceil((playerRef.current.autoUntil - Date.now()) / 1000);
         setAutoTimeLeft(diff > 0 ? diff : 0);
@@ -157,7 +165,7 @@ const App = () => {
     if (view === 'dungeon' && autoTimeLeft > 0 && !showDefeatedWindow) {
       autoLoop = setInterval(() => {
         const p = playerRef.current;
-        if (p && enemyRef.current && stunRef.current <= 0) {
+        if (p && enemyRef.current && stunRef.current <= 0 && missRef.current <= 0) {
           if (p.hp < (p.maxHp * 0.4) && (p.potions || 0) > 0) handleHeal();
           else handleAttack(false);
         }
@@ -313,7 +321,7 @@ const App = () => {
   const handleAttack = (isBoss = false) => {
     const p = playerRef.current || player;
     const e = enemyRef.current || enemy;
-    if (stunRef.current > 0 || showDefeatedWindow || !e) return;
+    if (stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || !e) return;
 
     // COMPANION BUFF CHANCE
     if (p.hiredMate && buffTimeLeft <= 0 && Math.random() < 0.5) {
@@ -339,6 +347,9 @@ const App = () => {
       }
     } else {
       if (!isBoss) addLog(`Missed strike on ${target.name}!`);
+      const missTaunts = target.missTaunts || ["Is that hitting anything?", "Too slow!", "I'm right here!"];
+      setCurrentMissTaunt(missTaunts[Math.floor(Math.random() * missTaunts.length)]);
+      setMissTimeLeft(1.5);
       enemyTurn(target, isBoss);
     }
   };
@@ -355,6 +366,9 @@ const App = () => {
 
       if (isCrit) { addLog(`⚠️ CRIT!`); setCritAlert(true); setTimeout(() => setCritAlert(false), 800); setStunTimeLeft(STUN_DURATION_CRIT / 1000); }
       else setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
+
+      const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
+      setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
       const newHp = Math.max(0, p.hp - dmg);
       setIsHurt(true); setTimeout(() => setIsHurt(false), 300);
@@ -390,7 +404,9 @@ const App = () => {
       const identifier = user.email || user.uid;
       const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', identifier);
       await setDoc(lbRef, { uid: identifier, email: user.email || '', name: p.name, score: newTotal, level: player.level });
-    } catch (e) { }
+    } catch (e) {
+      console.error("Error updating leaderboard:", e);
+    }
     enemyTurn(BOSS, true);
   };
 
@@ -548,10 +564,10 @@ const App = () => {
           {view === 'menu' && (
             <div className="flex-1 p-6 grid grid-cols-2 md:grid-cols-3 gap-4">
               <NavBtn onClick={() => { if (!isPenalized) { setView('dungeon'); setDepth(1); spawnNewEnemy(1); } }} icon={isPenalized ? <Clock className="animate-pulse" /> : <MapIcon />} title="Dungeon" sub={isPenalized ? `Wait ${penaltyRemaining}s` : "Battle"} color={isPenalized ? "bg-slate-800 grayscale" : "bg-cyan-600"} disabled={isPenalized} />
-              <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" />
-              <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub={`${player.abilityPoints || 0} pts`} color="bg-orange-600" />
-              <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" />
-              <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" />
+              <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" disabled={false} />
+              <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub={`${player.abilityPoints || 0} pts`} color="bg-orange-600" disabled={false} />
+              <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" disabled={false} />
+              <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" disabled={false} />
               <NavBtn onClick={() => { if (!isPenalized) setView('boss'); }} icon={<AlertCircle />} title="Core Raid" sub="Boss" color="bg-red-700" disabled={isPenalized} />
             </div>
           )}
@@ -721,22 +737,75 @@ const App = () => {
               <div className="flex gap-3 w-full max-w-sm pt-4 relative">
 
                 {isStunned && (
-                  <div className="absolute inset-x-0 bottom-0 bg-red-950/90 backdrop-blur-md rounded-2xl border border-red-500/50 p-4 flex flex-col items-center justify-center text-center shadow-2xl z-20 animate-in slide-in-from-bottom flex-1 py-4">
-                    <div className="flex items-center gap-2 text-red-400 mb-1">
-                      <AlertCircle size={16} className="animate-pulse" />
-                      <span className="font-black text-xs uppercase tracking-widest">Enemy Struck You!</span>
-                    </div>
-                    <p className="text-[10px] text-red-200/70 font-black uppercase mb-2">You are reeling. Recovering in...</p>
-                    <div className="text-3xl font-black text-white flex items-center gap-2">
-                      {stunTimeLeft.toFixed(1)}s
+                  <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md rounded-2xl border-[3px] border-red-500 p-2 shadow-[0_0_30px_rgba(239,68,68,0.5)] z-20 animate-in slide-in-from-bottom flex flex-col justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.3),transparent_60%)] pointer-events-none"></div>
+                    <div className="flex gap-3 items-center w-full relative z-10">
+                      <div className="relative shrink-0">
+                        <div className="absolute top-0 -left-1 bg-amber-400 border-2 border-black px-1.5 py-0.5 transform -rotate-[15deg] shadow-[2px_2px_0_0_rgba(0,0,0,1)] z-30 rounded-sm">
+                          <span className="font-black italic text-black text-[10px] uppercase tracking-widest leading-none block pb-px">HIT!</span>
+                        </div>
+                        <div className="w-16 h-16 bg-red-950 rounded-full border-2 border-red-500 flex items-center justify-center overflow-hidden shadow-inner transform -rotate-6">
+                          {enemy?.name ? (
+                            <img
+                              src={`/assets/monsters/${enemy.name}.png`}
+                              alt={enemy.name}
+                              className="w-full h-full object-cover scale-150 origin-top"
+                              onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <Skull size={32} className="text-red-500 absolute" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-white text-black p-2 px-3 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform rotate-1">
+                        <p className="font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2">"{currentTaunt}"</p>
+                        <div className="absolute -bottom-2 -left-1 w-4 h-4 bg-white border-b-2 border-l-2 border-black transform rotate-[30deg]"></div>
+                      </div>
+                      <div className="w-12 h-12 shrink-0 bg-red-600 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform rotate-[15deg] mr-1">
+                        <span className="text-lg font-black text-white leading-none">{Math.ceil(stunTimeLeft)}</span>
+                        <span className="text-[8px] font-black uppercase text-black leading-none">sec</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <button onClick={() => handleAttack()} disabled={isStunned || showDefeatedWindow} className={`flex-1 py-4 rounded-2xl font-black text-xl shadow-lg transition-all flex items-center justify-center gap-2 ${isStunned ? 'opacity-0 pointer-events-none' : 'bg-cyan-600 hover:bg-cyan-500'} ${isAutoActive && !isStunned ? 'animate-pulse ring-2 ring-cyan-400' : ''}`}>
+                {missTimeLeft > 0 && !isStunned && (
+                  <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md rounded-2xl border-[3px] border-emerald-500 p-2 shadow-[0_0_30px_rgba(16,185,129,0.5)] z-20 animate-in slide-in-from-bottom flex flex-col justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.3),transparent_60%)] pointer-events-none"></div>
+                    <div className="flex gap-3 items-center w-full relative z-10">
+                      <div className="relative shrink-0">
+                        <div className="absolute top-0 -left-1 bg-cyan-400 border-2 border-black px-1.5 py-0.5 transform -rotate-[15deg] shadow-[2px_2px_0_0_rgba(0,0,0,1)] z-30 rounded-sm">
+                          <span className="font-black italic text-black text-[10px] uppercase tracking-widest leading-none block pb-px">MISS!</span>
+                        </div>
+                        <div className="w-16 h-16 bg-emerald-950 rounded-full border-2 border-emerald-500 flex items-center justify-center overflow-hidden shadow-inner transform -rotate-6">
+                          {enemy?.name ? (
+                            <img
+                              src={`/assets/monsters/${enemy.name}.png`}
+                              alt={enemy.name}
+                              className="w-full h-full object-cover scale-150 origin-top grayscale"
+                              onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <Skull size={32} className="text-emerald-500 absolute" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-white text-black p-2 px-3 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform rotate-1">
+                        <p className="font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2">"{currentMissTaunt}"</p>
+                        <div className="absolute -bottom-2 -left-1 w-4 h-4 bg-white border-b-2 border-l-2 border-black transform rotate-[30deg]"></div>
+                      </div>
+                      <div className="w-12 h-12 shrink-0 bg-emerald-600 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform rotate-[15deg] mr-1">
+                        <span className="text-lg font-black text-white leading-none">{missTimeLeft.toFixed(1)}</span>
+                        <span className="text-[8px] font-black uppercase text-black leading-none">sec</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => handleAttack()} disabled={isStunned || missTimeLeft > 0 || showDefeatedWindow} className={`flex-1 py-4 rounded-2xl font-black text-xl shadow-lg transition-all flex items-center justify-center gap-2 ${isStunned || missTimeLeft > 0 ? 'opacity-0 pointer-events-none' : 'bg-cyan-600 hover:bg-cyan-500'} ${isAutoActive && !isStunned && missTimeLeft <= 0 ? 'animate-pulse ring-2 ring-cyan-400' : ''}`}>
                   {isAutoActive ? 'AUTO-STRIKING...' : 'ATTACK'}
                 </button>
-                <button onClick={() => { setView('menu'); setDepth(1); }} disabled={isStunned} className={`px-6 py-4 rounded-2xl font-bold transition-all ${isStunned ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800'}`}>EXIT</button>
+                <button onClick={() => { setView('menu'); setDepth(1); }} disabled={isStunned || missTimeLeft > 0} className={`px-6 py-4 rounded-2xl font-bold transition-all ${isStunned || missTimeLeft > 0 ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800'}`}>EXIT</button>
               </div>
             </div>
           )}
@@ -821,22 +890,57 @@ const App = () => {
               <div className="flex gap-4 w-full max-w-sm mt-4 relative">
 
                 {isStunned && (
-                  <div className="absolute inset-x-0 bottom-0 bg-red-950/90 backdrop-blur-md rounded-2xl border border-red-500/50 p-4 flex flex-col items-center justify-center text-center shadow-2xl z-20 animate-in slide-in-from-bottom flex-1 py-4">
-                    <div className="flex items-center gap-2 text-red-400 mb-1">
-                      <AlertCircle size={16} className="animate-pulse" />
-                      <span className="font-black text-xs uppercase tracking-widest">Boss Struck You!</span>
-                    </div>
-                    <p className="text-[10px] text-red-200/70 font-black uppercase mb-2">You are reeling. Recovering in...</p>
-                    <div className="text-3xl font-black text-white flex items-center gap-2">
-                      {stunTimeLeft.toFixed(1)}s
+                  <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md rounded-2xl border-[3px] border-red-500 p-2 shadow-[0_0_30px_rgba(239,68,68,0.5)] z-20 animate-in slide-in-from-bottom flex flex-col justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.3),transparent_60%)] pointer-events-none"></div>
+                    <div className="flex gap-3 items-center w-full relative z-10">
+                      <div className="relative shrink-0">
+                        <div className="absolute top-0 -left-1 bg-amber-400 border-2 border-black px-1.5 py-0.5 transform -rotate-[15deg] shadow-[2px_2px_0_0_rgba(0,0,0,1)] z-30 rounded-sm">
+                          <span className="font-black italic text-black text-[10px] uppercase tracking-widest leading-none block pb-px">HIT!</span>
+                        </div>
+                        <div className="w-16 h-16 bg-red-950 rounded-full border-2 border-red-500 flex items-center justify-center overflow-hidden shadow-inner transform -rotate-6">
+                          <Skull size={32} className="text-red-500 absolute" />
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-white text-black p-2 px-3 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform rotate-1">
+                        <p className="font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2">"{currentTaunt}"</p>
+                        <div className="absolute -bottom-2 -left-1 w-4 h-4 bg-white border-b-2 border-l-2 border-black transform rotate-[30deg]"></div>
+                      </div>
+                      <div className="w-12 h-12 shrink-0 bg-red-600 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform rotate-[15deg] mr-1">
+                        <span className="text-lg font-black text-white leading-none">{Math.ceil(stunTimeLeft)}</span>
+                        <span className="text-[8px] font-black uppercase text-black leading-none">sec</span>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                <button onClick={() => handleAttack(true)} disabled={isStunned || showDefeatedWindow} className={`flex-1 py-5 rounded-2xl font-black text-2xl shadow-xl transition-all ${isStunned ? 'opacity-0 pointer-events-none' : 'bg-red-600 hover:bg-red-500'}`}>
+                {missTimeLeft > 0 && !isStunned && (
+                  <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md rounded-2xl border-[3px] border-emerald-500 p-2 shadow-[0_0_30px_rgba(16,185,129,0.5)] z-20 animate-in slide-in-from-bottom flex flex-col justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.3),transparent_60%)] pointer-events-none"></div>
+                    <div className="flex gap-3 items-center w-full relative z-10">
+                      <div className="relative shrink-0">
+                        <div className="absolute top-0 -left-1 bg-cyan-400 border-2 border-black px-1.5 py-0.5 transform -rotate-[15deg] shadow-[2px_2px_0_0_rgba(0,0,0,1)] z-30 rounded-sm">
+                          <span className="font-black italic text-black text-[10px] uppercase tracking-widest leading-none block pb-px">MISS!</span>
+                        </div>
+                        <div className="w-16 h-16 bg-emerald-950 rounded-full border-2 border-emerald-500 flex items-center justify-center overflow-hidden shadow-inner transform -rotate-6">
+                          <Skull size={32} className="text-emerald-500 absolute" />
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-white text-black p-2 px-3 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform rotate-1">
+                        <p className="font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2">"{currentMissTaunt}"</p>
+                        <div className="absolute -bottom-2 -left-1 w-4 h-4 bg-white border-b-2 border-l-2 border-black transform rotate-[30deg]"></div>
+                      </div>
+                      <div className="w-12 h-12 shrink-0 bg-emerald-600 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform rotate-[15deg] mr-1">
+                        <span className="text-lg font-black text-white leading-none">{missTimeLeft.toFixed(1)}</span>
+                        <span className="text-[8px] font-black uppercase text-black leading-none">sec</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={() => handleAttack(true)} disabled={isStunned || missTimeLeft > 0 || showDefeatedWindow} className={`flex-1 py-5 rounded-2xl font-black text-2xl shadow-xl transition-all ${isStunned || missTimeLeft > 0 ? 'opacity-0 pointer-events-none' : 'bg-red-600 hover:bg-red-500'}`}>
                   STRIKE
                 </button>
-                <button onClick={() => setView('menu')} disabled={isStunned} className={`px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all ${isStunned ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800 text-slate-300'}`}>Retreat</button>
+                <button onClick={() => setView('menu')} disabled={isStunned || missTimeLeft > 0} className={`px-8 py-5 rounded-2xl font-bold uppercase tracking-widest transition-all ${isStunned || missTimeLeft > 0 ? 'bg-slate-800/50 text-slate-600 cursor-not-allowed' : 'bg-slate-800 text-slate-300'}`}>Retreat</button>
               </div>
             </div>
           )}

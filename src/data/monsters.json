@@ -7,7 +7,17 @@
         "agi": 4,
         "dex": 6,
         "xp": 25,
-        "loot": 20
+        "loot": 20,
+        "taunts": [
+            "Hehe, too slow!",
+            "Shiny! Mine!",
+            "Goblin best!"
+        ],
+        "missTaunts": [
+            "Missed me, slowpoke!",
+            "Goblin too fast!",
+            "Try again, human!"
+        ]
     },
     {
         "id": "wolf",
@@ -17,7 +27,17 @@
         "agi": 15,
         "dex": 12,
         "xp": 55,
-        "loot": 45
+        "loot": 45,
+        "taunts": [
+            "*Snarls viciously*",
+            "Awooooo!",
+            "Fresh meat!"
+        ],
+        "missTaunts": [
+            "*Dodges swiftly*",
+            "Too slow for the pack!",
+            "*Mocking growl*"
+        ]
     },
     {
         "id": "golem",
@@ -27,7 +47,17 @@
         "agi": 2,
         "dex": 8,
         "xp": 140,
-        "loot": 110
+        "loot": 110,
+        "taunts": [
+            "Crumble under my weight.",
+            "You are fragile.",
+            "Unstoppable force."
+        ],
+        "missTaunts": [
+            "Your aim is weak.",
+            "I felt nothing.",
+            "Pathetic strike."
+        ]
     },
     {
         "id": "slime",
@@ -37,7 +67,17 @@
         "agi": 2,
         "dex": 10,
         "xp": 35,
-        "loot": 30
+        "loot": 30,
+        "taunts": [
+            "*Squish, blub*.",
+            "Dissolving...",
+            "Give me your biomass."
+        ],
+        "missTaunts": [
+            "*Wobbles out of the way*",
+            "Too slippery!",
+            "*Gloop* Miss!"
+        ]
     },
     {
         "id": "skeleton",
@@ -47,7 +87,17 @@
         "agi": 8,
         "dex": 10,
         "xp": 70,
-        "loot": 60
+        "loot": 60,
+        "taunts": [
+            "Join our ranks...",
+            "Dust to dust.",
+            "*Bones rattling menacingly*"
+        ],
+        "missTaunts": [
+            "We have no flesh to hit.",
+            "Your blade hits air.",
+            "*Eerie hollow laughter*"
+        ]
     },
     {
         "id": "harpy",
@@ -57,7 +107,17 @@
         "agi": 25,
         "dex": 15,
         "xp": 65,
-        "loot": 50
+        "loot": 50,
+        "taunts": [
+            "Screeech!",
+            "The skies belong to me!",
+            "Too slow, groundwalker!"
+        ],
+        "missTaunts": [
+            "Can't hit the wind!",
+            "Too high for you!",
+            "*Flaps away mockingly*"
+        ]
     },
     {
         "id": "drake",
@@ -67,7 +127,17 @@
         "agi": 15,
         "dex": 20,
         "xp": 200,
-        "loot": 180
+        "loot": 180,
+        "taunts": [
+            "Burn, insect!",
+            "Turn to ash and cinder...",
+            "Pathetic mortal."
+        ],
+        "missTaunts": [
+            "You dare miss a dragon?",
+            "Scales untouched.",
+            "Feeble attempt."
+        ]
     },
     {
         "id": "wraith",
@@ -77,6 +147,16 @@
         "agi": 20,
         "dex": 30,
         "xp": 150,
-        "loot": 130
+        "loot": 130,
+        "taunts": [
+            "Embrace the void...",
+            "Your soul is mine.",
+            "Fade into eternal darkness."
+        ],
+        "missTaunts": [
+            "I am but a shadow...",
+            "You strike at darkness.",
+            "Illusions..."
+        ]
     }
 ]
