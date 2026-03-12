@@ -12,11 +12,6 @@
             "Hehe, too slow!",
             "Shiny! Mine!",
             "Goblin best!"
-        ],
-        "missTaunts": [
-            "Missed me, slowpoke!",
-            "Goblin too fast!",
-            "Try again, human!"
         ]
     },
     {
@@ -32,11 +27,6 @@
             "*Snarls viciously*",
             "Awooooo!",
             "Fresh meat!"
-        ],
-        "missTaunts": [
-            "*Dodges swiftly*",
-            "Too slow for the pack!",
-            "*Mocking growl*"
         ]
     },
     {
@@ -52,11 +42,6 @@
             "Crumble under my weight.",
             "You are fragile.",
             "Unstoppable force."
-        ],
-        "missTaunts": [
-            "Your aim is weak.",
-            "I felt nothing.",
-            "Pathetic strike."
         ]
     },
     {
@@ -72,11 +57,6 @@
             "*Squish, blub*.",
             "Dissolving...",
             "Give me your biomass."
-        ],
-        "missTaunts": [
-            "*Wobbles out of the way*",
-            "Too slippery!",
-            "*Gloop* Miss!"
         ]
     },
     {
@@ -92,11 +72,6 @@
             "Join our ranks...",
             "Dust to dust.",
             "*Bones rattling menacingly*"
-        ],
-        "missTaunts": [
-            "We have no flesh to hit.",
-            "Your blade hits air.",
-            "*Eerie hollow laughter*"
         ]
     },
     {
@@ -112,11 +87,6 @@
             "Screeech!",
             "The skies belong to me!",
             "Too slow, groundwalker!"
-        ],
-        "missTaunts": [
-            "Can't hit the wind!",
-            "Too high for you!",
-            "*Flaps away mockingly*"
         ]
     },
     {
@@ -132,11 +102,6 @@
             "Burn, insect!",
             "Turn to ash and cinder...",
             "Pathetic mortal."
-        ],
-        "missTaunts": [
-            "You dare miss a dragon?",
-            "Scales untouched.",
-            "Feeble attempt."
         ]
     },
     {
@@ -152,11 +117,6 @@
             "Embrace the void...",
             "Your soul is mine.",
             "Fade into eternal darkness."
-        ],
-        "missTaunts": [
-            "I am but a shadow...",
-            "You strike at darkness.",
-            "Illusions..."
         ]
     }
 ]

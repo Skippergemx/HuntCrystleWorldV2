@@ -1,0 +1,83 @@
+[
+  {
+    "id": "steel_edge",
+    "name": "Steel Edge",
+    "cost": 100,
+    "reqLvl": 2,
+    "stats": { "str": 10, "dex": 5, "agi": 0 },
+    "type": "Weapon",
+    "desc": "A sharp blade for aspiring hunters."
+  },
+  {
+    "id": "breaker_hammer",
+    "name": "Breaker Hammer",
+    "cost": 400,
+    "reqLvl": 8,
+    "stats": { "str": 25, "dex": -5, "agi": 0 },
+    "type": "Weapon",
+    "desc": "Heavy trauma in every strike."
+  },
+  {
+    "id": "scout_vest",
+    "name": "Scout Vest",
+    "cost": 150,
+    "reqLvl": 3,
+    "stats": { "str": 2, "dex": 2, "agi": 12 },
+    "type": "Armor",
+    "desc": "Lightweight protection for high mobility."
+  },
+  {
+    "id": "heavy_plate",
+    "name": "Heavy Plate",
+    "cost": 600,
+    "reqLvl": 10,
+    "stats": { "str": 10, "dex": 5, "agi": 25 },
+    "type": "Armor",
+    "desc": "Reinforced steel for the front lines."
+  },
+  {
+    "id": "leather_cap",
+    "name": "Leather Cap",
+    "cost": 80,
+    "reqLvl": 1,
+    "stats": { "str": 1, "dex": 1, "agi": 5 },
+    "type": "Headgear",
+    "desc": "Simple head protection."
+  },
+  {
+    "id": "iron_helm",
+    "name": "Iron Helm",
+    "cost": 250,
+    "reqLvl": 5,
+    "stats": { "str": 5, "dex": 2, "agi": 8 },
+    "type": "Headgear",
+    "desc": "Sturdy helm forged in the city deeps."
+  },
+  {
+    "id": "leather_boots",
+    "name": "Leather Boots",
+    "cost": 80,
+    "reqLvl": 1,
+    "stats": { "str": 0, "dex": 2, "agi": 4 },
+    "type": "Footwear",
+    "desc": "Reliable boots for long treks."
+  },
+  {
+    "id": "swift_sandals",
+    "name": "Swift Sandals",
+    "cost": 300,
+    "reqLvl": 6,
+    "stats": { "str": 0, "dex": 5, "agi": 15 },
+    "type": "Footwear",
+    "desc": "Enchanted footwear for fleet-footed hunters."
+  },
+  {
+    "id": "war_boots",
+    "name": "War Boots",
+    "cost": 500,
+    "reqLvl": 12,
+    "stats": { "str": 8, "dex": 3, "agi": 10 },
+    "type": "Footwear",
+    "desc": "Heavy boots designed for heavy combat."
+  }
+]
