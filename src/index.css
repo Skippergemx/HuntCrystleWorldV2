@@ -38,3 +38,69 @@
     animation: damage-shake 0.3s cubic-bezier(.36, .07, .19, .97) both;
     box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.4);
 }
+
+/* --- Loading Screen & Login Utilities --- */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+.transform-style-3d {
+    transform-style: preserve-3d;
+}
+
+.rotate-y-20 {
+    transform: rotateY(-20deg) rotateX(5deg);
+}
+
+@keyframes float-3d {
+    0%, 100% { transform: translateY(0px) rotateY(-20deg) rotateX(5deg); }
+    50% { transform: translateY(-20px) rotateY(-15deg) rotateX(10deg); }
+}
+
+@keyframes loading-bar-fast {
+    0% { width: 0%; transform: translateX(-100%); }
+    50% { width: 70%; transform: translateX(0%); }
+    100% { width: 100%; transform: translateX(0%); }
+}
+
+.animate-loading-bar-fast {
+    animation: loading-bar-fast 2s infinite ease-in-out;
+}
+
+.bg-scanline {
+    background: linear-gradient(
+        to bottom,
+        transparent 50%,
+        rgba(6, 182, 212, 0.1) 50%
+    );
+    background-size: 100% 4px;
+}
+
+.animate-flow-3d {
+    animation: flow-smooth 20s linear infinite;
+}
+
+@keyframes flow-smooth {
+    0% { transform: translateX(20%); }
+    50% { transform: translateX(-20%); }
+    100% { transform: translateX(20%); }
+}
+
+@keyframes float-slow {
+    0%, 100% { transform: translate(0px, 0px); }
+    33% { transform: translate(10px, -15px); }
+    66% { transform: translate(-5px, 10px); }
+}
+
+.animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+}
+
+@keyframes scroll-diag {
+    from { transform: translate(-10%, -10%) rotate(12deg); }
+    to { transform: translate(-30%, -30%) rotate(12deg); }
+}
+
+.animate-scroll-diag {
+    animation: scroll-diag 60s linear infinite;
+}
