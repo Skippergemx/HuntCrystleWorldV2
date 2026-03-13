@@ -1,0 +1,32 @@
+[
+  {
+    "id": "neon_slums",
+    "name": "Neon Slums",
+    "description": "Inner city ruins where low-tier mutants roam.",
+    "minLevel": 1,
+    "difficulty": "Easy",
+    "unlocked": true,
+    "availableFloors": [1, 2, 3, 4, 5],
+    "lootTable": ["crystle_shard", "beast_hide"]
+  },
+  {
+    "id": "rust_canyon",
+    "name": "Rust Canyon",
+    "description": "A graveyard of ancient machinery and iron beasts.",
+    "minLevel": 10,
+    "difficulty": "Medium",
+    "unlocked": false,
+    "availableFloors": [6, 7, 8, 9, 10],
+    "lootTable": ["crystle_shard", "ancient_gear"]
+  },
+  {
+    "id": "void_sector",
+    "name": "Void Sector 7",
+    "description": "High-security facility corrupted by void energy.",
+    "minLevel": 25,
+    "difficulty": "Hard",
+    "unlocked": false,
+    "availableFloors": [11, 12, 13, 14, 15],
+    "lootTable": ["void_essence", "core_pulse"]
+  }
+]

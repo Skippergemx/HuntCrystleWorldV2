@@ -1,0 +1,56 @@
+[
+  {
+    "id": "crystle_shard",
+    "name": "Crystle Shard",
+    "rarity": "Common",
+    "icon": "💎",
+    "description": "A glowing fragment of raw energy.",
+    "type": "Material",
+    "sellValue": 10
+  },
+  {
+    "id": "beast_hide",
+    "name": "Hardened Hide",
+    "rarity": "Common",
+    "icon": "📜",
+    "description": "Tough skin from a dungeon inhabitant.",
+    "type": "Material",
+    "sellValue": 15
+  },
+  {
+    "id": "void_essence",
+    "name": "Void Essence",
+    "rarity": "Uncommon",
+    "icon": "🌀",
+    "description": "Swirling dark energy trapped in a vial.",
+    "type": "Material",
+    "sellValue": 50
+  },
+  {
+    "id": "ancient_gear",
+    "name": "Ancient Gear",
+    "rarity": "Rare",
+    "icon": "⚙️",
+    "description": "A complex mechanism from a forgotten age.",
+    "type": "Component",
+    "sellValue": 200
+  },
+  {
+    "id": "core_pulse",
+    "name": "Core Pulse",
+    "rarity": "Epic",
+    "icon": "❤️",
+    "description": "A beating heart of pure technological power.",
+    "type": "Heart",
+    "sellValue": 1000
+  },
+  {
+    "id": "omega_crystle",
+    "name": "Omega Crystle",
+    "rarity": "Legendary",
+    "icon": "🌟",
+    "description": "The ultimate source of power in Crystle World.",
+    "type": "Artifact",
+    "sellValue": 5000
+  }
+]

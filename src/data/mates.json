@@ -1,0 +1,56 @@
+[
+  {
+    "id": "elf",
+    "name": "Sylvan Scout",
+    "cost": 500,
+    "type": "AGI",
+    "desc": "50% chance to double Agility for 20s.",
+    "rarity": "Common",
+    "icon": "🏹"
+  },
+  {
+    "id": "dwarf",
+    "name": "Ironclad Berserker",
+    "cost": 500,
+    "type": "STR",
+    "desc": "50% chance to double Strength for 20s.",
+    "rarity": "Common",
+    "icon": "🪓"
+  },
+  {
+    "id": "dragon",
+    "name": "Crimson Hatchling",
+    "cost": 1000,
+    "type": "DEX",
+    "desc": "50% chance to double Dexterity for 20s.",
+    "rarity": "Uncommon",
+    "icon": "🐲"
+  },
+  {
+    "id": "mage",
+    "name": "Aether Weaver",
+    "cost": 2500,
+    "type": "STR",
+    "desc": "75% chance to amplify Strength by 2.5x.",
+    "rarity": "Rare",
+    "icon": "✨"
+  },
+  {
+    "id": "shadow",
+    "name": "Void Assassin",
+    "cost": 5000,
+    "type": "AGI",
+    "desc": "80% chance for triple Agility.",
+    "rarity": "Epic",
+    "icon": "👤"
+  },
+  {
+    "id": "titan",
+    "name": "Colossal Guardian",
+    "cost": 15000,
+    "type": "STR",
+    "desc": "Guaranteed double Strength and massive HP bonus.",
+    "rarity": "Legendary",
+    "icon": "🛡️"
+  }
+]
