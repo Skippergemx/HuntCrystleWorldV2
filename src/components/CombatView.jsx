@@ -1,11 +1,14 @@
 import React from 'react';
-import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull } from 'lucide-react';
+import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 
 export const CombatView = ({ 
-  enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap
+  enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
+  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS
 }) => {
   if (!enemy) return null;
+
+  const possibleDrops = selectedMap?.lootTable ? selectedMap.lootTable.slice(0, 10).map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
 
   return (
     <div className={`flex-1 p-6 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
@@ -17,20 +20,21 @@ export const CombatView = ({
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 px-3 py-1 bg-black border-[3px] border-cyan-500 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)]">
             <TrendingUp size={14} className="text-cyan-400" />
-            <span className="text-xs font-black text-cyan-400 tracking-widest italic uppercase">Sector Node</span>
+            <span className="text-xs font-black text-cyan-400 tracking-widest italic uppercase">Floor {depth}</span>
           </div>
           
-          {/* Dotted Floor Progression */}
-          {selectedMap && (
-            <div className="flex gap-1.5 ml-1 mt-1">
-              {selectedMap.availableFloors.map(f => (
+          {/* 10-Kill Progression Nodes */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[7px] font-black text-slate-400 uppercase italic">Floor Evolution: {killsInFloor}/10</span>
+            <div className="flex gap-1">
+              {[...Array(10)].map((_, i) => (
                 <div 
-                  key={f} 
-                  className={`w-2.5 h-2.5 rounded-full border-2 border-black transition-all duration-500 ${f === depth ? 'bg-cyan-400 scale-125 shadow-[0_0_8px_rgba(34,211,238,0.8)]' : f < depth ? 'bg-black opacity-40' : 'bg-white opacity-20'}`}
+                  key={i} 
+                  className={`w-2.5 h-1.5 border-2 border-black transition-all duration-300 ${i < killsInFloor ? 'bg-cyan-500 shadow-[0_0_5px_rgba(6,182,212,0.6)]' : 'bg-slate-800'}`}
                 />
               ))}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex flex-col items-end gap-2">
@@ -42,15 +46,23 @@ export const CombatView = ({
                 <span className="text-xs font-black leading-none text-white italic">{player.potions || 0}</span>
               </div>
             </button>
-            {player.autoScrolls > 0 && !isAutoActive && (
-              <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
-                <MousePointer size={16} className="text-black" />
-                <div className="flex flex-col items-start bg-transparent">
-                  <span className="text-[7px] font-black uppercase tracking-widest text-black/70 leading-none italic">Auto</span>
-                  <span className="text-xs font-black leading-none text-black italic">{player.autoScrolls}</span>
-                </div>
-              </button>
-            )}
+            <div className="flex flex-col gap-1">
+                {player.autoScrolls > 0 && !isAutoActive && (
+                <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
+                    <MousePointer size={16} className="text-black" />
+                    <div className="flex flex-col items-start bg-transparent">
+                    <span className="text-[7px] font-black uppercase tracking-widest text-black/70 leading-none italic">Auto</span>
+                    <span className="text-xs font-black leading-none text-black italic">{player.autoScrolls}</span>
+                    </div>
+                </button>
+                )}
+                <button 
+                  onClick={() => setAutoUseScroll(!autoUseScroll)}
+                  className={`flex items-center gap-1.5 px-2 py-1 border-2 border-black rounded-lg text-[8px] font-black italic uppercase transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5 ${autoUseScroll ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}`}
+                >
+                  <Lock size={10} /> {autoUseScroll ? 'AUTO-USE ON' : 'AUTO-USE OFF'}
+                </button>
+            </div>
           </div>
           {isAutoActive && (
             <div className="flex items-center gap-2 px-3 py-1 bg-cyan-600 border-[3px] border-black text-black rounded-lg font-black text-[10px] animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)]">
@@ -60,41 +72,84 @@ export const CombatView = ({
         </div>
       </div>
 
-      {/* --- ENEMY DISPLAY --- */}
-      <div className="flex flex-col items-center gap-4 py-4">
-        <div className={`w-44 h-44 bg-slate-900 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative group transform -rotate-1`}>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_70%)] opacity-50"></div>
-          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f87171 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-          <img
-            src={`/assets/monsters/${enemy.name}.png`}
-            alt={enemy.name}
-            className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ghost"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>';
-            }}
-          />
-          <ImpactSplash splash={impactSplash} />
+      {/* --- MONSTER DATA CENTER --- */}
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 w-full max-w-2xl px-4">
+        
+        {/* Left: Monster Avatar & Health */}
+        <div className="flex flex-col items-center gap-4">
+            <div className={`w-40 h-40 bg-slate-900 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative group transform -rotate-1`}>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_70%)] opacity-50"></div>
+                <img
+                    src={`/assets/monsters/${enemy.name}.png`}
+                    alt={enemy.name}
+                    className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ghost"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>';
+                    }}
+                />
+                <ImpactSplash splash={impactSplash} />
+            </div>
+
+            <div className="w-full text-center">
+                <div className="bg-red-600 text-white px-4 py-1 border-[4px] border-black transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] inline-block mb-2">
+                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-tight">{enemy.name}</h2>
+                </div>
+                
+                <div className="w-full h-4 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden">
+                    <div className="h-full bg-red-600 transition-all duration-300 relative z-10" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }} />
+                </div>
+            </div>
         </div>
 
-        <div className="text-center relative">
-          <div className="bg-red-600 text-white px-6 py-1 border-[4px] border-black transform rotate-1 shadow-[5px_5px_0_rgba(0,0,0,1)] inline-block mb-2">
-            <h2 className="text-3xl font-black uppercase tracking-tighter italic leading-tight">{enemy.name}</h2>
-          </div>
-          
-          <div className="w-full h-4 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden mb-2">
-            <div className="h-full bg-red-600 transition-all duration-300 shadow-[0_0_10px_rgba(220,38,38,0.5)] relative z-10" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }} />
-            <div className="absolute inset-0 z-20 pointer-events-none opacity-50" style={{ backgroundImage: 'linear-gradient(90deg, transparent 95%, rgba(0,0,0,0.8) 95%)', backgroundSize: '5% 100%' }}></div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-2">
-            {['STR', 'AGI', 'DEX'].map((stat) => (
-              <div key={stat} className="flex flex-col items-center bg-black border-2 border-slate-700 px-2 py-0.5 rounded-sm shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                <span className={`text-[7px] ${stat === 'STR' ? 'text-red-500' : stat === 'AGI' ? 'text-emerald-500' : 'text-yellow-500'} font-black uppercase italic`}>{stat}</span>
-                <span className="text-[10px] font-black text-white italic">{enemy[stat.toLowerCase()]}</span>
-              </div>
-            ))}
-          </div>
+        {/* Right: Technical Stats & Intelligence */}
+        <div className="flex-1 w-full bg-slate-900/80 backdrop-blur-sm border-[4px] border-black p-4 rounded-3xl shadow-[8px_8px_0_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-2 mb-3 border-b-2 border-slate-800 pb-2">
+                <Activity size={14} className="text-emerald-500" />
+                <span className="text-[10px] font-black text-emerald-500 uppercase italic tracking-widest">Monster Intelligence</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                    <p className="text-[8px] font-black text-slate-500 uppercase italic">Combat Ratings</p>
+                    <div className="flex gap-2">
+                        {['STR', 'AGI', 'DEX'].map((stat) => (
+                        <div key={stat} className="flex flex-col items-center flex-1 bg-black border border-white/10 p-1 rounded">
+                            <span className={`text-[6px] ${stat === 'STR' ? 'text-red-500' : stat === 'AGI' ? 'text-emerald-500' : 'text-yellow-500'} font-black italic`}>{stat}</span>
+                            <span className="text-[10px] font-black text-white">{enemy[stat.toLowerCase()]}</span>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <p className="text-[8px] font-black text-emerald-500 uppercase italic">Yield Projection</p>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex justify-between items-center bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                            <span className="text-[7px] font-black text-white/50 uppercase">GX Crystal</span>
+                            <span className="text-[9px] font-black text-amber-500 italic">+{enemy.loot}</span>
+                        </div>
+                        <div className="flex justify-between items-center bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                            <span className="text-[7px] font-black text-white/50 uppercase">Exp Signal</span>
+                            <span className="text-[9px] font-black text-cyan-400 italic">+{enemy.xp}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <div className="flex items-center justify-between border-t border-slate-800 pt-2">
+                    <p className="text-[8px] font-black text-slate-500 uppercase italic">Possible Rewards</p>
+                    <span className="text-[7px] font-black text-amber-600 italic uppercase">Scanner Active</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 min-h-[24px]">
+                    {possibleDrops.map((loot, idx) => (
+                        <div key={idx} className="w-6 h-6 rounded bg-black/60 border border-white/10 flex items-center justify-center text-[12px] opacity-70 hover:opacity-100 hover:scale-110 transition-all cursor-help" title={loot.name}>
+                            {loot.icon}
+                        </div>
+                    ))}
+                    {possibleDrops.length === 0 && <span className="text-[7px] text-slate-700 italic">No drops detected</span>}
+                </div>
+            </div>
         </div>
       </div>
 
@@ -169,9 +224,9 @@ export const CombatView = ({
           </button>
         </div>
         
-        {/* Loot Visuals (Icons for loots obtained) */}
+        {/* Loot Visuals */}
         <div className="flex items-center justify-center gap-3 pt-2 opacity-50 hover:opacity-100 transition-opacity">
-           <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter italic">Recent Loot:</div>
+           <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter italic">Recent Session Drops:</div>
            <div className="flex gap-2">
               {(player.inventory || []).slice(-4).reverse().map((item, i) => (
                 <div key={i} className="text-xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500" title={item.name}>

@@ -115,6 +115,8 @@ const App = () => {
   const [showBossVideo, setShowBossVideo] = useState(true);
   const [showSuccessWindow, setShowSuccessWindow] = useState(false);
   const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
+  const [killsInFloor, setKillsInFloor] = useState(0);
+  const [autoUseScroll, setAutoUseScroll] = useState(false);
 
   const playerRef = useRef(null);
   const stunRef = useRef(0);
@@ -162,6 +164,30 @@ const App = () => {
     }
   };
 
+  const useAutoScroll = async () => {
+    const p = playerRef.current || player;
+    const scroll = p.inventory?.find(i => i.id === 'auto_scroll');
+    if (!scroll) {
+      addLog("❌ No Auto Scrolls remaining!");
+      return;
+    }
+    
+    const newInventory = [...p.inventory];
+    const idx = newInventory.findIndex(i => i.id === 'auto_scroll');
+    newInventory.splice(idx, 1);
+    
+    const now = Date.now();
+    const currentAutoUntil = Math.max(now, p.autoUntil || 0);
+    const newAutoUntil = currentAutoUntil + AUTO_SCROLL_DURATION; // 1 hour typically
+    
+    await syncPlayer({
+      autoUntil: newAutoUntil,
+      autoMode: view === 'boss' ? 'boss' : 'dungeon',
+      inventory: newInventory
+    });
+    addLog("⚡ Auto Scroll engaged (+1 Hour)");
+  };
+
   const handleLogout = async () => {
     try {
       if (player.autoUntil > 0 || player.buffUntil > 0) {
@@ -202,6 +228,12 @@ const App = () => {
           setPenaltyRemaining(Math.ceil((p.penaltyUntil - now) / 1000));
         } else {
           setPenaltyRemaining(0);
+        }
+
+        // Auto-Use Scroll Logic
+        if (autoUseScroll && (!p.autoUntil || p.autoUntil <= now) && (view === 'dungeon' || view === 'boss')) {
+          const hasScroll = p.inventory?.some(i => i.id === 'auto_scroll');
+          if (hasScroll) useAutoScroll();
         }
       }
     }, 100);
@@ -455,42 +487,59 @@ const App = () => {
       abilityPoints: nextAP 
     };
 
-    // --- Loot Drop Logic ---
+    // --- Loot Drop Logic (Optimized for Depth & Rarity) ---
     if (selectedMap && selectedMap.lootTable) {
-      const dropChance = 0.35 + (p.level * 0.005); // Scaling drop chance
+      const dropChance = 0.35 + (p.level * 0.005); 
       if (Math.random() < dropChance) {
-        const lootId = selectedMap.lootTable[Math.floor(Math.random() * selectedMap.lootTable.length)];
-        const lootItem = LOOTS.find(item => item.id === lootId);
-        if (lootItem) {
-          updates.inventory = [...(p.inventory || []), lootItem];
-          addLog(`🎁 LOOT: Found ${lootItem.name}!`);
+        // Filter loots based on rarity vs floor (depth)
+        // Rare: > Floor 5, Epic: > Floor 10, Legendary: > Floor 20
+        const possibleLoots = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
+          if (!l) return false;
+          if (l.rarity === 'Legendary' && depth < 20) return false;
+          if (l.rarity === 'Epic' && depth < 10) return false;
+          if (l.rarity === 'Rare' && depth < 5) return false;
+          return true;
+        });
+
+        if (possibleLoots.length > 0) {
+          // Weighted random based on rarity
+          const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
+          const pool = [];
+          possibleLoots.forEach(l => {
+            const weight = rarityWeights[l.rarity] || 10;
+            for(let i=0; i<weight; i++) pool.push(l);
+          });
+          
+          const lootItem = pool[Math.floor(Math.random() * pool.length)];
+          if (lootItem) {
+            updates.inventory = [...(p.inventory || []), lootItem];
+            addLog(`🎁 LOOT: Found ${lootItem.name}!`);
+          }
         }
       }
     }
     
-    const nextDepth = depth + 1;
-    if (selectedMap && !selectedMap.availableFloors.includes(nextDepth)) {
-       addLog(`Sector ${selectedMap.name} Cleared!`);
-       updates.autoUntil = 0; 
-       syncPlayer(updates);
-       
-       // Prepare summary and show window
-       const currentLoot = updates.inventory ? [updates.inventory[updates.inventory.length-1]] : [];
-       setSessionRewards(prev => ({
-         tokens: prev.tokens + e.loot,
-         xp: prev.xp + e.xp,
-         loots: updates.inventory ? [...prev.loots, updates.inventory[updates.inventory.length-1]] : prev.loots
-       }));
-       setShowSuccessWindow(true);
-    } else {
-       setSessionRewards(prev => ({
-         tokens: prev.tokens + e.loot,
-         xp: prev.xp + e.xp,
-         loots: updates.inventory ? [...prev.loots, updates.inventory[updates.inventory.length-1]] : prev.loots
-       }));
-       setDepth(nextDepth); 
+    syncPlayer(updates);
+
+    // Track Reward Session
+    const droppedItem = updates.inventory ? updates.inventory[updates.inventory.length-1] : null;
+    setSessionRewards(prev => ({
+      tokens: prev.tokens + e.loot,
+      xp: prev.xp + e.xp,
+      loots: droppedItem ? [...prev.loots, droppedItem] : prev.loots
+    }));
+
+    // Dungeon Progression: Every 10 monsters = Floor +1
+    const newKills = killsInFloor + 1;
+    if (newKills >= 10) {
+       setKillsInFloor(0);
+       const nextDepth = depth + 1;
+       setDepth(nextDepth);
+       addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
        spawnNewEnemy(nextDepth);
-       syncPlayer(updates);
+    } else {
+       setKillsInFloor(newKills);
+       spawnNewEnemy(depth);
     }
   };
 
@@ -835,6 +884,10 @@ const App = () => {
               syncPlayer={syncPlayer} 
               setDepth={setDepth} 
               selectedMap={selectedMap}
+              autoUseScroll={autoUseScroll}
+              setAutoUseScroll={setAutoUseScroll}
+              killsInFloor={killsInFloor}
+              LOOTS={LOOTS}
             />
           )}
 

@@ -6,8 +6,14 @@
     "minLevel": 1,
     "difficulty": "Easy",
     "unlocked": true,
-    "availableFloors": [1, 2, 3, 4, 5],
-    "lootTable": ["crystle_shard", "beast_hide"]
+    "lootTable": [
+      "crystle_shard", "beast_hide", "slum_scrap", "toxic_sludge", "rusty_wire", 
+      "mutant_tooth", "neon_dust", "broken_sensor", "slum_medals", "cypher_chip", 
+      "glowing_eye", "slum_rat_tail", "copper_piping", "broken_glasses", "dirty_rag", 
+      "moldy_bread", "faded_poster", "cracked_tile", "plastic_bottle", "old_coin", 
+      "bio_vial", "hazard_tape", "rusted_key", "empty_can", "cracked_screen", 
+      "neon_filament", "metal_shard", "steel_spring", "rubber_hose", "spark_plug"
+    ]
   },
   {
     "id": "rust_canyon",
@@ -16,8 +22,14 @@
     "minLevel": 10,
     "difficulty": "Medium",
     "unlocked": false,
-    "availableFloors": [6, 7, 8, 9, 10],
-    "lootTable": ["crystle_shard", "ancient_gear"]
+    "lootTable": [
+      "canyon_iron", "oil_drum", "cracked_piston", "sand_glass", "engine_bolt", 
+      "power_cell", "rusty_plate", "titanium_link", "turbo_charger", "exhaust_pipe", 
+      "steel_spring", "rubber_hose", "spark_plug", "fan_blade", "rusty_cog", 
+      "metal_shard", "fuel_filter", "brake_pad", "clutch_plate", "valve_stem", 
+      "radiator_fin", "chrome_trim", "carbon_filter", "hydraulics", "ignition_coil",
+      "ancient_gear", "crystle_shard", "stardust", "obsidian_glass", "void_shard"
+    ]
   },
   {
     "id": "void_sector",
@@ -26,7 +38,13 @@
     "minLevel": 25,
     "difficulty": "Hard",
     "unlocked": false,
-    "availableFloors": [11, 12, 13, 14, 15],
-    "lootTable": ["void_essence", "core_pulse"]
+    "lootTable": [
+      "void_shard", "dark_matter", "gravity_well", "neural_net", "plasma_core", 
+      "void_crystal", "singularity", "event_horizon", "quantum_bit", "nanite_cloud", 
+      "warp_drive_part", "cyber_heart", "stardust", "obsidian_glass", "void_tear", 
+      "shadow_pulse", "entropy_coil", "null_point", "void_membrane", "black_hole_shard", 
+      "time_drift", "phase_module", "void_beacon", "dark_energy_cell", "void_fang",
+      "void_essence", "core_pulse", "omega_crystle", "ancient_gear", "titanium_link"
+    ]
   }
 ]
