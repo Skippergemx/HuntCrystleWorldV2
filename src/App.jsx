@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
@@ -9,7 +9,8 @@ import {
   Wind, Lock, User, RefreshCw, AlertCircle, Sparkles,
   Hammer, Gem, Package, X, TrendingUp, Skull, Flame, Clock,
   PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
-  Book, Globe, Database, HardHat, Footprints
+  Book, Globe, Database, HardHat, Footprints,
+  Volume2, VolumeX, Music, Music2
 } from 'lucide-react';
 
 // --- Firebase Setup ---
@@ -88,6 +89,16 @@ const BOSS_MEDIA_FILES = [
 
 const SHOP_ITEMS = [...SHOP_CONSUMABLES, ...EQUIPMENT];
 
+const SOUNDS = {
+  mainBGM: ['/assets/sounds/Main-BGM01.mp3', '/assets/sounds/Main-BGM02.mp3'],
+  dungeonBGM: ['/assets/sounds/Dungeon-BGM01.mp3', '/assets/sounds/Dungeon-BGM02.mp3'],
+  bossBGM: ['/assets/sounds/Boss-BGM01.mp3', '/assets/sounds/Boss-BMG02.mp3'],
+  playerAttack: '/assets/sounds/Player-Attack.wav',
+  monsterAttack: '/assets/sounds/Monster-Attack.wav',
+  obtainLoot: '/assets/sounds/Obtain-Loot.wav',
+  useHeal: '/assets/sounds/Use-Heal-Potion.wav'
+};
+
 const App = () => {
   const [user, setUser] = useState(null);
   const [player, setPlayer] = useState(null);
@@ -109,35 +120,106 @@ const App = () => {
   const [autoTimeLeft, setAutoTimeLeft] = useState(0);
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
   const [currentTaunt, setCurrentTaunt] = useState("");
+  const [playerTaunt, setPlayerTaunt] = useState("");
   const [missTimeLeft, setMissTimeLeft] = useState(0);
   const [impactSplash, setImpactSplash] = useState(null);
+  const [playerImpactSplash, setPlayerImpactSplash] = useState(null);
+  const [strikingSide, setStrikingSide] = useState(null); // 'player' or 'monster'
+  const [lastLoot, setLastLoot] = useState(null);
   const [bossAvatarIdx, setBossAvatarIdx] = useState(0);
   const [showBossVideo, setShowBossVideo] = useState(true);
   const [showSuccessWindow, setShowSuccessWindow] = useState(false);
   const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
   const [killsInFloor, setKillsInFloor] = useState(0);
   const [autoUseScroll, setAutoUseScroll] = useState(false);
+  const [isMusicOn, setIsMusicOn] = useState(true);
+  const [isSfxOn, setIsSfxOn] = useState(true);
 
   const playerRef = useRef(null);
   const stunRef = useRef(0);
   const missRef = useRef(0);
+  const killsRef = useRef(0);
+  const depthRef = useRef(1);
+  const buffRef = useRef(0);
+  const bgmRef = useRef(new Audio());
+
+  const playSFX = (soundPath) => {
+    if (!isSfxOn) return;
+    const audio = new Audio(soundPath);
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  };
+
+  const updateBGM = useCallback(() => {
+    if (!isMusicOn) {
+      bgmRef.current.pause();
+      return;
+    }
+
+    let tracks = [];
+    const isCombatView = view === 'dungeon' || view === 'boss';
+    
+    if (isCombatView) {
+      tracks = (view === 'boss' || enemy?.isBoss) ? SOUNDS.bossBGM : SOUNDS.dungeonBGM;
+    } else {
+      tracks = SOUNDS.mainBGM;
+    }
+
+    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+    
+    // Only restart if the track category changes significantly
+    const currentSrc = bgmRef.current.src ? decodeURIComponent(bgmRef.current.src) : "";
+    const isCombatTrack = currentSrc.includes('Dungeon') || currentSrc.includes('Boss');
+    const isMainTrack = currentSrc.includes('Main');
+    
+    const shouldChange = (isCombatView && !isCombatTrack) || 
+                       (!isCombatView && !isMainTrack) || 
+                       (!bgmRef.current.src);
+
+    if (shouldChange) {
+      bgmRef.current.pause();
+      bgmRef.current.src = randomTrack;
+      bgmRef.current.loop = true;
+      bgmRef.current.volume = 0.3;
+      bgmRef.current.play().catch(e => console.log("BGM play error", e));
+    }
+  }, [view, isMusicOn, enemy?.isBoss]);
+
+  useEffect(() => {
+    updateBGM();
+  }, [updateBGM]);
 
   useEffect(() => {
     playerRef.current = player;
     stunRef.current = stunTimeLeft;
     missRef.current = missTimeLeft;
-  }, [player, stunTimeLeft, missTimeLeft]);
+    killsRef.current = killsInFloor;
+    depthRef.current = depth;
+    buffRef.current = buffTimeLeft;
+  }, [player, stunTimeLeft, missTimeLeft, killsInFloor, depth, buffTimeLeft]);
 
-  const triggerHitEffects = (dmg, isCrit) => {
-    // 1. Impact Splash
-    const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!"];
+  const triggerHitEffects = (dmg, isCrit, side = 'monster') => {
+    const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!", "CRUNCH!", "KRAK!"];
     const word = impactWords[Math.floor(Math.random() * impactWords.length)];
     const id = Date.now();
-    setImpactSplash({ text: word, dmg, isCrit, id });
-    setTimeout(() => setImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
+    
+    if (side === 'monster') {
+      setImpactSplash({ text: word, dmg, isCrit, id });
+      setTimeout(() => setImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
+      triggerFlinch();
+      
+      // Monster Ouch Moment
+      const ouchWords = ["Ouch!", "Gah!", "No!", "Stop!", "Critical Hit!", "Ack!", "My circuits!", "System Failure!"];
+      setCurrentTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
+    } else {
+      setPlayerImpactSplash({ text: word, dmg, isCrit, id });
+      setTimeout(() => setPlayerImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
+      triggerHurt();
 
-    // 2. Flinch
-    triggerFlinch();
+      // Player Ouch Moment
+      const ouchWords = ["Ugh!", "Ack!", "Too strong!", "Healing needed!", "Pain...", "Vision blurring!", "Armor cracked!"];
+      setPlayerTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
+    }
   };
 
   useEffect(() => {
@@ -153,6 +235,20 @@ const App = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (currentTaunt) {
+      const timer = setTimeout(() => setCurrentTaunt(""), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentTaunt]);
+
+  useEffect(() => {
+    if (playerTaunt) {
+      const timer = setTimeout(() => setPlayerTaunt(""), 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [playerTaunt]);
+
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
@@ -164,28 +260,36 @@ const App = () => {
     }
   };
 
-  const useAutoScroll = async () => {
+  const activateAutoScroll = async () => {
     const p = playerRef.current || player;
-    const scroll = p.inventory?.find(i => i.id === 'auto_scroll');
-    if (!scroll) {
-      addLog("❌ No Auto Scrolls remaining!");
+    const scrollIdx = p.inventory?.findIndex(i => i.id === 'auto_scroll');
+    const hasCounter = (p.autoScrolls || 0) > 0;
+    
+    if (scrollIdx === -1 && !hasCounter) {
+      if (autoUseScroll) {
+        setAutoUseScroll(false);
+        addLog("❌ All Auto Scrolls depleted!");
+      }
       return;
     }
-    
-    const newInventory = [...p.inventory];
-    const idx = newInventory.findIndex(i => i.id === 'auto_scroll');
-    newInventory.splice(idx, 1);
+
+    const updates = {};
+    if (scrollIdx !== -1) {
+      const newInventory = [...(p.inventory || [])];
+      newInventory.splice(scrollIdx, 1);
+      updates.inventory = newInventory;
+    } else {
+      updates.autoScrolls = p.autoScrolls - 1;
+    }
     
     const now = Date.now();
     const currentAutoUntil = Math.max(now, p.autoUntil || 0);
-    const newAutoUntil = currentAutoUntil + AUTO_SCROLL_DURATION; // 1 hour typically
+    updates.autoUntil = currentAutoUntil + AUTO_SCROLL_DURATION;
+    updates.autoMode = (view === 'boss' || view === 'dungeon') ? view : (p.autoMode || 'dungeon');
     
-    await syncPlayer({
-      autoUntil: newAutoUntil,
-      autoMode: view === 'boss' ? 'boss' : 'dungeon',
-      inventory: newInventory
-    });
-    addLog("⚡ Auto Scroll engaged (+1 Hour)");
+    await syncPlayer(updates);
+    const durationMin = AUTO_SCROLL_DURATION / 60000;
+    addLog(`⚡ Auto Scroll engaged (+${durationMin} min)`);
   };
 
   const sellItem = async (itemId, amount = 1) => {
@@ -258,8 +362,14 @@ const App = () => {
 
         // Auto-Use Scroll Logic
         if (autoUseScroll && (!p.autoUntil || p.autoUntil <= now) && (view === 'dungeon' || view === 'boss')) {
-          const hasScroll = p.inventory?.some(i => i.id === 'auto_scroll');
-          if (hasScroll) useAutoScroll();
+          const hasInInventory = p.inventory?.some(i => i && i.id === 'auto_scroll');
+          const hasInCounter = (p.autoScrolls || 0) > 0;
+          if (hasInInventory || hasInCounter) {
+            activateAutoScroll();
+          } else {
+            setAutoUseScroll(false);
+            addLog("❌ Out of Scrolls: Auto-Use Disabled.");
+          }
         }
       }
     }, 100);
@@ -391,7 +501,7 @@ const App = () => {
   }, [user]);
 
   const calculateTotalStats = () => {
-    return calculateStats(player, TAVERN_MATES, buffTimeLeft > 0);
+    return calculateStats(playerRef.current || player, TAVERN_MATES, buffRef.current > 0);
   };
 
   const addLog = (msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]);
@@ -400,19 +510,11 @@ const App = () => {
     const p = playerRef.current || player;
     if ((p.potions || 0) <= 0) return addLog("Out of Potions!");
     const healAmt = Math.floor(p.maxHp * 0.5);
+    playSFX(SOUNDS.useHeal);
     syncPlayer({ hp: Math.min(p.maxHp, p.hp + healAmt), potions: p.potions - 1 });
     addLog(`Healed ${healAmt} HP.`);
   };
 
-  const activateAutoScroll = () => {
-    if ((player.autoScrolls || 0) <= 0) return;
-    const now = Date.now();
-    syncPlayer({ 
-      autoUntil: (player.autoUntil > now ? player.autoUntil : now) + AUTO_SCROLL_DURATION, 
-      autoScrolls: player.autoScrolls - 1,
-      autoMode: view
-    });
-  };
 
   const hireMate = (mate) => {
     if (player.tokens < mate.cost) return addLog("Out of GX!");
@@ -441,13 +543,23 @@ const App = () => {
 
     const target = isBoss ? BOSS : e;
 
+    // Trigger Strike Animation
+    setStrikingSide('player');
+    playSFX(SOUNDS.playerAttack);
+    setTimeout(() => setStrikingSide(null), 300);
+
     const hitChance = Math.min(98, (stats.dex / (stats.dex + target.agi * 0.4)) * 100);
     if (Math.random() * 100 < hitChance) {
-      const isCrit = Math.random() < 0.15; // 15% crit chance for player
+      const isCrit = Math.random() < 0.15;
       const dmgBase = stats.str + Math.floor(Math.random() * 10) - Math.floor(target.agi / 5);
       const dmg = Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
       
-      triggerHitEffects(dmg, isCrit);
+      triggerHitEffects(dmg, isCrit, 'monster');
+      
+      // Player Battle Taunt (Aggressive)
+      const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
+      setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
+
       if (!isBoss) addLog(`Struck ${target.name} for ${dmg} DMG.`);
 
       if (isBoss) {
@@ -455,7 +567,7 @@ const App = () => {
       } else {
         const newHp = Math.max(0, target.hp - dmg);
         if (newHp <= 0) {
-          setEnemy({ ...target, hp: 0 }); // Visual sync
+          setEnemy({ ...target, hp: 0 });
           processKill();
         } else { 
           setEnemy({ ...target, hp: newHp }); 
@@ -465,6 +577,9 @@ const App = () => {
     } else {
       if (!isBoss) addLog(`Missed strike on ${target.name}!`);
       setMissTimeLeft(1.5);
+      // Miss Ouch/Taunt
+      setPlayerTaunt("Darn, missed!");
+      setCurrentTaunt("Ha! Too slow!");
       enemyTurn(target, isBoss);
     }
   };
@@ -473,6 +588,14 @@ const App = () => {
     if (showDefeatedWindow) return;
     const p = playerRef.current || player;
     const stats = calculateTotalStats();
+
+    // Trigger Strike Animation (after a slight delay to let player finish)
+    setTimeout(() => {
+      setStrikingSide('monster');
+      playSFX(SOUNDS.monsterAttack);
+      setTimeout(() => setStrikingSide(null), 300);
+    }, 400);
+
     const hitChance = (target.dex / (target.dex + stats.agi * 0.8)) * 100;
 
     if (Math.random() * 100 < hitChance) {
@@ -485,8 +608,10 @@ const App = () => {
       const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
       setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
+      // Hit Impact for Player
+      triggerHitEffects(dmg, isCrit, 'player');
+
       const newHp = Math.max(0, p.hp - dmg);
-      triggerHurt();
       
       if (newHp <= 0) {
         setShowDefeatedWindow(true);
@@ -494,6 +619,12 @@ const App = () => {
         syncPlayer({ hp: p.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
         setTimeout(() => { setShowDefeatedWindow(false); setDepth(1); setView('menu'); }, DEFEAT_WINDOW_DURATION);
       } else syncPlayer({ hp: newHp });
+    } else {
+      // Monster Miss
+      setTimeout(() => {
+        setCurrentTaunt("Drat! Slipped!");
+        setPlayerTaunt("Nice try!");
+      }, 500);
     }
   };
 
@@ -541,6 +672,9 @@ const App = () => {
           if (lootItem) {
             updates.inventory = [...(p.inventory || []), lootItem];
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
+            playSFX(SOUNDS.obtainLoot);
+            setLastLoot(lootItem);
+            setTimeout(() => setLastLoot(null), 3000);
           }
         }
       }
@@ -557,16 +691,16 @@ const App = () => {
     }));
 
     // Dungeon Progression: Every 10 monsters = Floor +1
-    const newKills = killsInFloor + 1;
+    const newKills = killsRef.current + 1;
     if (newKills >= 10) {
        setKillsInFloor(0);
-       const nextDepth = depth + 1;
+       const nextDepth = depthRef.current + 1;
        setDepth(nextDepth);
        addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
        spawnNewEnemy(nextDepth);
     } else {
        setKillsInFloor(newKills);
-       spawnNewEnemy(depth);
+       spawnNewEnemy(depthRef.current);
     }
   };
 
@@ -605,7 +739,13 @@ const App = () => {
 
   const forgeCrystle = (recipe) => {
     if (player.tokens < recipe.cost) return addLog("Need more tokens!");
-    syncPlayer({ tokens: player.tokens - recipe.cost, equipped: { ...player.equipped, [recipe.type]: recipe }, inventory: [...(player.inventory || []), recipe.id] });
+    // Ensure we add a valid object to inventory, not just the ID
+    const newInventoryItem = { ...recipe, id: recipe.id || `recipe_${Date.now()}`, icon: recipe.icon || '📜', sellValue: recipe.sellValue || 50 };
+    syncPlayer({ 
+      tokens: player.tokens - recipe.cost, 
+      equipped: { ...player.equipped, [recipe.type]: recipe }, 
+      inventory: [...(player.inventory || []).filter(Boolean), newInventoryItem] 
+    });
   };
 
   if (loading) return <LoadingScreen />;
@@ -813,6 +953,23 @@ const App = () => {
                    </div>
                 </div>
 
+                <div className="flex items-center gap-1 ml-2">
+                    <button 
+                      onClick={() => setIsMusicOn(!isMusicOn)} 
+                      className={`p-2 rounded-lg border transition-all ${isMusicOn ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                      title="Music Toggle"
+                    >
+                      {isMusicOn ? <Music size={14} strokeWidth={3} /> : <Music2 size={14} className="opacity-50" strokeWidth={3} />}
+                    </button>
+                    <button 
+                      onClick={() => setIsSfxOn(!isSfxOn)} 
+                      className={`p-2 rounded-lg border transition-all ${isSfxOn ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
+                      title="SFX Toggle"
+                    >
+                      {isSfxOn ? <Volume2 size={14} strokeWidth={3} /> : <VolumeX size={14} className="opacity-50" strokeWidth={3} />}
+                    </button>
+                </div>
+
                 <button onClick={handleLogout} className="text-slate-500 hover:text-red-500 transition-colors p-2 bg-black/40 rounded-lg border border-slate-700 ml-1" title="Logout"><Lock size={14} /></button>
               </div>
             </div>
@@ -915,6 +1072,12 @@ const App = () => {
               setAutoUseScroll={setAutoUseScroll}
               killsInFloor={killsInFloor}
               LOOTS={LOOTS}
+              currentTaunt={currentTaunt}
+              playerTaunt={playerTaunt}
+              playerImpactSplash={playerImpactSplash}
+              strikingSide={strikingSide}
+              totalStats={totalStats}
+              lastLoot={lastLoot}
             />
           )}
 
@@ -943,7 +1106,18 @@ const App = () => {
               handleHeal={handleHeal} 
               handleAttack={handleAttack} 
               setView={(v) => { if (v === 'menu') setAutoUseScroll(false); setView(v); }} 
-              syncPlayer={syncPlayer} 
+              syncPlayer={syncPlayer}
+              currentTaunt={currentTaunt}
+              playerTaunt={playerTaunt}
+              playerImpactSplash={playerImpactSplash}
+              strikingSide={strikingSide}
+              totalStats={totalStats}
+              isStunned={stunTimeLeft > 0}
+              stunTimeLeft={stunTimeLeft}
+              isMissed={missTimeLeft > 0}
+              missTimeLeft={missTimeLeft}
+              autoUseScroll={autoUseScroll}
+              setAutoUseScroll={setAutoUseScroll}
             />
           )}
 

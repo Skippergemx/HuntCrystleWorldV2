@@ -1,122 +1,1022 @@
 [
     {
-        "id": "goblin",
-        "name": "Forest Goblin",
-        "hp": 30,
-        "str": 3,
-        "agi": 4,
-        "dex": 6,
-        "xp": 25,
-        "loot": 20,
-        "taunts": [
-            "Hehe, too slow!",
-            "Shiny! Mine!",
-            "Goblin best!"
-        ]
+        "str":  3,
+        "id":  "goblin",
+        "loot":  20,
+        "taunts":  [
+                       "Hisss!",
+                       "Venom ready!"
+                   ],
+        "agi":  4,
+        "name":  "Venomhide Drake",
+        "dex":  6,
+        "hp":  30,
+        "xp":  25,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "wolf",
-        "name": "Crystal Wolf",
-        "hp": 65,
-        "str": 12,
-        "agi": 15,
-        "dex": 12,
-        "xp": 55,
-        "loot": 45,
-        "taunts": [
-            "*Snarls viciously*",
-            "Awooooo!",
-            "Fresh meat!"
-        ]
+        "str":  12,
+        "id":  "wolf",
+        "loot":  45,
+        "taunts":  [
+                       "Frost breath!",
+                       "Cold snaps!"
+                   ],
+        "agi":  15,
+        "name":  "Glacial Wyvern",
+        "dex":  12,
+        "hp":  65,
+        "xp":  55,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "golem",
-        "name": "Obsidian Sentinel",
-        "hp": 180,
-        "str": 30,
-        "agi": 2,
-        "dex": 8,
-        "xp": 140,
-        "loot": 110,
-        "taunts": [
-            "Crumble under my weight.",
-            "You are fragile.",
-            "Unstoppable force."
-        ]
+        "str":  30,
+        "id":  "golem",
+        "loot":  110,
+        "taunts":  [
+                       "Molten fury!",
+                       "Solid lava!"
+                   ],
+        "agi":  2,
+        "name":  "Magma Draconis",
+        "dex":  8,
+        "hp":  180,
+        "xp":  140,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "slime",
-        "name": "Toxic Slime",
-        "hp": 45,
-        "str": 5,
-        "agi": 2,
-        "dex": 10,
-        "xp": 35,
-        "loot": 30,
-        "taunts": [
-            "*Squish, blub*.",
-            "Dissolving...",
-            "Give me your biomass."
-        ]
+        "str":  5,
+        "id":  "slime",
+        "loot":  30,
+        "taunts":  [
+                       "Melt away!",
+                       "Corrosive touch!"
+                   ],
+        "agi":  2,
+        "name":  "Acidic Drake",
+        "dex":  10,
+        "hp":  45,
+        "xp":  35,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "skeleton",
-        "name": "Skeletal Warrior",
-        "hp": 85,
-        "str": 15,
-        "agi": 8,
-        "dex": 10,
-        "xp": 70,
-        "loot": 60,
-        "taunts": [
-            "Join our ranks...",
-            "Dust to dust.",
-            "*Bones rattling menacingly*"
-        ]
+        "str":  15,
+        "id":  "skeleton",
+        "loot":  60,
+        "taunts":  [
+                       "Death lives on.",
+                       "Rattling terror!"
+                   ],
+        "agi":  8,
+        "name":  "Bone Dragon",
+        "dex":  10,
+        "hp":  85,
+        "xp":  70,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "harpy",
-        "name": "Wind Harpy",
-        "hp": 60,
-        "str": 10,
-        "agi": 25,
-        "dex": 15,
-        "xp": 65,
-        "loot": 50,
-        "taunts": [
-            "Screeech!",
-            "The skies belong to me!",
-            "Too slow, groundwalker!"
-        ]
+        "str":  10,
+        "id":  "harpy",
+        "loot":  50,
+        "taunts":  [
+                       "Sharp talons!",
+                       "Wind strike!"
+                   ],
+        "agi":  25,
+        "name":  "Sky Razer",
+        "dex":  15,
+        "hp":  60,
+        "xp":  65,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "drake",
-        "name": "Ember Drake",
-        "hp": 250,
-        "str": 40,
-        "agi": 15,
-        "dex": 20,
-        "xp": 200,
-        "loot": 180,
-        "taunts": [
-            "Burn, insect!",
-            "Turn to ash and cinder...",
-            "Pathetic mortal."
-        ]
+        "str":  40,
+        "id":  "drake",
+        "loot":  180,
+        "taunts":  [
+                       "Burn!",
+                       "Cinder surge!"
+                   ],
+        "agi":  15,
+        "name":  "Ember Drake",
+        "dex":  20,
+        "hp":  250,
+        "xp":  200,
+        "folder":  "Neon Slums"
     },
     {
-        "id": "wraith",
-        "name": "Shadow Wraith",
-        "hp": 120,
-        "str": 25,
-        "agi": 20,
-        "dex": 30,
-        "xp": 150,
-        "loot": 130,
-        "taunts": [
-            "Embrace the void...",
-            "Your soul is mine.",
-            "Fade into eternal darkness."
-        ]
+        "str":  25,
+        "id":  "wraith",
+        "loot":  130,
+        "taunts":  [
+                       "Dream no more.",
+                       "Void hunger!"
+                   ],
+        "agi":  20,
+        "name":  "Nightmare Wyrm",
+        "dex":  30,
+        "hp":  120,
+        "xp":  150,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  20,
+        "id":  "flare",
+        "loot":  70,
+        "taunts":  [
+                       "Feel the heat!",
+                       "Engulfed in fire!"
+                   ],
+        "agi":  15,
+        "name":  "Crimson Flare",
+        "dex":  18,
+        "hp":  100,
+        "xp":  80,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  15,
+        "id":  "glider",
+        "loot":  65,
+        "taunts":  [
+                       "Swooping in!",
+                       "Catch the wind!"
+                   ],
+        "agi":  25,
+        "name":  "Azure Glider",
+        "dex":  20,
+        "hp":  80,
+        "xp":  75,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  25,
+        "id":  "ripper",
+        "loot":  80,
+        "taunts":  [
+                       "Slicing through!",
+                       "Green fury!"
+                   ],
+        "agi":  10,
+        "name":  "Emerald Ripper",
+        "dex":  15,
+        "hp":  120,
+        "xp":  90,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  18,
+        "id":  "frostbite",
+        "loot":  75,
+        "taunts":  [
+                       "Freeze!",
+                       "Cold as death!"
+                   ],
+        "agi":  18,
+        "name":  "Frost Bite",
+        "dex":  22,
+        "hp":  90,
+        "xp":  85,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  10,
+        "id":  "sprout",
+        "loot":  35,
+        "taunts":  [
+                       "Tiny but heated!",
+                       "Poof!"
+                   ],
+        "agi":  12,
+        "name":  "Cinder Sprout",
+        "dex":  15,
+        "hp":  50,
+        "xp":  40,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  45,
+        "id":  "crusher",
+        "loot":  180,
+        "taunts":  [
+                       "Crush!",
+                       "Solid as rock!"
+                   ],
+        "agi":  5,
+        "name":  "Stone Crusher",
+        "dex":  10,
+        "hp":  250,
+        "xp":  220,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  30,
+        "id":  "bringer",
+        "loot":  150,
+        "taunts":  [
+                       "Thunder rolls!",
+                       "Shocking, isn\u0027t it?"
+                   ],
+        "agi":  35,
+        "name":  "Storm Bringer",
+        "dex":  25,
+        "hp":  150,
+        "xp":  180,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  22,
+        "id":  "gunk",
+        "loot":  85,
+        "taunts":  [
+                       "Sticky situation!",
+                       "Ew, slime!"
+                   ],
+        "agi":  8,
+        "name":  "Gunk Dragon",
+        "dex":  12,
+        "hp":  110,
+        "xp":  95,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  28,
+        "id":  "stalker",
+        "loot":  140,
+        "taunts":  [
+                       "From the shadows...",
+                       "Unseen strike!"
+                   ],
+        "agi":  20,
+        "name":  "Void Stalker",
+        "dex":  35,
+        "hp":  130,
+        "xp":  160,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  50,
+        "id":  "guardian",
+        "loot":  250,
+        "taunts":  [
+                       "Protecting the hoard!",
+                       "Golden might!"
+                   ],
+        "agi":  12,
+        "name":  "Aurelian Guardian",
+        "dex":  15,
+        "hp":  300,
+        "xp":  280,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  60,
+        "id":  "ravager",
+        "loot":  300,
+        "taunts":  [
+                       "Darkness consumes!",
+                       "Tear them apart!"
+                   ],
+        "agi":  10,
+        "name":  "Obsidian Ravager",
+        "dex":  12,
+        "hp":  350,
+        "xp":  320,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  35,
+        "id":  "defender",
+        "loot":  190,
+        "taunts":  [
+                       "Pure and sharp!",
+                       "Iridescent shield!"
+                   ],
+        "agi":  30,
+        "name":  "Pearl Defender",
+        "dex":  25,
+        "hp":  220,
+        "xp":  210,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  32,
+        "id":  "flyer",
+        "loot":  155,
+        "taunts":  [
+                       "Red streak!",
+                       "Burning wings!"
+                   ],
+        "agi":  35,
+        "name":  "Ruby Flyer",
+        "dex":  28,
+        "hp":  140,
+        "xp":  170,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  34,
+        "id":  "diver",
+        "loot":  165,
+        "taunts":  [
+                       "Deep blue death!",
+                       "Crushing pressure!"
+                   ],
+        "agi":  32,
+        "name":  "Sapphire Diver",
+        "dex":  30,
+        "hp":  160,
+        "xp":  185,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  42,
+        "id":  "roarer",
+        "loot":  175,
+        "taunts":  [
+                       "Sonic echo!",
+                       "Purple haze!"
+                   ],
+        "agi":  18,
+        "name":  "Amethyst Roarer",
+        "dex":  20,
+        "hp":  200,
+        "xp":  195,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  38,
+        "id":  "topaz",
+        "loot":  185,
+        "taunts":  [
+                       "Sparkling strike!",
+                       "Yellow flash!"
+                   ],
+        "agi":  25,
+        "name":  "Topaz Drake",
+        "dex":  32,
+        "hp":  180,
+        "xp":  205,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  80,
+        "id":  "breaker",
+        "loot":  400,
+        "taunts":  [
+                       "Unbreakable!",
+                       "Hard as diamond!"
+                   ],
+        "agi":  8,
+        "name":  "Diamond Breaker",
+        "dex":  15,
+        "hp":  500,
+        "xp":  450,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  35,
+        "id":  "shade",
+        "loot":  270,
+        "taunts":  [
+                       "Fading away...",
+                       "Dark strike!"
+                   ],
+        "agi":  40,
+        "name":  "Onyx Shade",
+        "dex":  45,
+        "hp":  170,
+        "xp":  300,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  55,
+        "id":  "scale",
+        "loot":  260,
+        "taunts":  [
+                       "Clang!",
+                       "Solid defense!"
+                   ],
+        "agi":  10,
+        "name":  "Iron Scale",
+        "dex":  20,
+        "hp":  400,
+        "xp":  290,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  28,
+        "id":  "copper",
+        "loot":  130,
+        "taunts":  [
+                       "Conductive breath!",
+                       "Metallic snap!"
+                   ],
+        "agi":  22,
+        "name":  "Copper Wyrm",
+        "dex":  25,
+        "hp":  130,
+        "xp":  145,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  32,
+        "id":  "bronzetail",
+        "loot":  145,
+        "taunts":  [
+                       "Heavy swing!",
+                       "Polish your fear!"
+                   ],
+        "agi":  24,
+        "name":  "Bronzetail",
+        "dex":  28,
+        "hp":  150,
+        "xp":  165,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  40,
+        "id":  "soarer",
+        "loot":  225,
+        "taunts":  [
+                       "Silver lining!",
+                       "Bright as a star!"
+                   ],
+        "agi":  38,
+        "name":  "Silver Soarer",
+        "dex":  42,
+        "hp":  190,
+        "xp":  250,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  52,
+        "id":  "goldheart",
+        "loot":  310,
+        "taunts":  [
+                       "Heart of gold!",
+                       "Radiant power!"
+                   ],
+        "agi":  28,
+        "name":  "Goldheart",
+        "dex":  35,
+        "hp":  280,
+        "xp":  340,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  75,
+        "id":  "platinum",
+        "loot":  500,
+        "taunts":  [
+                       "The ultimate metallic!",
+                       "Superior design!"
+                   ],
+        "agi":  35,
+        "name":  "Platinum Prime",
+        "dex":  40,
+        "hp":  450,
+        "xp":  550,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  26,
+        "id":  "quiver",
+        "loot":  170,
+        "taunts":  [
+                       "Vibrating scales!",
+                       "Harmonic strike!"
+                   ],
+        "agi":  32,
+        "name":  "Quartz Quiver",
+        "dex":  45,
+        "hp":  120,
+        "xp":  190,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  44,
+        "id":  "opal",
+        "loot":  230,
+        "taunts":  [
+                       "Seeing your future...",
+                       "Color spray!"
+                   ],
+        "agi":  35,
+        "name":  "Opal Eye",
+        "dex":  38,
+        "hp":  210,
+        "xp":  260,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  48,
+        "id":  "jade",
+        "loot":  215,
+        "taunts":  [
+                       "Snap!",
+                       "Green bite!"
+                   ],
+        "agi":  15,
+        "name":  "Jade Jaw",
+        "dex":  25,
+        "hp":  240,
+        "xp":  240,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  24,
+        "id":  "amber",
+        "loot":  125,
+        "taunts":  [
+                       "Preserved in time!",
+                       "Golden glow!"
+                   ],
+        "agi":  35,
+        "name":  "Amber Wing",
+        "dex":  30,
+        "hp":  110,
+        "xp":  140,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  54,
+        "id":  "garnet",
+        "loot":  245,
+        "taunts":  [
+                       "Deep red hunger!",
+                       "Gorging on mana!"
+                   ],
+        "agi":  12,
+        "name":  "Garnet Gorge",
+        "dex":  20,
+        "hp":  260,
+        "xp":  275,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  36,
+        "id":  "citrine",
+        "loot":  195,
+        "taunts":  [
+                       "Bright scratch!",
+                       "Solar energy!"
+                   ],
+        "agi":  28,
+        "name":  "Citrine Claw",
+        "dex":  35,
+        "hp":  170,
+        "xp":  215,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  38,
+        "id":  "moonstone",
+        "loot":  290,
+        "taunts":  [
+                       "Ethereal form...",
+                       "Lunar pulse!"
+                   ],
+        "agi":  42,
+        "name":  "Moonstone Mist",
+        "dex":  48,
+        "hp":  190,
+        "xp":  320,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  58,
+        "id":  "sunshine",
+        "loot":  265,
+        "taunts":  [
+                       "Blinding brightness!",
+                       "Solar flare!"
+                   ],
+        "agi":  32,
+        "name":  "Sunshine Scorch",
+        "dex":  30,
+        "hp":  230,
+        "xp":  290,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  42,
+        "id":  "shimmer",
+        "loot":  340,
+        "taunts":  [
+                       "Twinkle twinkle...",
+                       "Stellar strike!"
+                   ],
+        "agi":  45,
+        "name":  "Starlight Shimmer",
+        "dex":  50,
+        "hp":  200,
+        "xp":  380,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  65,
+        "id":  "naga",
+        "loot":  430,
+        "taunts":  [
+                       "Cosmic coils!",
+                       "Space-time warp!"
+                   ],
+        "agi":  38,
+        "name":  "Nebula Naga",
+        "dex":  45,
+        "hp":  300,
+        "xp":  480,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  100,
+        "id":  "draco",
+        "loot":  750,
+        "taunts":  [
+                       "King of the stars!",
+                       "Galactic breath!"
+                   ],
+        "agi":  40,
+        "name":  "Cosmos Draco",
+        "dex":  55,
+        "hp":  600,
+        "xp":  800,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  150,
+        "id":  "infinity",
+        "loot":  1800,
+        "taunts":  [
+                       "Infinite loops!",
+                       "Beyond time!"
+                   ],
+        "agi":  50,
+        "name":  "Infinity Wyrm",
+        "dex":  70,
+        "hp":  1000,
+        "xp":  2000,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  180,
+        "id":  "eternal",
+        "loot":  2200,
+        "taunts":  [
+                       "Unending fire!",
+                       "Ancient roar!"
+                   ],
+        "agi":  55,
+        "name":  "Eternal Drake",
+        "dex":  75,
+        "hp":  1200,
+        "xp":  2500,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  220,
+        "id":  "alpha",
+        "loot":  3000,
+        "taunts":  [
+                       "I was here first.",
+                       "Primal power!"
+                   ],
+        "agi":  60,
+        "name":  "Ancient Alpha",
+        "dex":  85,
+        "hp":  1500,
+        "xp":  3500,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  200,
+        "id":  "terror",
+        "loot":  2800,
+        "taunts":  [
+                       "Fear me!",
+                       "Nightmare fuel!"
+                   ],
+        "agi":  70,
+        "name":  "Prime Terror",
+        "dex":  95,
+        "hp":  1300,
+        "xp":  3200,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  300,
+        "id":  "omega",
+        "loot":  4500,
+        "taunts":  [
+                       "The end is nigh.",
+                       "Perfect defense!"
+                   ],
+        "agi":  80,
+        "name":  "Omega Scales",
+        "dex":  110,
+        "hp":  2000,
+        "xp":  5000,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  120,
+        "id":  "awing",
+        "loot":  1300,
+        "taunts":  [
+                       "Master of the sky!",
+                       "Down draft!"
+                   ],
+        "agi":  90,
+        "name":  "Alpha Wing",
+        "dex":  100,
+        "hp":  800,
+        "xp":  1500,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  140,
+        "id":  "bbreath",
+        "loot":  1400,
+        "taunts":  [
+                       "Toxic fumes!",
+                       "Gasp for air!"
+                   ],
+        "agi":  70,
+        "name":  "Beta Breath",
+        "dex":  80,
+        "hp":  900,
+        "xp":  1600,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  110,
+        "id":  "gglare",
+        "loot":  1500,
+        "taunts":  [
+                       "I see everything.",
+                       "Radiation burn!"
+                   ],
+        "agi":  100,
+        "name":  "Gamma Glare",
+        "dex":  120,
+        "hp":  750,
+        "xp":  1700,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  150,
+        "id":  "ddiver",
+        "loot":  1600,
+        "taunts":  [
+                       "Crashing down!",
+                       "Splashing death!"
+                   ],
+        "agi":  85,
+        "name":  "Delta Diver",
+        "dex":  90,
+        "hp":  950,
+        "xp":  1800,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  130,
+        "id":  "eember",
+        "loot":  1700,
+        "taunts":  [
+                       "Spark of life...",
+                       "Inferno!"
+                   ],
+        "agi":  110,
+        "name":  "Epsilon Ember",
+        "dex":  115,
+        "hp":  700,
+        "xp":  1900,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  160,
+        "id":  "zzenith",
+        "loot":  1900,
+        "taunts":  [
+                       "Top of the food chain!",
+                       "Peak performance!"
+                   ],
+        "agi":  95,
+        "name":  "Zeta Zenith",
+        "dex":  105,
+        "hp":  1100,
+        "xp":  2100,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  135,
+        "id":  "tthorn",
+        "loot":  2000,
+        "taunts":  [
+                       "Prickly situation!",
+                       "Needle spray!"
+                   ],
+        "agi":  80,
+        "name":  "Theta Thorn",
+        "dex":  130,
+        "hp":  850,
+        "xp":  2200,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  155,
+        "id":  "iice",
+        "loot":  2100,
+        "taunts":  [
+                       "Deep freeze!",
+                       "Solid block!"
+                   ],
+        "agi":  75,
+        "name":  "Iota Ice",
+        "dex":  110,
+        "hp":  1050,
+        "xp":  2300,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  210,
+        "id":  "kking",
+        "loot":  2500,
+        "taunts":  [
+                       "All bow to the king!",
+                       "Royal decree!"
+                   ],
+        "agi":  65,
+        "name":  "Kappa King",
+        "dex":  85,
+        "hp":  1400,
+        "xp":  2800,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  175,
+        "id":  "llustre",
+        "loot":  2700,
+        "taunts":  [
+                       "Dazzling strike!",
+                       "Blinding light!"
+                   ],
+        "agi":  120,
+        "name":  "Lambda Lustre",
+        "dex":  140,
+        "hp":  1150,
+        "xp":  3000,
+        "folder":  "Neon Slums"
+    },
+    {
+        "str":  40,
+        "id":  "rust_cat_alpha",
+        "folder":  "Rust Canyon",
+        "loot":  150,
+        "taunts":  [
+                       "Meow... of DOOM!",
+                       "Scrap for the scrap god!"
+                   ],
+        "agi":  55,
+        "name":  "Rust Cat 0-0",
+        "dex":  50,
+        "hp":  250,
+        "xp":  180
+    },
+    {
+        "str":  35,
+        "id":  "canyon_flyer_beta",
+        "folder":  "Rust Canyon",
+        "loot":  130,
+        "taunts":  [
+                       "Screeech!",
+                       "Oil from above!"
+                   ],
+        "agi":  65,
+        "name":  "Canyon Flyer 1-1",
+        "dex":  60,
+        "hp":  200,
+        "xp":  160
+    },
+    {
+        "str":  50,
+        "id":  "iron_pet_gamma",
+        "folder":  "Rust Canyon",
+        "loot":  180,
+        "taunts":  [
+                       "Clank clank!",
+                       "Solid iron strike!"
+                   ],
+        "agi":  20,
+        "name":  "Iron Pet 2-2",
+        "dex":  30,
+        "hp":  450,
+        "xp":  220
+    },
+    {
+        "str":  45,
+        "id":  "oil_swimmer_delta",
+        "folder":  "Rust Canyon",
+        "loot":  160,
+        "taunts":  [
+                       "Drowning in oil?",
+                       "Slick and deadly."
+                   ],
+        "agi":  45,
+        "name":  "Oil Swimmer 3-1",
+        "dex":  55,
+        "hp":  300,
+        "xp":  190
+    },
+    {
+        "str":  30,
+        "id":  "scrap_bota_epsilon",
+        "folder":  "Rust Canyon",
+        "loot":  100,
+        "taunts":  [
+                       "*Static noise*",
+                       "Processing... elimination."
+                   ],
+        "agi":  35,
+        "name":  "Scrap Bota 1",
+        "dex":  40,
+        "hp":  150,
+        "xp":  120
+    },
+    {
+        "str":  55,
+        "id":  "rust_cat_prime",
+        "folder":  "Rust Canyon",
+        "loot":  200,
+        "taunts":  [
+                       "The canyon belongs to me!",
+                       "Purring engine roar!"
+                   ],
+        "agi":  60,
+        "name":  "Rust Cat 3-2",
+        "dex":  65,
+        "hp":  350,
+        "xp":  250
+    },
+    {
+        "str":  42,
+        "id":  "canyon_flyer_strike",
+        "folder":  "Rust Canyon",
+        "loot":  145,
+        "taunts":  [
+                       "Dive bomb!",
+                       "Sky scrap!"
+                   ],
+        "agi":  70,
+        "name":  "Canyon Flyer 2-3",
+        "dex":  65,
+        "hp":  220,
+        "xp":  185
+    },
+    {
+        "str":  65,
+        "id":  "iron_pet_heavy",
+        "folder":  "Rust Canyon",
+        "loot":  250,
+        "taunts":  [
+                       "CRUSH!",
+                       "UNSTOPPABLE!"
+                   ],
+        "agi":  15,
+        "name":  "Iron Pet 0-0",
+        "dex":  25,
+        "hp":  600,
+        "xp":  300
+    },
+    {
+        "str":  48,
+        "id":  "oil_swimmer_slick",
+        "folder":  "Rust Canyon",
+        "loot":  175,
+        "taunts":  [
+                       "Can\u0027t catch me!",
+                       "Slip and slide... to death!"
+                   ],
+        "agi":  50,
+        "name":  "Oil Swimmer 1-0",
+        "dex":  60,
+        "hp":  320,
+        "xp":  210
+    },
+    {
+        "str":  38,
+        "id":  "scrap_bota_mk2",
+        "folder":  "Rust Canyon",
+        "loot":  115,
+        "taunts":  [
+                       "Upgraded protocols.",
+                       "Voltage spike!"
+                   ],
+        "agi":  42,
+        "name":  "Scrap Bota 2",
+        "dex":  45,
+        "hp":  180,
+        "xp":  140
     }
 ]

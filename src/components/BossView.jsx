@@ -1,6 +1,7 @@
 import React from 'react';
-import { MousePointer, Coffee, Wind, Zap } from 'lucide-react';
-import { BossImpactSplash } from './CombatEffects';
+import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock } from 'lucide-react';
+import { BossImpactSplash, ImpactSplash } from './CombatEffects';
+import { AvatarMedia } from './GameUI';
 
 const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => {
   const media = BOSS_MEDIA_FILES[bossIdx] || BOSS_MEDIA_FILES[0];
@@ -20,85 +21,253 @@ const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => 
 };
 
 export const BossView = ({
-  isHurt, enemyFlinch, bossAvatarIdx, showBossVideo, setShowBossVideo, BOSS_MEDIA_FILES, impactSplash, BOSS, player, autoTimeLeft, activateAutoScroll, handleHeal, handleAttack, setView, syncPlayer
+  isHurt, enemyFlinch, bossAvatarIdx, showBossVideo, setShowBossVideo, BOSS_MEDIA_FILES, impactSplash, BOSS, player, autoTimeLeft, activateAutoScroll, handleHeal, handleAttack, setView, syncPlayer,
+  currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, isStunned, stunTimeLeft, isMissed, missTimeLeft,
+  autoUseScroll, setAutoUseScroll
 }) => {
+  const isAutoActive = autoTimeLeft > 0;
+
   return (
-    <div className={`flex-1 p-8 flex flex-col items-center justify-center gap-6 text-center relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
-      {/* Halftone Overlay HUD */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
+    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
+      {/* Intense Red Halftone Overlay */}
+      <div className="absolute inset-0 opacity-[0.15] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 2px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
       
-      <div className={`relative ${enemyFlinch ? 'animate-flinch' : ''}`}>
-        <div className="bg-black/60 w-64 h-64 border-[8px] border-red-600 shadow-[0_0_60px_rgba(239,68,68,0.4)] relative overflow-hidden group mx-auto">
-           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#ef4444_0%,transparent_70%)] opacity-20 animate-pulse z-10"></div>
-           <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo} className="w-full h-full object-cover grayscale-[0.2] contrast-[1.2] brightness-[0.8]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
-           
-           <button 
-             onClick={(e) => { e.stopPropagation(); setShowBossVideo(!showBossVideo); }}
-             className="absolute bottom-2 right-2 z-20 bg-black/80 p-2 border-2 border-red-600 text-white hover:bg-red-600 transition-colors shadow-lg"
-           >
-             {showBossVideo ? <Wind size={14} /> : <Zap size={14} />}
-           </button>
-        </div>
-        
-        <BossImpactSplash splash={impactSplash} />
-      </div>
-
-      <div className="relative transform rotate-1">
-        <div className="bg-red-600 text-white px-8 py-3 border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] inline-block">
-           <h2 className="text-6xl font-black uppercase tracking-tighter italic drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]">{BOSS.name}</h2>
-        </div>
-        <div className="absolute -top-3 -right-4 bg-black text-red-500 px-3 py-1 text-xs font-black border-[3px] border-red-500 transform rotate-6 shadow-lg">
-           LEVEL: Ω
-        </div>
-      </div>
-
-      <div className="w-full max-w-lg space-y-4">
-        <div className="h-8 bg-black border-[4px] border-white/20 p-1.5 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden">
-          <div className="h-full bg-red-600 transition-all duration-300 shadow-[0_0_20px_rgba(220,38,38,0.5)]" style={{ width: `100%` }} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-[10px] font-black text-white uppercase tracking-[0.4em] drop-shadow-md">Core Integrity: Stable</p>
+      {/* --- HUD TOP: INTENSE BOSS TITLE --- */}
+      <div className="w-full flex justify-between items-start z-10 px-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 px-4 py-2 bg-black border-[4px] border-red-600 rounded-lg shadow-[5px_5px_0_rgba(0,0,0,1)] transform -rotate-1">
+              <TrendingUp size={16} className="text-red-500 animate-pulse" />
+              <div className="flex flex-col leading-none">
+                  <span className="text-[10px] font-black text-red-500 uppercase tracking-widest italic leading-none">Entity Detected</span>
+                  <span className="text-xs font-black text-white tracking-tighter uppercase">Ω-LEVEL GUARDIAN</span>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div className="flex flex-col items-end gap-2 text-sm font-black">
+             <div className="flex gap-2">
+                <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-2 bg-red-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group">
+                    <Coffee size={16} className="text-white group-hover:scale-110 transition-transform" />
+                    <div className="flex flex-col items-start bg-transparent leading-none">
+                        <span className="text-[7px] font-black uppercase text-white/70 italic">Heal</span>
+                        <span className="text-xs font-black text-white italic">{player.potions || 0}</span>
+                    </div>
+                </button>
+                
+                <div className="flex flex-col gap-1">
+                  {player.autoScrolls > 0 && !isAutoActive && (
+                    <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group">
+                      <MousePointer size={14} className="text-black group-hover:scale-110 transition-transform" />
+                      <div className="flex flex-col items-start bg-transparent leading-none">
+                        <span className="text-[7px] font-black uppercase text-black/70 italic">Auto</span>
+                        <span className="text-xs font-black text-black italic">{player.autoScrolls}</span>
+                      </div>
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setAutoUseScroll(!autoUseScroll)}
+                    className={`flex items-center gap-1.5 px-2 py-1 border-2 border-black rounded-lg text-[8px] font-black italic uppercase transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5 ${autoUseScroll ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}`}
+                  >
+                    <Lock size={10} strokeWidth={3} /> {autoUseScroll ? 'AUTO-USE ON' : 'AUTO-USE OFF'}
+                  </button>
+                </div>
+             </div>
+             {isAutoActive && (
+               <div className="flex items-center gap-2 px-3 py-1 bg-cyan-600 border-[3px] border-black text-black rounded-lg font-black text-[10px] animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                 <MousePointer size={10} /> LOCK-ON: {autoTimeLeft}s
+               </div>
+             )}
+          </div>
+      </div>
+
+      {/* --- BATTLE ARENA: TWO PANELS --- */}
+      <div className="w-full flex flex-col lg:flex-row flex-1 items-center justify-center gap-8 px-2 py-4 relative">
         
-        <div className="bg-slate-900/80 backdrop-blur-md border-[4px] border-black p-4 rounded-xl flex justify-between items-center shadow-[6px_6px_0_rgba(0,0,0,1)] gap-4">
-           <div className="text-left flex-1">
-              <p className="text-[10px] font-black text-red-400 uppercase italic">Boss Damage Dealt</p>
-              <p className="text-3xl font-black text-white italic drop-shadow-md">{(player.totalBossDamage || 0).toLocaleString()}</p>
+        {/* LEFT PANEL: BOSS */}
+        <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-6 transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
+           <div className="relative group">
+              {/* Boss Yield Detail Overlay */}
+              <div className="absolute -left-20 top-0 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-right duration-700">
+                  <div className="bg-black/95 border-2 border-red-600 p-3 rounded-lg transform -rotate-6 shadow-[4px_4px_0_rgba(239,68,68,0.3)]">
+                      <p className="text-[8px] font-black text-red-500 uppercase leading-none mb-2 text-center tracking-widest">Scanner Active</p>
+                      <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                              <Target size={10} className="text-red-500" />
+                              <span className="text-[11px] font-black text-white">ATK: {BOSS.str}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <Shield size={10} className="text-red-500" />
+                              <span className="text-[11px] font-black text-white">DEF: {BOSS.agi}</span>
+                          </div>
+                          <div className="pt-2 border-t border-red-900/50">
+                             <p className="text-[7px] font-black text-red-400 uppercase leading-none mb-1">Condition</p>
+                             <p className="text-[10px] font-black text-white animate-pulse">OVERLOAD READY</p>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Boss Taunt Bubble */}
+              {currentTaunt && (
+                <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-6 duration-300">
+                  <div className="relative bg-black border-[4px] border-red-600 px-6 py-3 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,1)] min-w-[140px] max-w-[220px]">
+                    <p className="text-[12px] font-black uppercase text-red-500 italic text-center leading-tight tracking-tight drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                      {currentTaunt}
+                    </p>
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-black border-r-[4px] border-b-[4px] border-red-600 rotate-45 transform"></div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`w-64 h-64 bg-slate-950 flex items-center justify-center border-[8px] border-black shadow-[15px_15px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : ''}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-60 z-20"></div>
+                  <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
+                  
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowBossVideo(!showBossVideo); }}
+                    className="absolute bottom-2 right-2 z-30 bg-black/90 p-2 border-2 border-red-600 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-lg active:scale-95"
+                  >
+                    {showBossVideo ? <Wind size={16} /> : <Zap size={16} />}
+                  </button>
+                  
+                  <BossImpactSplash splash={impactSplash} />
+              </div>
            </div>
-           <div className="flex gap-2">
-             {player.autoScrolls > 0 && autoTimeLeft <= 0 && (
-               <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
-                 <MousePointer size={16} className="text-black" />
-                 <div className="flex flex-col items-start bg-transparent">
-                   <span className="text-[7px] font-black uppercase tracking-widest text-black/70 leading-none italic">Auto</span>
-                   <span className="text-xs font-black leading-none text-black italic">{player.autoScrolls} SCROLLS</span>
-                 </div>
-               </button>
-             )}
-             {autoTimeLeft > 0 && (
-               <div className="flex items-center gap-2 bg-cyan-600/20 border-[3px] border-cyan-500/50 px-4 py-2 rounded-xl shadow-lg animate-pulse">
-                 <MousePointer size={16} className="text-cyan-400" />
-                 <div className="flex flex-col items-start bg-transparent">
-                   <span className="text-[7px] font-black uppercase tracking-widest text-cyan-400/70 leading-none italic">Active</span>
-                   <span className="text-xs font-black leading-none text-cyan-400 italic">{autoTimeLeft}s</span>
-                 </div>
-               </div>
-             )}
-             <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-2 bg-red-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group">
-               <Coffee size={16} className="text-white group-hover:scale-110 transition-transform" />
-               <div className="flex flex-col items-start bg-transparent">
-                 <span className="text-[7px] font-black uppercase tracking-widest text-white/70 leading-none italic">Heal</span>
-                 <span className="text-xs font-black leading-none text-white italic">{player.potions || 0} POTS</span>
-               </div>
-             </button>
-           </div>
+
+            <div className="w-full space-y-4 px-6 scale-110">
+                <div className="bg-red-600 text-white px-6 py-2 border-[5px] border-black transform rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block relative">
+                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{BOSS.name}</h2>
+                    <div className="absolute -top-4 -right-2 bg-black text-white px-2 py-0.5 text-[8px] font-black border-2 border-white rotate-12">THREAT: Ω</div>
+                </div>
+                
+                <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-800 via-red-500 to-red-400 transition-all duration-300 relative shadow-[0_0_15px_rgba(220,38,38,0.8)]" style={{ width: `100%` }}>
+                        <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <p className="text-[10px] font-black text-white uppercase tracking-[0.4em] drop-shadow-md italic">BOSS INTEGRITY: MAX</p>
+                    </div>
+                </div>
+
+                <div className="flex flex-col items-center">
+                   <p className="text-[8px] font-black text-red-500 uppercase italic opacity-70 mb-1">Entity Damage Record</p>
+                   <p className="text-4xl font-black text-white italic drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{(player.totalBossDamage || 0).toLocaleString()}</p>
+                </div>
+            </div>
         </div>
 
-        <div className="flex gap-4">
-          <button onClick={() => handleAttack(true)} className={`flex-1 py-6 rounded-2xl font-black text-4xl shadow-[10px_10px_0_rgba(0,0,0,1)] border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[12px_12px_0_rgba(0,0,0,1)] italic bg-red-600 text-white`}>
-            OVERLOAD
+        {/* INTENSE RED VS DIVIDER */}
+        <div className="hidden lg:flex flex-col items-center justify-center opacity-40 z-20">
+            <div className="w-2 h-32 bg-gradient-to-b from-transparent via-red-600 to-transparent animate-pulse" />
+            <div className="text-6xl font-black italic text-red-600 -rotate-12 my-4 drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">VS</div>
+            <div className="w-2 h-32 bg-gradient-to-t from-transparent via-red-600 to-transparent animate-pulse" />
+        </div>
+
+        {/* RIGHT PANEL: PLAYER */}
+        <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-6 transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
+           <div className="relative group">
+              {/* Player Stats Detail Overlay */}
+              <div className="absolute -right-20 top-0 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-left duration-700">
+                  <div className="bg-black/95 border-2 border-cyan-500 p-3 rounded-lg transform rotate-6 shadow-[4px_4px_0_rgba(8,145,178,0.3)]">
+                      <p className="text-[8px] font-black text-cyan-400 uppercase leading-none mb-2 text-center tracking-widest">Hunter Status</p>
+                      <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                              <Star size={10} className="text-yellow-400" />
+                              <span className="text-[11px] font-black text-white">LEVEL {player.level}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <Shield size={10} className="text-emerald-400" />
+                              <span className="text-[11px] font-black text-white">DEF: {totalStats.agi}</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              {/* Player Taunt Bubble */}
+              {playerTaunt && (
+                <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-6 duration-300">
+                  <div className="relative bg-cyan-600 border-[4px] border-black px-6 py-3 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,1)] min-w-[140px] max-w-[220px]">
+                    <p className="text-[12px] font-black uppercase text-white italic text-center leading-tight tracking-tight drop-shadow-[0_0_8px_rgba(0,0,0,0.5)]">
+                      {playerTaunt}
+                    </p>
+                    <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-6 bg-cyan-600 border-r-[4px] border-b-[4px] border-black rotate-45 transform"></div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`w-64 h-64 bg-slate-950 flex items-center justify-center border-[8px] border-black shadow-[15px_15px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50"></div>
+                  {player.avatar && (
+                    <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover relative z-10" />
+                  )}
+                  <ImpactSplash splash={playerImpactSplash} />
+              </div>
+           </div>
+
+            <div className="w-full space-y-4 px-6 scale-110">
+                <div className="bg-cyan-600 text-white px-6 py-2 border-[5px] border-black transform -rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block float-right relative">
+                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{player.name}</h2>
+                    <div className="absolute -top-4 -right-2 bg-black text-cyan-400 px-2 py-0.5 text-[8px] font-black border-2 border-cyan-400 -rotate-12">RANK: S</div>
+                </div>
+                
+                <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden clear-both">
+                    <div className="h-full bg-gradient-to-r from-cyan-800 via-cyan-500 to-cyan-400 transition-all duration-300 relative shadow-[0_0_15px_rgba(6,182,212,0.8)]" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
+                        <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 justify-center">
+                    <div className="bg-black/90 border-2 border-cyan-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
+                        <Swords size={12} className="text-cyan-400" />
+                        <span className="text-sm font-black text-white italic">{totalStats.str}</span>
+                    </div>
+                    <div className="bg-black/90 border-2 border-emerald-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
+                        <Activity size={12} className="text-emerald-500" />
+                        <span className="text-sm font-black text-white italic">{totalStats.agi}</span>
+                    </div>
+                    <div className="bg-black/90 border-2 border-yellow-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
+                        <Target size={12} className="text-yellow-500" />
+                        <span className="text-sm font-black text-white italic">{totalStats.dex}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* --- HUD BOTTOM: CONTROLS --- */}
+      <div className="w-full max-w-xl space-y-4 z-10 px-4">
+        <div className="flex gap-4 relative">
+          {isStunned && (
+            <div className="absolute inset-0 bg-black/95 backdrop-blur-md border-4 border-red-600 z-50 flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] transform scale-105">
+              <div className="flex items-center gap-4 animate-pulse">
+                <Skull size={32} className="text-red-500" />
+                <p className="font-black text-2xl uppercase italic drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">SYSTEM STUNNED! {Math.ceil(stunTimeLeft)}s</p>
+              </div>
+            </div>
+          )}
+
+          {isMissed && !isStunned && (
+            <div className="absolute inset-0 bg-slate-500/90 backdrop-blur-md border-4 border-black z-50 flex items-center justify-center shadow-lg transform scale-105">
+               <p className="font-black text-2xl uppercase italic text-black tracking-widest">ATTACK DEFLECTED!</p>
+            </div>
+          )}
+
+          <button 
+            onClick={() => handleAttack(true)} 
+            disabled={isStunned || isMissed} 
+            className={`flex-1 py-6 rounded-2xl font-black text-4xl shadow-[10px_10px_0_rgba(0,0,0,1)] border-[5px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} relative overflow-hidden group`}
+          >
+            <span className="relative z-10">OVERLOAD</span>
+            <span className="text-[10px] opacity-70 tracking-[0.5em] uppercase relative z-10 font-black">Core Strike Phase</span>
+            <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </button>
-          <button onClick={() => { setView('menu'); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} className={`px-10 py-6 rounded-2xl font-black uppercase tracking-widest border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}>Retreat</button>
+          
+          <button 
+            onClick={() => { setView('menu'); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} 
+            className={`px-12 py-6 rounded-2xl font-black uppercase tracking-widest border-[5px] border-black transition-all shadow-[10px_10px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
+          >
+            RETREAT
+          </button>
         </div>
       </div>
     </div>

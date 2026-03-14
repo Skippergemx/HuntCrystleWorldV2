@@ -44,7 +44,7 @@ export const InventoryView = ({ player, setView, sellItem }) => (
            <p className="text-[10px] font-black uppercase text-black italic opacity-50 mb-3 border-b-2 border-black/10 pb-1">Stacked Artifacts & Materials</p>
            <div className="grid grid-cols-1 gap-2">
               {(() => {
-                const stacked = (player.inventory || []).reduce((acc, item) => {
+                const stacked = (player.inventory || []).filter(i => i && typeof i === 'object').reduce((acc, item) => {
                   const existing = acc.find(i => i.id === item.id);
                   if (existing) existing.count += 1;
                   else acc.push({ ...item, count: 1 });
@@ -62,15 +62,15 @@ export const InventoryView = ({ player, setView, sellItem }) => (
                                   <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm border-2 border-white/20">x{item.count}</span>
                                 )}
                             </div>
-                            <div className="flex flex-col ml-1">
-                              <span className="font-black text-sm uppercase leading-none text-black italic">{item.name}</span>
+                             <div className="flex flex-col ml-1">
+                              <span className="font-black text-sm uppercase leading-none text-black italic">{item.name || 'Unknown Artifact'}</span>
                               <span className={`text-[8px] font-black leading-none mt-1.5 uppercase tracking-widest ${item.rarity === 'Legendary' ? 'text-amber-600' : item.rarity === 'Epic' ? 'text-purple-600' : item.rarity === 'Rare' ? 'text-blue-600' : 'text-slate-500'}`}>
-                                {item.rarity} • {item.type}
+                                {item.rarity || 'Common'} • {item.type || 'Material'}
                               </span>
                             </div>
                           </div>
                           <div className="text-right">
-                             <p className="text-xs font-black text-amber-600 italic">{item.sellValue} GX</p>
+                             <p className="text-xs font-black text-amber-600 italic">{item.sellValue || 0} GX</p>
                              <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">Value Per Unit</p>
                           </div>
                        </div>
@@ -87,7 +87,7 @@ export const InventoryView = ({ player, setView, sellItem }) => (
                               onClick={() => sellItem(item.id, item.count)}
                               className="flex-1 bg-amber-500 hover:bg-amber-400 text-black border-2 border-black py-1 text-[9px] font-black uppercase italic transition-all active:translate-y-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none"
                             >
-                              Sell All ({item.count * item.sellValue} GX)
+                              Sell All ({item.count * (item.sellValue || 0)} GX)
                             </button>
                           )}
                        </div>

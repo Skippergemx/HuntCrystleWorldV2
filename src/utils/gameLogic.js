@@ -11,7 +11,7 @@ export const PENALTY_DURATION = 30000;
 export const STUN_DURATION_NORMAL = 2000;
 export const STUN_DURATION_CRIT = 4000;
 export const DEFEAT_WINDOW_DURATION = 3000;
-export const AUTO_SCROLL_DURATION = 30000;
+export const AUTO_SCROLL_DURATION = 60000;
 export const COMPANION_BUFF_DURATION = 10000;
 
 /**

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Database, Skull, Gem, Shield, Swords, Info } from 'lucide-react';
+import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown } from 'lucide-react';
 import { Header } from './GameUI';
 
 export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT }) => {
@@ -49,8 +49,22 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT }) => 
           <div className="grid gap-4">
             {MONSTERS.filter(m => m.name.toLowerCase().includes(filter.toLowerCase())).map((monster, idx) => (
               <div key={idx} className="bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] flex gap-4 transform transition-all hover:scale-[1.01]">
-                <div className="w-16 h-16 bg-slate-900 border-2 border-black shrink-0 overflow-hidden flex items-center justify-center">
-                   <img src={`/assets/monsters/${monster.name}.png`} className="w-full h-full object-cover" onError={(e) => { e.target.src='https://api.dicebear.com/7.x/identicon/svg?seed='+monster.name; }} />
+                <div className="w-16 h-16 bg-slate-950 border-[3px] border-black shrink-0 overflow-hidden flex items-center justify-center relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2">
+                   {/* Background Glow */}
+                   <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent opacity-50"></div>
+                   <img 
+                    src={`/assets/monsters/${monster.folder || 'Neon Slums'}/${monster.name}.png`} 
+                    className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500" 
+                    onError={(e) => { 
+                      const folder = monster.folder || 'Neon Slums';
+                      if (e.target.src.endsWith('.png')) {
+                        e.target.src = `/assets/monsters/${folder}/${monster.name}.jpg`;
+                      } else {
+                        e.target.onerror = null;
+                        e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + monster.name;
+                      }
+                    }} 
+                   />
                 </div>
                 <div className="flex-1">
                    <div className="flex justify-between items-start">
@@ -81,9 +95,12 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT }) => 
           <div className="grid gap-3">
              {LOOTS.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()) || l.type.toLowerCase().includes(filter.toLowerCase())).map((loot, idx) => (
                <div key={idx} className="bg-white border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                     <span className="text-2xl filter drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">{loot.icon}</span>
-                     <div>
+                   <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] flex-shrink-0 bg-slate-50 relative overflow-hidden group`}>
+                         <div className="absolute inset-0 bg-gradient-to-tr from-slate-200 to-transparent opacity-50"></div>
+                         <span className="text-xl relative z-10 transform group-hover:scale-125 transition-transform">{loot.icon}</span>
+                      </div>
+                      <div>
                         <p className="font-black text-xs uppercase italic leading-none">{loot.name}</p>
                         <p className={`text-[7px] font-black uppercase mt-1 ${loot.rarity === 'Legendary' ? 'text-amber-500' : loot.rarity === 'Epic' ? 'text-purple-500' : loot.rarity === 'Rare' ? 'text-blue-500' : 'text-slate-400'}`}>{loot.rarity} • {loot.type}</p>
                      </div>
@@ -100,11 +117,26 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT }) => 
           <div className="grid gap-3">
              {EQUIPMENT.filter(e => e.name.toLowerCase().includes(filter.toLowerCase())).map((item, idx) => (
                <div key={idx} className="bg-white border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                     <div className={`w-8 h-8 flex items-center justify-center rounded-lg border-2 border-black ${item.type === 'Weapon' ? 'bg-amber-100' : 'bg-cyan-100'}`}>
-                        {item.type === 'Weapon' ? <Swords size={16} /> : <Shield size={16} />}
-                     </div>
-                     <div>
+                   <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] flex-shrink-0 relative overflow-hidden group
+                        ${item.type === 'Weapon' ? 'bg-amber-400' : 
+                          item.type === 'Armor' ? 'bg-cyan-400' : 
+                          item.type === 'Headgear' ? 'bg-purple-400' : 
+                          item.type === 'Footwear' ? 'bg-emerald-400' : 
+                          'bg-rose-400'}`}>
+                         
+                         {/* Shine effect */}
+                         <div className="absolute inset-0 bg-white/30 skew-x-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-700"></div>
+                         
+                         <div className="relative z-10 text-black">
+                           {item.type === 'Weapon' ? <Swords size={20} /> : 
+                            item.type === 'Armor' ? <Shield size={20} /> : 
+                            item.type === 'Headgear' ? <Crown size={20} /> : 
+                            item.type === 'Footwear' ? <Footprints size={20} /> : 
+                            <Zap size={20} />}
+                         </div>
+                      </div>
+                      <div>
                         <p className="font-black text-xs uppercase italic leading-none">{item.name}</p>
                         <p className="text-[7px] font-black text-slate-400 uppercase mt-1">LVL {item.level} • {item.type}</p>
                      </div>

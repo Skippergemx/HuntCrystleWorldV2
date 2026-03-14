@@ -1,17 +1,18 @@
-import React from 'react';
-import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
+import { AvatarMedia } from './GameUI';
 
 export const CombatView = ({ 
   enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
-  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS
+  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot
 }) => {
   if (!enemy) return null;
 
   const possibleDrops = selectedMap?.lootTable ? selectedMap.lootTable.slice(0, 10).map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
 
   return (
-    <div className={`flex-1 p-6 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
+    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
       {/* Halftone Overlay HUD */}
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f87171 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
       
@@ -23,15 +24,11 @@ export const CombatView = ({
             <span className="text-xs font-black text-cyan-400 tracking-widest italic uppercase">Floor {depth}</span>
           </div>
           
-          {/* 10-Kill Progression Nodes */}
           <div className="flex flex-col gap-1">
-            <span className="text-[7px] font-black text-slate-400 uppercase italic">Floor Evolution: {killsInFloor}/10</span>
+            <span className="text-[7px] font-black text-slate-400 uppercase italic">Progression: {killsInFloor}/10</span>
             <div className="flex gap-1">
               {[...Array(10)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-2.5 h-1.5 border-2 border-black transition-all duration-300 ${i < killsInFloor ? 'bg-cyan-500 shadow-[0_0_5px_rgba(6,182,212,0.6)]' : 'bg-slate-800'}`}
-                />
+                <div key={i} className={`w-2.5 h-1.5 border-2 border-black transition-all duration-300 ${i < killsInFloor ? 'bg-cyan-500' : 'bg-slate-800'}`} />
               ))}
             </div>
           </div>
@@ -40,28 +37,29 @@ export const CombatView = ({
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
             <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-2 bg-red-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group">
-              <Coffee size={16} className="text-white group-hover:scale-110 transition-transform" />
-              <div className="flex flex-col items-start bg-transparent">
-                <span className="text-[7px] font-black uppercase tracking-widest text-white/70 leading-none italic">Heal</span>
-                <span className="text-xs font-black leading-none text-white italic">{player.potions || 0}</span>
+              <Coffee size={14} className="text-white group-hover:scale-110 transition-transform" />
+              <div className="flex flex-col items-start bg-transparent leading-none">
+                <span className="text-[7px] font-black uppercase text-white/70 italic">Heal</span>
+                <span className="text-xs font-black text-white italic">{player.potions || 0}</span>
               </div>
             </button>
+            
             <div className="flex flex-col gap-1">
-                {player.autoScrolls > 0 && !isAutoActive && (
-                <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1">
-                    <MousePointer size={16} className="text-black" />
-                    <div className="flex flex-col items-start bg-transparent">
-                    <span className="text-[7px] font-black uppercase tracking-widest text-black/70 leading-none italic">Auto</span>
-                    <span className="text-xs font-black leading-none text-black italic">{player.autoScrolls}</span>
-                    </div>
+              {player.autoScrolls > 0 && !isAutoActive && (
+                <button onClick={activateAutoScroll} className="flex items-center gap-2 bg-cyan-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-cyan-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group">
+                  <MousePointer size={14} className="text-black group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col items-start bg-transparent leading-none">
+                    <span className="text-[7px] font-black uppercase text-black/70 italic">Auto</span>
+                    <span className="text-xs font-black text-black italic">{player.autoScrolls}</span>
+                  </div>
                 </button>
-                )}
-                <button 
-                  onClick={() => setAutoUseScroll(!autoUseScroll)}
-                  className={`flex items-center gap-1.5 px-2 py-1 border-2 border-black rounded-lg text-[8px] font-black italic uppercase transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5 ${autoUseScroll ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}`}
-                >
-                  <Lock size={10} /> {autoUseScroll ? 'AUTO-USE ON' : 'AUTO-USE OFF'}
-                </button>
+              )}
+              <button 
+                onClick={() => setAutoUseScroll(!autoUseScroll)}
+                className={`flex items-center gap-1.5 px-2 py-1 border-2 border-black rounded-lg text-[8px] font-black italic uppercase transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5 ${autoUseScroll ? 'bg-amber-500 text-black' : 'bg-slate-800 text-slate-500'}`}
+              >
+                <Lock size={10} /> {autoUseScroll ? 'AUTO-USE ON' : 'AUTO-USE OFF'}
+              </button>
             </div>
           </div>
           {isAutoActive && (
@@ -72,169 +70,234 @@ export const CombatView = ({
         </div>
       </div>
 
-      {/* --- MONSTER DATA CENTER --- */}
-      <div className="flex flex-col md:flex-row items-center justify-center gap-6 w-full max-w-2xl px-4">
+      {/* --- BATTLE ARENA: TWO PANELS --- */}
+      <div className="w-full flex flex-col md:flex-row flex-1 items-center justify-center gap-4 px-2 py-4 relative">
         
-        {/* Left: Monster Avatar & Health */}
-        <div className="flex flex-col items-center gap-4">
-            <div className={`w-40 h-40 bg-slate-900 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative group transform -rotate-1`}>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_70%)] opacity-50"></div>
-                <img
-                    src={`/assets/monsters/${enemy.name}.png`}
-                    alt={enemy.name}
-                    className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ghost"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></svg>';
-                    }}
-                />
-                <ImpactSplash splash={impactSplash} />
-            </div>
+        {/* LOOT DISCOVERY OVERLAY */}
+        {lastLoot && (
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-[100] flex items-center justify-center pointer-events-none">
+             <div className="animate-in fade-in zoom-in-75 duration-500 flex flex-col items-center">
+                <div className="bg-amber-400 border-[6px] border-black p-6 shadow-[10px_10px_0_rgba(0,0,0,1)] transform -rotate-3 mb-4 flex flex-col items-center">
+                   <div className="text-6xl mb-2 animate-bounce">{lastLoot.icon}</div>
+                   <h2 className="text-2xl font-black text-black uppercase italic tracking-tighter">LOOT FOUND!</h2>
+                   <p className="text-xs font-black text-black/60 uppercase">{lastLoot.name}</p>
+                </div>
+                <div className="flex gap-2">
+                   {[...Array(5)].map((_, i) => (
+                     <Sparkles key={i} className={`text-amber-300 animate-pulse delay-${i * 100}`} size={24} />
+                   ))}
+                </div>
+             </div>
+          </div>
+        )}
 
-            <div className="w-full text-center">
-                <div className="bg-red-600 text-white px-4 py-1 border-[4px] border-black transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] inline-block mb-2">
-                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-tight">{enemy.name}</h2>
+        {/* LEFT PANEL: MONSTER */}
+        <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-4 transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
+           <div className="relative group">
+              {/* Yield Scanner Overlay */}
+              <div className="absolute -left-20 top-0 hidden lg:flex flex-col gap-2 z-10 animate-in slide-in-from-right duration-500">
+                  <div className="bg-black/90 border-2 border-red-500/50 p-2 rounded-lg transform -rotate-6">
+                      <p className="text-[6px] font-black text-red-400 uppercase leading-none mb-1 text-center">Scanner</p>
+                      <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                              <Gem size={8} className="text-amber-500" />
+                              <span className="text-[9px] font-black text-white">+{enemy.loot} GX</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                              <Target size={8} className="text-cyan-400" />
+                              <span className="text-[9px] font-black text-white">+{enemy.xp} XP</span>
+                          </div>
+                      </div>
+                  </div>
+                  
+                  <div className="bg-black/90 border-2 border-white/20 p-2 rounded-lg transform rotate-3 max-w-[80px]">
+                      <p className="text-[6px] font-black text-slate-500 uppercase leading-none mb-1 text-center">Rewards</p>
+                      <div className="flex flex-wrap gap-1">
+                          {possibleDrops.slice(0, 4).map((l, i) => (
+                            <span key={i} className="text-[10px] opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all">{l.icon}</span>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+
+              {/* Monster Taunt Bubble */}
+              {currentTaunt && (
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-4 duration-300">
+                  <div className="relative bg-white border-[3px] border-black px-4 py-2 rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] min-w-[100px] max-w-[180px]">
+                    <p className="text-[10px] font-black uppercase text-black italic text-center leading-tight tracking-tight">
+                      {currentTaunt}
+                    </p>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-[3px] border-b-[3px] border-black rotate-45 transform"></div>
+                  </div>
+                </div>
+              )}
+
+              <div className={`w-44 h-44 bg-slate-900 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-shake-lite' : ''}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_70%)] opacity-50"></div>
+                  <img
+                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.png`}
+                      alt={enemy.name}
+                      className="w-full h-full object-cover relative z-10"
+                      onError={(e) => {
+                          const folder = enemy.folder || 'Neon Slums';
+                          if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.jpg`;
+                          else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
+                      }}
+                  />
+                  <ImpactSplash splash={impactSplash} />
+              </div>
+           </div>
+
+            <div className="w-full space-y-2 px-4">
+                <div className="bg-red-600 text-white px-3 py-1 border-[4px] border-black transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] inline-block">
+                    <h2 className="text-sm font-black uppercase tracking-tighter italic leading-none">{enemy.name}</h2>
                 </div>
                 
-                <div className="w-full h-4 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden">
-                    <div className="h-full bg-red-600 transition-all duration-300 relative z-10" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }} />
+                <div className="w-full h-4 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                    <div className="h-full bg-red-600 transition-all duration-300" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }} />
+                </div>
+
+                <div className="flex gap-2 justify-center">
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Swords size={10} className="text-red-500" />
+                        <span className="text-[10px] font-black text-white italic">{enemy.str}</span>
+                    </div>
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Activity size={10} className="text-emerald-500" />
+                        <span className="text-[10px] font-black text-white italic">{enemy.agi}</span>
+                    </div>
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Target size={10} className="text-yellow-500" />
+                        <span className="text-[10px] font-black text-white italic">{enemy.dex}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {/* Right: Technical Stats & Intelligence */}
-        <div className="flex-1 w-full bg-slate-900/80 backdrop-blur-sm border-[4px] border-black p-4 rounded-3xl shadow-[8px_8px_0_rgba(0,0,0,1)]">
-            <div className="flex items-center gap-2 mb-3 border-b-2 border-slate-800 pb-2">
-                <Activity size={14} className="text-emerald-500" />
-                <span className="text-[10px] font-black text-emerald-500 uppercase italic tracking-widest">Monster Intelligence</span>
-            </div>
+        {/* VS DIVIDER */}
+        <div className="hidden md:flex flex-col items-center justify-center opacity-30 z-20">
+            <div className="w-1 h-24 bg-gradient-to-b from-transparent via-white to-transparent" />
+            <div className="text-4xl font-black italic text-white -rotate-12 my-2">VS</div>
+            <div className="w-1 h-24 bg-gradient-to-t from-transparent via-white to-transparent" />
+        </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
-                    <p className="text-[8px] font-black text-slate-500 uppercase italic">Combat Ratings</p>
-                    <div className="flex gap-2">
-                        {['STR', 'AGI', 'DEX'].map((stat) => (
-                        <div key={stat} className="flex flex-col items-center flex-1 bg-black border border-white/10 p-1 rounded">
-                            <span className={`text-[6px] ${stat === 'STR' ? 'text-red-500' : stat === 'AGI' ? 'text-emerald-500' : 'text-yellow-500'} font-black italic`}>{stat}</span>
-                            <span className="text-[10px] font-black text-white">{enemy[stat.toLowerCase()]}</span>
-                        </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <p className="text-[8px] font-black text-emerald-500 uppercase italic">Yield Projection</p>
-                    <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center bg-black/40 px-2 py-0.5 rounded border border-white/5">
-                            <span className="text-[7px] font-black text-white/50 uppercase">GX Crystal</span>
-                            <span className="text-[9px] font-black text-amber-500 italic">+{enemy.loot}</span>
-                        </div>
-                        <div className="flex justify-between items-center bg-black/40 px-2 py-0.5 rounded border border-white/5">
-                            <span className="text-[7px] font-black text-white/50 uppercase">Exp Signal</span>
-                            <span className="text-[9px] font-black text-cyan-400 italic">+{enemy.xp}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {/* RIGHT PANEL: PLAYER */}
+        <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-4 transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
+           <div className="relative group">
+              {/* Player Stats Detail Overlay */}
+              <div className="absolute -right-20 top-0 hidden lg:flex flex-col gap-2 z-10 animate-in slide-in-from-left duration-500">
+                  <div className="bg-black/90 border-2 border-cyan-500/50 p-2 rounded-lg transform rotate-6">
+                      <p className="text-[6px] font-black text-cyan-400 uppercase leading-none mb-1 text-center">Hunter Protocol</p>
+                      <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                              <Star size={8} className="text-yellow-400" />
+                              <span className="text-[9px] font-black text-white">LVL {player.level}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                              <Shield size={8} className="text-emerald-400" />
+                              <span className="text-[9px] font-black text-white">{totalStats.agi} DEF</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
 
-            <div className="space-y-2">
-                <div className="flex items-center justify-between border-t border-slate-800 pt-2">
-                    <p className="text-[8px] font-black text-slate-500 uppercase italic">Possible Rewards</p>
-                    <span className="text-[7px] font-black text-amber-600 italic uppercase">Scanner Active</span>
+              {/* Player Taunt Bubble */}
+              {playerTaunt && (
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-4 duration-300">
+                  <div className="relative bg-cyan-500 border-[3px] border-black px-4 py-2 rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] min-w-[100px] max-w-[180px]">
+                    <p className="text-[10px] font-black uppercase text-white italic text-center leading-tight tracking-tight">
+                      {playerTaunt}
+                    </p>
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-cyan-500 border-r-[3px] border-b-[3px] border-black rotate-45 transform"></div>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5 min-h-[24px]">
-                    {possibleDrops.map((loot, idx) => (
-                        <div key={idx} className="w-6 h-6 rounded bg-black/60 border border-white/10 flex items-center justify-center text-[12px] opacity-70 hover:opacity-100 hover:scale-110 transition-all cursor-help" title={loot.name}>
-                            {loot.icon}
-                        </div>
-                    ))}
-                    {possibleDrops.length === 0 && <span className="text-[7px] text-slate-700 italic">No drops detected</span>}
+              )}
+
+              <div className={`w-44 h-44 bg-slate-900 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_70%)] opacity-50"></div>
+                  {player.avatar && (
+                    <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover" />
+                  )}
+                  <ImpactSplash splash={playerImpactSplash} />
+              </div>
+           </div>
+
+            <div className="w-full space-y-2 px-4">
+                <div className="bg-cyan-600 text-white px-3 py-1 border-[4px] border-black transform -rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] inline-block float-right">
+                    <h2 className="text-sm font-black uppercase tracking-tighter italic leading-none">{player.name}</h2>
+                </div>
+                
+                <div className="w-full h-4 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] clear-both">
+                    <div className="h-full bg-cyan-500 transition-all duration-300" style={{ width: `${(player.hp / player.maxHp) * 100}%` }} />
+                </div>
+
+                <div className="flex gap-2 justify-center">
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Swords size={10} className="text-cyan-400" />
+                        <span className="text-[10px] font-black text-white italic">{totalStats.str}</span>
+                    </div>
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Activity size={10} className="text-emerald-500" />
+                        <span className="text-[10px] font-black text-white italic">{totalStats.agi}</span>
+                    </div>
+                    <div className="bg-black/80 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Target size={10} className="text-yellow-500" />
+                        <span className="text-[10px] font-black text-white italic">{totalStats.dex}</span>
+                    </div>
                 </div>
             </div>
         </div>
       </div>
 
-      {/* --- HUD BOTTOM: PLAYER STATUS --- */}
-      <div className="w-full max-w-sm space-y-4 z-10">
-        
-        {/* Player Health HUD */}
-        <div className="space-y-1">
-          <div className="flex justify-between items-end px-1">
-            <div className="flex items-center gap-1">
-               <User size={12} className="text-cyan-400" />
-               <span className="text-[10px] font-black text-white uppercase italic tracking-widest">{player.name} [LVL {player.level}]</span>
-            </div>
-            <span className="text-[10px] font-black text-white italic">{player.hp} / {player.maxHp} HP</span>
-          </div>
-          <div className="h-6 bg-black border-[3px] border-cyan-900/50 p-1 relative shadow-[5px_5px_0_rgba(0,0,0,1)] overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-300 shadow-[0_0_15px_rgba(34,211,238,0.4)] relative z-10" style={{ width: `${(player.hp / player.maxHp) * 100}%` }} />
-            <div className="absolute inset-0 bg-cyan-400/5 animate-pulse z-20 pointer-events-none"></div>
-          </div>
-        </div>
-
-        {/* Combat Controls & Status */}
+      {/* --- HUD BOTTOM: CONTROLS & RECENT DROPS --- */}
+      <div className="w-full max-w-lg space-y-4 z-10 px-2">
         <div className="flex gap-4 relative">
           {isStunned && (
             <div className="absolute inset-0 bg-black/90 backdrop-blur-sm border-2 border-red-600 z-30 flex items-center justify-center shadow-lg transform scale-105">
               <div className="flex items-center gap-3 animate-pulse">
-                <div className="w-12 h-12 shrink-0 bg-slate-800 rounded-full border-2 border-red-500 flex items-center justify-center shadow-inner transform -rotate-6">
-                  <Skull size={32} className="text-red-500" />
-                </div>
-                <div className="flex-1 max-w-[150px] bg-red-600 text-white p-2 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform rotate-1">
-                  <p className="font-black text-xs uppercase text-center w-full italic">Stunned!</p>
-                </div>
-                <div className="w-12 h-12 shrink-0 bg-red-900 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform rotate-6 mr-1">
-                  <span className="text-lg font-black text-white leading-none">{Math.ceil(stunTimeLeft)}</span>
-                </div>
+                <Skull size={24} className="text-red-500" />
+                <p className="font-black text-xs uppercase italic drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">STUNNED! {Math.ceil(stunTimeLeft)}s</p>
               </div>
             </div>
           )}
 
           {isMissed && !isStunned && (
             <div className="absolute inset-0 bg-slate-400/80 backdrop-blur-sm border-2 border-black z-30 flex items-center justify-center shadow-lg transform scale-105">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 shrink-0 bg-slate-800 rounded-full border-2 border-slate-500 flex items-center justify-center shadow-inner transform rotate-6">
-                  <User size={24} className="text-slate-400 opacity-50 absolute" />
-                  <X size={32} className="text-white relative z-10" />
-                </div>
-                <div className="flex-1 max-w-[150px] bg-slate-300 text-black p-2 rounded-2xl rounded-bl-sm relative shadow-md border-2 border-black transform -rotate-1">
-                  <p className="font-black text-xs uppercase text-center w-full">Missed Target!</p>
-                </div>
-                <div className="w-12 h-12 shrink-0 bg-slate-600 border-[3px] border-black rounded-full flex flex-col items-center justify-center shadow-lg transform -rotate-6 mr-1">
-                  <span className="text-lg font-black text-white leading-none">{missTimeLeft.toFixed(1)}</span>
-                </div>
-              </div>
+               <p className="font-black text-xs uppercase italic text-black">Missed Target! {missTimeLeft.toFixed(1)}s</p>
             </div>
           )}
 
           <button 
             onClick={() => handleAttack()} 
             disabled={isStunned || isMissed || showDefeatedWindow} 
-            className={`flex-1 py-4 rounded-xl font-black text-xl shadow-[6px_6px_0_rgba(0,0,0,1)] border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0 pointer-events-none' : 'bg-red-600 text-white'} ${isAutoActive && !(isStunned || isMissed) ? 'animate-pulse' : ''}`}
+            className={`flex-1 py-4 rounded-xl font-black text-xl shadow-[6px_6px_0_rgba(0,0,0,1)] border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-0.5 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} ${isAutoActive ? 'animate-pulse' : ''}`}
           >
-            <span>{isAutoActive ? 'ACTIVE' : 'STRIKE'}</span>
-            <span className="text-[8px] opacity-70 tracking-widest">{isAutoActive ? 'AUTO-PROTOCOL' : 'MANUAL COMMAND'}</span>
+            <span>{isAutoActive ? 'LOCK-ON' : 'STRIKE'}</span>
+            <span className="text-[8px] opacity-70 tracking-widest uppercase">Combat Command</span>
           </button>
           
           <button 
             onClick={() => { setView('menu'); setDepth(1); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} 
-            disabled={isStunned || isMissed} 
-            className={`px-6 py-4 rounded-xl font-black uppercase tracking-widest border-[4px] border-black transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic ${(isStunned || isMissed) ? 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed' : 'bg-slate-300 text-black hover:bg-white'}`}
+            className={`px-8 py-4 rounded-xl font-black uppercase tracking-widest border-[4px] border-black transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
           >
             EXIT
           </button>
         </div>
-        
-        {/* Loot Visuals */}
-        <div className="flex items-center justify-center gap-3 pt-2 opacity-50 hover:opacity-100 transition-opacity">
-           <div className="text-[8px] font-black text-slate-400 uppercase tracking-tighter italic">Recent Session Drops:</div>
-           <div className="flex gap-2">
-              {(player.inventory || []).slice(-4).reverse().map((item, i) => (
-                <div key={i} className="text-xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom duration-500" title={item.name}>
-                   {item.icon}
-                </div>
-              ))}
-              {(player.inventory || []).length === 0 && <span className="text-[8px] text-slate-700 font-black italic uppercase">Scan Empty</span>}
-           </div>
+
+        {/* RECENT DROPS MINI-SCANNER */}
+        <div className="bg-black/80 border-[3px] border-black p-2 flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,0.2)]">
+            <div className="flex items-center gap-2">
+                <Gift size={12} className="text-amber-400" />
+                <span className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em]">Session Rewards:</span>
+            </div>
+            <div className="flex gap-2">
+                {(player.inventory || []).slice(-5).reverse().map((item, i) => (
+                  <div key={i} className="text-lg animate-in slide-in-from-right stagger-1 transform hover:scale-125 transition-transform cursor-help" title={item.name}>
+                    {item.icon}
+                  </div>
+                ))}
+                {(player.inventory || []).length === 0 && <span className="text-[7px] text-white/20 italic uppercase tracking-widest">No Drops Synchronized</span>}
+            </div>
         </div>
       </div>
     </div>

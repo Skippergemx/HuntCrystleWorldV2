@@ -14,11 +14,20 @@ export const useAdventure = () => {
   const enemyInternalRef = useRef(null);
   
   const spawnNewEnemy = useCallback((currentDepth = 1) => {
-    const base = MONSTERS[Math.floor(Math.random() * MONSTERS.length)];
+    // Filter monsters by the current map's name if available
+    const folderName = selectedMap?.name;
+    const pool = folderName 
+      ? MONSTERS.filter(m => m.folder === folderName)
+      : MONSTERS;
+      
+    // Fallback to full pool if no monsters match the specific map folder
+    const finalPool = pool.length > 0 ? pool : MONSTERS;
+    
+    const base = finalPool[Math.floor(Math.random() * finalPool.length)];
     const scaled = scaleMonster(base, currentDepth);
     setEnemy(scaled);
     enemyInternalRef.current = scaled;
-  }, []);
+  }, [selectedMap]);
 
   const triggerFlinch = () => {
     setEnemyFlinch(true);
