@@ -2,11 +2,11 @@ import React from 'react';
 import { Coffee, MousePointer } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const InventoryView = ({ player, setView }) => (
+export const InventoryView = ({ player, setView, sellItem }) => (
   <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
      <Header title="STORAGE CORE: BAG" onClose={() => setView('menu')} />
-     <div className="grid grid-cols-2 gap-4 relative z-10">
+     <div className="grid grid-cols-2 gap-4 relative z-10 overflow-y-auto max-h-[85vh] pr-2">
         <div className="bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] transform -rotate-1">
            <div className="flex justify-between items-start mb-2">
              <div className="p-2 bg-red-600 border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
@@ -40,7 +40,7 @@ export const InventoryView = ({ player, setView }) => (
            </div>
         </div>
 
-        <div className="col-span-2 bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] mt-4 max-h-[400px] overflow-y-auto">
+        <div className="col-span-2 bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] mt-4">
            <p className="text-[10px] font-black uppercase text-black italic opacity-50 mb-3 border-b-2 border-black/10 pb-1">Stacked Artifacts & Materials</p>
            <div className="grid grid-cols-1 gap-2">
               {(() => {
@@ -53,24 +53,43 @@ export const InventoryView = ({ player, setView }) => (
 
                 return stacked.length > 0 ? (
                   stacked.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-black italic bg-slate-50 p-2 border-2 border-black/5 transform rotate-0.5 hover:rotate-0 transition-transform">
-                       <div className="flex items-center gap-2">
-                         <div className="relative">
-                            <span className="text-2xl filter drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">{item.icon}</span>
-                            {item.count > 1 && (
-                              <span className="absolute -bottom-1 -right-1 bg-black text-white text-[8px] font-black px-1 rounded-sm border border-white/20">x{item.count}</span>
-                            )}
-                         </div>
-                         <div className="flex flex-col ml-1">
-                           <span className="font-black text-[10px] uppercase leading-none">{item.name}</span>
-                           <span className={`text-[7px] font-black leading-none mt-1 uppercase ${item.rarity === 'Legendary' ? 'text-amber-500' : item.rarity === 'Epic' ? 'text-purple-500' : item.rarity === 'Rare' ? 'text-blue-500' : 'text-slate-400'}`}>
-                             {item.rarity}
-                           </span>
-                         </div>
+                    <div key={idx} className="flex flex-col bg-slate-50 p-3 border-2 border-black/10 transform rotate-0.5 hover:rotate-0 transition-all hover:bg-slate-100">
+                       <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">{item.icon}</span>
+                                {item.count > 1 && (
+                                  <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm border-2 border-white/20">x{item.count}</span>
+                                )}
+                            </div>
+                            <div className="flex flex-col ml-1">
+                              <span className="font-black text-sm uppercase leading-none text-black italic">{item.name}</span>
+                              <span className={`text-[8px] font-black leading-none mt-1.5 uppercase tracking-widest ${item.rarity === 'Legendary' ? 'text-amber-600' : item.rarity === 'Epic' ? 'text-purple-600' : item.rarity === 'Rare' ? 'text-blue-600' : 'text-slate-500'}`}>
+                                {item.rarity} • {item.type}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-xs font-black text-amber-600 italic">{item.sellValue} GX</p>
+                             <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">Value Per Unit</p>
+                          </div>
                        </div>
-                       <div className="text-right">
-                          <p className="text-[8px] font-black text-amber-600 bg-amber-50 px-1 border border-amber-200 inline-block">{item.sellValue} GX</p>
-                          <p className="text-[6px] text-slate-400 font-bold uppercase mt-0.5">{item.type}</p>
+                       
+                       <div className="flex gap-2 mt-1 pt-2 border-t border-black/5">
+                          <button 
+                            onClick={() => sellItem(item.id, 1)}
+                            className="flex-1 bg-slate-200 hover:bg-slate-300 text-black border-2 border-black py-1 text-[9px] font-black uppercase italic transition-all active:translate-y-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none"
+                          >
+                            Sell 1
+                          </button>
+                          {item.count > 1 && (
+                            <button 
+                              onClick={() => sellItem(item.id, item.count)}
+                              className="flex-1 bg-amber-500 hover:bg-amber-400 text-black border-2 border-black py-1 text-[9px] font-black uppercase italic transition-all active:translate-y-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none"
+                            >
+                              Sell All ({item.count * item.sellValue} GX)
+                            </button>
+                          )}
                        </div>
                     </div>
                   ))

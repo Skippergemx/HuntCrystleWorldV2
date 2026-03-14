@@ -1,23 +1,124 @@
-import React from 'react';
-import { Database } from 'lucide-react';
+import React, { useState } from 'react';
+import { Database, Skull, Gem, Shield, Swords, Info } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const DatabaseView = ({ depth, setView }) => (
-  <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
-     <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-     <Header title="ARCHIVES: MONSTER DB" onClose={() => setView('menu')} />
-     <div className="bg-white border-[4px] border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,1)] transform rotate-1 text-center">
-        <div className="mb-4 inline-block bg-blue-600 p-4 border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)]">
-           <Database size={48} className="text-white" />
+export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT }) => {
+  const [activeTab, setActiveTab] = useState('monsters');
+  const [filter, setFilter] = useState('');
+
+  const tabs = [
+    { id: 'monsters', label: 'Beasts', icon: <Skull size={14} /> },
+    { id: 'loots', label: 'Materials', icon: <Gem size={14} /> },
+    { id: 'equipment', label: 'Gear', icon: <Shield size={14} /> }
+  ];
+
+  return (
+    <div className="flex-1 p-6 space-y-4 relative overflow-hidden flex flex-col max-h-screen">
+      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
+      <Header title="ARCHIVES: SYSTEM DB" onClose={() => setView('menu')} />
+      
+      {/* Search & Tabs */}
+      <div className="z-10 space-y-4">
+        <div className="flex gap-2 bg-black/5 p-1 rounded-xl border-2 border-black/10">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); setFilter(''); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg font-black text-[10px] uppercase transition-all ${activeTab === tab.id ? 'bg-black text-white shadow-[4px_4px_0_rgba(0,0,0,0.2)]' : 'text-slate-500 hover:bg-black/5'}`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
         </div>
-        <h3 className="text-3xl font-black text-black uppercase italic italic mb-2">SYSTEM ARCHIVES</h3>
-        <p className="text-[10px] font-black text-slate-500 uppercase italic leading-relaxed">
-          Data logs on Floor {depth} and beyond are being decrypted. <br/>
-          Defeat monsters to unlock their core biological profiles.
-        </p>
-        <div className="mt-8 pt-6 border-t-[3px] border-dashed border-black/10">
-           <p className="text-[9px] font-black text-blue-600 uppercase tracking-widest animate-pulse">Scanning Bio-Signatures...</p>
+        
+        <div className="relative">
+          <input 
+            type="text" 
+            placeholder={`Search ${activeTab}...`} 
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full bg-white border-[3px] border-black p-3 pl-10 text-xs font-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)] focus:outline-none focus:translate-y-0.5 focus:shadow-none transition-all"
+          />
+          <Database size={16} className="absolute left-3 top-3.5 text-slate-400" />
         </div>
-     </div>
-  </div>
-);
+      </div>
+
+      {/* Content Area */}
+      <div className="flex-1 overflow-y-auto z-10 pr-2 space-y-4 pb-10">
+        {activeTab === 'monsters' && (
+          <div className="grid gap-4">
+            {MONSTERS.filter(m => m.name.toLowerCase().includes(filter.toLowerCase())).map((monster, idx) => (
+              <div key={idx} className="bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] flex gap-4 transform transition-all hover:scale-[1.01]">
+                <div className="w-16 h-16 bg-slate-900 border-2 border-black shrink-0 overflow-hidden flex items-center justify-center">
+                   <img src={`/assets/monsters/${monster.name}.png`} className="w-full h-full object-cover" onError={(e) => { e.target.src='https://api.dicebear.com/7.x/identicon/svg?seed='+monster.name; }} />
+                </div>
+                <div className="flex-1">
+                   <div className="flex justify-between items-start">
+                      <h4 className="font-black text-sm uppercase italic text-black">{monster.name}</h4>
+                      <span className="text-[8px] font-black text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">CLASS: {monster.hp > 500 ? 'ELITE' : 'COMMON'}</span>
+                   </div>
+                   <div className="grid grid-cols-3 gap-2 mt-2">
+                      <div className="bg-slate-50 border border-black/5 p-1 text-center">
+                         <p className="text-[6px] font-black text-slate-400 uppercase">Health</p>
+                         <p className="text-[10px] font-black text-black">{monster.hp}</p>
+                      </div>
+                      <div className="bg-slate-50 border border-black/5 p-1 text-center">
+                         <p className="text-[6px] font-black text-slate-400 uppercase">Attack</p>
+                         <p className="text-[10px] font-black text-black">{monster.str}</p>
+                      </div>
+                      <div className="bg-slate-50 border border-black/5 p-1 text-center">
+                         <p className="text-[6px] font-black text-slate-400 uppercase">Agility</p>
+                         <p className="text-[10px] font-black text-black">{monster.agi}</p>
+                      </div>
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'loots' && (
+          <div className="grid gap-3">
+             {LOOTS.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()) || l.type.toLowerCase().includes(filter.toLowerCase())).map((loot, idx) => (
+               <div key={idx} className="bg-white border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                     <span className="text-2xl filter drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">{loot.icon}</span>
+                     <div>
+                        <p className="font-black text-xs uppercase italic leading-none">{loot.name}</p>
+                        <p className={`text-[7px] font-black uppercase mt-1 ${loot.rarity === 'Legendary' ? 'text-amber-500' : loot.rarity === 'Epic' ? 'text-purple-500' : loot.rarity === 'Rare' ? 'text-blue-500' : 'text-slate-400'}`}>{loot.rarity} • {loot.type}</p>
+                     </div>
+                  </div>
+                  <div className="text-right">
+                     <p className="text-[9px] font-black text-amber-600 italic">{loot.sellValue} GX</p>
+                  </div>
+               </div>
+             ))}
+          </div>
+        )}
+
+        {activeTab === 'equipment' && (
+          <div className="grid gap-3">
+             {EQUIPMENT.filter(e => e.name.toLowerCase().includes(filter.toLowerCase())).map((item, idx) => (
+               <div key={idx} className="bg-white border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                     <div className={`w-8 h-8 flex items-center justify-center rounded-lg border-2 border-black ${item.type === 'Weapon' ? 'bg-amber-100' : 'bg-cyan-100'}`}>
+                        {item.type === 'Weapon' ? <Swords size={16} /> : <Shield size={16} />}
+                     </div>
+                     <div>
+                        <p className="font-black text-xs uppercase italic leading-none">{item.name}</p>
+                        <p className="text-[7px] font-black text-slate-400 uppercase mt-1">LVL {item.level} • {item.type}</p>
+                     </div>
+                  </div>
+                  <div className="flex gap-1">
+                     {Object.entries(item.stats || {}).map(([s, v]) => (
+                       <span key={s} className="text-[8px] font-black text-black bg-slate-100 border border-black/10 px-1 uppercase">{s.slice(0,3)} +{v}</span>
+                     ))}
+                  </div>
+               </div>
+             ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

@@ -188,6 +188,32 @@ const App = () => {
     addLog("⚡ Auto Scroll engaged (+1 Hour)");
   };
 
+  const sellItem = async (itemId, amount = 1) => {
+    const p = playerRef.current || player;
+    const itemsOfId = p.inventory.filter(i => i.id === itemId);
+    if (itemsOfId.length < amount) return;
+
+    const itemsToSell = itemsOfId.slice(0, amount);
+    const totalValue = itemsToSell.reduce((sum, i) => sum + (i.sellValue || 0), 0);
+    
+    // Create new inventory by filtering out the sold items
+    // Since they might have same ID but different objects, we filter carefully
+    let remainingAmount = amount;
+    const newInventory = p.inventory.filter(item => {
+      if (item.id === itemId && remainingAmount > 0) {
+        remainingAmount--;
+        return false;
+      }
+      return true;
+    });
+
+    await syncPlayer({
+      tokens: p.tokens + totalValue,
+      inventory: newInventory
+    });
+    addLog(`💰 Sold ${amount}x ${itemsToSell[0].name} for ${totalValue} GX`);
+  };
+
   const handleLogout = async () => {
     try {
       if (player.autoUntil > 0 || player.buffUntil > 0) {
@@ -238,7 +264,7 @@ const App = () => {
       }
     }, 100);
     return () => clearInterval(interval);
-  }, []);
+  }, [view, autoUseScroll]);
 
   useEffect(() => {
     let autoLoop;
@@ -464,6 +490,7 @@ const App = () => {
       
       if (newHp <= 0) {
         setShowDefeatedWindow(true);
+        setAutoUseScroll(false);
         syncPlayer({ hp: p.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
         setTimeout(() => { setShowDefeatedWindow(false); setDepth(1); setView('menu'); }, DEFEAT_WINDOW_DURATION);
       } else syncPlayer({ hp: newHp });
@@ -880,7 +907,7 @@ const App = () => {
               missTimeLeft={missTimeLeft} 
               showDefeatedWindow={showDefeatedWindow} 
               handleAttack={handleAttack} 
-              setView={setView} 
+              setView={(v) => { if (v === 'menu') setAutoUseScroll(false); setView(v); }} 
               syncPlayer={syncPlayer} 
               setDepth={setDepth} 
               selectedMap={selectedMap}
@@ -915,7 +942,7 @@ const App = () => {
               activateAutoScroll={activateAutoScroll} 
               handleHeal={handleHeal} 
               handleAttack={handleAttack} 
-              setView={setView} 
+              setView={(v) => { if (v === 'menu') setAutoUseScroll(false); setView(v); }} 
               syncPlayer={syncPlayer} 
             />
           )}
@@ -967,6 +994,7 @@ const App = () => {
             <InventoryView 
               player={player} 
               setView={setView} 
+              sellItem={sellItem}
             />
           )}
 
@@ -974,6 +1002,9 @@ const App = () => {
             <DatabaseView 
               depth={depth} 
               setView={setView} 
+              MONSTERS={MONSTERS}
+              LOOTS={LOOTS}
+              EQUIPMENT={EQUIPMENT}
             />
           )}
 
