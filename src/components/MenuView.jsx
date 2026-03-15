@@ -37,8 +37,8 @@ export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spa
       <NavBtn 
         onClick={startBoss} 
         icon={<AlertCircle />} 
-        title="Dungeon Core" 
-        sub="Boss" 
+        title="Boss" 
+        sub="High Yield" 
         color="bg-red-700" 
         disabled={isPenalized} 
       />

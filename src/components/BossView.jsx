@@ -35,9 +35,9 @@ export const BossView = ({
       {/* --- HUD TOP: INTENSE BOSS TITLE --- */}
       <div className="w-full flex justify-between items-start z-10 px-2">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 px-4 py-2 bg-black border-[4px] border-red-600 rounded-lg shadow-[5px_5px_0_rgba(0,0,0,1)] transform -rotate-1">
-              <TrendingUp size={16} className="text-red-500 animate-pulse" />
-              <div className="flex flex-col leading-none">
+            <div className="flex items-center gap-3 px-5 py-3 bg-black border-[4px] border-red-600 rounded-lg shadow-[5px_5px_0_rgba(0,0,0,1)] transform -rotate-1">
+              <TrendingUp size={18} className="text-red-500 animate-pulse" />
+              <div className="flex flex-col gap-0.5 leading-none">
                   <span className="text-[10px] font-black text-red-500 uppercase tracking-widest italic leading-none">Entity Detected</span>
                   <span className="text-xs font-black text-white tracking-tighter uppercase">Ω-LEVEL GUARDIAN</span>
               </div>
@@ -46,11 +46,11 @@ export const BossView = ({
 
           <div className="flex flex-col items-end gap-2 text-sm font-black">
              <div className="flex gap-2">
-                <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-2 bg-red-600 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group">
-                    <Coffee size={16} className="text-white group-hover:scale-110 transition-transform" />
-                    <div className="flex flex-col items-start bg-transparent leading-none">
-                        <span className="text-[7px] font-black uppercase text-white/70 italic">Heal</span>
-                        <span className="text-xs font-black text-white italic">{player.potions || 0}</span>
+                 <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-3 bg-red-600 border-[3px] border-black px-5 py-2.5 rounded-xl hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group">
+                    <Coffee size={18} className="text-white group-hover:scale-110 transition-transform" />
+                    <div className="flex flex-col items-start bg-transparent leading-none gap-0.5">
+                        <span className="text-[8px] font-black uppercase text-white/70 italic">Heal</span>
+                        <span className="text-sm font-black text-white italic">{player.potions || 0}</span>
                     </div>
                 </button>
                 
@@ -86,9 +86,9 @@ export const BossView = ({
         {/* LEFT PANEL: BOSS */}
         <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-6 transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
            <div className="relative group">
-              {/* Boss Yield Detail Overlay */}
-              <div className="absolute -left-20 top-0 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-right duration-700">
-                  <div className="bg-black/95 border-2 border-red-600 p-3 rounded-lg transform -rotate-6 shadow-[4px_4px_0_rgba(239,68,68,0.3)]">
+              {/* Boss Yield Detail Overlay - Adjusted positioning to prevent clipping */}
+              <div className="absolute -left-20 -top-4 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-right duration-700">
+                  <div className="bg-black/95 border-2 border-red-600 p-4 pt-5 rounded-lg transform -rotate-6 shadow-[4px_4px_0_rgba(239,68,68,0.3)]">
                       <p className="text-[8px] font-black text-red-500 uppercase leading-none mb-2 text-center tracking-widest">Scanner Active</p>
                       <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export const BossView = ({
 
               <div className={`w-64 h-64 bg-slate-950 flex items-center justify-center border-[8px] border-black shadow-[15px_15px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : ''}`}>
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-60 z-20"></div>
-                  <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
+                  <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo && player.avatarAnimated} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
                   
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowBossVideo(!showBossVideo); }}
@@ -135,9 +135,9 @@ export const BossView = ({
            </div>
 
             <div className="w-full space-y-4 px-6 scale-110">
-                <div className="bg-red-600 text-white px-6 py-2 border-[5px] border-black transform rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block relative">
+                <div className="bg-red-600 text-white px-8 py-3 border-[5px] border-black transform rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block relative">
                     <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{BOSS.name}</h2>
-                    <div className="absolute -top-4 -right-2 bg-black text-white px-2 py-0.5 text-[8px] font-black border-2 border-white rotate-12">THREAT: Ω</div>
+                    <div className="absolute -top-5 -right-3 bg-black text-white px-2 py-1 text-[8px] font-black border-2 border-white rotate-12 shadow-sm">THREAT: Ω</div>
                 </div>
                 
                 <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden">
@@ -166,9 +166,9 @@ export const BossView = ({
         {/* RIGHT PANEL: PLAYER */}
         <div className={`flex-1 w-full max-w-sm flex flex-col items-center gap-6 transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
            <div className="relative group">
-              {/* Player Stats Detail Overlay */}
-              <div className="absolute -right-20 top-0 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-left duration-700">
-                  <div className="bg-black/95 border-2 border-cyan-500 p-3 rounded-lg transform rotate-6 shadow-[4px_4px_0_rgba(8,145,178,0.3)]">
+              {/* Player Stats Detail Overlay - Adjusted positioning to prevent clipping */}
+              <div className="absolute -right-20 -top-4 hidden xl:flex flex-col gap-2 z-10 animate-in slide-in-from-left duration-700">
+                  <div className="bg-black/95 border-2 border-cyan-500 p-4 pt-5 rounded-lg transform rotate-6 shadow-[4px_4px_0_rgba(8,145,178,0.3)]">
                       <p className="text-[8px] font-black text-cyan-400 uppercase leading-none mb-2 text-center tracking-widest">Hunter Status</p>
                       <div className="flex flex-col gap-2">
                           <div className="flex items-center gap-2">
@@ -205,9 +205,9 @@ export const BossView = ({
            </div>
 
             <div className="w-full space-y-4 px-6 scale-110">
-                <div className="bg-cyan-600 text-white px-6 py-2 border-[5px] border-black transform -rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block float-right relative">
+                <div className="bg-cyan-600 text-white px-8 py-3 border-[5px] border-black transform -rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-auto relative float-right">
                     <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{player.name}</h2>
-                    <div className="absolute -top-4 -right-2 bg-black text-cyan-400 px-2 py-0.5 text-[8px] font-black border-2 border-cyan-400 -rotate-12">RANK: S</div>
+                    <div className="absolute -top-5 -right-3 bg-black text-cyan-400 px-2 py-1 text-[8px] font-black border-2 border-cyan-400 -rotate-12 shadow-sm">RANK: S</div>
                 </div>
                 
                 <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden clear-both">

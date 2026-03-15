@@ -70,6 +70,7 @@ import { DatabaseView } from './components/DatabaseView';
 import { MapView } from './components/MapView';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
+import { AnimatedBackground } from './components/AnimatedBackground';
 
 const BOSS = {
   name: "The Core Guardian",
@@ -134,6 +135,7 @@ const App = () => {
   const [autoUseScroll, setAutoUseScroll] = useState(false);
   const [isMusicOn, setIsMusicOn] = useState(true);
   const [isSfxOn, setIsSfxOn] = useState(true);
+  const [isActionProcessing, setIsActionProcessing] = useState(false);
 
   const playerRef = useRef(null);
   const stunRef = useRef(0);
@@ -141,6 +143,7 @@ const App = () => {
   const killsRef = useRef(0);
   const depthRef = useRef(1);
   const buffRef = useRef(0);
+  const processingRef = useRef(false);
   const bgmRef = useRef(new Audio());
 
   const playSFX = (soundPath) => {
@@ -196,7 +199,8 @@ const App = () => {
     killsRef.current = killsInFloor;
     depthRef.current = depth;
     buffRef.current = buffTimeLeft;
-  }, [player, stunTimeLeft, missTimeLeft, killsInFloor, depth, buffTimeLeft]);
+    processingRef.current = isActionProcessing;
+  }, [player, stunTimeLeft, missTimeLeft, killsInFloor, depth, buffTimeLeft, isActionProcessing]);
 
   const triggerHitEffects = (dmg, isCrit, side = 'monster') => {
     const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!", "CRUNCH!", "KRAK!"];
@@ -383,7 +387,7 @@ const App = () => {
         const p = playerRef.current;
         const isBossView = view === 'boss';
         // For boss view, we don't need enemyRef since it uses the global BOSS constant
-        if (p && (isBossView || enemyRef.current) && stunRef.current <= 0 && missRef.current <= 0) {
+        if (p && (isBossView || enemyRef.current) && stunRef.current <= 0 && missRef.current <= 0 && !processingRef.current) {
           if (p.hp < (p.maxHp * 0.4) && (p.potions || 0) > 0) handleHeal();
           else handleAttack(isBossView);
         }
@@ -527,7 +531,9 @@ const App = () => {
   const handleAttack = (isBoss = false) => {
     const p = playerRef.current || player;
     const e = enemyRef.current || enemy;
-    if (stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || (!isBoss && !e)) return;
+    if (stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || isActionProcessing || (!isBoss && !e)) return;
+
+    setIsActionProcessing(true);
 
     // COMPANION BUFF CHANCE
     let stats = calculateTotalStats();
@@ -560,27 +566,32 @@ const App = () => {
       const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
       setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
 
-      if (!isBoss) addLog(`Struck ${target.name} for ${dmg} DMG.`);
+      addLog(`Struck ${target.name} for ${dmg} DMG.`);
 
-      if (isBoss) {
-        processBossHit(dmg, isCrit);
-      } else {
-        const newHp = Math.max(0, target.hp - dmg);
-        if (newHp <= 0) {
-          setEnemy({ ...target, hp: 0 });
-          processKill();
-        } else { 
-          setEnemy({ ...target, hp: newHp }); 
-          enemyTurn({ ...target, hp: newHp }, isBoss); 
+      // HIT DELAY (0.5s)
+      setTimeout(() => {
+        if (isBoss) {
+          processBossHit(dmg, isCrit);
+        } else {
+          const newHp = Math.max(0, target.hp - dmg);
+          if (newHp <= 0) {
+            setEnemy({ ...target, hp: 0 });
+            processKill();
+            setIsActionProcessing(false);
+          } else { 
+            setEnemy({ ...target, hp: newHp }); 
+            enemyTurn({ ...target, hp: newHp }, isBoss); 
+          }
         }
-      }
+      }, 500);
     } else {
-      if (!isBoss) addLog(`Missed strike on ${target.name}!`);
+      addLog(`Missed strike on ${target.name}!`);
       setMissTimeLeft(1.5);
       // Miss Ouch/Taunt
       setPlayerTaunt("Darn, missed!");
       setCurrentTaunt("Ha! Too slow!");
       enemyTurn(target, isBoss);
+      setIsActionProcessing(false);
     }
   };
 
@@ -605,25 +616,34 @@ const App = () => {
       if (isCrit) { addLog(`⚠️ CRIT!`); setCritAlert(true); setTimeout(() => setCritAlert(false), 800); setStunTimeLeft(STUN_DURATION_CRIT / 1000); }
       else setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
 
+      addLog(`⚠️ ${target.name} hit you for ${dmg} DMG!`);
       const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
       setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
       // Hit Impact for Player
       triggerHitEffects(dmg, isCrit, 'player');
 
-      const newHp = Math.max(0, p.hp - dmg);
-      
-      if (newHp <= 0) {
-        setShowDefeatedWindow(true);
-        setAutoUseScroll(false);
-        syncPlayer({ hp: p.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
-        setTimeout(() => { setShowDefeatedWindow(false); setDepth(1); setView('menu'); }, DEFEAT_WINDOW_DURATION);
-      } else syncPlayer({ hp: newHp });
+      // HIT DELAY (0.5s)
+      setTimeout(() => {
+        const newHp = Math.max(0, p.hp - dmg);
+        
+        if (newHp <= 0) {
+          setShowDefeatedWindow(true);
+          setAutoUseScroll(false);
+          syncPlayer({ hp: p.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
+          setTimeout(() => { setShowDefeatedWindow(false); setDepth(1); setView('menu'); }, DEFEAT_WINDOW_DURATION);
+        } else {
+          syncPlayer({ hp: newHp });
+        }
+        setIsActionProcessing(false);
+      }, 500);
     } else {
+      addLog(`🛡️ Dodged ${target.name}'s strike!`);
       // Monster Miss
       setTimeout(() => {
         setCurrentTaunt("Drat! Slipped!");
         setPlayerTaunt("Nice try!");
+        setIsActionProcessing(false);
       }, 500);
     }
   };
@@ -718,6 +738,7 @@ const App = () => {
       const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', identifier);
       await setDoc(lbRef, { uid: identifier, email: user.email || '', name: p.name, score: newTotal, level: player.level });
     } catch (e) { }
+    // Note: enemyTurn will handle setting isActionProcessing(false) after its own hit delay
     enemyTurn(BOSS, true);
   };
 
@@ -762,7 +783,8 @@ const App = () => {
   const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors`}>
+    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors relative`}>
+      <AnimatedBackground MONSTERS={MONSTERS} />
 
       {showDefeatedWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">
@@ -1179,6 +1201,7 @@ const App = () => {
               MONSTERS={MONSTERS}
               LOOTS={LOOTS}
               EQUIPMENT={EQUIPMENT}
+              MAPS={MAPS}
             />
           )}
 
