@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon } from 'lucide-react';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X } from 'lucide-react';
 
-export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }) => {
+export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, addLog }) => {
   const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
+  const [dragonStats, setDragonStats] = useState(player.dragon || { level: 1, fruitsFed: 0 });
   const [fruits, setFruits] = useState([]);
   const [monsters, setMonsters] = useState([]);
-  const [dragon, setDragon] = useState(null);
   const [message, setMessage] = useState(null);
+  const [showInfo, setShowInfo] = useState(false);
   const groundRef = useRef(null);
 
   const MONSTER_POOL = [
@@ -17,18 +18,19 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
     { name: 'Sky Razer', icon: 'Sky Razer' }
   ];
 
-  const crystalItem = LOOTS.find(l => l.id === 'crystle_shard');
   const crystalsInInventory = player.inventory?.filter(i => i.id === 'crystle_shard').length || 0;
+  const fruitsInInventory = player.inventory?.filter(i => i.type === 'Fruit').length || 0;
 
-  // Level requirements: level * 10
-  const nextLevelRequirement = gemx.level * 10;
+  const gemxNextLevelRequirement = gemx.level * 10;
+  const dragonNextLevelRequirement = dragonStats.level * 5;
 
-  useEffect(() => {
-    // Sync gemx to player if it changed
-    if (JSON.stringify(player.gemx) !== JSON.stringify(gemx)) {
-      syncPlayer({ gemx });
-    }
-  }, [gemx]);
+  const GEMX_AVATARS = [
+    'gemx (1).gif',
+    'gemx (2).gif',
+    'gemx (3).gif',
+    'gemx (4).gif',
+    'gemx (5).gif'
+  ];
 
   const feedGem = () => {
     if (crystalsInInventory <= 0) {
@@ -36,7 +38,6 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
       return;
     }
 
-    // Remove one crystle shard from inventory
     const newInventory = [...(player.inventory || [])];
     const index = newInventory.findIndex(i => i.id === 'crystle_shard');
     if (index !== -1) {
@@ -45,7 +46,7 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
       let newCrystalsFed = gemx.crystalsFed + 1;
       let newLevel = gemx.level;
       
-      if (newCrystalsFed >= nextLevelRequirement) {
+      if (newCrystalsFed >= gemxNextLevelRequirement) {
         newLevel += 1;
         newCrystalsFed = 0;
         setMessage({ type: 'success', text: `GEMX reached Level ${newLevel}!` });
@@ -59,27 +60,41 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
     }
   };
 
-  // Spawn logic
-  useEffect(() => {
-    const timer = setInterval(() => {
-      // 1. Manage Dragon
-      if (gemx.level >= 1 && !dragon) {
-        const dName = gemx.level >= 10 ? 'Ancient Alpha' : 'Ember Drake';
-        setDragon({
-          id: 'dragon_' + Date.now(),
-          type: gemx.level >= 10 ? '🐲' : '🐉',
-          name: dName,
-          x: 40 + (Math.random() * 20),
-          y: 20 + (Math.random() * 20),
-          targetX: 50,
-          targetY: 50
-        });
-        addLog(`🐉 DRAGON SIGHTING: ${dName} has arrived at the grounds!`);
+  const feedDragon = () => {
+    const dragonFruit = player.inventory?.find(i => i.type === 'Fruit');
+    if (!dragonFruit) {
+      setMessage({ type: 'error', text: 'You need Dragon Fruits to feed the Dragon!' });
+      return;
+    }
+
+    const newInventory = [...(player.inventory || [])];
+    const index = newInventory.findIndex(i => i === dragonFruit);
+    if (index !== -1) {
+      newInventory.splice(index, 1);
+      
+      let newFruitsFed = dragonStats.fruitsFed + (dragonFruit.exp || 1);
+      let newLevel = dragonStats.level;
+      
+      if (newFruitsFed >= dragonNextLevelRequirement) {
+        newLevel += 1;
+        newFruitsFed = 0;
+        setMessage({ type: 'success', text: `Dragon reached Level ${newLevel}!` });
+        addLog(`🐉 DRAGON EVOLUTION: Reached Level ${newLevel}!`);
+      } else {
+        setMessage({ type: 'info', text: `Dragon enjoyed the ${dragonFruit.name}.` });
       }
 
-      // 2. Spawn monsters based on dragon presence
-      if (dragon && monsters.length < Math.min(10, gemx.level + 2)) {
-        if (Math.random() < 0.3) {
+      setDragonStats({ level: newLevel, fruitsFed: newFruitsFed });
+      syncPlayer({ inventory: newInventory, dragon: { level: newLevel, fruitsFed: newFruitsFed } });
+    }
+  };
+
+  // Spawn and Move logic
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // 1. Spawn monsters
+      if (monsters.length < gemx.level * 3) {
+        if (Math.random() < 0.4) {
           const spawnSide = Math.floor(Math.random() * 4);
           let x, y;
           if (spawnSide === 0) { x = -10; y = Math.random() * 100; }
@@ -89,40 +104,40 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
 
           const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
           setMonsters(prev => [...prev, {
-            id: 'monster_' + Date.now(),
+            id: 'monster_' + Date.now() + Math.random(),
             icon: mProto.icon,
             name: mProto.name,
             x, y,
-            targetX: 20 + Math.random() * 60,
-            targetY: 20 + Math.random() * 60,
-            speed: 0.5 + Math.random() * 1
+            targetX: 10 + Math.random() * 80,
+            targetY: 10 + Math.random() * 80,
+            speed: 0.3 + Math.random() * 0.7
           }]);
         }
       }
 
-      // 3. Move monsters and drop fruits
+      // 2. Move monsters and drop fruits
       setMonsters(prev => {
-        const moved = prev.map(m => {
+        return prev.map(m => {
           const dx = m.targetX - m.x;
           const dy = m.targetY - m.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           
           if (dist < 2) {
-            // Drop fruit!
-            if (Math.random() < 0.05) {
-              const fruitEmojis = ['🍎', '🍇', '🍓', '🍒', '🍑', '🍋', '🍊', '🍏'];
+            // Drop fruit! (Increased frequency as requested)
+            if (Math.random() < 0.8) {
+              const randomFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
               setFruits(f => [...f, {
                 id: 'fruit_' + Date.now() + Math.random(),
-                icon: fruitEmojis[Math.floor(Math.random() * fruitEmojis.length)],
+                data: randomFruit,
                 x: m.x,
                 y: m.y
               }]);
             }
-            // New target
+            // New target (roaming)
             return {
               ...m,
-              targetX: 20 + Math.random() * 60,
-              targetY: 20 + Math.random() * 60
+              targetX: 10 + Math.random() * 80,
+              targetY: 10 + Math.random() * 80
             };
           }
 
@@ -132,40 +147,109 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
             y: m.y + (dy / dist) * m.speed
           };
         });
-        return moved;
       });
 
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [dragon, monsters, gemx.level]);
+  }, [monsters, gemx.level, dragonStats.level, FRUITS]);
 
   const collectFruit = (fruit) => {
     setFruits(prev => prev.filter(f => f.id !== fruit.id));
     
-    // Add fruit to inventory
-    const fruitItem = {
-      id: 'mystic_fruit_' + fruit.icon,
-      name: 'Mystic Fruit',
-      icon: fruit.icon,
-      type: 'Consumable',
-      rarity: 'Common',
-      description: 'A magical fruit dropped by monsters in the Dragons Ground. Restores some HP.',
-      sellValue: 20,
-      effect: { hp: 20 }
-    };
-
     syncPlayer({
-      inventory: [...(player.inventory || []), fruitItem]
+      inventory: [...(player.inventory || []), fruit.data]
     });
 
-    setMessage({ type: 'success', text: `Collected ${fruit.icon}!` });
+    setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
   };
 
+  const selectGemxAvatar = (avatar) => {
+    syncPlayer({ gemxAvatar: avatar });
+    addLog(`✨ GEMX APPEARANCE: Changed to ${avatar.split('.')[0]}`);
+  };
+
+  const toggleDragonAnimation = () => {
+    syncPlayer({ dragonAnimationEnabled: !player.dragonAnimationEnabled });
+  };
+
+  // Auto-hide messages
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   return (
-    <div className="flex-1 flex flex-col h-full bg-emerald-900/20">
+    <div className="flex-1 flex flex-col h-full bg-emerald-950/40 relative">
+      {/* Sanctuary Guide Modal */}
+      {showInfo && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="max-w-md w-full bg-slate-900 border-4 border-black shadow-[12px_12px_0_rgba(0,0,0,1)] rounded-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="bg-emerald-600 p-4 border-b-4 border-black flex justify-between items-center">
+              <h2 className="text-xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
+                <Sparkles size={20} /> Sanctuary Guide
+              </h2>
+              <button 
+                onClick={() => setShowInfo(false)}
+                className="p-1 bg-black/20 hover:bg-black/40 rounded-full transition-colors"
+              >
+                <X size={20} className="text-white" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+              <section className="space-y-2">
+                <h3 className="text-emerald-400 font-black uppercase text-xs tracking-widest italic">What is Dragons Ground?</h3>
+                <p className="text-slate-300 text-xs leading-relaxed font-medium">
+                  The Dragons Ground is a sacred sanctuary where hunters sync their energy with the <span className="text-cyan-400 font-bold">GEMX Sentinel</span> and nurture the <span className="text-amber-400 font-bold">Great Drake</span>. It is a place of passive growth and immense stat boosts.
+                </p>
+              </section>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 font-black uppercase text-[10px]">
+                    <Gem size={14} /> The GEMX Sentinel
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    Feed <span className="text-white">Crystle Shards</span> to GEMX to increase its Sentinel Level. Higher levels attract more monsters to the sanctuary and unlock new Sentinel appearances.
+                  </p>
+                </div>
+
+                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-400 font-black uppercase text-[10px]">
+                    <ShoppingBag size={14} /> The Great Drake
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    Level up the Dragon using <span className="text-white">Mystic Fruits</span>. Every Dragon Level provides a permanent <span className="text-emerald-400 font-bold">+5 bonus to ALL stats</span> (STR, AGI, DEX).
+                  </p>
+                </div>
+
+                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-[10px]">
+                    <Ghost size={14} /> Wild Encounters
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight">
+                    Wild monsters are attracted to the sanctuary based on GEMX's level (3 monsters per level). These monsters roam the Wild Encounter Zone and <span className="text-white">drop Mystic Fruits (80% rate)</span> as they travel. Click the fruits to harvest them!
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button 
+                  onClick={() => setShowInfo(false)}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all italic"
+                >
+                  Got it, Hunter!
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b border-white/10 bg-slate-900/80 backdrop-blur-md z-20">
+      <div className="p-4 flex items-center justify-between border-b border-white/10 bg-slate-900/90 backdrop-blur-md z-30">
         <div className="flex items-center gap-3">
           <button onClick={() => setView('menu')} className="p-2 hover:bg-white/10 rounded-full transition-all">
             <ArrowLeft className="text-white" size={20} />
@@ -177,6 +261,13 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
         </div>
 
         <div className="flex items-center gap-4">
+          <button 
+            onClick={() => setShowInfo(true)}
+            className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-full border border-emerald-500/30 text-emerald-400 transition-all flex items-center gap-2 group"
+          >
+            <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Info</span>
+          </button>
           <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
             <Gem size={14} className="text-cyan-400" />
             <div>
@@ -184,141 +275,206 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
               <p className="text-xs font-black text-white">{crystalsInInventory}</p>
             </div>
           </div>
-          <div className="bg-black/60 border-2 border-cyan-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
-            <TrendingUp size={14} className="text-cyan-400" />
+          <div className="bg-black/60 border-2 border-amber-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
+            <ShoppingBag size={14} className="text-amber-400" />
             <div>
-              <p className="text-[7px] font-black text-slate-500 uppercase">GEMX LVL</p>
-              <p className="text-xs font-black text-white">{gemx.level}</p>
+              <p className="text-[7px] font-black text-slate-500 uppercase">Dragon Fruits</p>
+              <p className="text-xs font-black text-white">{fruitsInInventory}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Ground */}
-      <div 
-        ref={groundRef}
-        className="flex-1 relative overflow-hidden bg-[url('https://www.transparenttextures.com/patterns/grass.png')] bg-emerald-800"
-        style={{ backgroundSize: '200px' }}
-      >
-        {/* Ground Details */}
-        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 2px, transparent 2px)', backgroundSize: '40px 40px' }}></div>
+      {/* Main Functional Container */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* GEMX Crystal */}
-        <div 
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center"
-        >
-          <div className="relative group cursor-pointer" onClick={feedGem}>
-            <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 group-hover:opacity-50 transition-all animate-pulse duration-[2000ms]"></div>
-            <div className={`w-24 h-24 flex items-center justify-center text-6xl animate-bounce duration-[3000ms] transition-transform ${gemx.level >= 10 ? 'scale-125' : 'scale-100'}`}>
-              💎
+        {/* Top Section: Management Panels (Reduced Height) */}
+        <div className="py-2 px-4 flex gap-3 bg-emerald-950/20 border-b border-white/5 z-20">
+            {/* Gemx Panel */}
+            <div className="flex-1 bg-black/40 backdrop-blur-md border border-cyan-500/30 rounded-xl p-2 flex flex-col items-center">
+                <div className="relative group cursor-pointer scale-90" onClick={feedGem}>
+                    <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
+                    <div className="w-20 h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[6px_6px_0_rgba(0,0,0,1)] bg-slate-900">
+                        <img 
+                          src={`/assets/dragonsground/gemx/${player.gemxAvatar || 'gemx (1).gif'}`} 
+                          className="w-full h-full object-cover"
+                          alt="Gemx"
+                        />
+                    </div>
+                    {/* Energy Progress */}
+                    <div className="absolute -bottom-2 -right-2 bg-cyan-500 text-black text-[10px] font-black px-2 py-0.5 border-2 border-black rotate-3">
+                        LVL {gemx.level}
+                    </div>
+                </div>
+
+                <div className="mt-2 w-full space-y-1">
+                    <div className="flex justify-between text-[7px] font-black text-cyan-400 uppercase tracking-widest">
+                        <span>Energy Sync</span>
+                        <span>{gemx.crystalsFed} / {gemxNextLevelRequirement}</span>
+                    </div>
+                    <div className="h-2 bg-black rounded-full border border-cyan-500/30 overflow-hidden p-0.5">
+                        <div 
+                          className="h-full bg-cyan-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                          style={{ width: `${(gemx.crystalsFed / gemxNextLevelRequirement) * 100}%` }}
+                        ></div>
+                    </div>
+                </div>
+
+                {/* Avatar Selector */}
+                <div className="flex gap-1 mt-2">
+                    {GEMX_AVATARS.map(avatar => (
+                        <button 
+                          key={avatar}
+                          onClick={() => selectGemxAvatar(avatar)}
+                          className={`w-6 h-6 rounded border-2 overflow-hidden transition-all ${player.gemxAvatar === avatar ? 'border-cyan-400 scale-110' : 'border-black/50 hover:border-white'}`}
+                        >
+                            <img src={`/assets/dragonsground/gemx/${avatar}`} className="w-full h-full object-cover" />
+                        </button>
+                    ))}
+                </div>
+                <h3 className="mt-2 text-xs font-black text-white italic uppercase tracking-tighter">GEMX SENTINEL</h3>
             </div>
-            {/* Energy progress ring */}
-            <svg className="absolute -inset-4 w-32 h-32 -rotate-90">
-              <circle
-                cx="64" cy="64" r="58"
-                fill="none"
-                stroke="rgba(0,0,0,0.3)"
-                strokeWidth="4"
-              />
-              <circle
-                cx="64" cy="64" r="58"
-                fill="none"
-                stroke="#22d3ee"
-                strokeWidth="4"
-                strokeDasharray={364}
-                strokeDashoffset={364 - (gemx.crystalsFed / nextLevelRequirement) * 364}
-                className="transition-all duration-500"
-              />
-            </svg>
-            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/80 px-2 py-0.5 rounded border border-cyan-500/50 whitespace-nowrap shadow-xl">
-               <p className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">{gemx.crystalsFed} / {nextLevelRequirement} ENERGY</p>
+
+            {/* Dragon Panel */}
+            <div className="flex-1 bg-black/40 backdrop-blur-md border border-amber-500/30 rounded-xl p-2 flex flex-col items-center">
+                <div className="relative group cursor-pointer scale-90" onClick={feedDragon}>
+                    <div className="absolute inset-0 bg-amber-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
+                    <div className="w-20 h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[6px_6px_0_rgba(0,0,0,1)] bg-slate-900">
+                        {player.dragonAnimationEnabled ? (
+                            <video 
+                              autoPlay loop muted playsInline
+                              className="w-full h-full object-cover"
+                              poster="/assets/dragonsground/dragons/DragonAvatar (1).jpg"
+                            >
+                                <source src="/assets/dragonsground/dragons/DragonAvatar (1) video.mp4" type="video/mp4" />
+                            </video>
+                        ) : (
+                            <img 
+                              src="/assets/dragonsground/dragons/DragonAvatar (1).jpg" 
+                              className="w-full h-full object-cover"
+                              alt="Dragon"
+                            />
+                        )}
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); toggleDragonAnimation(); }}
+                          className="absolute top-1 right-1 p-1 bg-black/60 rounded border border-white/20 text-white hover:bg-black transition-all"
+                        >
+                            {player.dragonAnimationEnabled ? <Pause size={10} /> : <Play size={10} />}
+                        </button>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 border-2 border-black -rotate-3">
+                        LVL {dragonStats.level}
+                    </div>
+                </div>
+
+                <div className="mt-2 w-full space-y-1">
+                    <div className="flex justify-between text-[7px] font-black text-amber-400 uppercase tracking-widest">
+                        <span>Growth Maturity</span>
+                        <span>{dragonStats.fruitsFed} / {dragonNextLevelRequirement}</span>
+                    </div>
+                    <div className="h-2 bg-black rounded-full border border-amber-500/30 overflow-hidden p-0.5">
+                        <div 
+                          className="h-full bg-amber-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+                          style={{ width: `${(dragonStats.fruitsFed / dragonNextLevelRequirement) * 100}%` }}
+                        ></div>
+                    </div>
+                </div>
+
+                <div className="mt-4 flex gap-4">
+                    <div className="text-center">
+                        <p className="text-[7px] font-black text-slate-500 uppercase">Stat Buff</p>
+                        <p className="text-xs font-black text-emerald-400">+{dragonStats.level * 5} ALL</p>
+                    </div>
+                    <div className="h-6 w-[2px] bg-white/10 self-center"></div>
+                    <div className="text-center">
+                        <p className="text-[7px] font-black text-slate-500 uppercase">Animation</p>
+                        <p className="text-[7px] font-black text-white">{player.dragonAnimationEnabled ? 'ENABLED' : 'DISABLED'}</p>
+                    </div>
+                </div>
+                <h3 className="mt-2 text-xs font-black text-white italic uppercase tracking-tighter">GREAT DRAKE</h3>
             </div>
-          </div>
-          <h2 className="mt-12 text-2xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg">GEMX</h2>
         </div>
 
-        {/* Dragon */}
-        {dragon && (
-          <div 
-            className="absolute transition-all duration-1000 z-20 pointer-events-none"
-            style={{ 
-              left: `${dragon.x}%`, 
-              top: `${dragon.y}%`, 
-              width: gemx.level >= 10 ? '120px' : '90px',
-              height: gemx.level >= 10 ? '120px' : '90px'
-            }}
-          >
-            <div className="animate-bounce duration-[4000ms] w-full h-full">
-              <img 
-                src={`/assets/monsters/Neon Slums/${dragon.name}.jpg`} 
-                alt={dragon.name}
-                className="w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]"
-                onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + dragon.name; }}
-              />
+        {/* Bottom Section: Roaming Ground (Further Expanded) */}
+        <div className="flex-[4] relative bg-[url('https://www.transparenttextures.com/patterns/grass.png')] bg-emerald-900 border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-hidden">
+            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+            
+            {/* Label for the ground */}
+            <div className="absolute top-2 left-4 z-10">
+                <p className="text-[10px] font-black text-emerald-300 opacity-50 uppercase tracking-[0.3em] flex items-center gap-2">
+                    <Trees size={12} /> Wild Encounter Zone
+                </p>
             </div>
-          </div>
-        )}
 
-        {/* Monsters */}
-        {monsters.map(m => (
-          <div 
-            key={m.id}
-            className="absolute transition-all duration-1000 z-10 pointer-events-none w-12 h-12"
-            style={{ left: `${m.x}%`, top: `${m.y}%` }}
-          >
-            <div className="animate-pulse w-full h-full">
-               <img 
-                src={`/assets/monsters/Neon Slums/${m.name}.jpg`} 
-                alt={m.name}
-                className="w-full h-full object-contain filter drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]"
-                onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }}
-              />
-            </div>
-          </div>
-        ))}
+            {/* Roaming Entities Area */}
+            <div className="absolute inset-0 pointer-events-none">
+                {/* Monsters */}
+                {monsters.map(m => (
+                    <div 
+                        key={m.id}
+                        className="absolute transition-all duration-1000 z-10 w-8 h-8"
+                        style={{ left: `${m.x}%`, top: `${m.y}%` }}
+                    >
+                        <div className="animate-pulse w-full h-full relative">
+                            <div className="w-full h-full rounded-full border-[3px] border-black bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden transform rotate-2">
+                                <img 
+                                    src={`/assets/monsters/Neon Slums/${m.name}.jpg`} 
+                                    alt={m.name}
+                                    className="w-full h-full object-cover rounded-full opacity-80"
+                                    onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ))}
 
-        {/* Fruits */}
-        {fruits.map(f => (
-          <button 
-            key={f.id}
-            onClick={() => collectFruit(f)}
-            className="absolute z-30 text-3xl hover:scale-125 transition-transform active:scale-95 animate-in fade-in zoom-in duration-300"
-            style={{ left: `${f.x}%`, top: `${f.y}%` }}
-          >
-            <div className="relative group">
-               <div className="absolute inset-0 bg-white blur-md opacity-0 group-hover:opacity-40"></div>
-               {f.icon}
+                {/* Fruits (Interactive) */}
+                {fruits.map(f => (
+                    <button 
+                        key={f.id}
+                        onClick={() => collectFruit(f)}
+                        className="absolute z-20 text-4xl p-4 -m-4 hover:scale-125 transition-transform active:scale-95 animate-in fade-in zoom-in duration-300 pointer-events-auto"
+                        style={{ left: `${f.x}%`, top: `${f.y}%` }}
+                    >
+                        <div className="relative group">
+                        <div className="absolute inset-0 bg-white blur-md opacity-0 group-hover:opacity-40"></div>
+                        {f.data.icon}
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 px-1 py-0.5 rounded border border-white/20 text-[6px] text-white opacity-0 group-hover:opacity-100 whitespace-nowrap">
+                            {f.data.name}
+                        </div>
+                        </div>
+                    </button>
+                ))}
             </div>
-          </button>
-        ))}
 
-        {/* HUD Messages */}
-        {message && (
-          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <div className={`px-6 py-2 rounded-full border-2 font-black uppercase italic text-xs shadow-2xl ${
-              message.type === 'success' ? 'bg-emerald-950/80 border-emerald-500 text-emerald-400' : 
-              message.type === 'error' ? 'bg-red-950/80 border-red-500 text-red-100' :
-              'bg-blue-950/80 border-blue-500 text-blue-100'
-            }`}>
-              {message.text}
-            </div>
-          </div>
-        )}
+            {/* HUD Messages (Moved inside roaming panel for better context) */}
+            {message && (
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
+                    <div className={`px-6 py-2 rounded-full border-2 font-black uppercase italic text-xs shadow-2xl ${
+                        message.type === 'success' ? 'bg-emerald-950/80 border-emerald-500 text-emerald-400' : 
+                        message.type === 'error' ? 'bg-red-950/80 border-red-500 text-red-100' :
+                        'bg-blue-950/80 border-blue-500 text-blue-100'
+                    }`}>
+                        {message.text}
+                    </div>
+                </div>
+            )}
+        </div>
       </div>
 
       {/* Footer Instructions */}
-      <div className="p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-8">
+      <div className="p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-8 z-30">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-cyan-600/20 border border-cyan-500 flex items-center justify-center text-cyan-400 font-black">1</div>
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Feed GEMX with Crystle Shards</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-red-600/20 border border-red-500 flex items-center justify-center text-red-400 font-black">2</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Attract the Great Dragon</p>
+          <div className="w-8 h-8 rounded bg-amber-600/20 border border-amber-500 flex items-center justify-center text-amber-400 font-black">2</div>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Level Dragon with Mystic Fruits</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-amber-600/20 border border-amber-500 flex items-center justify-center text-amber-400 font-black">3</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Collect Mystic Fruits</p>
+          <div className="w-8 h-8 rounded bg-red-600/20 border border-red-500 flex items-center justify-center text-red-400 font-black">3</div>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Dragon boosts ALL your stats!</p>
         </div>
       </div>
     </div>

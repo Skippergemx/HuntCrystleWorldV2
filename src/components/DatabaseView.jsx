@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown, Globe, Map as MapIcon, Target, TrendingUp } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS }) => {
+export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS }) => {
   const [activeTab, setActiveTab] = useState('monsters');
   const [filter, setFilter] = useState('');
 
   const tabs = [
     { id: 'monsters', label: 'Beast Lore', icon: <Skull size={14} /> },
     { id: 'loots', label: 'Crystle Materials', icon: <Gem size={14} /> },
+    { id: 'fruits', label: 'Dragon Fruits', icon: <Target size={14} /> },
     { id: 'equipment', label: 'Hunter Gear', icon: <Shield size={14} /> },
     { id: 'maps', label: 'Sector Nodes', icon: <Globe size={14} /> }
   ];
@@ -130,6 +131,31 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS 
                  </div>
                );
              })}
+          </div>
+        )}
+
+         {activeTab === 'fruits' && (
+          <div className="grid gap-3">
+             {FRUITS.filter(f => f.name.toLowerCase().includes(filter.toLowerCase())).map((fruit, idx) => (
+               <div key={idx} className="bg-white border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between group">
+                   <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 flex items-center justify-center rounded-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] flex-shrink-0 bg-emerald-50 relative overflow-hidden">
+                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-100 to-transparent opacity-50"></div>
+                         <span className="text-2xl relative z-10 transform group-hover:scale-125 transition-transform duration-300">{fruit.icon}</span>
+                      </div>
+                      <div>
+                        <p className="font-black text-xs uppercase italic leading-none mb-1">{fruit.name}</p>
+                        <div className="flex items-center gap-2">
+                           <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full border ${fruit.rarity === 'Legendary' ? 'bg-amber-100 text-amber-600 border-amber-200' : fruit.rarity === 'Epic' ? 'bg-purple-100 text-purple-600 border-purple-200' : fruit.rarity === 'Rare' ? 'bg-blue-100 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>{fruit.rarity}</span>
+                           <span className="text-[8px] font-black text-emerald-600 uppercase">+{fruit.exp} Dragon XP</span>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                     <p className="text-xs font-black text-slate-400 italic">{fruit.description.slice(0, 30)}...</p>
+                  </div>
+               </div>
+             ))}
           </div>
         )}
 

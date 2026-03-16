@@ -36,6 +36,7 @@ import SHOP_CONSUMABLES from './data/shop.json';
 import CRYSTLE_RECIPES from './data/recipes.json';
 import LOOTS from './data/loots.json';
 import MAPS from './data/maps.json';
+import FRUITS from './data/fruits.json';
 
 import { 
   DIFFICULTY_MULTIPLIER, 
@@ -416,7 +417,14 @@ const App = () => {
       const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setPlayer(docSnap.data());
+        const data = docSnap.data();
+        // Migration: Add new fields if missing
+        if (!data.gemx) data.gemx = { level: 1, crystalsFed: 0 };
+        if (!data.dragon) data.dragon = { level: 1, fruitsFed: 0 };
+        if (!data.gemxAvatar) data.gemxAvatar = 'gemx (1).gif';
+        if (data.dragonAnimationEnabled === undefined) data.dragonAnimationEnabled = true;
+
+        setPlayer(data);
       } else {
         const newPlayer = {
           uid: u.uid,
@@ -443,7 +451,10 @@ const App = () => {
           totalBossDamage: 0,
           penaltyUntil: 0,
           autoMode: null,
-          gemx: { level: 1, crystalsFed: 0 }
+          gemx: { level: 1, crystalsFed: 0 },
+          dragon: { level: 1, fruitsFed: 0 },
+          gemxAvatar: 'gemx (1).gif',
+          dragonAnimationEnabled: true
         };
         await setDoc(docRef, newPlayer);
         setPlayer(newPlayer);
@@ -473,7 +484,11 @@ const App = () => {
         recipes: [],
         inventory: [],
         totalBossDamage: 0,
-        penaltyUntil: 0
+        penaltyUntil: 0,
+        gemx: { level: 1, crystalsFed: 0 },
+        dragon: { level: 1, fruitsFed: 0 },
+        gemxAvatar: 'gemx (1).gif',
+        dragonAnimationEnabled: true
       })
     }
     setLoading(false);
@@ -1267,6 +1282,7 @@ const App = () => {
               LOOTS={LOOTS}
               EQUIPMENT={EQUIPMENT}
               MAPS={MAPS}
+              FRUITS={FRUITS}
             />
           )}
 
@@ -1299,6 +1315,7 @@ const App = () => {
               syncPlayer={syncPlayer} 
               setView={setView} 
               LOOTS={LOOTS}
+              FRUITS={FRUITS}
               addLog={addLog}
             />
           )}
