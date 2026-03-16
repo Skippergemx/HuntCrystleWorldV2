@@ -1,5 +1,17 @@
 import React from 'react';
-import { Map as MapIcon, Beer, Activity, Package, ShoppingBag, Hammer, Book, Globe, AlertCircle, Clock, Leaf } from 'lucide-react';
+import { 
+  Map as MapIcon, 
+  Beer, 
+  Activity, 
+  Package, 
+  ShoppingBag, 
+  Hammer, 
+  Book, 
+  Globe, 
+  AlertCircle, 
+  Clock, 
+  Trees 
+} from 'lucide-react';
 import { NavBtn } from './GameUI';
 
 export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spawnNewEnemy, autoUntil, syncPlayer }) => {
@@ -34,7 +46,7 @@ export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spa
       <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" />
       <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" />
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" />
-      <NavBtn onClick={() => setView('dragons_ground')} icon={<Leaf />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" />
+      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" />
       <NavBtn 
         onClick={startBoss} 
         icon={<AlertCircle />} 

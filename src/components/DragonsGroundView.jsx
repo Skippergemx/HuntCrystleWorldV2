@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Leaf, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon } from 'lucide-react';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon } from 'lucide-react';
 
 export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }) => {
   const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
