@@ -17,8 +17,8 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
     { name: 'Slum Rat', icon: '🐀' }
   ];
 
-  const voidCrystal = LOOTS.find(l => l.id === 'void_crystal');
-  const crystalsInInventory = player.inventory?.filter(i => i.id === 'void_crystal').length || 0;
+  const crystalItem = LOOTS.find(l => l.id === 'crystle_shard');
+  const crystalsInInventory = player.inventory?.filter(i => i.id === 'crystle_shard').length || 0;
 
   // Level requirements: level * 10
   const nextLevelRequirement = gemx.level * 10;
@@ -32,13 +32,13 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
 
   const feedGem = () => {
     if (crystalsInInventory <= 0) {
-      setMessage({ type: 'error', text: 'You need Void Crystals to feed GEMX!' });
+      setMessage({ type: 'error', text: 'You need Crystle Shards to feed GEMX!' });
       return;
     }
 
-    // Remove one void crystal from inventory
+    // Remove one crystle shard from inventory
     const newInventory = [...(player.inventory || [])];
-    const index = newInventory.findIndex(i => i.id === 'void_crystal');
+    const index = newInventory.findIndex(i => i.id === 'crystle_shard');
     if (index !== -1) {
       newInventory.splice(index, 1);
       
@@ -180,7 +180,7 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
           <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
             <Gem size={14} className="text-cyan-400" />
             <div>
-              <p className="text-[7px] font-black text-slate-500 uppercase">Void Crystals</p>
+              <p className="text-[7px] font-black text-slate-500 uppercase">Crystle Shards</p>
               <p className="text-xs font-black text-white">{crystalsInInventory}</p>
             </div>
           </div>
@@ -295,7 +295,7 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
       <div className="p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-8">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-cyan-600/20 border border-cyan-500 flex items-center justify-center text-cyan-400 font-black">1</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Feed GEMX with Void Crystals</p>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Feed GEMX with Crystle Shards</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded bg-red-600/20 border border-red-500 flex items-center justify-center text-red-400 font-black">2</div>
