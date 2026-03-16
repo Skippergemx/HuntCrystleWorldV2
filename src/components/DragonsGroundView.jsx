@@ -10,11 +10,11 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
   const groundRef = useRef(null);
 
   const MONSTER_POOL = [
-    { name: 'Gunk Dragon', icon: '👻' },
-    { name: 'Cinder Sprout', icon: '👾' },
-    { name: 'Neon Glider', icon: '👽' },
-    { name: 'Void Stalker', icon: '👹' },
-    { name: 'Slum Rat', icon: '🐀' }
+    { name: 'Gunk Dragon', icon: 'Gunk Dragon' },
+    { name: 'Cinder Sprout', icon: 'Cinder Sprout' },
+    { name: 'Azure Glider', icon: 'Azure Glider' },
+    { name: 'Void Stalker', icon: 'Void Stalker' },
+    { name: 'Sky Razer', icon: 'Sky Razer' }
   ];
 
   const crystalItem = LOOTS.find(l => l.id === 'crystle_shard');
@@ -241,10 +241,20 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
         {dragon && (
           <div 
             className="absolute transition-all duration-1000 z-20 pointer-events-none"
-            style={{ left: `${dragon.x}%`, top: `${dragon.y}%`, fontSize: gemx.level >= 10 ? '80px' : '60px' }}
+            style={{ 
+              left: `${dragon.x}%`, 
+              top: `${dragon.y}%`, 
+              width: gemx.level >= 10 ? '120px' : '90px',
+              height: gemx.level >= 10 ? '120px' : '90px'
+            }}
           >
-            <div className="animate-bounce duration-[4000ms]">
-              <span className="drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]">{dragon.type}</span>
+            <div className="animate-bounce duration-[4000ms] w-full h-full">
+              <img 
+                src={`/assets/monsters/Neon Slums/${dragon.name}.jpg`} 
+                alt={dragon.name}
+                className="w-full h-full object-contain filter drop-shadow-[0_0_20px_rgba(239,68,68,0.5)]"
+                onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + dragon.name; }}
+              />
             </div>
           </div>
         )}
@@ -253,11 +263,16 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, addLog }
         {monsters.map(m => (
           <div 
             key={m.id}
-            className="absolute transition-all duration-1000 z-10 pointer-events-none text-2xl"
+            className="absolute transition-all duration-1000 z-10 pointer-events-none w-12 h-12"
             style={{ left: `${m.x}%`, top: `${m.y}%` }}
           >
-            <div className="animate-pulse">
-              {m.icon}
+            <div className="animate-pulse w-full h-full">
+               <img 
+                src={`/assets/monsters/Neon Slums/${m.name}.jpg`} 
+                alt={m.name}
+                className="w-full h-full object-contain filter drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]"
+                onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }}
+              />
             </div>
           </div>
         ))}
