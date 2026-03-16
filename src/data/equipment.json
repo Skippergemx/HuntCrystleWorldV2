@@ -79,5 +79,50 @@
     "stats": { "str": 8, "dex": 3, "agi": 10 },
     "type": "Footwear",
     "desc": "Heavy boots designed for heavy combat."
+  },
+  {
+    "id": "crystle_blade",
+    "name": "Crystle Blade",
+    "cost": 1000,
+    "reqLvl": 5,
+    "stats": { "str": 25, "dex": 15, "agi": 5 },
+    "type": "Weapon",
+    "desc": "A blade forged from pure crystle energy."
+  },
+  {
+    "id": "neon_plate",
+    "name": "Neon Chestplate",
+    "cost": 1500,
+    "reqLvl": 8,
+    "stats": { "str": 10, "dex": 5, "agi": 30 },
+    "type": "Armor",
+    "desc": "High-tech protection with a neon glow."
+  },
+  {
+    "id": "tech_visor",
+    "name": "Tech Visor",
+    "cost": 800,
+    "reqLvl": 4,
+    "stats": { "str": 5, "dex": 20, "agi": 5 },
+    "type": "Headgear",
+    "desc": "Enhanced tactical data visualization."
+  },
+  {
+    "id": "kinetic_boots",
+    "name": "Kinetic Boots",
+    "cost": 1200,
+    "reqLvl": 6,
+    "stats": { "str": 5, "dex": 10, "agi": 25 },
+    "type": "Footwear",
+    "desc": "Converts motion into energy shields."
+  },
+  {
+    "id": "void_edge",
+    "name": "Void Edge",
+    "cost": 5000,
+    "reqLvl": 20,
+    "stats": { "str": 100, "dex": 60, "agi": 20 },
+    "type": "Weapon",
+    "desc": "A weapon that cuts through space-time."
   }
 ]

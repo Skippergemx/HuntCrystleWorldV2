@@ -10,30 +10,33 @@ export const AnimatedBackground = ({ MONSTERS }) => {
     if (!MONSTERS || MONSTERS.length === 0) return [];
     
     // Use a subset for performance
-    const subset = [...MONSTERS].slice(0, 48);
+    const subset = [...MONSTERS].slice(0, 32); // Reduced from 48 for performance
     const expanded = [...subset, ...subset];
     
-    // Shuffle the list once
-    return expanded.sort(() => Math.random() - 0.5);
-  }, [MONSTERS.length]); // Only re-shuffle if count changes
+    // Add random properties once
+    return expanded.map(monster => ({
+      ...monster,
+      rotation: Math.random() * 8 - 4,
+      id: Math.random().toString(36).substr(2, 9)
+    })).sort(() => Math.random() - 0.5);
+  }, [MONSTERS.length]); 
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-slate-950">
       {/* 3D Perspective Wrapper */}
       <div className="absolute inset-0 perspective-1000 flex items-center justify-center scale-125">
         <div 
-          className="relative w-[200vw] h-[200vh] grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 opacity-20 transform-style-3d animate-scroll-diag"
+          className="relative w-[200vw] h-[200vh] grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 opacity-20 transform-style-3d animate-scroll-diag will-change-transform"
           style={{ 
             filter: 'contrast(1.2) grayscale(0.2) saturate(1.5) brightness(0.7)'
           }}
         >
           {collageList.map((monster, i) => (
             <div 
-              key={i} 
-              className="relative aspect-square border-4 border-black/40 shadow-2xl overflow-hidden bg-black flex items-center justify-center transform hover:scale-105 transition-transform duration-500"
+              key={`${monster.id}-${i}`} 
+              className="relative aspect-square border-4 border-black/40 shadow-2xl overflow-hidden bg-black flex items-center justify-center transition-transform duration-500 will-change-transform"
               style={{
-                // Subtle random rotations for that hand-placed comic panel feel
-                transform: `rotate(${Math.random() * 8 - 4}deg)`
+                transform: `rotate(${monster.rotation}deg)`
               }}
             >
               {/* Halftone pattern overlay on items */}

@@ -9,7 +9,9 @@ export const CombatView = ({
 }) => {
   if (!enemy) return null;
 
-  const possibleDrops = selectedMap?.lootTable ? selectedMap.lootTable.slice(0, 10).map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
+  const possibleDrops = React.useMemo(() => {
+    return selectedMap?.lootTable ? selectedMap.lootTable.slice(0, 10).map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
+  }, [selectedMap, LOOTS]);
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>

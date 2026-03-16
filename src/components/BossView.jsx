@@ -119,7 +119,7 @@ export const BossView = ({
                 </div>
               )}
 
-              <div className={`w-64 h-64 bg-slate-950 flex items-center justify-center border-[8px] border-black shadow-[15px_15px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : ''}`}>
+              <div className={`w-44 h-44 bg-slate-950 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : ''}`}>
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-60 z-20"></div>
                   <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo && player.avatarAnimated} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
                   
@@ -134,18 +134,15 @@ export const BossView = ({
               </div>
            </div>
 
-            <div className="w-full space-y-4 px-6 scale-110">
-                <div className="bg-red-600 text-white px-8 py-3 border-[5px] border-black transform rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-block relative">
-                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{BOSS.name}</h2>
-                    <div className="absolute -top-5 -right-3 bg-black text-white px-2 py-1 text-[8px] font-black border-2 border-white rotate-12 shadow-sm">THREAT: Ω</div>
+            <div className="w-full space-y-4 px-6">
+                <div className="bg-red-600 text-white px-6 py-2 border-[4px] border-black transform rotate-1 shadow-[6px_6px_0_rgba(0,0,0,1)] inline-block relative">
+                    <h2 className="text-lg font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{BOSS.name}</h2>
+                    <div className="absolute -top-4 -right-2 bg-black text-white px-1.5 py-0.5 text-[7px] font-black border-2 border-white rotate-12 shadow-sm">LVL {BOSS.level}</div>
                 </div>
                 
-                <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-red-800 via-red-500 to-red-400 transition-all duration-300 relative shadow-[0_0_15px_rgba(220,38,38,0.8)]" style={{ width: `100%` }}>
+                <div className="w-full h-5 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[6px_6px_0_rgba(0,0,0,1)] overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-800 via-red-500 to-red-400 transition-all duration-300 relative shadow-[0_0_10px_rgba(220,38,38,0.8)]" style={{ width: `100%` }}>
                         <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <p className="text-[10px] font-black text-white uppercase tracking-[0.4em] drop-shadow-md italic">BOSS INTEGRITY: MAX</p>
                     </div>
                 </div>
 
@@ -159,7 +156,7 @@ export const BossView = ({
         {/* INTENSE RED VS DIVIDER */}
         <div className="hidden lg:flex flex-col items-center justify-center opacity-40 z-20">
             <div className="w-2 h-32 bg-gradient-to-b from-transparent via-red-600 to-transparent animate-pulse" />
-            <div className="text-6xl font-black italic text-red-600 -rotate-12 my-4 drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">VS</div>
+            <div className="text-4xl font-black italic text-red-600 -rotate-12 my-4 drop-shadow-[0_0_20px_rgba(220,38,38,0.8)]">VS</div>
             <div className="w-2 h-32 bg-gradient-to-t from-transparent via-red-600 to-transparent animate-pulse" />
         </div>
 
@@ -195,7 +192,7 @@ export const BossView = ({
                 </div>
               )}
 
-              <div className={`w-64 h-64 bg-slate-950 flex items-center justify-center border-[8px] border-black shadow-[15px_15px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
+              <div className={`w-44 h-44 bg-slate-950 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50"></div>
                   {player.avatar && (
                     <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover relative z-10" />
@@ -204,30 +201,30 @@ export const BossView = ({
               </div>
            </div>
 
-            <div className="w-full space-y-4 px-6 scale-110">
-                <div className="bg-cyan-600 text-white px-8 py-3 border-[5px] border-black transform -rotate-1 shadow-[8px_8px_0_rgba(0,0,0,1)] inline-auto relative float-right">
-                    <h2 className="text-xl font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{player.name}</h2>
-                    <div className="absolute -top-5 -right-3 bg-black text-cyan-400 px-2 py-1 text-[8px] font-black border-2 border-cyan-400 -rotate-12 shadow-sm">RANK: S</div>
+            <div className="w-full space-y-4 px-6">
+                <div className="bg-cyan-600 text-white px-6 py-2 border-[4px] border-black transform -rotate-1 shadow-[6px_6px_0_rgba(0,0,0,1)] inline-auto relative float-right">
+                    <h2 className="text-lg font-black uppercase tracking-tighter italic leading-none drop-shadow-md">{player.name}</h2>
+                    <div className="absolute -top-4 -right-2 bg-black text-cyan-400 px-1.5 py-0.5 text-[7px] font-black border-2 border-cyan-400 -rotate-12 shadow-sm">RANK: S</div>
                 </div>
                 
-                <div className="w-full h-8 bg-black border-[4px] border-white/20 p-1 relative shadow-[8px_8px_0_rgba(0,0,0,1)] overflow-hidden clear-both">
-                    <div className="h-full bg-gradient-to-r from-cyan-800 via-cyan-500 to-cyan-400 transition-all duration-300 relative shadow-[0_0_15px_rgba(6,182,212,0.8)]" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
+                <div className="w-full h-5 bg-black border-[3px] border-white/20 p-0.5 relative shadow-[6px_6px_0_rgba(0,0,0,1)] overflow-hidden clear-both">
+                    <div className="h-full bg-gradient-to-r from-cyan-800 via-cyan-500 to-cyan-400 transition-all duration-300 relative shadow-[0_0_10px_rgba(6,182,212,0.8)]" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
                         <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
                     </div>
                 </div>
 
                 <div className="flex gap-3 justify-center">
-                    <div className="bg-black/90 border-2 border-cyan-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
-                        <Swords size={12} className="text-cyan-400" />
-                        <span className="text-sm font-black text-white italic">{totalStats.str}</span>
+                    <div className="bg-black/90 border-2 border-cyan-500/50 px-2 py-0.5 rounded flex items-center gap-1 shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+                        <Swords size={10} className="text-cyan-400" />
+                        <span className="text-[11px] font-black text-white italic">{totalStats.str}</span>
                     </div>
-                    <div className="bg-black/90 border-2 border-emerald-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
-                        <Activity size={12} className="text-emerald-500" />
-                        <span className="text-sm font-black text-white italic">{totalStats.agi}</span>
+                    <div className="bg-black/90 border-2 border-emerald-500/50 px-2 py-0.5 rounded flex items-center gap-1 shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+                        <Activity size={10} className="text-emerald-500" />
+                        <span className="text-[11px] font-black text-white italic">{totalStats.agi}</span>
                     </div>
-                    <div className="bg-black/90 border-2 border-yellow-500/50 px-3 py-1 rounded flex items-center gap-2 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
-                        <Target size={12} className="text-yellow-500" />
-                        <span className="text-sm font-black text-white italic">{totalStats.dex}</span>
+                    <div className="bg-black/90 border-2 border-yellow-500/50 px-2 py-0.5 rounded flex items-center gap-1 shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+                        <Target size={10} className="text-yellow-500" />
+                        <span className="text-[11px] font-black text-white italic">{totalStats.dex}</span>
                     </div>
                 </div>
             </div>
@@ -255,16 +252,16 @@ export const BossView = ({
           <button 
             onClick={() => handleAttack(true)} 
             disabled={isStunned || isMissed} 
-            className={`flex-1 py-6 rounded-2xl font-black text-4xl shadow-[10px_10px_0_rgba(0,0,0,1)] border-[5px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} relative overflow-hidden group`}
+            className={`flex-1 py-4 rounded-xl font-black text-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} relative overflow-hidden group`}
           >
-            <span className="relative z-10">OVERLOAD</span>
-            <span className="text-[10px] opacity-70 tracking-[0.5em] uppercase relative z-10 font-black">Core Strike Phase</span>
+            <span className="relative z-10 text-xl">OVERLOAD</span>
+            <span className="text-[8px] opacity-70 tracking-[0.2em] uppercase relative z-10 font-black">Core Strike Phase</span>
             <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
           </button>
           
           <button 
             onClick={() => { setView('menu'); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} 
-            className={`px-12 py-6 rounded-2xl font-black uppercase tracking-widest border-[5px] border-black transition-all shadow-[10px_10px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
+            className={`px-8 py-4 rounded-xl font-black uppercase tracking-widest border-[4px] border-black transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
           >
             RETREAT
           </button>

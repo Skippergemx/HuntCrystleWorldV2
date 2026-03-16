@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
@@ -68,16 +68,19 @@ import { LeaderboardView } from './components/LeaderboardView';
 import { InventoryView } from './components/InventoryView';
 import { DatabaseView } from './components/DatabaseView';
 import { MapView } from './components/MapView';
+import { AdminPanelView } from './components/AdminPanelView';
+import { DragonsGroundView } from './components/DragonsGroundView';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
 import { AnimatedBackground } from './components/AnimatedBackground';
 
 const BOSS = {
   name: "The Core Guardian",
+  level: 500,
   hp: 10000000,
-  str: 150,
-  agi: 70,
-  dex: 85,
+  str: 1000,
+  agi: 800,
+  dex: 700,
   critChance: 0.25,
   recipeDropChance: 0.15,
   taunts: ["I am the final obstacle!", "Your journey ends here.", "Kneel before the Core!"]
@@ -145,6 +148,14 @@ const App = () => {
   const buffRef = useRef(0);
   const processingRef = useRef(false);
   const bgmRef = useRef(new Audio());
+
+  // URL routing for Admin
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true' || window.location.pathname === '/admin') {
+      setView('admin');
+    }
+  }, []);
 
   const playSFX = (soundPath) => {
     if (!isSfxOn) return;
@@ -334,35 +345,27 @@ const App = () => {
     }
   };
 
+  // Consolidated Timer Effect
   useEffect(() => {
     const interval = setInterval(() => {
-      setStunTimeLeft(prev => Math.max(0, prev - 0.1));
-      setMissTimeLeft(prev => Math.max(0, prev - 0.1));
+      // Use functional updates to batch state changes
+      setStunTimeLeft(prev => Math.max(0, prev - 0.2));
+      setMissTimeLeft(prev => Math.max(0, prev - 0.2));
       
       const p = playerRef.current;
       if (p) {
         const now = Date.now();
         
-        // Auto Scroll Timer
-        if (p.autoUntil && p.autoUntil > now) {
-          setAutoTimeLeft(Math.ceil((p.autoUntil - now) / 1000));
-        } else {
-          setAutoTimeLeft(0);
-        }
+        // Update multiple timers in one go if possible, but these are separate states
+        // Consider merging these into a single state object if re-renders are still high
+        
+        const newAutoTime = p.autoUntil && p.autoUntil > now ? Math.ceil((p.autoUntil - now) / 1000) : 0;
+        const newBuffTime = p.buffUntil && p.buffUntil > now ? Math.ceil((p.buffUntil - now) / 1000) : 0;
+        const newPenaltyTime = p.penaltyUntil && p.penaltyUntil > now ? Math.ceil((p.penaltyUntil - now) / 1000) : 0;
 
-        // Buff Timer
-        if (p.buffUntil && p.buffUntil > now) {
-          setBuffTimeLeft(Math.ceil((p.buffUntil - now) / 1000));
-        } else {
-          setBuffTimeLeft(0);
-        }
-
-        // Penalty Timer
-        if (p.penaltyUntil && p.penaltyUntil > now) {
-          setPenaltyRemaining(Math.ceil((p.penaltyUntil - now) / 1000));
-        } else {
-          setPenaltyRemaining(0);
-        }
+        if (newAutoTime !== autoTimeLeft) setAutoTimeLeft(newAutoTime);
+        if (newBuffTime !== buffTimeLeft) setBuffTimeLeft(newBuffTime);
+        if (newPenaltyTime !== penaltyRemaining) setPenaltyRemaining(newPenaltyTime);
 
         // Auto-Use Scroll Logic
         if (autoUseScroll && (!p.autoUntil || p.autoUntil <= now) && (view === 'dungeon' || view === 'boss')) {
@@ -376,9 +379,9 @@ const App = () => {
           }
         }
       }
-    }, 100);
+    }, 200);
     return () => clearInterval(interval);
-  }, [view, autoUseScroll]);
+  }, [view, autoUseScroll, autoTimeLeft, buffTimeLeft, penaltyRemaining]);
 
   useEffect(() => {
     let autoLoop;
@@ -439,7 +442,8 @@ const App = () => {
           inventory: [],
           totalBossDamage: 0,
           penaltyUntil: 0,
-          autoMode: null
+          autoMode: null,
+          gemx: { level: 1, crystalsFed: 0 }
         };
         await setDoc(docRef, newPlayer);
         setPlayer(newPlayer);
@@ -475,19 +479,35 @@ const App = () => {
     setLoading(false);
   };
 
+  // Throttled sync mechanism
+  const syncTimeoutRef = useRef(null);
+  const pendingUpdatesRef = useRef({});
+
   const syncPlayer = async (updates) => {
     if (!user) return;
-    try {
-      const identifier = user.email || user.uid;
-      const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
-      setPlayer(prev => {
-        const next = { ...prev, ...updates };
-        setDoc(docRef, next, { merge: true }).catch(console.error);
-        return next;
-      });
-    } catch (e) {
-      setPlayer(prev => ({ ...prev, ...updates }));
-    }
+    
+    // Immediate local update for UI responsiveness
+    setPlayer(prev => {
+      const next = { ...prev, ...updates };
+      
+      // Batch updates for remote sync
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+      
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      
+      syncTimeoutRef.current = setTimeout(async () => {
+        try {
+          const identifier = user.email || user.uid;
+          const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
+          await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
+          pendingUpdatesRef.current = {};
+        } catch (e) {
+          console.error("Sync error:", e);
+        }
+      }, 2000); // Wait 2s of silence before syncing to Firebase
+
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -504,9 +524,10 @@ const App = () => {
     }
   }, [user]);
 
-  const calculateTotalStats = () => {
-    return calculateStats(playerRef.current || player, TAVERN_MATES, buffRef.current > 0);
-  };
+  // Memoize stats to avoid recalculating on every render
+  const totalStats = useMemo(() => {
+    return calculateStats(player, TAVERN_MATES, buffTimeLeft > 0);
+  }, [player, buffTimeLeft]);
 
   const addLog = (msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]);
 
@@ -536,7 +557,7 @@ const App = () => {
     setIsActionProcessing(true);
 
     // COMPANION BUFF CHANCE
-    let stats = calculateTotalStats();
+    let stats = totalStats;
     if (p.hiredMate && buffTimeLeft <= 0 && Math.random() < 0.5) {
       const mate = TAVERN_MATES.find(m => m.id === p.hiredMate);
       syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
@@ -598,7 +619,7 @@ const App = () => {
   const enemyTurn = (target, isBoss = false) => {
     if (showDefeatedWindow) return;
     const p = playerRef.current || player;
-    const stats = calculateTotalStats();
+    const stats = totalStats;
 
     // Trigger Strike Animation (after a slight delay to let player finish)
     setTimeout(() => {
@@ -758,15 +779,59 @@ const App = () => {
     else syncPlayer({ tokens: player.tokens - item.cost, equipped: { ...player.equipped, [item.type]: item } });
   };
 
-  const forgeCrystle = (recipe) => {
-    if (player.tokens < recipe.cost) return addLog("Need more tokens!");
-    // Ensure we add a valid object to inventory, not just the ID
-    const newInventoryItem = { ...recipe, id: recipe.id || `recipe_${Date.now()}`, icon: recipe.icon || '📜', sellValue: recipe.sellValue || 50 };
-    syncPlayer({ 
-      tokens: player.tokens - recipe.cost, 
-      equipped: { ...player.equipped, [recipe.type]: recipe }, 
-      inventory: [...(player.inventory || []).filter(Boolean), newInventoryItem] 
+  const forgeCrystle = async (recipe) => {
+    const p = playerRef.current || player;
+    const stats = totalStats;
+    
+    if (p.tokens < recipe.cost) return addLog("Need more tokens!");
+    
+    // Check materials again for safety
+    const materials = recipe.materials || [];
+    const hasMaterials = materials.every(mat => {
+      const countInInv = p.inventory?.filter(i => i.id === mat.id).length || 0;
+      return countInInv >= mat.count;
     });
+
+    if (!hasMaterials) return addLog("Missing required materials!");
+
+    // Success Rate: 50% base + Dex/2
+    const successRate = Math.min(95, 50 + Math.floor(stats.dex / 2));
+    const roll = Math.random() * 100;
+
+    // Consume Materials regardless of success (Hardcore Mode)
+    let newInventory = [...(p.inventory || [])];
+    materials.forEach(mat => {
+      for (let i = 0; i < mat.count; i++) {
+        const index = newInventory.findIndex(item => item.id === mat.id);
+        if (index !== -1) newInventory.splice(index, 1);
+      }
+    });
+
+    if (roll <= successRate) {
+      // Success!
+      const newEquipment = { 
+        ...recipe, 
+        id: recipe.id, 
+        icon: recipe.img || '📜', 
+        sellValue: Math.floor(recipe.cost / 2) 
+      };
+      
+      await syncPlayer({ 
+        tokens: p.tokens - recipe.cost, 
+        equipped: { ...p.equipped, [recipe.type]: newEquipment }, 
+        inventory: [...newInventory, newEquipment] 
+      });
+      
+      addLog(`✨ SUCCESS! Forged ${recipe.name}!`);
+      playSFX(SOUNDS.obtainLoot);
+    } else {
+      // Failure
+      await syncPlayer({ 
+        tokens: p.tokens - recipe.cost,
+        inventory: newInventory
+      });
+      addLog(`💥 FORGE FAILED! Materials lost in the reaction...`);
+    }
   };
 
   if (loading) return <LoadingScreen />;
@@ -775,7 +840,6 @@ const App = () => {
     return <LoginView handleGoogleLogin={handleGoogleLogin} />;
   }
 
-  const totalStats = calculateTotalStats();
   const isPenalized = penaltyRemaining > 0;
   const isStunned = stunTimeLeft > 0;
   const isMissed = missTimeLeft > 0;
@@ -1175,6 +1239,7 @@ const App = () => {
               player={player} 
               forgeCrystle={forgeCrystle} 
               setView={setView} 
+              LOOTS={LOOTS}
             />
           )}
 
@@ -1189,15 +1254,15 @@ const App = () => {
           {view === 'inventory' && (
             <InventoryView 
               player={player} 
-              setView={setView} 
+              setView={setView}
               sellItem={sellItem}
             />
           )}
 
           {view === 'database' && (
-            <DatabaseView 
-              depth={depth} 
-              setView={setView} 
+            <DatabaseView
+              depth={depth}
+              setView={setView}
               MONSTERS={MONSTERS}
               LOOTS={LOOTS}
               EQUIPMENT={EQUIPMENT}
@@ -1216,6 +1281,25 @@ const App = () => {
               setSelectedMap={setSelectedMap}
               isPenalized={isPenalized}
               penaltyRemaining={penaltyRemaining}
+            />
+          )}
+
+          {view === 'admin' && (
+            <AdminPanelView 
+              db={db} 
+              appId={appId} 
+              userEmail={user?.email} 
+              setView={setView} 
+            />
+          )}
+          
+          {view === 'dragons_ground' && (
+            <DragonsGroundView 
+              player={player} 
+              syncPlayer={syncPlayer} 
+              setView={setView} 
+              LOOTS={LOOTS}
+              addLog={addLog}
             />
           )}
         </div>

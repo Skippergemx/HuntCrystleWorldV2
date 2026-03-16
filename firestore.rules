@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Genesis Admin Check
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'skippergemx@gmail.com';
+    }
+    
+    // 👑 ULTIMATE ADMIN OVERRIDE
+    // Grants absolute read/write access to the entire database for maintenance
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // STANDARD PROTOCOLS: User-level access rules
+    
+    // Personal Profile Security
+    match /artifacts/crystle-hunter-world-v1/users/{userEmail}/profile/data {
+      allow read, write: if request.auth != null && request.auth.token.email == userEmail;
+    }
+    
+    // Leaderboard Security
+    match /artifacts/crystle-hunter-world-v1/public/data/leaderboard/{userEmail} {
+      allow read: if true; 
+      allow write: if request.auth != null && request.auth.token.email == userEmail;
+    }
+  }
+}
