@@ -1386,7 +1386,7 @@ const App = () => {
           <StatTile icon={<Target size={14} />} label="DEX" value={totalStats.dex} color="text-yellow-400" desc="Accuracy" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'DEX'} />
         </div>
 
-        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl min-h-[380px] flex flex-col overflow-hidden backdrop-blur-sm relative">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl min-h-[450px] md:min-h-[550px] flex flex-col overflow-hidden backdrop-blur-sm relative">
 
           {view === 'menu' && (
             <MenuView 

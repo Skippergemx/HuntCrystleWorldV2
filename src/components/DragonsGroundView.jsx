@@ -296,11 +296,11 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
       {/* Main Functional Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* Top Section: Management Panels (Compact) */}
-        <div className="flex-none py-1.5 px-3 flex gap-2 bg-emerald-950/20 border-b border-white/5 z-20 relative">
-            {/* HUD Messages (Moved to top-center of panels) */}
+        {/* Top Section: Management Headers (Streamlined) */}
+        <div className="flex-none p-2 md:p-3 grid grid-cols-2 gap-2 md:gap-4 bg-emerald-950/40 border-b-2 border-black z-20 relative">
+            {/* HUD Messages */}
             {message && (
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
                     <div className={`px-4 py-1.5 rounded-lg border-2 font-black uppercase italic text-[10px] shadow-xl backdrop-blur-md ${
                         message.type === 'success' ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' : 
                         message.type === 'error' ? 'bg-red-950/90 border-red-500 text-red-100' :
@@ -310,108 +310,65 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
                     </div>
                 </div>
             )}
-            {/* Gemx Panel */}
-            <div className="flex-1 bg-black/40 backdrop-blur-md border border-cyan-500/30 rounded-xl p-2 flex flex-col items-center">
-                <div className="relative group cursor-pointer scale-75 md:scale-90" onClick={feedGem}>
-                    <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900">
+
+            {/* Gemx Compact HUD */}
+            <div className="bg-black/40 border-2 border-cyan-500/30 rounded-xl p-2 flex items-center gap-3">
+                <div className="relative group cursor-pointer shrink-0" onClick={feedGem}>
+                    <div className="absolute inset-0 bg-cyan-400 blur-xl opacity-30 animate-pulse"></div>
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg border-2 border-black overflow-hidden relative shadow-lg bg-slate-900">
                         <img 
                           src={`/assets/dragonsground/gemx/${player.gemxAvatar || 'gemx (1).gif'}`} 
                           className="w-full h-full object-cover"
                           alt="Gemx"
                         />
                     </div>
-                    {/* Energy Progress */}
-                    <div className="absolute -bottom-2 -right-2 bg-cyan-500 text-black text-[10px] font-black px-2 py-0.5 border-2 border-black rotate-3">
-                        LVL {gemx.level}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-end mb-1">
+                        <h3 className="text-[10px] font-black text-cyan-400 italic uppercase">Gemx Sntnl</h3>
+                        <span className="text-[8px] font-black text-white bg-cyan-600 px-1 rounded">LVL {gemx.level}</span>
+                    </div>
+                    <div className="h-1.5 bg-black rounded-full border border-cyan-500/20 overflow-hidden">
+                        <div className="h-full bg-cyan-400 transition-all duration-500" style={{ width: `${(gemx.crystalsFed / gemxNextLevelRequirement) * 100}%` }}></div>
+                    </div>
+                    <div className="flex gap-1 mt-1.5 overflow-x-auto py-0.5 no-scrollbar">
+                        {GEMX_AVATARS.map(avatar => (
+                            <button key={avatar} onClick={() => selectGemxAvatar(avatar)} className={`w-5 h-5 rounded border overflow-hidden shrink-0 ${player.gemxAvatar === avatar ? 'border-cyan-400' : 'border-black/50'}`}>
+                                <img src={`/assets/dragonsground/gemx/${avatar}`} className="w-full h-full object-cover" />
+                            </button>
+                        ))}
                     </div>
                 </div>
-
-                <div className="mt-2 w-full space-y-1">
-                    <div className="flex justify-between text-[7px] font-black text-cyan-400 uppercase tracking-widest">
-                        <span>Energy Sync</span>
-                        <span>{gemx.crystalsFed} / {gemxNextLevelRequirement}</span>
-                    </div>
-                    <div className="h-2 bg-black rounded-full border border-cyan-500/30 overflow-hidden p-0.5">
-                        <div 
-                          className="h-full bg-cyan-400 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
-                          style={{ width: `${(gemx.crystalsFed / gemxNextLevelRequirement) * 100}%` }}
-                        ></div>
-                    </div>
-                </div>
-
-                {/* Avatar Selector */}
-                <div className="flex gap-1 mt-2">
-                    {GEMX_AVATARS.map(avatar => (
-                        <button 
-                          key={avatar}
-                          onClick={() => selectGemxAvatar(avatar)}
-                          className={`w-6 h-6 rounded border-2 overflow-hidden transition-all ${player.gemxAvatar === avatar ? 'border-cyan-400 scale-110' : 'border-black/50 hover:border-white'}`}
-                        >
-                            <img src={`/assets/dragonsground/gemx/${avatar}`} className="w-full h-full object-cover" />
-                        </button>
-                    ))}
-                </div>
-                <h3 className="mt-2 text-xs font-black text-white italic uppercase tracking-tighter">GEMX SENTINEL</h3>
             </div>
 
-            {/* Dragon Panel */}
-            <div className="flex-1 bg-black/40 backdrop-blur-md border border-amber-500/30 rounded-xl p-2 flex flex-col items-center">
-                <div className="relative group cursor-pointer scale-75 md:scale-90" onClick={feedDragon}>
-                    <div className="absolute inset-0 bg-amber-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900">
+            {/* Dragon Compact HUD */}
+            <div className="bg-black/40 border-2 border-amber-500/30 rounded-xl p-2 flex items-center gap-3">
+                <div className="relative group cursor-pointer shrink-0" onClick={feedDragon}>
+                    <div className="absolute inset-0 bg-amber-400 blur-xl opacity-30 animate-pulse"></div>
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg border-2 border-black overflow-hidden relative shadow-lg bg-slate-900">
                         {player.dragonAnimationEnabled ? (
-                            <video 
-                              autoPlay loop muted playsInline
-                              className="w-full h-full object-cover"
-                              poster="/assets/dragonsground/dragons/DragonAvatar (1).jpg"
-                            >
+                            <video autoPlay loop muted playsInline className="w-full h-full object-cover" poster="/assets/dragonsground/dragons/DragonAvatar (1).jpg">
                                 <source src="/assets/dragonsground/dragons/DragonAvatar (1) video.mp4" type="video/mp4" />
                             </video>
                         ) : (
-                            <img 
-                              src="/assets/dragonsground/dragons/DragonAvatar (1).jpg" 
-                              className="w-full h-full object-cover"
-                              alt="Dragon"
-                            />
+                            <img src="/assets/dragonsground/dragons/DragonAvatar (1).jpg" className="w-full h-full object-cover" alt="Dragon" />
                         )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); toggleDragonAnimation(); }}
-                          className="absolute top-1 right-1 p-1 bg-black/60 rounded border border-white/20 text-white hover:bg-black transition-all"
-                        >
-                            {player.dragonAnimationEnabled ? <Pause size={10} /> : <Play size={10} />}
-                        </button>
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 bg-amber-500 text-black text-[10px] font-black px-2 py-0.5 border-2 border-black -rotate-3">
-                        LVL {dragonStats.level}
+                        <button onClick={(e) => { e.stopPropagation(); toggleDragonAnimation(); }} className="absolute bottom-0 right-0 p-0.5 bg-black/60 text-white"><Play size={6} /></button>
                     </div>
                 </div>
-
-                <div className="mt-2 w-full space-y-1">
-                    <div className="flex justify-between text-[7px] font-black text-amber-400 uppercase tracking-widest">
-                        <span>Growth Maturity</span>
-                        <span>{dragonStats.fruitsFed} / {dragonNextLevelRequirement}</span>
+                <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-end mb-1">
+                        <h3 className="text-[10px] font-black text-amber-400 italic uppercase">Great Drake</h3>
+                        <span className="text-[8px] font-black text-white bg-amber-600 px-1 rounded">LVL {dragonStats.level}</span>
                     </div>
-                    <div className="h-2 bg-black rounded-full border border-amber-500/30 overflow-hidden p-0.5">
-                        <div 
-                          className="h-full bg-amber-500 rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                          style={{ width: `${(dragonStats.fruitsFed / dragonNextLevelRequirement) * 100}%` }}
-                        ></div>
+                    <div className="h-1.5 bg-black rounded-full border border-amber-500/20 overflow-hidden">
+                        <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${(dragonStats.fruitsFed / dragonNextLevelRequirement) * 100}%` }}></div>
                     </div>
-                </div>
-
-                <div className="mt-2 flex gap-2 md:gap-4">
-                    <div className="text-center">
-                        <p className="text-[6px] md:text-[7px] font-black text-slate-500 uppercase">Stat Buff</p>
-                        <p className="text-[10px] md:text-xs font-black text-emerald-400">+{dragonStats.level * 5} ALL</p>
-                    </div>
-                    <div className="h-4 md:h-6 w-[2px] bg-white/10 self-center"></div>
-                    <div className="text-center">
-                        <p className="text-[6px] md:text-[7px] font-black text-slate-500 uppercase">Animation</p>
-                        <p className="text-[6px] md:text-[7px] font-black text-white">{player.dragonAnimationEnabled ? 'ENABLED' : 'DISABLED'}</p>
+                    <div className="mt-1 flex items-center justify-between">
+                        <p className="text-[8px] font-black text-emerald-400">+{dragonStats.level * 5} ALL STATS</p>
+                        <ShoppingBag size={10} className="text-amber-500 opacity-50" />
                     </div>
                 </div>
-                <h3 className="mt-1 md:mt-2 text-[10px] md:text-xs font-black text-white italic uppercase tracking-tighter">GREAT DRAKE</h3>
             </div>
         </div>
 
