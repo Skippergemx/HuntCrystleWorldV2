@@ -140,6 +140,77 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     }
   };
 
+  const clearChatMessages = async () => {
+    if (!window.confirm("CRITICAL: Purge all Arena Comms? This will permanently delete the global chat history.")) return;
+    
+    setLoading(true);
+    setMessage(null);
+    try {
+      const chatSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'pvp_chat'));
+      const batch = writeBatch(db);
+      
+      chatSnap.forEach((d) => {
+        batch.delete(d.ref);
+      });
+
+      await batch.commit();
+      setMessage({ type: 'success', text: `Comms Purge Complete: ${chatSnap.size} signals neutralized.` });
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Purge failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const syncAllPlayersToLeaderboard = async () => {
+    if (!window.confirm("COMMENCE GLOBAL SYNC: This will scan all user profiles and update the Hall of Fame with their latest stats. Proceed?")) return;
+    
+    setLoading(true);
+    setMessage(null);
+    try {
+      console.log("Terminal: Initiating Cross-Sector Synchronization...");
+      const profilesSnap = await getDocs(query(collectionGroup(db, 'profile')));
+      const batch = writeBatch(db);
+      let count = 0;
+      
+      profilesSnap.forEach(d => {
+        if (d.id === 'data' && d.ref.parent.parent) {
+          const userId = d.ref.parent.parent.id;
+          const data = d.data();
+          
+          const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', userId);
+          batch.set(lbRef, {
+            uid: userId,
+            name: data.name || 'Anonymous Hunter',
+            email: data.email || '',
+            level: data.level || 1,
+            score: data.totalBossDamage || 0,
+            maxDepth: data.maxDepth || 1,
+            heroAvatar: data.avatar || 1
+          }, { merge: true });
+          count++;
+          
+          if (count >= 450) {
+            console.warn("Sync: Batch limit approaching.");
+          }
+        }
+      });
+
+      if (count > 0) {
+        await batch.commit();
+        setMessage({ type: 'success', text: `Sync Complete: ${count} Hunter signals broadcast to Hall of Fame.` });
+      } else {
+        setMessage({ type: 'warning', text: 'Sync Idle: No profile data found in the grid.' });
+      }
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Synchronization failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4 bg-slate-950">
@@ -270,6 +341,46 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                 Initiate Global Reset
               </button>
             </div>
+
+            <div className="p-6 bg-cyan-950/20 border-2 border-cyan-600/30 rounded-lg">
+              <h3 className="text-lg font-black text-cyan-400 uppercase italic flex items-center gap-2 mb-2">
+                <Users size={20} />
+                Global Ranking Sync
+              </h3>
+              <p className="text-sm text-slate-400 mb-6 font-medium">
+                Deep-probe all existing player profiles and force-synchronize their levels, damage, and floor progress to the Hall of Fame. 
+                Use this to populate rankings after structural updates.
+              </p>
+              
+              <button
+                onClick={syncAllPlayersToLeaderboard}
+                disabled={loading}
+                className="w-full md:w-auto px-10 py-4 bg-cyan-600 text-white font-black uppercase italic rounded shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-cyan-500 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {loading ? <RefreshCw className="animate-spin" /> : <Users />}
+                Synchronize All Hunters
+              </button>
+            </div>
+
+            <div className="p-6 bg-slate-900/40 border-2 border-slate-700/50 rounded-lg">
+              <h3 className="text-lg font-black text-cyan-500 uppercase italic flex items-center gap-2 mb-2">
+                <Trash2 size={20} />
+                Arena Comms Purge
+              </h3>
+              <p className="text-sm text-slate-400 mb-6 font-medium">
+                This protocol will permanently delete all signals (messages) in the PVP Arena chat database. 
+                Recommended after major updates or every 24 hours to optimize grid performance.
+              </p>
+              
+              <button
+                onClick={clearChatMessages}
+                disabled={loading}
+                className="w-full md:w-auto px-10 py-4 bg-slate-800 text-cyan-400 font-black uppercase italic rounded border-2 border-cyan-900/50 shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-cyan-600 hover:text-white active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {loading ? <RefreshCw className="animate-spin" /> : <Trash2 />}
+                Purge All Messages
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -296,6 +407,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Level</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GX Coins</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Boss Damage</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Floor</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Inventory</th>
                 </tr>
               </thead>
@@ -340,6 +452,9 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                           </td>
                           <td className="py-4 px-4">
                             <span className="text-sm font-black text-red-500 italic">{(player.totalBossDamage || 0).toLocaleString()}</span>
+                          </td>
+                          <td className="py-4 px-4">
+                            <span className="text-sm font-black text-blue-400 italic">FLR {player.maxDepth || 1}</span>
                           </td>
                           <td className="py-4 px-4">
                             <span className="text-[10px] font-black text-slate-400">{(player.inventory || []).length} Items</span>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, query, onSnapshot, updateDoc, increment, deleteDoc } from 'firebase/firestore';
 import {
   Sword, Shield, Coins, Star, Trophy, ShoppingBag,
   Map as MapIcon, ChevronRight, Heart, Zap, Target,
@@ -66,11 +66,14 @@ import { IdentityView } from './components/IdentityView';
 import { ShopView } from './components/ShopView';
 import { ForgeView } from './components/ForgeView';
 import { LeaderboardView } from './components/LeaderboardView';
+import { GearView } from './components/GearView';
+import { MarketplaceView } from './components/MarketplaceView';
 import { InventoryView } from './components/InventoryView';
 import { DatabaseView } from './components/DatabaseView';
 import { MapView } from './components/MapView';
 import { AdminPanelView } from './components/AdminPanelView';
 import { DragonsGroundView } from './components/DragonsGroundView';
+import { PvpRoomView } from './components/PvpRoomView';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
 import { AnimatedBackground } from './components/AnimatedBackground';
@@ -108,6 +111,7 @@ const App = () => {
   const [user, setUser] = useState(null);
   const [player, setPlayer] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [marketplace, setMarketplace] = useState([]);
   const [logs, setLogs] = useState(["Synchronizing with hunt.crystle.world..."]);
   const [loading, setLoading] = useState(true);
   
@@ -150,6 +154,67 @@ const App = () => {
   const processingRef = useRef(false);
   const bgmRef = useRef(new Audio());
 
+  // Throttled sync mechanism
+  const syncTimeoutRef = useRef(null);
+  const pendingUpdatesRef = useRef({});
+
+  // --- INFRASTRUCTURE FUNCTIONS ---
+  const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
+
+  const playSFX = (soundPath) => {
+    if (!isSfxOn) return;
+    const audio = new Audio(soundPath);
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  };
+
+  const syncPlayer = useCallback(async (updates) => {
+    if (!user) return;
+    
+    // Immediate local update for UI responsiveness
+    setPlayer(prev => {
+      const next = { ...prev, ...updates };
+      
+      // Batch updates for remote sync
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+      
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      
+      syncTimeoutRef.current = setTimeout(async () => {
+        try {
+          const identifier = user.email || user.uid;
+          const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
+          await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
+          pendingUpdatesRef.current = {};
+        } catch (e) {
+          console.error("Sync error:", e);
+        }
+      }, 2000); // Wait 2s of silence before syncing to Firebase
+
+      return next;
+    });
+  }, [user, db, appId]);
+
+  const updateLeaderboard = useCallback(async (updates = {}) => {
+    if (!user || !player) return;
+    const identifier = user.email || user.uid;
+    const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', identifier);
+    
+    // Merge updates with current player data for a complete leaderboard entry
+    const entry = {
+      uid: identifier,
+      name: player.name,
+      email: user.email || '',
+      level: player.level,
+      score: player.totalBossDamage || 0,
+      maxDepth: player.maxDepth || 1,
+      heroAvatar: player.avatar || 1,
+      ...updates
+    };
+    
+    setDoc(lbRef, entry, { merge: true }).catch(err => console.error("Leaderboard Sync Error:", err));
+  }, [user, player, db, appId]);
+
   // URL routing for Admin
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -158,12 +223,6 @@ const App = () => {
     }
   }, []);
 
-  const playSFX = (soundPath) => {
-    if (!isSfxOn) return;
-    const audio = new Audio(soundPath);
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
-  };
 
   const updateBGM = useCallback(() => {
     if (!isMusicOn) {
@@ -214,7 +273,7 @@ const App = () => {
     processingRef.current = isActionProcessing;
   }, [player, stunTimeLeft, missTimeLeft, killsInFloor, depth, buffTimeLeft, isActionProcessing]);
 
-  const triggerHitEffects = (dmg, isCrit, side = 'monster') => {
+  const triggerHitEffects = useCallback((dmg, isCrit, side = 'monster') => {
     const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!", "CRUNCH!", "KRAK!"];
     const word = impactWords[Math.floor(Math.random() * impactWords.length)];
     const id = Date.now();
@@ -236,7 +295,7 @@ const App = () => {
       const ouchWords = ["Ugh!", "Ack!", "Too strong!", "Healing needed!", "Pain...", "Vision blurring!", "Armor cracked!"];
       setPlayerTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
     }
-  };
+  }, [triggerFlinch, triggerHurt]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -308,31 +367,114 @@ const App = () => {
     addLog(`⚡ Auto Scroll engaged (+${durationMin} min)`);
   };
 
-  const sellItem = async (itemId, amount = 1) => {
-    const p = playerRef.current || player;
-    const itemsOfId = p.inventory.filter(i => i.id === itemId);
-    if (itemsOfId.length < amount) return;
+  const sellItem = useCallback((itemId, amount = 1) => {
+    setPlayer(prev => {
+      if (!prev) return prev;
+      const newInventory = [...(prev.inventory || [])];
+      const remainingItems = [];
+      let tokensGained = 0;
+      let foundCount = 0;
+      let itemName = "";
+      
+      newInventory.forEach(item => {
+        if (item.id === itemId && foundCount < amount) {
+          const value = item.sellValue !== undefined ? item.sellValue : Math.floor((item.cost || 0) / 2);
+          tokensGained += value;
+          foundCount++;
+          itemName = item.name;
+        } else {
+          remainingItems.push(item);
+        }
+      });
 
-    const itemsToSell = itemsOfId.slice(0, amount);
-    const totalValue = itemsToSell.reduce((sum, i) => sum + (i.sellValue || 0), 0);
-    
-    // Create new inventory by filtering out the sold items
-    // Since they might have same ID but different objects, we filter carefully
-    let remainingAmount = amount;
-    const newInventory = p.inventory.filter(item => {
-      if (item.id === itemId && remainingAmount > 0) {
-        remainingAmount--;
-        return false;
+      if (foundCount > 0) {
+        syncPlayer({ tokens: prev.tokens + tokensGained, inventory: remainingItems });
+        addLog(`💰 Sold ${foundCount}x ${itemName} for ${tokensGained} GX`);
+        playSFX(SOUNDS.obtainLoot); 
       }
-      return true;
+      return { ...prev, tokens: prev.tokens + tokensGained, inventory: remainingItems };
     });
+  }, [syncPlayer, addLog]);
 
-    await syncPlayer({
-      tokens: p.tokens + totalValue,
-      inventory: newInventory
-    });
-    addLog(`💰 Sold ${amount}x ${itemsToSell[0].name} for ${totalValue} GX`);
-  };
+  const purchaseMarketItem = useCallback(async (listing) => {
+    if (!player || player.tokens < listing.price) return addLog("Out of GX!");
+    
+    try {
+      // 1. Delete listing
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id));
+      
+      // 2. Buyer gets item and loses tokens
+      const newInventory = [...(player.inventory || []), listing.item];
+      await syncPlayer({ 
+        tokens: player.tokens - listing.price, 
+        inventory: newInventory 
+      });
+
+      // 3. Queue payout for Seller (minus 5% tax) in a public payouts collection.
+      //    The buyer cannot write to the seller's private profile due to Firestore rules,
+      //    so we use a "pending payouts" pattern — the seller claims the GX on their next login.
+      const payout = Math.floor(listing.price * 0.95);
+      const payoutRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'payouts'));
+      await setDoc(payoutRef, {
+        recipientEmail: listing.sellerEmail,
+        amount: payout,
+        itemName: listing.item.name,
+        buyerName: player.name,
+        createdAt: Date.now()
+      });
+
+      addLog(`\uD83E\uDD1D Market Deal: Acquired ${listing.item.name} for ${listing.price} GX.`);
+      playSFX(SOUNDS.obtainLoot);
+    } catch (e) {
+      console.error(e);
+      addLog("Transaction failed: listing may have been acquired.");
+    }
+  }, [player, syncPlayer, addLog, db, appId]);
+
+  const listMarketItem = useCallback(async (item, price) => {
+    if (!user || !player) return;
+    
+    try {
+      // Remove from local inventory
+      const index = player.inventory.findIndex(i => i.id === item.id);
+      const newInventory = [...player.inventory];
+      newInventory.splice(index, 1);
+      
+      await syncPlayer({ inventory: newInventory });
+
+      // Post to marketplace
+      const listRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      await setDoc(listRef, {
+        sellerUid: user.uid,
+        sellerEmail: user.email || user.uid,
+        sellerName: player.name,
+        item: item,
+        price: price,
+        createdAt: Date.now()
+      });
+
+      addLog(`📡 Broadcast: ${item.name} listed for ${price} GX.`);
+    } catch (e) {
+      console.error(e);
+      addLog("Broadcasting failed.");
+    }
+  }, [user, player, syncPlayer, addLog, db, appId]);
+
+  const cancelMarketListing = useCallback(async (listingId) => {
+    if (!player) return;
+    try {
+      const listing = marketplace.find(l => l.id === listingId);
+      if (!listing) return;
+
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listingId));
+      
+      // Return item to inventory
+      await syncPlayer({ inventory: [...(player.inventory || []), listing.item] });
+      addLog(`🚫 Signal Terminated: ${listing.item.name} returned to storage.`);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [player, marketplace, syncPlayer, addLog, db, appId]);
 
   const handleLogout = async () => {
     try {
@@ -368,6 +510,19 @@ const App = () => {
         if (newBuffTime !== buffTimeLeft) setBuffTimeLeft(newBuffTime);
         if (newPenaltyTime !== penaltyRemaining) setPenaltyRemaining(newPenaltyTime);
 
+        // COMBAT HEARTBEAT / SAFETY RESET
+        // If action processing is stuck for more than 4 seconds, force release it
+        if (processingRef.current) {
+          if (!window._combatTimer) window._combatTimer = now;
+          if (now - window._combatTimer > 4000) {
+             setIsActionProcessing(false);
+             window._combatTimer = null;
+             console.log("Combat heartbeat: Force released stuck action lock.");
+          }
+        } else {
+          window._combatTimer = null;
+        }
+
         // Auto-Use Scroll Logic
         if (autoUseScroll && (!p.autoUntil || p.autoUntil <= now) && (view === 'dungeon' || view === 'boss')) {
           const hasInInventory = p.inventory?.some(i => i && i.id === 'auto_scroll');
@@ -400,8 +555,10 @@ const App = () => {
     return () => clearInterval(autoLoop);
   }, [view, autoTimeLeft > 0, showDefeatedWindow, player?.autoMode]);
 
-  // Safety Guard: Cancel auto-scroll if player leaves current combat mode
+  // Safety Guard: Reset action lock and cancel auto-scroll if player leaves current combat mode
   useEffect(() => {
+    if (isActionProcessing) setIsActionProcessing(false);
+    
     if (player?.autoUntil > 0 && player?.autoMode !== view) {
       syncPlayer({ autoUntil: 0, autoMode: null });
     }
@@ -409,7 +566,7 @@ const App = () => {
     if (view === 'dungeon' && !showSuccessWindow) {
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
     }
-  }, [view, player?.autoUntil, player?.autoMode, showSuccessWindow]);
+  }, [view, showSuccessWindow]); // Removed player properties from deps to avoid lint issues
 
   const loadPlayerData = async (u) => {
     try {
@@ -423,6 +580,8 @@ const App = () => {
         if (!data.dragon) data.dragon = { level: 1, fruitsFed: 0 };
         if (!data.gemxAvatar) data.gemxAvatar = 'gemx (1).gif';
         if (data.dragonAnimationEnabled === undefined) data.dragonAnimationEnabled = true;
+        if (data.performanceMode === undefined) data.performanceMode = false;
+        if (data.maxDepth === undefined) data.maxDepth = 1;
 
         setPlayer(data);
       } else {
@@ -449,12 +608,14 @@ const App = () => {
           recipes: [],
           inventory: [],
           totalBossDamage: 0,
+          maxDepth: 1,
           penaltyUntil: 0,
           autoMode: null,
           gemx: { level: 1, crystalsFed: 0 },
           dragon: { level: 1, fruitsFed: 0 },
           gemxAvatar: 'gemx (1).gif',
-          dragonAnimationEnabled: true
+          dragonAnimationEnabled: true,
+          performanceMode: false
         };
         await setDoc(docRef, newPlayer);
         setPlayer(newPlayer);
@@ -488,42 +649,13 @@ const App = () => {
         gemx: { level: 1, crystalsFed: 0 },
         dragon: { level: 1, fruitsFed: 0 },
         gemxAvatar: 'gemx (1).gif',
-        dragonAnimationEnabled: true
+        dragonAnimationEnabled: true,
+        performanceMode: false
       })
     }
     setLoading(false);
   };
 
-  // Throttled sync mechanism
-  const syncTimeoutRef = useRef(null);
-  const pendingUpdatesRef = useRef({});
-
-  const syncPlayer = async (updates) => {
-    if (!user) return;
-    
-    // Immediate local update for UI responsiveness
-    setPlayer(prev => {
-      const next = { ...prev, ...updates };
-      
-      // Batch updates for remote sync
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
-      
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-      
-      syncTimeoutRef.current = setTimeout(async () => {
-        try {
-          const identifier = user.email || user.uid;
-          const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
-          await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
-          pendingUpdatesRef.current = {};
-        } catch (e) {
-          console.error("Sync error:", e);
-        }
-      }, 2000); // Wait 2s of silence before syncing to Firebase
-
-      return next;
-    });
-  };
 
   useEffect(() => {
     if (!user) return;
@@ -539,21 +671,62 @@ const App = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const q = collection(db, 'artifacts', appId, 'public', 'data', 'marketplace');
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setMarketplace(data);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.error(e);
+    }
+  }, [user]);
+
+  // Auto-claim pending GX payouts from marketplace sales
+  useEffect(() => {
+    if (!user || !player) return;
+    const identifier = user.email || user.uid;
+    const claimPayouts = async () => {
+      try {
+        const { getDocs, query: fsQuery, where } = await import('firebase/firestore');
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'payouts');
+        const snapshot = await getDocs(fsQuery(q, where('recipientEmail', '==', identifier)));
+        if (snapshot.empty) return;
+        let totalPayout = 0;
+        const deletePromises = [];
+        snapshot.forEach(d => {
+          totalPayout += d.data().amount || 0;
+          deletePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'payouts', d.id)));
+        });
+        await Promise.all(deletePromises);
+        if (totalPayout > 0) {
+          await syncPlayer({ tokens: (player.tokens || 0) + totalPayout });
+          addLog(`💸 Marketplace: +${totalPayout} GX from your sales!`);
+        }
+      } catch (e) {
+        console.error('Payout claim error:', e);
+      }
+    };
+    claimPayouts();
+  }, [user?.uid, player?.level]); // Runs on login and on level-up
+
   // Memoize stats to avoid recalculating on every render
   const totalStats = useMemo(() => {
     return calculateStats(player, TAVERN_MATES, buffTimeLeft > 0);
   }, [player, buffTimeLeft]);
 
-  const addLog = (msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]);
 
-  const handleHeal = () => {
+  const handleHeal = useCallback(() => {
     const p = playerRef.current || player;
     if ((p.potions || 0) <= 0) return addLog("Out of Potions!");
     const healAmt = Math.floor(p.maxHp * 0.5);
     playSFX(SOUNDS.useHeal);
     syncPlayer({ hp: Math.min(p.maxHp, p.hp + healAmt), potions: p.potions - 1 });
     addLog(`Healed ${healAmt} HP.`);
-  };
+  }, [player, addLog, syncPlayer]);
 
 
   const hireMate = (mate) => {
@@ -564,76 +737,19 @@ const App = () => {
 
 
 
-  const handleAttack = (isBoss = false) => {
-    const p = playerRef.current || player;
-    const e = enemyRef.current || enemy;
-    if (stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || isActionProcessing || (!isBoss && !e)) return;
 
-    setIsActionProcessing(true);
 
-    // COMPANION BUFF CHANCE
-    let stats = totalStats;
-    if (p.hiredMate && buffTimeLeft <= 0 && Math.random() < 0.5) {
-      const mate = TAVERN_MATES.find(m => m.id === p.hiredMate);
-      syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
-      addLog(`✨ ${mate.name} cast a buff on you!`);
-      // Apply immediate buff to current strike
-      if (mate.type === 'STR') stats.str *= 2;
-      if (mate.type === 'AGI') stats.agi *= 2;
-      if (mate.type === 'DEX') stats.dex *= 2;
+
+  const enemyTurn = useCallback((target, isBoss = false) => {
+    if (showDefeatedWindow) {
+      setIsActionProcessing(false); // Safety reset if defeated
+      return;
     }
-
-    const target = isBoss ? BOSS : e;
-
-    // Trigger Strike Animation
-    setStrikingSide('player');
-    playSFX(SOUNDS.playerAttack);
-    setTimeout(() => setStrikingSide(null), 300);
-
-    const hitChance = Math.min(98, (stats.dex / (stats.dex + target.agi * 0.4)) * 100);
-    if (Math.random() * 100 < hitChance) {
-      const isCrit = Math.random() < 0.15;
-      const dmgBase = stats.str + Math.floor(Math.random() * 10) - Math.floor(target.agi / 5);
-      const dmg = Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
-      
-      triggerHitEffects(dmg, isCrit, 'monster');
-      
-      // Player Battle Taunt (Aggressive)
-      const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
-      setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
-
-      addLog(`Struck ${target.name} for ${dmg} DMG.`);
-
-      // HIT DELAY (0.5s)
-      setTimeout(() => {
-        if (isBoss) {
-          processBossHit(dmg, isCrit);
-        } else {
-          const newHp = Math.max(0, target.hp - dmg);
-          if (newHp <= 0) {
-            setEnemy({ ...target, hp: 0 });
-            processKill();
-            setIsActionProcessing(false);
-          } else { 
-            setEnemy({ ...target, hp: newHp }); 
-            enemyTurn({ ...target, hp: newHp }, isBoss); 
-          }
-        }
-      }, 500);
-    } else {
-      addLog(`Missed strike on ${target.name}!`);
-      setMissTimeLeft(1.5);
-      // Miss Ouch/Taunt
-      setPlayerTaunt("Darn, missed!");
-      setCurrentTaunt("Ha! Too slow!");
-      enemyTurn(target, isBoss);
+    const p = playerRef.current || player;
+    if (!target || !p || p.hp <= 0) {
       setIsActionProcessing(false);
+      return;
     }
-  };
-
-  const enemyTurn = (target, isBoss = false) => {
-    if (showDefeatedWindow) return;
-    const p = playerRef.current || player;
     const stats = totalStats;
 
     // Trigger Strike Animation (after a slight delay to let player finish)
@@ -666,12 +782,13 @@ const App = () => {
         if (newHp <= 0) {
           setShowDefeatedWindow(true);
           setAutoUseScroll(false);
+          setIsActionProcessing(false); // Reset lock on defeat
           syncPlayer({ hp: p.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
           setTimeout(() => { setShowDefeatedWindow(false); setDepth(1); setView('menu'); }, DEFEAT_WINDOW_DURATION);
         } else {
           syncPlayer({ hp: newHp });
+          setIsActionProcessing(false); // Reset lock after hit processing
         }
-        setIsActionProcessing(false);
       }, 500);
     } else {
       addLog(`🛡️ Dodged ${target.name}'s strike!`);
@@ -682,15 +799,23 @@ const App = () => {
         setIsActionProcessing(false);
       }, 500);
     }
-  };
+  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, setDepth, setView]);
 
-  const processKill = () => {
+  const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
     const p = playerRef.current || player;
     addLog(`Victory! Found ${e.loot} GX.`);
     
     let nextXp = p.xp + e.xp, nextLvl = p.level, nextMaxHp = p.maxHp, nextAP = p.abilityPoints || 0;
-    while (nextXp >= nextLvl * XP_BASE) { nextXp -= nextLvl * XP_BASE; nextLvl++; nextMaxHp += 50; nextAP += AP_PER_LEVEL; addLog(`LVL UP! +5 AP.`); }
+    let didLevelUp = false;
+    while (nextXp >= nextLvl * XP_BASE) { 
+      nextXp -= nextLvl * XP_BASE; 
+      nextLvl++; 
+      nextMaxHp += 50; 
+      nextAP += AP_PER_LEVEL; 
+      addLog(`LVL UP! +5 AP.`); 
+      didLevelUp = true;
+    }
     
     const updates = { 
       tokens: p.tokens + e.loot, 
@@ -753,14 +878,26 @@ const App = () => {
        const nextDepth = depthRef.current + 1;
        setDepth(nextDepth);
        addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
+       
+       if (nextDepth > (p.maxDepth || 1)) {
+         updates.maxDepth = nextDepth;
+       }
+       
        spawnNewEnemy(nextDepth);
     } else {
        setKillsInFloor(newKills);
        spawnNewEnemy(depthRef.current);
     }
-  };
 
-  const processBossHit = async (dmg, isCrit) => {
+    if (didLevelUp || updates.maxDepth) {
+      updateLeaderboard({ 
+        level: nextLvl, 
+        maxDepth: updates.maxDepth || p.maxDepth || 1 
+      });
+    }
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, depth, setDepth]);
+
+  const processBossHit = useCallback(async (dmg, isCrit) => {
     const p = playerRef.current || player;
     const newTotal = (p.totalBossDamage || 0) + dmg;
     let nextRecipes = [...p.recipes];
@@ -769,14 +906,86 @@ const App = () => {
       if (!nextRecipes.includes(randomRecipe.id)) { nextRecipes.push(randomRecipe.id); addLog(`BOSS DROP: ${randomRecipe.name}!`); }
     }
     syncPlayer({ totalBossDamage: newTotal, recipes: nextRecipes });
-    try {
-      const identifier = user.email || user.uid;
-      const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', identifier);
-      await setDoc(lbRef, { uid: identifier, email: user.email || '', name: p.name, score: newTotal, level: player.level });
-    } catch (e) { }
+    
+    // Non-blocking leaderboard update
+    updateLeaderboard({ score: newTotal });
+    
     // Note: enemyTurn will handle setting isActionProcessing(false) after its own hit delay
     enemyTurn(BOSS, true);
-  };
+  }, [player, addLog, syncPlayer, user, db, appId, enemyTurn]);
+
+  const handleAttack = useCallback((isBoss = false) => {
+    const p = playerRef.current || player;
+    const e = enemyRef.current || enemy;
+    
+    // Safety check: Don't allow attack if dead or already processing
+    if (p.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || isActionProcessing || (!isBoss && !e)) {
+      if (isActionProcessing) setIsActionProcessing(false); // Recovery if somehow stuck
+      return;
+    }
+
+    setIsActionProcessing(true);
+
+    // COMPANION BUFF CHANCE
+    let stats = totalStats;
+    if (p.hiredMate && buffTimeLeft <= 0 && Math.random() < 0.5) {
+      const mate = TAVERN_MATES.find(m => m.id === p.hiredMate);
+      syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
+      addLog(`✨ ${mate.name} cast a buff on you!`);
+      // Apply immediate buff to current strike
+      if (mate.type === 'STR') stats.str *= 2;
+      if (mate.type === 'AGI') stats.agi *= 2;
+      if (mate.type === 'DEX') stats.dex *= 2;
+    }
+
+    const target = isBoss ? BOSS : e;
+
+    // Trigger Strike Animation
+    setStrikingSide('player');
+    playSFX(SOUNDS.playerAttack);
+    setTimeout(() => setStrikingSide(null), 300);
+
+    const hitChance = Math.min(98, (stats.dex / (stats.dex + target.agi * 0.4)) * 100);
+    if (Math.random() * 100 < hitChance) {
+      const isCrit = Math.random() < 0.15;
+      const dmgBase = stats.str + Math.floor(Math.random() * 10) - Math.floor(target.agi / 5);
+      const dmg = Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
+      
+      triggerHitEffects(dmg, isCrit, 'monster');
+      
+      // Player Battle Taunt (Aggressive)
+      const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
+      setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
+
+      addLog(`Struck ${target.name} for ${dmg} DMG.`);
+
+      // HIT DELAY (0.5s)
+      setTimeout(() => {
+        if (isBoss) {
+          processBossHit(dmg, isCrit);
+        } else {
+          const newHp = Math.max(0, target.hp - dmg);
+          if (newHp <= 0) {
+            setEnemy({ ...target, hp: 0 });
+            processKill();
+            setIsActionProcessing(false);
+          } else { 
+            setEnemy({ ...target, hp: newHp }); 
+            enemyTurn({ ...target, hp: newHp }, isBoss); 
+          }
+        }
+      }, 500);
+    } else {
+      addLog(`Missed strike on ${target.name}!`);
+      setMissTimeLeft(1.5);
+      // Miss Ouch/Taunt
+      setPlayerTaunt("Darn, missed!");
+      setCurrentTaunt("Ha! Too slow!");
+      enemyTurn(target, isBoss); 
+      // Removed immediate setIsActionProcessing(false) here. 
+      // enemyTurn will handle the reset after its animation delay.
+    }
+  }, [player, enemy, showDefeatedWindow, isActionProcessing, totalStats, buffTimeLeft, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy]);
 
   const allocateStat = (statName) => {
     if ((player.abilityPoints || 0) <= 0) return;
@@ -789,9 +998,46 @@ const App = () => {
     if (player.tokens < item.cost) return addLog("Out of GX!");
     if (player.level < (item.reqLvl || 1)) return addLog(`Requires Level ${item.reqLvl}!`);
     
-    if (item.id === 'hp_potion') syncPlayer({ tokens: player.tokens - item.cost, potions: (player.potions || 0) + 1 });
-    else if (item.id === 'auto_scroll') syncPlayer({ tokens: player.tokens - item.cost, autoScrolls: (player.autoScrolls || 0) + 1 });
-    else syncPlayer({ tokens: player.tokens - item.cost, equipped: { ...player.equipped, [item.type]: item } });
+    if (item.id === 'hp_potion') {
+      syncPlayer({ tokens: player.tokens - item.cost, potions: (player.potions || 0) + 1 });
+    } else if (item.id === 'auto_scroll') {
+      syncPlayer({ tokens: player.tokens - item.cost, autoScrolls: (player.autoScrolls || 0) + 1 });
+    } else {
+      // Equipment: Move old item to inventory
+      const oldItem = player.equipped?.[item.type];
+      const newInventory = oldItem ? [...(player.inventory || []), oldItem] : (player.inventory || []);
+      syncPlayer({ 
+        tokens: player.tokens - item.cost, 
+        equipped: { ...player.equipped, [item.type]: item },
+        inventory: newInventory
+      });
+      addLog(`Equipped ${item.name}! Old gear moved to Storage.`);
+    }
+  };
+
+  const equipItem = (item) => {
+    const oldItem = player.equipped?.[item.type];
+    
+    // Remove new item from inventory, add old item back
+    let newInventory = player.inventory.filter((_, i) => i !== player.inventory.findIndex(inv => inv.id === item.id));
+    if (oldItem) newInventory.push(oldItem);
+
+    syncPlayer({
+      equipped: { ...player.equipped, [item.type]: item },
+      inventory: newInventory
+    });
+    addLog(`Installed Tech: ${item.name}`);
+  };
+
+  const unequipItem = (slot) => {
+    const item = player.equipped?.[slot];
+    if (!item) return;
+
+    syncPlayer({
+      equipped: { ...player.equipped, [slot]: null },
+      inventory: [...(player.inventory || []), item]
+    });
+    addLog(`Uninstalled Tech: ${item.name}`);
   };
 
   const forgeCrystle = async (recipe) => {
@@ -863,7 +1109,7 @@ const App = () => {
 
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors relative`}>
-      <AnimatedBackground MONSTERS={MONSTERS} />
+      <AnimatedBackground MONSTERS={MONSTERS} performanceMode={player.performanceMode} />
 
       {showDefeatedWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">
@@ -1007,133 +1253,140 @@ const App = () => {
         </div>
       )}
 
-      <nav className="bg-slate-900 border-b-[4px] border-black sticky top-0 z-50 p-4 shadow-xl relative overflow-hidden">
+      <nav className="bg-slate-950 border-b-[4px] border-black sticky top-0 z-50 p-3 md:p-6 shadow-2xl relative overflow-hidden">
         {/* Halftone Overlay HUD */}
-        <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '6px 6px' }}></div>
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1.5px, transparent 1.5px)', backgroundSize: '12px 12px' }}></div>
         
         {player.avatar && (
-          <div className="absolute inset-0 pointer-events-none z-0">
-            <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover opacity-60 blur-[1px] scale-105 transition-all" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-transparent to-slate-950/90"></div>
-          </div>
+           <div className="absolute inset-0 pointer-events-none z-0">
+             <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover opacity-40 blur-[2px] scale-110" />
+             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-slate-950"></div>
+           </div>
         )}
-        <div className="max-w-4xl mx-auto flex gap-6 relative z-10 items-stretch">
-          <button onClick={() => setView('avatars')} className="w-24 min-h-[140px] bg-cyan-600 rounded-xl flex items-center justify-center border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] overflow-hidden hover:scale-105 transition-all duration-300 group relative shrink-0">
-            {player.avatar ? <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover group-hover:rotate-3 group-hover:scale-110 transition-transform duration-500" /> : <User size={36} className="text-white" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
-            <div className="absolute bottom-1 w-full text-center text-[7px] font-black uppercase text-white tracking-widest bg-black/40 py-0.5">Edit</div>
-          </button>
 
-          <div className="flex flex-col justify-between flex-1 py-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col justify-center transform -rotate-1">
-                <div className="bg-white text-black px-3 py-1 border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] inline-block">
-                  <h1 className="font-black text-xl uppercase tracking-tighter leading-none truncate">{player.name}</h1>
-                </div>
-                <div className="flex items-center gap-2 mt-3 pl-1">
-                  <p className="text-[10px] font-black text-cyan-400 bg-black px-2 py-0.5 border border-cyan-400/50 uppercase tracking-widest italic">LVL {player.level}</p>
-                  {player.abilityPoints > 0 && <span className="text-[8px] bg-amber-400 text-black px-1.5 py-0.5 rounded-sm shadow-sm font-black border-2 border-black animate-pulse">+{player.abilityPoints} AP</span>}
-                  {currentMate && <span className="text-[8px] bg-purple-600 text-white px-1.5 py-0.5 rounded-sm shadow-sm font-black uppercase tracking-widest border-2 border-black">{currentMate.name}</span>}
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-sm font-black mt-1 shrink-0">
-                <div className="flex items-center gap-1.5 text-black bg-cyan-400 border-[3px] border-black px-3 py-1 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
-                  <Coins size={14} strokeWidth={3} /> {player.tokens.toLocaleString()}
+        <div className="max-w-5xl mx-auto flex flex-row gap-3 md:gap-6 relative z-10 items-stretch">
+          {/* PROFILE CARD - SIDE PANEL */}
+          <div className="w-24 sm:w-28 md:w-40 bg-slate-900 border-[3px] md:border-[5px] border-black rounded-xl md:rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0">
+            <div className="aspect-[3/4] md:flex-1 relative overflow-hidden">
+               <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 contrast-125" />
+               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none opacity-60" />
+            </div>
+            <button 
+              onClick={() => setView('avatars')}
+              className="w-full py-1.5 md:py-3 bg-black/80 hover:bg-black text-[7px] md:text-[11px] font-black uppercase text-white tracking-[0.2em] md:tracking-[0.4em] transition-all border-t-[2px] md:border-t-[4px] border-black italic shrink-0"
+            >
+              EDIT
+            </button>
+          </div>
+
+          {/* MAIN HUD DATA */}
+          <div className="flex-1 flex flex-col justify-between py-0.5 md:py-1 min-w-0">
+            {/* Top Row: Info & Currencies */}
+            <div className="flex flex-col gap-2 md:gap-4">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                <div className="flex items-center gap-2 md:gap-4 w-full md:w-auto">
+                  <div className="bg-white text-black px-2 md:px-6 py-0.5 md:py-2 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] transform -rotate-1 min-w-0 md:min-w-[200px] flex-1 md:flex-none">
+                    <h1 className="font-black text-xs md:text-3xl uppercase tracking-tighter italic leading-none truncate">{player.name}</h1>
+                  </div>
                 </div>
                 
-                {/* Consumable Quick Slots */}
-                <div className="flex items-center gap-2">
-                   <div className="flex items-center gap-1.5 bg-red-600 text-white border-[3px] border-black px-2 py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1 relative group" title="Health Potions">
-                      <Coffee size={12} strokeWidth={3} />
-                      <span className="text-xs leading-none">{player.potions || 0}</span>
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full border border-black animate-pulse opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex flex-wrap gap-1 md:gap-3">
+                   <div className="bg-cyan-500 text-black px-1.5 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[4px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-sm uppercase italic tracking-widest leading-none">
+                     LVL {player.level}
                    </div>
-                   <div className="flex items-center gap-1.5 bg-blue-600 text-white border-[3px] border-black px-2 py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative group" title="Auto-Hunt Scrolls">
-                      <MousePointer size={12} strokeWidth={3} />
-                      <span className="text-xs leading-none">{player.autoScrolls || 0}</span>
-                   </div>
-                </div>
-
-                <div className="flex items-center gap-1 ml-2">
-                    <button 
-                      onClick={() => setIsMusicOn(!isMusicOn)} 
-                      className={`p-2 rounded-lg border transition-all ${isMusicOn ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
-                      title="Music Toggle"
-                    >
-                      {isMusicOn ? <Music size={14} strokeWidth={3} /> : <Music2 size={14} className="opacity-50" strokeWidth={3} />}
-                    </button>
-                    <button 
-                      onClick={() => setIsSfxOn(!isSfxOn)} 
-                      className={`p-2 rounded-lg border transition-all ${isSfxOn ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-500'}`}
-                      title="SFX Toggle"
-                    >
-                      {isSfxOn ? <Volume2 size={14} strokeWidth={3} /> : <VolumeX size={14} className="opacity-50" strokeWidth={3} />}
-                    </button>
-                </div>
-
-                <button onClick={handleLogout} className="text-slate-500 hover:text-red-500 transition-colors p-2 bg-black/40 rounded-lg border border-slate-700 ml-1" title="Logout"><Lock size={14} /></button>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2 w-full mt-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-[10px] font-black tracking-widest uppercase w-12 shrink-0">
-                  <Heart size={10} strokeWidth={3} className={player.hp / player.maxHp <= 0.25 ? "text-red-500 animate-pulse" : "text-white"} />
-                  <span className={player.hp / player.maxHp <= 0.25 ? "text-red-500" : "text-white"}>{player.hp}</span>
-                </div>
-                <div className="flex-1 h-3 bg-black rounded-sm border-[3px] border-white/20 p-0.5 relative overflow-hidden shadow-inner">
-                  <div
-                    className={`h-full transition-all duration-300 rounded-sm relative z-10 ${player.hp / player.maxHp <= 0.25 ? 'bg-red-500' : player.hp / player.maxHp <= 0.5 ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                    style={{ width: `${(player.hp / player.maxHp) * 100}%` }}
-                  />
-                  <div className="absolute inset-0 z-20 pointer-events-none opacity-50" style={{ backgroundImage: 'linear-gradient(90deg, transparent 95%, rgba(0,0,0,0.8) 95%)', backgroundSize: '5% 100%' }}></div>
+                   {player.abilityPoints > 0 && (
+                     <div className="bg-amber-400 text-black px-1.5 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[4px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-sm uppercase italic tracking-widest leading-none animate-pulse">
+                       +{player.abilityPoints} AP
+                     </div>
+                   )}
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 text-[10px] font-black tracking-widest uppercase w-12 shrink-0 text-cyan-400">
-                  <Star size={10} strokeWidth={3} />
-                  <span>{player.xp}</span>
+              <div className="flex items-center justify-between gap-2 md:gap-4">
+                <div className="flex gap-1 md:gap-4 flex-wrap flex-1">
+                   <div className="flex items-center gap-1 md:gap-2 bg-cyan-400 text-black border-[2px] md:border-[4px] border-black px-1.5 md:px-4 py-1 md:py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] transform rotate-1 font-black italic">
+                      <Coins size={10} md:size={18} strokeWidth={3} />
+                      <span className="text-[10px] md:text-xl">{player.tokens.toLocaleString()}</span>
+                   </div>
+                   <div className="hidden sm:flex items-center gap-1 md:gap-2 bg-red-600 text-white border-[2px] md:border-[4px] border-black px-1.5 md:px-4 py-1 md:py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] transform -rotate-1 font-black italic">
+                      <Coffee size={10} md:size={18} strokeWidth={3} />
+                      <span className="text-[10px] md:text-xl">{player.potions || 0}</span>
+                   </div>
+                   <div className="hidden sm:flex items-center gap-1 md:gap-2 bg-blue-600 text-white border-[2px] md:border-[4px] border-black px-1.5 md:px-4 py-1 md:py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] transform rotate-1 font-black italic">
+                      <MousePointer size={10} md:size={18} strokeWidth={3} />
+                      <span className="text-[10px] md:text-xl">{player.autoScrolls || 0}</span>
+                   </div>
                 </div>
-                <div className="flex-1 h-3 bg-black rounded-sm border-[3px] border-white/20 p-0.5 relative overflow-hidden shadow-inner">
-                  <div 
-                    className="h-full bg-blue-500 transition-all duration-300 rounded-sm relative z-10 shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
-                    style={{ width: `${Math.min(100, (player.xp / (player.level * XP_BASE)) * 100)}%` }} 
-                  />
-                  <div className="absolute inset-0 z-20 pointer-events-none opacity-50" style={{ backgroundImage: 'linear-gradient(90deg, transparent 95%, rgba(0,0,0,0.8) 95%)', backgroundSize: '5% 100%' }}></div>
+
+                <div className="flex gap-1 md:gap-3 shrink-0">
+                   <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1 md:p-2 rounded-lg border-[2px] md:border-[4px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transition-all ${isMusicOn ? 'bg-cyan-900 border-cyan-500 text-cyan-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}><Music size={12} md:size={20} /></button>
+                   <button onClick={handleLogout} className="p-1 md:p-2 bg-slate-900 border-[2px] md:border-[4px] border-black text-slate-500 shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:text-red-500 transition-all"><Lock size={12} md:size={20} /></button>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-5 gap-1.5 mt-4">
-               {[
-                 { label: 'Head', key: 'Headgear', color: 'text-blue-400' },
-                 { label: 'Weapon', key: 'Weapon', color: 'text-amber-400' },
-                 { label: 'Armor', key: 'Armor', color: 'text-cyan-400' },
-                 { label: 'Feet', key: 'Footwear', color: 'text-emerald-400' },
-                 { label: 'Relic', key: 'Relic', color: 'text-purple-400' }
-               ].map(slot => (
-                 <div key={slot.key} className="bg-slate-900 border-[2px] border-black p-1 flex flex-col items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-slate-800 transition-colors min-w-0">
-                    <span className="text-[6px] text-slate-500 font-black uppercase tracking-tighter leading-none mb-1">{slot.label}</span>
-                    <span className={`text-[7px] font-black leading-none truncate w-full text-center tracking-tighter uppercase ${player.equipped?.[slot.key] ? slot.color : 'text-slate-600'}`}>
-                      {player.equipped?.[slot.key] ? player.equipped[slot.key].name : 'EMPTY'}
-                    </span>
-                 </div>
-               ))}
+            {/* HP & XP BAR Segment */}
+            <div className="space-y-1 md:space-y-4 mt-2">
+              {/* HP BAR */}
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-1.5 md:gap-2 min-w-[70px] md:min-w-[100px] shrink-0">
+                   <Heart size={14} md:size={20} className={player.hp / player.maxHp <= 0.25 ? "text-red-500 animate-pulse" : "text-white"} fill="currentColor" />
+                   <span className={`text-sm md:text-lg font-black italic ${player.hp / player.maxHp <= 0.25 ? "text-red-500" : "text-white"}`}>{player.hp}</span>
+                </div>
+                <div className="flex-1 h-3.5 md:h-6 bg-black border-[2px] md:border-[4px] border-white/10 p-0.5 md:p-1 relative shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[5px_5px_0_rgba(0,0,0,1)] overflow-hidden">
+                   <div 
+                     className={`h-full transition-all duration-300 rounded-sm relative z-10 shadow-[0_0_20px_rgba(255,255,255,0.1)] ${player.hp / player.maxHp <= 0.25 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`}
+                     style={{ width: `${(player.hp / player.maxHp) * 100}%` }}
+                   />
+                   <div className="absolute inset-0 z-20 pointer-events-none opacity-40" style={{ backgroundImage: 'linear-gradient(90deg, transparent 96%, rgba(0,0,0,0.8) 96%)', backgroundSize: '4% 100%' }}></div>
+                </div>
+              </div>
+
+              {/* XP BAR */}
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-1.5 md:gap-2 min-w-[70px] md:min-w-[100px] shrink-0">
+                   <Star size={14} md:size={20} className="text-cyan-400" fill="currentColor" />
+                   <span className="text-sm md:text-lg font-black text-white italic">{player.xp}</span>
+                </div>
+                <div className="flex-1 h-3.5 md:h-6 bg-black border-[2px] md:border-[4px] border-white/10 p-0.5 md:p-1 relative shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[5px_5px_0_rgba(0,0,0,1)] overflow-hidden">
+                   <div 
+                     className="h-full bg-blue-500 transition-all duration-300 rounded-sm relative z-10 shadow-[0_0_10px_rgba(59,130,246,0.3)]" 
+                     style={{ width: `${Math.min(100, (player.xp / (player.level * XP_BASE)) * 100)}%` }} 
+                   />
+                   <div className="absolute inset-0 z-20 pointer-events-none opacity-40" style={{ backgroundImage: 'linear-gradient(90deg, transparent 96%, rgba(0,0,0,0.8) 96%)', backgroundSize: '4% 100%' }}></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row: Gear HUD */}
+            <div className="grid grid-cols-5 gap-1.5 md:gap-3 mt-2 md:mt-4">
+              {[
+                { label: 'HEAD', key: 'Headgear', color: 'text-blue-400' },
+                { label: 'WEAPON', key: 'Weapon', color: 'text-amber-400' },
+                { label: 'ARMOR', key: 'Armor', color: 'text-cyan-400' },
+                { label: 'FEET', key: 'Footwear', color: 'text-emerald-400' },
+                { label: 'RELIC', key: 'Relic', color: 'text-purple-400' }
+              ].map(slot => (
+                <div key={slot.key} className="bg-slate-900 border-[2px] md:border-[3px] border-black p-1 md:p-2 flex flex-col items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-800 transition-all group min-w-0">
+                  <span className="text-[5px] md:text-[7px] text-slate-500 font-black uppercase tracking-widest leading-none mb-0.5 md:mb-1 group-hover:text-slate-400">{slot.label}</span>
+                  <span className={`text-[6px] md:text-[9px] font-black leading-none truncate w-full text-center tracking-tighter uppercase italic ${player.equipped?.[slot.key] ? slot.color : 'text-slate-600'}`}>
+                    {player.equipped?.[slot.key] ? player.equipped[slot.key].name : 'EMPTY'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto p-4 space-y-6">
-
-        <div className="grid grid-cols-3 gap-3">
-          <StatTile icon={<Sword size={16} />} label="STR" value={totalStats.str} color="text-red-400" desc="Boosts raw damage output" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'STR'} />
-          <StatTile icon={<Wind size={16} />} label="AGI" value={totalStats.agi} color="text-emerald-400" desc="Mitigates enemy damage" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'AGI'} />
-          <StatTile icon={<Target size={16} />} label="DEX" value={totalStats.dex} color="text-yellow-400" desc="Increases hit accuracy" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'DEX'} />
+      <main className="max-w-4xl mx-auto p-3 space-y-4">
+        <div className="grid grid-cols-3 gap-2">
+          <StatTile icon={<Sword size={14} />} label="STR" value={totalStats.str} color="text-red-400" desc="Attack Power" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'STR'} />
+          <StatTile icon={<Wind size={14} />} label="AGI" value={totalStats.agi} color="text-emerald-400" desc="Evasion/SPD" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'AGI'} />
+          <StatTile icon={<Target size={14} />} label="DEX" value={totalStats.dex} color="text-yellow-400" desc="Accuracy" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'DEX'} />
         </div>
 
-        <div className="bg-slate-900/50 border border-slate-800 rounded-3xl min-h-[460px] flex flex-col overflow-hidden backdrop-blur-sm relative">
+        <div className="bg-slate-900/50 border border-slate-800 rounded-2xl min-h-[380px] flex flex-col overflow-hidden backdrop-blur-sm relative">
 
           {view === 'menu' && (
             <MenuView 
@@ -1274,6 +1527,30 @@ const App = () => {
             />
           )}
 
+          {view === 'gear' && (
+            <GearView 
+              player={player} 
+              totalStats={totalStats}
+              equipItem={equipItem}
+              unequipItem={unequipItem}
+              setView={setView}
+              currentMate={currentMate}
+              buffTimeLeft={buffTimeLeft}
+            />
+          )}
+
+          {view === 'market' && (
+            <MarketplaceView 
+              player={player}
+              listings={marketplace}
+              purchaseItem={purchaseMarketItem}
+              listItem={listMarketItem}
+              cancelListing={cancelMarketListing}
+              setView={setView}
+              addLog={addLog}
+            />
+          )}
+
           {view === 'database' && (
             <DatabaseView
               depth={depth}
@@ -1300,6 +1577,19 @@ const App = () => {
             />
           )}
 
+          {view === 'pvp' && (
+            <PvpRoomView 
+              player={player} 
+              syncPlayer={syncPlayer} 
+              setView={setView} 
+              addLog={addLog} 
+              totalStats={totalStats}
+              db={db}
+              appId={appId}
+              user={user}
+            />
+          )}
+          
           {view === 'admin' && (
             <AdminPanelView 
               db={db} 
@@ -1321,7 +1611,7 @@ const App = () => {
           )}
         </div>
 
-        <div className="bg-amber-400 border-[4px] border-black rounded-lg p-4 h-36 overflow-y-auto relative shadow-[6px_6px_0_rgba(0,0,0,1)] transform rotate-1">
+        <div className="bg-amber-400 border-[4px] border-black rounded-lg p-3 h-28 overflow-y-auto relative shadow-[4px_4px_0_rgba(0,0,0,1)]">
           <div className="absolute top-2 right-4 text-[8px] font-black text-black opacity-30 uppercase tracking-[0.4em]">Battle Bulletin</div>
           <div className="space-y-1">
             {logs.map((log, i) => (

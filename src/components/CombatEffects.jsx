@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const ImpactSplash = ({ splash }) => {
+export const ImpactSplash = React.memo(({ splash }) => {
   if (!splash) return null;
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
@@ -15,9 +15,9 @@ export const ImpactSplash = ({ splash }) => {
       </div>
     </div>
   );
-};
+});
 
-export const BossImpactSplash = ({ splash }) => {
+export const BossImpactSplash = React.memo(({ splash }) => {
   if (!splash) return null;
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none scale-[2.0]">
@@ -32,4 +32,4 @@ export const BossImpactSplash = ({ splash }) => {
       </div>
     </div>
   );
-};
+});

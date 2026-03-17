@@ -10,11 +10,14 @@ import {
   Globe, 
   AlertCircle, 
   Clock, 
-  Trees 
+  Trees,
+  Swords,
+  Zap,
+  Tag
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 
-export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spawnNewEnemy, autoUntil, syncPlayer }) => {
+export const MenuView = React.memo(({ setView, isPenalized, penaltyRemaining, setDepth, spawnNewEnemy, autoUntil, syncPlayer }) => {
   const startDungeon = () => {
     if (!isPenalized) {
       setView('map');
@@ -29,7 +32,7 @@ export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spa
   };
 
   return (
-    <div className="flex-1 p-6 grid grid-cols-2 md:grid-cols-3 gap-6 relative">
+    <div className="flex-1 p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
       <NavBtn 
         onClick={startDungeon} 
@@ -41,8 +44,10 @@ export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spa
       />
       <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" />
       <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub="Stats" color="bg-orange-600" />
+      <NavBtn onClick={() => setView('gear')} icon={<Zap />} title="Gear" sub="Tactical" color="bg-cyan-700" />
       <NavBtn onClick={() => setView('inventory')} icon={<Package />} title="Bag" sub="Inventory" color="bg-emerald-600" />
       <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" />
+      <NavBtn onClick={() => setView('market')} icon={<Tag />} title="Market" sub="P2P Trade" color="bg-amber-600" />
       <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" />
       <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" />
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" />
@@ -55,6 +60,13 @@ export const MenuView = ({ setView, isPenalized, penaltyRemaining, setDepth, spa
         color="bg-red-700" 
         disabled={isPenalized} 
       />
+      <NavBtn 
+        onClick={() => setView('pvp')} 
+        icon={<Swords />} 
+        title="PVP Arena" 
+        sub="Holo-Grid" 
+        color="bg-red-900 border-red-500/50" 
+      />
     </div>
   );
-};
+});

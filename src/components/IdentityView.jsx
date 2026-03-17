@@ -2,8 +2,9 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 
-export const IdentityView = ({ player, syncPlayer, setView, addLog }) => (
-  <div className="flex-1 p-6 space-y-6 flex flex-col items-center justify-start overflow-y-auto max-h-[600px]">
+export const IdentityView = React.memo(({ player, syncPlayer, setView, addLog }) => (
+  <div className="flex-1 p-6 space-y-6 flex flex-col items-center justify-start overflow-y-auto max-h-[600px] relative">
+    <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
     <Header title="Identity Core" onClose={() => setView('menu')} />
     <div className="w-full max-w-sm flex flex-col items-center">
 
@@ -13,14 +14,32 @@ export const IdentityView = ({ player, syncPlayer, setView, addLog }) => (
         <p className="absolute bottom-3 inset-x-0 text-center text-[10px] font-black tracking-[0.4em] uppercase text-cyan-400 z-20 drop-shadow-md">Active</p>
       </div>
 
-      <div className="flex items-center gap-3 mb-8 bg-slate-800/50 p-2 pr-4 rounded-xl border border-slate-700">
-        <button
-          onClick={() => { syncPlayer({ avatarAnimated: !player.avatarAnimated }); addLog(`Animated mode ${!player.avatarAnimated ? 'enabled' : 'disabled'}.`); }}
-          className={`relative w-10 h-6 rounded-full transition-colors ${player.avatarAnimated ? 'bg-cyan-500' : 'bg-slate-600'}`}
-        >
-          <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.avatarAnimated ? 'translate-x-4 shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'translate-x-0'}`}></div>
-        </button>
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Animated Mode</span>
+      <div className="grid grid-cols-1 gap-3 w-full mb-8">
+        <div className="flex items-center justify-between bg-slate-800/50 p-3 pr-4 rounded-xl border border-slate-700">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Animated Mode</span>
+            <span className="text-[7px] text-slate-500 font-bold uppercase">Dynamic avatar visuals</span>
+          </div>
+          <button
+            onClick={() => { syncPlayer({ avatarAnimated: !player.avatarAnimated }); addLog(`Animated mode ${!player.avatarAnimated ? 'enabled' : 'disabled'}.`); }}
+            className={`relative w-10 h-6 rounded-full transition-colors ${player.avatarAnimated ? 'bg-cyan-500' : 'bg-slate-600'}`}
+          >
+            <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.avatarAnimated ? 'translate-x-4 shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'translate-x-0'}`}></div>
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between bg-slate-800/50 p-3 pr-4 rounded-xl border border-slate-700">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Reduced FX Mode</span>
+            <span className="text-[7px] text-slate-500 font-bold uppercase italic">Recommended for Mobile / Heat reduction</span>
+          </div>
+          <button
+            onClick={() => { syncPlayer({ performanceMode: !player.performanceMode }); addLog(`Performance Mode ${!player.performanceMode ? 'Activated' : 'Deactivated'}.`); }}
+            className={`relative w-10 h-6 rounded-full transition-colors ${player.performanceMode ? 'bg-amber-500' : 'bg-slate-600'}`}
+          >
+            <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.performanceMode ? 'translate-x-4 shadow-[0_0_10px_rgba(245,158,11,0.8)]' : 'translate-x-0'}`}></div>
+          </button>
+        </div>
       </div>
 
       <p className="text-[10px] text-slate-500 font-black uppercase text-center mb-4 tracking-widest border-b border-slate-800/50 pb-2 w-full">Select your combat avatar</p>
@@ -38,4 +57,4 @@ export const IdentityView = ({ player, syncPlayer, setView, addLog }) => (
       </div>
     </div>
   </div>
-);
+));

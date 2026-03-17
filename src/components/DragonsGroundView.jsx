@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X } from 'lucide-react';
 
-export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, addLog }) => {
+export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOTS, FRUITS, addLog }) => {
   const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
   const [dragonStats, setDragonStats] = useState(player.dragon || { level: 1, fruitsFed: 0 });
   const [fruits, setFruits] = useState([]);
@@ -92,8 +92,8 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
   // Spawn and Move logic
   useEffect(() => {
     const timer = setInterval(() => {
-      // 1. Spawn monsters
-      if (monsters.length < gemx.level * 3) {
+      // 1. Spawn monsters (Cap at 15 for performance)
+      if (monsters.length < Math.min(15, gemx.level * 3)) {
         if (Math.random() < 0.4) {
           const spawnSide = Math.floor(Math.random() * 4);
           let x, y;
@@ -124,8 +124,16 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
           
           if (dist < 2) {
             // Drop fruit! (Increased frequency as requested)
-            if (Math.random() < 0.8) {
-              const randomFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+            if (Math.random() < 0.3) {
+              // Rarity-based weighted drop logic
+              const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
+              const pool = [];
+              FRUITS.forEach(f => {
+                const weight = rarityWeights[f.rarity] || 10;
+                for (let i = 0; i < weight; i++) pool.push(f);
+              });
+              
+              const randomFruit = pool[Math.floor(Math.random() * pool.length)];
               setFruits(f => [...f, {
                 id: 'fruit_' + Date.now() + Math.random(),
                 data: randomFruit,
@@ -288,13 +296,25 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
       {/* Main Functional Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* Top Section: Management Panels (Reduced Height) */}
-        <div className="py-2 px-4 flex gap-3 bg-emerald-950/20 border-b border-white/5 z-20">
+        {/* Top Section: Management Panels (Compact) */}
+        <div className="flex-none py-1.5 px-3 flex gap-2 bg-emerald-950/20 border-b border-white/5 z-20 relative">
+            {/* HUD Messages (Moved to top-center of panels) */}
+            {message && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
+                    <div className={`px-4 py-1.5 rounded-lg border-2 font-black uppercase italic text-[10px] shadow-xl backdrop-blur-md ${
+                        message.type === 'success' ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' : 
+                        message.type === 'error' ? 'bg-red-950/90 border-red-500 text-red-100' :
+                        'bg-blue-950/90 border-blue-500 text-blue-100'
+                    }`}>
+                        {message.text}
+                    </div>
+                </div>
+            )}
             {/* Gemx Panel */}
             <div className="flex-1 bg-black/40 backdrop-blur-md border border-cyan-500/30 rounded-xl p-2 flex flex-col items-center">
-                <div className="relative group cursor-pointer scale-90" onClick={feedGem}>
+                <div className="relative group cursor-pointer scale-75 md:scale-90" onClick={feedGem}>
                     <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
-                    <div className="w-20 h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[6px_6px_0_rgba(0,0,0,1)] bg-slate-900">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900">
                         <img 
                           src={`/assets/dragonsground/gemx/${player.gemxAvatar || 'gemx (1).gif'}`} 
                           className="w-full h-full object-cover"
@@ -337,9 +357,9 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
 
             {/* Dragon Panel */}
             <div className="flex-1 bg-black/40 backdrop-blur-md border border-amber-500/30 rounded-xl p-2 flex flex-col items-center">
-                <div className="relative group cursor-pointer scale-90" onClick={feedDragon}>
+                <div className="relative group cursor-pointer scale-75 md:scale-90" onClick={feedDragon}>
                     <div className="absolute inset-0 bg-amber-400 blur-2xl opacity-20 group-hover:opacity-50 animate-pulse"></div>
-                    <div className="w-20 h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[6px_6px_0_rgba(0,0,0,1)] bg-slate-900">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900">
                         {player.dragonAnimationEnabled ? (
                             <video 
                               autoPlay loop muted playsInline
@@ -380,23 +400,23 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
                     </div>
                 </div>
 
-                <div className="mt-4 flex gap-4">
+                <div className="mt-2 flex gap-2 md:gap-4">
                     <div className="text-center">
-                        <p className="text-[7px] font-black text-slate-500 uppercase">Stat Buff</p>
-                        <p className="text-xs font-black text-emerald-400">+{dragonStats.level * 5} ALL</p>
+                        <p className="text-[6px] md:text-[7px] font-black text-slate-500 uppercase">Stat Buff</p>
+                        <p className="text-[10px] md:text-xs font-black text-emerald-400">+{dragonStats.level * 5} ALL</p>
                     </div>
-                    <div className="h-6 w-[2px] bg-white/10 self-center"></div>
+                    <div className="h-4 md:h-6 w-[2px] bg-white/10 self-center"></div>
                     <div className="text-center">
-                        <p className="text-[7px] font-black text-slate-500 uppercase">Animation</p>
-                        <p className="text-[7px] font-black text-white">{player.dragonAnimationEnabled ? 'ENABLED' : 'DISABLED'}</p>
+                        <p className="text-[6px] md:text-[7px] font-black text-slate-500 uppercase">Animation</p>
+                        <p className="text-[6px] md:text-[7px] font-black text-white">{player.dragonAnimationEnabled ? 'ENABLED' : 'DISABLED'}</p>
                     </div>
                 </div>
-                <h3 className="mt-2 text-xs font-black text-white italic uppercase tracking-tighter">GREAT DRAKE</h3>
+                <h3 className="mt-1 md:mt-2 text-[10px] md:text-xs font-black text-white italic uppercase tracking-tighter">GREAT DRAKE</h3>
             </div>
         </div>
 
-        {/* Bottom Section: Roaming Ground (Further Expanded) */}
-        <div className="flex-[4] relative bg-[url('https://www.transparenttextures.com/patterns/grass.png')] bg-emerald-900 border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-hidden">
+        {/* Bottom Section: Roaming Ground (Massively Expanded) */}
+        <div className="flex-[8] relative bg-[url('https://www.transparenttextures.com/patterns/grass.png')] bg-emerald-900 border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-hidden">
             <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
             
             {/* Label for the ground */}
@@ -447,36 +467,25 @@ export const DragonsGroundView = ({ player, syncPlayer, setView, LOOTS, FRUITS, 
                 ))}
             </div>
 
-            {/* HUD Messages (Moved inside roaming panel for better context) */}
-            {message && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">
-                    <div className={`px-6 py-2 rounded-full border-2 font-black uppercase italic text-xs shadow-2xl ${
-                        message.type === 'success' ? 'bg-emerald-950/80 border-emerald-500 text-emerald-400' : 
-                        message.type === 'error' ? 'bg-red-950/80 border-red-500 text-red-100' :
-                        'bg-blue-950/80 border-blue-500 text-blue-100'
-                    }`}>
-                        {message.text}
-                    </div>
-                </div>
-            )}
+
         </div>
       </div>
 
-      {/* Footer Instructions */}
-      <div className="p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-8 z-30">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-cyan-600/20 border border-cyan-500 flex items-center justify-center text-cyan-400 font-black">1</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Feed GEMX with Crystle Shards</p>
+      {/* Footer Instructions (Compact) */}
+      <div className="p-2 md:p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-4 md:gap-8 z-30">
+        <div className="flex items-center gap-1.5">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-cyan-600/20 border border-cyan-500 flex items-center justify-center text-cyan-400 font-black text-xs md:text-base">1</div>
+          <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider">Feed GEMX</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-amber-600/20 border border-amber-500 flex items-center justify-center text-amber-400 font-black">2</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Level Dragon with Mystic Fruits</p>
+        <div className="flex items-center gap-1.5">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-amber-600/20 border border-amber-500 flex items-center justify-center text-amber-400 font-black text-xs md:text-base">2</div>
+          <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider">Level Dragon</p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-red-600/20 border border-red-500 flex items-center justify-center text-red-400 font-black">3</div>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Dragon boosts ALL your stats!</p>
+        <div className="flex items-center gap-1.5">
+          <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-red-600/20 border border-red-500 flex items-center justify-center text-red-400 font-black text-xs md:text-base">3</div>
+          <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider">Boost Stats</p>
         </div>
       </div>
     </div>
   );
-};
+});

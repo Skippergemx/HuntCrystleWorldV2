@@ -2,7 +2,7 @@ import React from 'react';
 import { Coffee, MousePointer } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const InventoryView = ({ player, setView, sellItem }) => (
+export const InventoryView = React.memo(({ player, setView, sellItem }) => (
   <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
      <Header title="STORAGE CORE: BAG" onClose={() => setView('menu')} />
@@ -28,20 +28,9 @@ export const InventoryView = ({ player, setView, sellItem }) => (
            <p className="text-[8px] font-black text-slate-500 uppercase mt-1 leading-tight italic">Automates offensive protocols.</p>
         </div>
         
-        <div className="col-span-2 bg-slate-100 border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] mt-4">
-           <p className="text-[10px] font-black uppercase text-black italic opacity-50 mb-3 border-b-2 border-black/10 pb-1">Equipped Gear</p>
-           <div className="space-y-3">
-              {Object.entries(player.equipped || {}).map(([slot, item]) => (
-                <div key={slot} className="flex justify-between items-center text-black italic">
-                   <span className="text-[10px] font-black uppercase text-slate-400">{slot}</span>
-                   <span className="font-black text-sm uppercase">{item ? item.name : 'Empty Slot'}</span>
-                </div>
-              ))}
-           </div>
-        </div>
 
         <div className="col-span-2 bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] mt-4">
-           <p className="text-[10px] font-black uppercase text-black italic opacity-50 mb-3 border-b-2 border-black/10 pb-1">Stacked Artifacts & Materials</p>
+           <p className="text-[10px] font-black uppercase text-black italic opacity-50 mb-3 border-b-2 border-black/10 pb-1">Inventory / Storage Bag</p>
            <div className="grid grid-cols-1 gap-2">
               {(() => {
                 const stacked = (player.inventory || []).filter(i => i && typeof i === 'object').reduce((acc, item) => {
@@ -70,7 +59,7 @@ export const InventoryView = ({ player, setView, sellItem }) => (
                             </div>
                           </div>
                           <div className="text-right">
-                             <p className="text-xs font-black text-amber-600 italic">{item.sellValue || 0} GX</p>
+                             <p className="text-xs font-black text-amber-600 italic">{item.sellValue !== undefined ? item.sellValue : Math.floor((item.cost || 0) / 2)} GX</p>
                              <p className="text-[7px] text-slate-400 font-bold uppercase mt-0.5">Value Per Unit</p>
                           </div>
                        </div>
@@ -101,4 +90,4 @@ export const InventoryView = ({ player, setView, sellItem }) => (
         </div>
      </div>
   </div>
-);
+));

@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
  * AnimatedBackground
  * Creates a scrolling 3D collage of monster assets with a comic/manga filter.
  */
-export const AnimatedBackground = ({ MONSTERS }) => {
+export const AnimatedBackground = React.memo(({ MONSTERS, performanceMode }) => {
   // Memoize the monster list to avoid reshuffling on every render
   const collageList = useMemo(() => {
     if (!MONSTERS || MONSTERS.length === 0) return [];
@@ -26,9 +26,10 @@ export const AnimatedBackground = ({ MONSTERS }) => {
       {/* 3D Perspective Wrapper */}
       <div className="absolute inset-0 perspective-1000 flex items-center justify-center scale-125">
         <div 
-          className="relative w-[200vw] h-[200vh] grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 opacity-20 transform-style-3d animate-scroll-diag will-change-transform"
+          className="relative w-[200vw] h-[200vh] grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 opacity-20 transform-style-3d"
           style={{ 
-            filter: 'contrast(1.2) grayscale(0.2) saturate(1.5) brightness(0.7)'
+            filter: 'contrast(1.2) grayscale(0.2) saturate(1.5) brightness(0.7)',
+            transform: 'translate(-10%, -10%) rotate(12deg)'
           }}
         >
           {collageList.map((monster, i) => (
@@ -61,18 +62,22 @@ export const AnimatedBackground = ({ MONSTERS }) => {
         </div>
       </div>
 
-      {/* Comic Overlays */}
-      {/* Global Halftone Overlay */}
-      <div className="absolute inset-0 z-[1] opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 2px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-      
-      {/* Vignette */}
-      <div className="absolute inset-0 z-[2] pointer-events-none bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.8)_100%)]"></div>
-      
-      {/* Scanlines Effect */}
-      <div className="absolute inset-0 z-[3] pointer-events-none bg-scanline opacity-[0.15]"></div>
+      {/* Comic Overlays (Disabled in Performance Mode) */}
+      {!performanceMode && (
+        <>
+          {/* Global Halftone Overlay */}
+          <div className="absolute inset-0 z-[1] opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 2px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+          
+          {/* Vignette */}
+          <div className="absolute inset-0 z-[2] pointer-events-none bg-[radial-gradient(circle,transparent_40%,rgba(0,0,0,0.8)_100%)]"></div>
+          
+          {/* Scanlines Effect */}
+          <div className="absolute inset-0 z-[3] pointer-events-none bg-scanline opacity-[0.15]"></div>
 
-      {/* Sketch-style paper texture overlay */}
-      <div className="absolute inset-0 z-[4] pointer-events-none opacity-[0.02] mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/pinstriped-suit.png")' }}></div>
+          {/* Sketch-style paper texture overlay */}
+          <div className="absolute inset-0 z-[4] pointer-events-none opacity-[0.02] mix-blend-overlay" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/pinstriped-suit.png")' }}></div>
+        </>
+      )}
     </div>
   );
-};
+});

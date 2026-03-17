@@ -1,7 +1,7 @@
 import React from 'react';
 import { Header, AttributeRow } from './GameUI';
 
-export const AttributesView = ({ player, allocateStat, setView }) => (
+export const AttributesView = React.memo(({ player, allocateStat, setView }) => (
   <div className="flex-1 p-6 space-y-8 flex flex-col items-center justify-start overflow-y-auto relative">
     <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
     
@@ -27,4 +27,4 @@ export const AttributesView = ({ player, allocateStat, setView }) => (
       </div>
     </div>
   </div>
-);
+));

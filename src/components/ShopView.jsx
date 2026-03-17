@@ -2,7 +2,7 @@ import React from 'react';
 import { Sword, Shield, HardHat, Footprints, Package, Lock } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const ShopView = ({ SHOP_ITEMS, player, buyItem, setView }) => (
+export const ShopView = React.memo(({ SHOP_ITEMS, player, buyItem, setView }) => (
   <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[500px] relative">
     <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
     
@@ -33,13 +33,39 @@ export const ShopView = ({ SHOP_ITEMS, player, buyItem, setView }) => (
                   <h4 className="font-black text-xl text-black uppercase tracking-tighter italic leading-none">{item.name}</h4>
                   {isLocked && <span className="text-[7px] bg-red-600 text-white px-1 font-black transform rotate-6 border border-black shadow-sm tracking-tighter">LVL {item.reqLvl} REQ</span>}
                 </div>
-                <div className="bg-slate-100 px-2 py-1 border border-black/10 inline-block">
-                   <p className="text-[9px] text-slate-500 font-black uppercase italic leading-none">
-                     {item.desc || Object.entries(item.stats || {}).map(([k, v]) => `${k} +${v}`).join(' ')}
-                     {item.type !== 'Consumable' && ` • REQ LVL ${item.reqLvl}`}
-                     {item.id === 'hp_potion' && ` • STASHED: ${player.potions || 0}`}
-                     {item.id === 'auto_scroll' && ` • STASHED: ${player.autoScrolls || 0}`}
-                   </p>
+                <div className="space-y-2">
+                  <p className="text-[10px] text-slate-600 font-bold italic leading-tight uppercase mr-12">{item.desc}</p>
+                  
+                  {item.stats && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {Object.entries(item.stats).map(([key, val]) => {
+                        if (val === 0) return null;
+                        const label = key.toUpperCase();
+                        const color = key === 'str' ? 'bg-red-100 text-red-700 border-red-200' : 
+                                      key === 'agi' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 
+                                      'bg-blue-100 text-blue-700 border-blue-200';
+                        return (
+                          <span key={key} className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${color}`}>
+                            {label} {val > 0 ? `+${val}` : val}
+                          </span>
+                        );
+                      })}
+                      {item.type !== 'Consumable' && (
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded border bg-slate-100 text-slate-600 border-slate-200">
+                          REQ LVL {item.reqLvl}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {!item.stats && (
+                    <div className="bg-slate-100 px-2 py-1 border border-black/10 inline-block">
+                      <p className="text-[9px] text-slate-500 font-black uppercase italic leading-none">
+                        {item.id === 'hp_potion' && `STASHED: ${player.potions || 0}`}
+                        {item.id === 'auto_scroll' && `STASHED: ${player.autoScrolls || 0}`}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -62,4 +88,4 @@ export const ShopView = ({ SHOP_ITEMS, player, buyItem, setView }) => (
       })}
     </div>
   </div>
-);
+));
