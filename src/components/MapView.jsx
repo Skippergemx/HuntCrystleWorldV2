@@ -45,21 +45,60 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                 <h3 className="text-2xl font-black text-black uppercase italic italic leading-none mb-1 group-hover:text-cyan-600 transition-colors">{map.name}</h3>
                 <p className="text-[10px] font-black text-slate-500 uppercase italic leading-tight mb-4">{map.description}</p>
                 
-                <div className="space-y-2 mt-4">
-                  <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest italic flex items-center gap-1">
-                    <TrendingUp size={10} /> Obtainable Assets:
-                  </p>
-                  <div className="flex gap-2 min-h-[32px]">
-                      {map.lootTable.slice(0, 8).map((lootId, li) => {
-                        const loot = LOOTS.find(l => l.id === lootId);
-                        if (!loot) return null;
-                        return (
-                          <div key={li} className="w-8 h-8 rounded-lg bg-slate-50 border-2 border-black flex items-center justify-center text-lg shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:bg-cyan-50 transition-colors" title={loot.name}>
-                            {loot.icon}
-                          </div>
-                        );
-                      })}
-                      <div className="text-[8px] font-black text-slate-400 self-end mb-1">+{map.lootTable.length - 8} more</div>
+                <div className="flex flex-col md:flex-row gap-6 mt-4">
+                  {/* Left: Loot Assets */}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-[8px] font-black text-cyan-600 uppercase tracking-widest italic flex items-center gap-1">
+                      <TrendingUp size={10} /> Obtainable Assets:
+                    </p>
+                    <div className="flex flex-wrap gap-2 min-h-[32px]">
+                        {map.lootTable.slice(0, 8).map((lootId, li) => {
+                          const loot = LOOTS.find(l => l.id === lootId);
+                          if (!loot) return null;
+                          return (
+                            <div key={li} className="w-8 h-8 rounded-lg bg-slate-50 border-2 border-black flex items-center justify-center text-lg shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover:bg-cyan-50 transition-colors" title={loot.name}>
+                              {loot.icon}
+                            </div>
+                          );
+                        })}
+                        <div className="text-[8px] font-black text-slate-400 self-end mb-1">+{map.lootTable.length - 8} more</div>
+                    </div>
+                  </div>
+
+                  {/* Right: Sector Denizens (New) */}
+                  <div className="flex-1 space-y-2">
+                    <p className="text-[8px] font-black text-red-600 uppercase tracking-widest italic flex items-center gap-1">
+                      <Skull size={10} /> Sector Denizens:
+                    </p>
+                    <div className="flex gap-2">
+                        {(() => {
+                           const folderMap = {
+                             'neon_slums': 'Neon Slums',
+                             'rust_canyon': 'Rust Canyon',
+                             'void_sector': 'Void Sector 7'
+                           };
+                           const folder = folderMap[map.id] || 'Neon Slums';
+                           const denizens = map.id === 'neon_slums' ? ['Venomhide Drake', 'Bone Dragon', 'Ember Drake'] : 
+                                            map.id === 'rust_canyon' ? ['Rust Cat 0-0', 'Canyon Flyer 1-1', 'Iron Pet 2-2'] : 
+                                            ['Null Stalker', 'Void Wraith', 'Abyssal Crawler'];
+                           
+                           return denizens.map((name, di) => (
+                             <div key={di} className="w-10 h-10 border-2 border-black bg-slate-900 rounded-md overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] hover:scale-110 transition-transform relative group/portrait">
+                                <img 
+                                  src={`/assets/monsters/${folder}/${name}.png`} 
+                                  className="w-full h-full object-cover" 
+                                  onError={(e) => { 
+                                    if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${name}.jpg`;
+                                    else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + name; }
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-red-600/20 opacity-0 group-hover/portrait:opacity-100 transition-opacity flex items-center justify-center">
+                                   <p className="text-[5px] font-black text-white uppercase text-center">{name}</p>
+                                </div>
+                             </div>
+                           ));
+                        })()}
+                    </div>
                   </div>
                 </div>
                 

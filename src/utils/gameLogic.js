@@ -37,7 +37,7 @@ export const scaleMonster = (baseMonster, depth) => {
 /**
  * Calculates player stats with equipment and buffs
  */
-export const calculateStats = (player, tavernMates, buffActive) => {
+export const calculateStats = (player, tavernMates, buffActive, dragonActive) => {
   if (!player) return { str: 0, agi: 0, dex: 0 };
   
   const stats = { 
@@ -65,8 +65,8 @@ export const calculateStats = (player, tavernMates, buffActive) => {
     }
   }
 
-  // Apply Dragon Buffs
-  if (player.dragon && player.dragon.level > 0) {
+  // Apply Dragon Buffs (Requires Dragon to be Summoned)
+  if (player.dragon && player.dragon.level > 0 && dragonActive) {
     const dragonBonus = 5 * player.dragon.level;
     stats.str += dragonBonus;
     stats.agi += dragonBonus;

@@ -124,5 +124,36 @@
     "stats": { "str": 100, "dex": 60, "agi": 20 },
     "type": "Weapon",
     "desc": "A weapon that cuts through space-time."
+  },
+  {
+    "id": "guardian_core",
+    "name": "Guardian Core",
+    "cost": 5000,
+    "reqLvl": 20,
+    "stats": { "str": 35, "dex": 20, "agi": 20 },
+    "type": "Relic",
+    "rarity": "Legendary",
+    "desc": "The pulsating heart of the Core Guardian."
+  },
+  {
+    "id": "void_capacitor",
+    "name": "Void Capacitor",
+    "cost": 4500,
+    "reqLvl": 15,
+    "stats": { "str": 15, "dex": 50, "agi": 15 },
+    "type": "Relic",
+    "rarity": "Epic",
+    "desc": "Stabilizes void energy for tactical use."
+  },
+  {
+    "id": "omega_sigil",
+    "name": "Omega Sigil",
+    "cost": 8000,
+    "reqLvl": 25,
+    "stats": { "str": 50, "dex": 50, "agi": 50 },
+    "type": "Relic",
+    "rarity": "Legendary",
+    "desc": "A fragment of the Ω-field itself."
   }
 ]
+

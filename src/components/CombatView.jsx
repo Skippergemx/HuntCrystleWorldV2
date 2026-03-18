@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
-import { AvatarMedia } from './GameUI';
+import { AvatarMedia, SquadHUD } from './GameUI';
 
 export const CombatView = React.memo(({ 
-  enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
+  enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, dragonTimeLeft, TAVERN_MATES, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
   autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot
 }) => {
   if (!enemy) return null;
@@ -215,12 +215,17 @@ export const CombatView = React.memo(({
                 </div>
               )}
 
-              <div className={`w-32 h-32 md:w-44 md:h-44 bg-slate-900 flex items-center justify-center border-[4px] md:border-[6px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_70%)] opacity-50"></div>
-                  {player.avatar && (
-                    <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover" />
-                  )}
-                  <ImpactSplash splash={playerImpactSplash} />
+              <div className="flex items-center gap-2 md:gap-4">
+                <div className={`w-32 h-32 md:w-44 md:h-44 bg-slate-900 flex items-center justify-center border-[4px] md:border-[6px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_70%)] opacity-50"></div>
+                    {player.avatar && (
+                      <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover" />
+                    )}
+                    <ImpactSplash splash={playerImpactSplash} />
+                </div>
+                
+                {/* SQUAD / PARTY HUD */}
+                <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} />
               </div>
            </div>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
-import { AvatarMedia } from './GameUI';
+import { AvatarMedia, SquadHUD } from './GameUI';
 
 const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => {
   const media = BOSS_MEDIA_FILES[bossIdx] || BOSS_MEDIA_FILES[0];
@@ -21,7 +21,7 @@ const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => 
 };
 
 export const BossView = ({
-  isHurt, enemyFlinch, bossAvatarIdx, showBossVideo, setShowBossVideo, BOSS_MEDIA_FILES, impactSplash, BOSS, player, autoTimeLeft, activateAutoScroll, handleHeal, handleAttack, setView, syncPlayer,
+  isHurt, enemyFlinch, bossAvatarIdx, showBossVideo, setShowBossVideo, BOSS_MEDIA_FILES, impactSplash, BOSS, player, dragonTimeLeft, TAVERN_MATES, autoTimeLeft, activateAutoScroll, handleHeal, handleAttack, setView, syncPlayer,
   currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, isStunned, stunTimeLeft, isMissed, missTimeLeft,
   autoUseScroll, setAutoUseScroll
 }) => {
@@ -192,12 +192,17 @@ export const BossView = ({
                 </div>
               )}
 
-              <div className={`w-44 h-44 bg-slate-950 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50"></div>
-                  {player.avatar && (
-                    <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover relative z-10" />
-                  )}
-                  <ImpactSplash splash={playerImpactSplash} />
+              <div className="flex items-center gap-4">
+                <div className={`w-44 h-44 bg-slate-950 flex items-center justify-center border-[6px] border-black shadow-[10px_10px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-shake-lite' : ''}`}>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50"></div>
+                    {player.avatar && (
+                      <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover relative z-10" />
+                    )}
+                    <ImpactSplash splash={playerImpactSplash} />
+                </div>
+                
+                {/* SQUAD / PARTY HUD */}
+                <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} />
               </div>
            </div>
 

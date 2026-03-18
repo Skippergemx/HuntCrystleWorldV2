@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Header, AvatarMedia } from './GameUI';
+import { Header, AvatarMedia, SquadHUD } from './GameUI';
 import { Trophy, Skull, Star, ChevronUp, Swords, Medal } from 'lucide-react';
 
-export const LeaderboardView = React.memo(({ leaderboard, user, setView }) => {
+export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTimeLeft, TAVERN_MATES, setView }) => {
   const [activeTab, setActiveTab] = useState('boss'); // 'boss', 'level', 'depth'
 
   const sortedData = useMemo(() => {
@@ -116,7 +116,10 @@ export const LeaderboardView = React.memo(({ leaderboard, user, setView }) => {
              </div>
              <div>
                <p className="text-[8px] font-black text-white/70 uppercase italic tracking-widest leading-none">Your Standing</p>
-               <p className="text-xs font-black text-white uppercase italic tracking-tighter">Ready to Ascend?</p>
+               <div className="flex items-center gap-3">
+                 <p className="text-xs font-black text-white uppercase italic tracking-tighter">Ready to Ascend?</p>
+                 <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
+               </div>
              </div>
           </div>
           <Trophy size={20} className="text-cyan-200 animate-bounce" />

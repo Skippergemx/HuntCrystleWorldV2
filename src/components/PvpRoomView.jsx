@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send, MessageSquare } from 'lucide-react';
 import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getFirestore, increment, updateDoc, getDoc } from 'firebase/firestore';
-import { Header, AvatarMedia } from './GameUI';
+import { Header, AvatarMedia, SquadHUD } from './GameUI';
 
-export const PvpRoomView = React.memo(({ player, syncPlayer, setView, addLog, totalStats, db, appId, user }) => {
+export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, syncPlayer, setView, addLog, totalStats, db, appId, user }) => {
   const [players, setPlayers] = useState([]);
   const [penaltyTime, setPenaltyTime] = useState(0);
   const [combatAnim, setCombatAnim] = useState(null); // { targetId, type }
@@ -53,6 +53,11 @@ export const PvpRoomView = React.memo(({ player, syncPlayer, setView, addLog, to
           hp: player.maxHp,
           maxHp: player.maxHp,
           stats: totalStats,
+          // Sync Squad to other players
+          hiredMate: player.hiredMate,
+          dragonSummoned: dragonTimeLeft > 0,
+          gemx: player.gemx,
+          gemxAvatar: player.gemxAvatar,
           lastAction: Date.now(),
           lastHitBy: null,
           lastHitId: null,
@@ -72,7 +77,7 @@ export const PvpRoomView = React.memo(({ player, syncPlayer, setView, addLog, to
     return () => {
       deleteDoc(pvpDocRef).catch(console.error);
     };
-  }, [db, appId, user, player.name, player.level, player.avatar, player.maxHp, totalStats]);
+  }, [db, appId, user, player.name, player.level, player.avatar, player.maxHp, totalStats, player.hiredMate, dragonTimeLeft, player.gemx, player.gemxAvatar]);
 
   // Listen to players in room
   useEffect(() => {
@@ -230,7 +235,7 @@ export const PvpRoomView = React.memo(({ player, syncPlayer, setView, addLog, to
           icon={<Users size={20} className="text-blue-400" />}
         />
 
-        <div className="flex justify-between items-end mb-4 px-2">
+        <div className="flex justify-between items-center mb-4 px-2 bg-black/20 p-2 border-b border-white/5 border-[4px] border-black rounded-xl">
           <div>
             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none mb-1">Live Arena Status</p>
             <p className="text-xl font-black text-white uppercase italic tracking-tighter">Active Hunters: {players.length}</p>
@@ -267,18 +272,22 @@ export const PvpRoomView = React.memo(({ player, syncPlayer, setView, addLog, to
                       {isSelf && <span className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase tracking-tighter italic">YOU</span>}
                     </div>
 
-                    <div className={`w-20 h-24 mb-2 border-2 border-black overflow-hidden bg-slate-900 group-hover:border-white/50 transition-colors relative ${isBeingHit ? 'animate-shake' : ''}`}>
-                       <AvatarMedia num={p.avatar} animated={!isSelf} className="w-full h-full object-cover grayscale-[0.2]" />
-                       {p.hp <= 0 && (
-                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-                            <Skull size={32} className="text-white/80 animate-pulse" />
-                         </div>
-                       )}
-                       {isBeingHit && (
-                         <div className="absolute inset-0 flex items-center justify-center animate-ping">
-                           <Sword size={40} className="text-white drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-                         </div>
-                       )}
+                    <div className="flex flex-col items-center mb-2 w-full gap-2">
+                      <div className={`w-20 h-24 border-2 border-black overflow-hidden bg-slate-900 group-hover:border-white/50 transition-colors relative ${isBeingHit ? 'animate-shake' : ''}`}>
+                         <AvatarMedia num={p.avatar} animated={!isSelf} className="w-full h-full object-cover grayscale-[0.2]" />
+                         {p.hp <= 0 && (
+                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+                              <Skull size={32} className="text-white/80 animate-pulse" />
+                           </div>
+                         )}
+                         {isBeingHit && (
+                           <div className="absolute inset-0 flex items-center justify-center animate-ping">
+                             <Sword size={40} className="text-white drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                           </div>
+                         )}
+                      </div>
+                      {/* Compact horizontal squad Beneath avatar */}
+                      <SquadHUD player={p} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
                     </div>
 
                     <h3 className="text-[10px] font-black text-white uppercase italic tracking-tighter truncate w-full text-center mb-2 drop-shadow-md">{p.name}</h3>

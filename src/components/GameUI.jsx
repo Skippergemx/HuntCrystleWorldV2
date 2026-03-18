@@ -12,15 +12,31 @@ export const Header = React.memo(({ title, onClose }) => (
   </div>
 ));
 
-export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled }) => (
+export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop }) => (
   <button 
     onClick={onClick} 
     disabled={disabled} 
-    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-900 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-800 hover:border-cyan-500 hover:bg-slate-700 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)]'} transition-transform`}
+    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-950 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)]'} transition-transform`}
   >
-    <div className={`p-2 md:p-4 ${color} rounded-xl md:rounded-2xl mb-2 md:mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] group-hover:scale-110 transition-transform text-white border-[2px] md:border-[3px] border-black`}>{icon}</div>
-    <h3 className="font-black text-[10px] md:text-xs uppercase tracking-widest text-white italic drop-shadow-md">{title}</h3>
-    <p className="text-[7px] md:text-[8px] font-bold text-slate-400 uppercase mt-0.5 md:mt-1 tracking-tighter italic leading-none">{sub}</p>
+    {backdrop && (
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img 
+          src={backdrop} 
+          className="w-full h-full object-cover grayscale-[0.4] contrast-150 opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700" 
+          alt=""
+        />
+        <div className="absolute inset-0 bg-black/20" />
+      </div>
+    )}
+
+    <div className={`relative z-20 p-2 md:p-4 ${color} rounded-xl md:rounded-2xl mb-1.5 md:mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] group-hover:scale-110 group-hover:-rotate-3 transition-transform text-white border-[2px] md:border-[3px] border-black flex items-center justify-center shrink-0`}>
+      {React.cloneElement(icon, { size: 18, className: 'md:w-6 md:h-6 h-4 w-4' })}
+    </div>
+    
+    <div className="relative z-20 text-center">
+      <h3 className="font-black text-[9px] md:text-xs uppercase tracking-widest text-white italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none">{title}</h3>
+      <p className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase mt-0.5 md:mt-1 tracking-tighter italic leading-none opacity-80">{sub}</p>
+    </div>
   </button>
 ));
 
@@ -75,6 +91,49 @@ export const AvatarMedia = React.memo(({ num, animated, className }) => {
       </video>
     );
   }
-  return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" />;
+return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" />;
+});
+
+export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, orientation = 'vertical' }) => {
+  const isHorizontal = orientation === 'horizontal';
+  const hasDragon = dragonTimeLeft > 0 || player?.dragonSummoned;
+  
+  return (
+    <div className={`flex ${isHorizontal ? 'flex-row items-center gap-1.5 md:gap-2' : 'flex-col justify-center gap-1.5 md:gap-3'} shrink-0 py-1 scale-[0.8] md:scale-[0.9] z-20`}>
+      {player?.hiredMate && (
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-purple-600 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title={`Companion: ${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}`}>
+          <img
+            src={`/assets/partymemberavatar/${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}.jpg`}
+            className="w-full h-full object-cover grayscale-[0.2] contrast-125"
+            onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + player.hiredMate; }}
+            alt="Mate"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">MATE</div>
+        </div>
+      )}
+      {hasDragon && (
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-emerald-600 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title="Summoned Dragon Power">
+          <img
+             src="/assets/dragonsground/dragons/DragonAvatar (1).jpg"
+             className="w-full h-full object-cover grayscale-[0.2] contrast-125"
+             onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=dragon'; }}
+             alt="Drake"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">DRAKE</div>
+        </div>
+      )}
+      {player?.gemx?.level >= 1 && (
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-cyan-600 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title={`GEMX Sentinel Level ${player.gemx.level}`}>
+          <img
+             src={`/assets/dragonsground/gemx/${player.gemxAvatar || player.gemxAvatar || 'gemx (1).gif'}`}
+             className="w-full h-full object-cover contrast-125"
+             onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=gemx'; }}
+             alt="Gemx"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">GEMX</div>
+        </div>
+      )}
+    </div>
+  );
 });
 

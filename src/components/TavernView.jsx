@@ -2,7 +2,7 @@ import React from 'react';
 import { User, Sparkles } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const TavernView = ({ TAVERN_MATES, player, hireMate, setView }) => {
+export const TavernView = ({ TAVERN_MATES, player, hireMate, dismissMate, setView }) => {
   return (
     <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
@@ -14,7 +14,12 @@ export const TavernView = ({ TAVERN_MATES, player, hireMate, setView }) => {
             <Sparkles size={14} className="text-purple-400 animate-pulse" />
             <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Current Contract: Active</span>
           </div>
-          <span className="text-[8px] font-black text-purple-300 uppercase italic">Slot Occupied</span>
+          <button 
+            onClick={dismissMate}
+            className="text-[8px] font-black bg-red-600 text-white px-2 py-0.5 border border-black shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-500 active:shadow-none translate-y-0 active:translate-y-0.5 transition-all uppercase italic"
+          >
+            Terminate Contract
+          </button>
         </div>
       )}
 
@@ -33,8 +38,12 @@ export const TavernView = ({ TAVERN_MATES, player, hireMate, setView }) => {
             >
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 ${rarityColor} border-2 border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] text-2xl`}>
-                     {mate.icon || <User className="text-black" size={20} />}
+                  <div className={`w-14 h-14 ${rarityColor} border-2 border-black overflow-hidden shadow-[3px_3px_0_rgba(0,0,0,1)] group-hover:scale-110 transition-transform`}>
+                     <img 
+                       src={`/assets/partymemberavatar/${mate.name}.jpg`} 
+                       className="w-full h-full object-cover"
+                       onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + mate.name; }}
+                     />
                   </div>
                   <div className="text-left">
                     <span className={`text-[8px] font-black uppercase px-2 py-0.5 border border-black/20 text-white ${rarityColor} mb-1 inline-block italic`}>{mate.rarity}</span>
