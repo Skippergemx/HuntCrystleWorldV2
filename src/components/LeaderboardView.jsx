@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
-import { Trophy, Skull, Star, ChevronUp, Swords, Medal } from 'lucide-react';
+import { Trophy, Skull, Star, ChevronUp, Swords, Medal, Coins } from 'lucide-react';
 
 export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTimeLeft, TAVERN_MATES, setView }) => {
   const [activeTab, setActiveTab] = useState('boss'); // 'boss', 'level', 'depth'
@@ -13,6 +13,8 @@ export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTi
       return data.sort((a, b) => (b.level || 0) - (a.level || 0));
     } else if (activeTab === 'depth') {
       return data.sort((a, b) => (b.maxDepth || 0) - (a.maxDepth || 0));
+    } else if (activeTab === 'gx') {
+      return data.sort((a, b) => (b.gx || 0) - (a.gx || 0));
     }
     return data;
   }, [leaderboard, activeTab]);
@@ -20,7 +22,8 @@ export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTi
   const tabs = [
     { id: 'boss', label: 'Iron Slayer', sub: 'Boss Damage', icon: <Swords size={12} />, color: 'from-red-600 to-red-900', secondary: 'border-red-500' },
     { id: 'level', label: 'Ancient Veteran', sub: 'Highest Level', icon: <Star size={12} />, color: 'from-amber-500 to-amber-800', secondary: 'border-amber-400' },
-    { id: 'depth', label: 'Dungeon Vanguard', sub: 'Deepest floor', icon: <ChevronUp size={12} />, color: 'from-blue-600 to-blue-900', secondary: 'border-blue-400' }
+    { id: 'depth', label: 'Dungeon Vanguard', sub: 'Deepest floor', icon: <ChevronUp size={12} />, color: 'from-blue-600 to-blue-900', secondary: 'border-blue-400' },
+    { id: 'gx', label: 'Wealth Baron', sub: 'Highest GX', icon: <Coins size={12} />, color: 'from-emerald-500 to-emerald-800', secondary: 'border-emerald-400' }
   ];
 
   const selfRank = useMemo(() => {
@@ -36,7 +39,7 @@ export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTi
       <Header title="ELITE HALL OF FAME" onClose={() => setView('menu')} icon={<Trophy className="text-amber-400" />} />
 
       {/* Hero Tabs */}
-      <div className="grid grid-cols-3 gap-2 mb-6 mt-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 mt-4">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -90,11 +93,12 @@ export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTi
               <div className="text-right flex-shrink-0">
                 <p className="text-sm font-black text-white italic tracking-tighter">
                   {activeTab === 'boss' ? (entry.score || 0).toLocaleString() : 
+                   activeTab === 'gx' ? (entry.gx || 0).toLocaleString() :
                    activeTab === 'level' ? entry.level :
                    (entry.maxDepth || 1)}
                 </p>
                 <p className="text-[6px] font-black text-slate-500 uppercase italic opacity-70">
-                  {activeTab === 'boss' ? 'DMG' : activeTab === 'level' ? 'LVL' : 'FLOOR'}
+                  {activeTab === 'boss' ? 'DMG' : activeTab === 'gx' ? 'GX' : activeTab === 'level' ? 'LVL' : 'FLOOR'}
                 </p>
               </div>
 

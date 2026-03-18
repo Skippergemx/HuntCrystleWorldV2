@@ -87,7 +87,7 @@ const BOSS = {
   agi: 800,
   dex: 700,
   critChance: 0.25,
-  baseDropRate: 0.8, // 80% for testing, will be 15% later
+  baseDropRate: 0.1, // 10% drop rate for Relics
   taunts: ["I am the final obstacle!", "Your journey ends here.", "Kneel before the Core!"]
 };
 
@@ -95,7 +95,8 @@ const BOSS_MEDIA_FILES = [
   { img: '/assets/bossmonster/DungeonGemBoss (1).jpg', vid: '/assets/bossmonstervideo/DungeonGemBoss (1) video.mp4' },
   { img: '/assets/bossmonster/CrystleHunterAvatar (30).jpg', vid: '/assets/bossmonstervideo/DungeonGemBoss (2) video.mp4' }
 ];
-const SHOP_ITEMS = [...SHOP_CONSUMABLES, ...EQUIPMENT.filter(e => e.type !== 'Relic')];
+const forgeableIDs = CRYSTLE_RECIPES.map(r => r.id);
+const SHOP_ITEMS = [...SHOP_CONSUMABLES, ...EQUIPMENT.filter(e => e.type !== 'Relic' && !forgeableIDs.includes(e.id))];
 const SOUNDS = {
   mainBGM: ['/assets/sounds/Main-BGM01.mp3', '/assets/sounds/Main-BGM02.mp3'],
   dungeonBGM: ['/assets/sounds/Dungeon-BGM01.mp3', '/assets/sounds/Dungeon-BGM02.mp3'],
@@ -213,6 +214,7 @@ const App = () => {
       email: user.email || '',
       level: player.level,
       score: player.totalBossDamage || 0,
+      gx: player.gx || 0,
       maxDepth: player.maxDepth || 1,
       heroAvatar: player.avatar || 1,
       ...updates

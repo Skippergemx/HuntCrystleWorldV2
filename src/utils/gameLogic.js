@@ -67,7 +67,7 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
 
   // Apply Dragon Buffs (Requires Dragon to be Summoned)
   if (player.dragon && player.dragon.level > 0 && dragonActive) {
-    const dragonBonus = 5 * player.dragon.level;
+    const dragonBonus = 2 * player.dragon.level;
     stats.str += dragonBonus;
     stats.agi += dragonBonus;
     stats.dex += dragonBonus;

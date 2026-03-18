@@ -131,8 +131,8 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < 2) {
-            // Drop fruit! (Increased frequency as requested)
-            if (Math.random() < 0.3) {
+            // Drop fruit! (Adjusted to 15% drop rate)
+            if (Math.random() < 0.15) {
               // Rarity-based weighted drop logic
               const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
               const pool = [];
@@ -241,7 +241,7 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
                     <ShoppingBag size={14} /> The Great Drake
                   </div>
                   <p className="text-[10px] text-slate-400 leading-tight">
-                    Level up the Dragon using <span className="text-white">Mystic Fruits</span>. Every Dragon Level provides a permanent <span className="text-emerald-400 font-bold">+5 bonus to ALL stats</span> (STR, AGI, DEX).
+                    Level up the Dragon using <span className="text-white">Mystic Fruits</span>. Every Dragon Level provides a permanent <span className="text-emerald-400 font-bold">+2 bonus to ALL stats</span> (STR, AGI, DEX).
                   </p>
                 </div>
 
@@ -250,7 +250,7 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
                     <Ghost size={14} /> Wild Encounters
                   </div>
                   <p className="text-[10px] text-slate-400 leading-tight">
-                    Wild monsters are attracted to the sanctuary based on GEMX's level (3 monsters per level). These monsters roam the Wild Encounter Zone and <span className="text-white">drop Mystic Fruits (80% rate)</span> as they travel. Click the fruits to harvest them!
+                    Wild monsters are attracted to the sanctuary based on GEMX's level (3 monsters per level). These monsters roam the Wild Encounter Zone and <span className="text-white">drop Mystic Fruits (15% rate)</span> as they travel. Click the fruits to harvest them!
                   </p>
                 </div>
               </div>
@@ -377,7 +377,7 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
               </div>
               <div className="mt-2 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 5} ALL STATS</p>
+                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 2} ALL STATS</p>
                   {dragonTimeLeft > 0 ? (
                     <div className={`flex items-center gap-1 text-[8px] font-black text-white bg-black/40 px-2 py-0.5 rounded border border-${activeGemx.color}-500/30 animate-pulse`}>
                       <Clock size={10} className="text-white" />

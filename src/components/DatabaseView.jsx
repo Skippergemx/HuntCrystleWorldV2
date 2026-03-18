@@ -55,7 +55,7 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
             placeholder={`Search ${activeTab}...`} 
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="w-full bg-white border-[3px] border-black p-3 pl-10 text-xs font-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)] focus:outline-none focus:translate-y-0.5 focus:shadow-none transition-all"
+            className="w-full bg-white border-[3px] border-black p-3 pl-10 text-xs font-black text-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)] focus:outline-none focus:translate-y-0.5 focus:shadow-none transition-all"
           />
           <Database size={16} className="absolute left-3 top-3.5 text-slate-400" />
         </div>
@@ -119,7 +119,7 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
                            <span className="text-3xl relative z-10">{loot.icon}</span>
                         </div>
                         <div>
-                          <p className="font-black text-lg uppercase italic leading-none mb-1 group-hover:text-cyan-600 transition-colors">{loot.name}</p>
+                          <p className="font-black text-lg text-black uppercase italic leading-none mb-1 group-hover:text-cyan-600 transition-colors">{loot.name}</p>
                           <div className="flex items-center gap-3">
                              <span className={`text-[10px] font-black uppercase px-3 py-0.5 rounded-full border-2 border-black ${loot.rarity === 'Legendary' ? 'bg-amber-400' : loot.rarity === 'Epic' ? 'bg-purple-500 text-white' : loot.rarity === 'Rare' ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{loot.rarity}</span>
                              {sourceMap && (
@@ -151,7 +151,7 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
                          <span className="text-3xl relative z-10 transform group-hover:scale-125 transition-transform duration-300">{fruit.icon}</span>
                       </div>
                       <div>
-                        <p className="font-black text-lg uppercase italic leading-none mb-1 group-hover:text-emerald-600 transition-colors">{fruit.name}</p>
+                        <p className="font-black text-lg text-black uppercase italic leading-none mb-1 group-hover:text-emerald-600 transition-colors">{fruit.name}</p>
                         <div className="flex items-center gap-3">
                            <span className={`text-[10px] font-black uppercase px-3 py-0.5 rounded-full border-2 border-black ${fruit.rarity === 'Legendary' ? 'bg-amber-400' : fruit.rarity === 'Epic' ? 'bg-purple-500 text-white' : fruit.rarity === 'Rare' ? 'bg-blue-500 text-white' : 'bg-emerald-200 text-emerald-700'}`}>{fruit.rarity}</span>
                            <span className="text-[10px] font-black text-emerald-600 uppercase italic tracking-widest">+{fruit.exp} Dragon XP</span>
@@ -159,7 +159,7 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
                      </div>
                   </div>
                   <div className="text-right max-w-[200px]">
-                     <p className="text-[10px] font-black text-slate-400 italic leading-tight uppercase line-clamp-2">"{fruit.description}"</p>
+                     <p className="text-[10px] font-black text-slate-700 italic leading-tight uppercase line-clamp-2">"{fruit.description}"</p>
                   </div>
                </div>
              ))}
