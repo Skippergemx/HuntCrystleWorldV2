@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star } from 'lucide-react';
+import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD } from './GameUI';
 
 export const CombatView = React.memo(({ 
   enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, dragonTimeLeft, TAVERN_MATES, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
-  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot
+  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot, onHelp
 }) => {
   if (!enemy) return null;
 
@@ -13,17 +13,34 @@ export const CombatView = React.memo(({
     return selectedMap?.lootTable ? selectedMap.lootTable.slice(0, 10).map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
   }, [selectedMap, LOOTS]);
 
+  const arenaTheme = React.useMemo(() => {
+    const el = selectedMap?.element;
+    if (el === 'Pyro') return { bg: 'bg-red-950', dot: '#f97316', hud: 'border-orange-500', text: 'text-orange-400', banner: 'bg-orange-600' };
+    if (el === 'Earthen') return { bg: 'bg-emerald-950', dot: '#10b981', hud: 'border-emerald-500', text: 'text-emerald-400', banner: 'bg-emerald-600' };
+    if (el === 'Hydro') return { bg: 'bg-blue-950', dot: '#0ea5e9', hud: 'border-blue-500', text: 'text-blue-400', banner: 'bg-blue-600' };
+    return { bg: 'bg-slate-950/40', dot: '#0ea5e9', hud: 'border-cyan-500', text: 'text-cyan-400', banner: 'bg-cyan-600' };
+  }, [selectedMap]);
+
   return (
-    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${isHurt ? 'animate-damage' : ''}`}>
+    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}>
       {/* Halftone Overlay HUD */}
-      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f87171 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, ${arenaTheme.dot} 1px, transparent 1px)`, backgroundSize: '8px 8px' }}></div>
       
       {/* --- HUD TOP --- */}
       <div className="w-full flex justify-between items-start z-10 px-2">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 px-3 py-1 bg-black border-[3px] border-cyan-500 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)]">
-            <TrendingUp size={14} className="text-cyan-400" />
-            <span className="text-xs font-black text-cyan-400 tracking-widest italic uppercase">Floor {depth}</span>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 px-3 py-1 bg-black border-[3px] ${arenaTheme.hud} rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] ${arenaTheme.text}`}>
+              <TrendingUp size={14} />
+              <span className="text-xs font-black tracking-widest italic uppercase">Floor {depth}</span>
+            </div>
+            <button 
+              onClick={onHelp} 
+              className={`p-1.5 ${arenaTheme.banner} border-[3px] border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:brightness-110 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none`}
+              title="Tactical Guide"
+            >
+              <HelpCircle size={14} strokeWidth={3} />
+            </button>
           </div>
           
           <div className="flex flex-col gap-1">

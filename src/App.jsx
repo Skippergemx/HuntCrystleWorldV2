@@ -52,10 +52,11 @@ import {
   scaleMonster,
   calculateStats,
   getHitChance,
-  getDamage
+  getDamage,
+  ELEMENT_ADVANTAGE
 } from './utils/gameLogic';
 
-import { Header, NavBtn, StatTile, AttributeRow, AvatarMedia, SquadHUD } from './components/GameUI';
+import { Header, NavBtn, StatTile, AttributeRow, AvatarMedia, SquadHUD, GuideModal } from './components/GameUI';
 import { ImpactSplash, BossImpactSplash } from './components/CombatEffects';
 import { useAdventure } from './hooks/useAdventure';
 import { MenuView } from './components/MenuView';
@@ -145,6 +146,67 @@ const App = () => {
   const [isSfxOn, setIsSfxOn] = useState(true);
   const [dragonTimeLeft, setDragonTimeLeft] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showGuide, setShowGuide] = useState(false);
+  const [guideType, setGuideType] = useState('menu');
+
+  const GUIDE_CONTENT = {
+    menu: [
+      { topic: 'Nexus Hub', text: 'This is your central command. Access all sectors, manage your equipment, and trade in the marketplace from here.' },
+      { topic: 'World Progression', text: 'Unlock new sectors by reaching specific level milestones. Rust Canyon (Lvl 10) and Void Sector 7 (Lvl 25) await elite hunters.' },
+      { topic: 'Combat Arena', text: 'Enter the PVP Holo-Grid to test your strength against other active hunters in real-time synchronized combat.' }
+    ],
+    dungeon: [
+      { topic: 'Floor Scaling', text: 'Every floor you clear increases GX and XP rewards by 15% (exponential). However, monster health and damage scale at the same rate!' },
+      { topic: 'Loot Gating', text: 'Rare items drop after Floor 5, Epic after Floor 10, and Legendary after Floor 20. Higher floors significantly increase drop chances.' },
+      { topic: 'Combat Stats', text: 'STR increases damage. AGI increases your defense and dodge chance. DEX improves your hit rate and critical strike chance.' }
+    ],
+    boss: [
+      { topic: 'Relic Protocol', text: 'The Boss has a 10% base chance to drop a Relic. This chance DOUBLES for every 1 Million cumulative damage deal to the system.' },
+      { topic: 'Stun Cycles', text: 'High damage strikes can stun the boss. Use these windows to maximize your damage output without fear of retaliation.' }
+    ],
+    dragons_ground: [
+      { topic: 'Dragon Empowerment', text: 'Feed Mystic Fruits to your dragon to level it up. Each level provides a permanent +2 bonus to ALL player stats when summoned.' },
+      { topic: 'Gemx Sentinels', text: 'Feed Crystle Materials to your Gemx to increase its level. Higher level Gemx provide better passive bonuses and visual evolution.' },
+      { topic: 'Fruit Scavenging', text: 'Monsters in the Dragons Ground have a 15% chance to drop Mystic Fruits. Clear floors quickly to stockpile reserves.' }
+    ],
+    forge: [
+      { topic: 'Crystle Forging', text: 'Combine raw materials and GX to create powerful Crystle-tier equipment. Forged items are more powerful than standard shop gear.' },
+      { topic: 'Success Calculus', text: 'Success rate starts at 50% and improves based on your total DEX. High-tier gear has high failure risks—equip DEX gear before forging!' }
+    ],
+    shop: [
+      { topic: 'Equipment Procurement', text: 'The shop provides basic and advanced gear. Note that Relics and forged Crystle items CANNOT be bought here—they must be found or crafted.' },
+      { topic: 'Potion Reserves', text: 'Always keep at least 10 HP Potions and a few Auto-Scrolls. Combat in higher floors will drain your resources rapidly.' }
+    ],
+    marketplace: [
+      { topic: 'Player Trading', text: 'Trade your found loot with other hunters for GX. Use this to find rare materials you need for forging without grinding.' },
+      { topic: 'Meta-Tax', text: 'The Metaverse Union takes a 5% tax on all completed sales. Payouts are claimed automatically the next time you access the terminal.' }
+    ],
+    pvp: [
+      { topic: 'Holo-Grid Combat', text: 'Real-time combat where you can challenge any active hunter. Strikes consume current HP. Defeat results in a 30-second expulsion penalty.' },
+      { topic: 'Combat Sync', text: 'Your current total stats, including dragon buffs and companion perks, are synchronized upon entry. Counter-attacks are automated based on agility levels.' }
+    ],
+    leaderboard: [
+      { topic: 'Ranking Metrics', text: 'Hunters are ranked by Combat Score (Boss Damage), Hunter Level, Peak Depth (Highest Floor), and Wealth (Total GX).' },
+      { topic: 'Baron Status', text: 'The top wealth earners are tracked in the Wealth tab. Use the marketplace to flip items and climb the economic rankings.' }
+    ],
+    attributes: [
+      { topic: 'Evolution Points', text: 'Gain 5 Ability Points every time you level up. Spend them here to permanently increase your base stats.' },
+      { topic: 'Scaling Returns', text: 'DEX is critical early game for hit rating. STR becomes vital as monster HP increases exponentially in the deep dungeon.' }
+    ],
+    database: [
+      { topic: 'Archive Wiki', text: 'The totality of the In-Game items is documented here. Use this as a wiki to study monster behaviors, drop probabilities, and item tech specs.' },
+      { topic: 'Asset Analysis', text: 'Switch tabs to scan Beast Lore, Crystle Materials, and Equipment tiers. Live probability scanners show real-time drop chances per sector.' }
+    ],
+    attributes: [
+      { topic: 'Tech Installation', text: 'Manage currently equipped gear. Installing new tech will move your old equipment back to storage.' },
+      { topic: 'Relic Slots', text: 'You have one Relic slot for ultra-rare items found from Bosses. These provide unique, game-changing passive stats.' }
+    ]
+  };
+
+  const openGuide = (type) => {
+    setGuideType(type || view);
+    setShowGuide(true);
+  };
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -989,6 +1051,30 @@ const App = () => {
 
     const target = isBoss ? BOSS : e;
 
+    // --- Elemental Imbuement Check (Inferno/Tectonic/Abyssal Tiers) ---
+    const monsterElement = selectedMap?.element;
+    if (monsterElement) {
+        const playerElement = p.gemxElement || 'Cosmic';
+        const isEffective = playerElement && ELEMENT_ADVANTAGE[playerElement] === monsterElement;
+        
+        // Cosmic is neutral, but the user said "normal damage will hardly cut" 
+        // requiring "proper GEMX element". So we enforce the advantage system here.
+        if (!isEffective) {
+            addLog(`⛔ SYNC ERROR: Attacks nullified!`);
+            addLog(`💡 Strategy: Imbuement with ${
+                monsterElement === 'Earthen' ? 'Pyro' : 
+                monsterElement === 'Hydro' ? 'Earthen' : 
+                monsterElement === 'Pyro' ? 'Gale' : 'Hydro'
+            } resonance required.`);
+            
+            // Missing imbuement results in an automatic strike failure
+            setMissTimeLeft(1.2);
+            enemyTurn(target, isBoss);
+            setIsActionProcessing(false);
+            return;
+        }
+    }
+
     // Trigger Strike Animation
     setStrikingSide('player');
     playSFX(SOUNDS.playerAttack);
@@ -1464,6 +1550,7 @@ const App = () => {
               spawnNewEnemy={spawnNewEnemy}
               autoUntil={player?.autoUntil || 0}
               syncPlayer={syncPlayer}
+              onHelp={openGuide}
             />
           )}
 
@@ -1501,6 +1588,7 @@ const App = () => {
               strikingSide={strikingSide}
               totalStats={totalStats}
               lastLoot={lastLoot}
+              onHelp={() => openGuide('dungeon')}
             />
           )}
 
@@ -1511,6 +1599,7 @@ const App = () => {
               hireMate={hireMate}
               dismissMate={dismissMate}
               setView={setView}
+              onHelp={() => openGuide('menu')}
             />
           )}
 
@@ -1544,6 +1633,7 @@ const App = () => {
               missTimeLeft={missTimeLeft}
               autoUseScroll={autoUseScroll}
               setAutoUseScroll={setAutoUseScroll}
+              onHelp={() => openGuide('boss')}
             />
           )}
 
@@ -1552,6 +1642,7 @@ const App = () => {
               player={player}
               allocateStat={allocateStat}
               setView={setView}
+              onHelp={() => openGuide('attributes')}
             />
           )}
 
@@ -1561,6 +1652,7 @@ const App = () => {
               syncPlayer={syncPlayer}
               setView={setView}
               addLog={addLog}
+              onHelp={() => openGuide('menu')}
             />
           )}
 
@@ -1570,6 +1662,7 @@ const App = () => {
               player={player}
               buyItem={buyItem}
               setView={setView}
+              onHelp={() => openGuide('shop')}
             />
           )}
 
@@ -1580,6 +1673,7 @@ const App = () => {
               forgeCrystle={forgeCrystle}
               setView={setView}
               LOOTS={LOOTS}
+              onHelp={() => openGuide('forge')}
             />
           )}
 
@@ -1591,6 +1685,7 @@ const App = () => {
               dragonTimeLeft={dragonTimeLeft}
               TAVERN_MATES={TAVERN_MATES}
               setView={setView}
+              onHelp={() => openGuide('leaderboard')}
             />
           )}
 
@@ -1599,6 +1694,7 @@ const App = () => {
               player={player}
               setView={setView}
               sellItem={sellItem}
+              onHelp={() => openGuide('inventory')}
             />
           )}
 
@@ -1611,6 +1707,7 @@ const App = () => {
               setView={setView}
               currentMate={currentMate}
               buffTimeLeft={buffTimeLeft}
+              onHelp={() => openGuide('gear')}
             />
           )}
 
@@ -1623,6 +1720,7 @@ const App = () => {
               cancelListing={cancelMarketListing}
               setView={setView}
               addLog={addLog}
+              onHelp={() => openGuide('marketplace')}
             />
           )}
 
@@ -1635,6 +1733,7 @@ const App = () => {
               EQUIPMENT={EQUIPMENT}
               MAPS={MAPS}
               FRUITS={FRUITS}
+              onHelp={() => openGuide('database')}
             />
           )}
 
@@ -1649,6 +1748,7 @@ const App = () => {
               setSelectedMap={setSelectedMap}
               isPenalized={isPenalized}
               penaltyRemaining={penaltyRemaining}
+              onHelp={() => openGuide('dungeon')}
             />
           )}
 
@@ -1664,6 +1764,7 @@ const App = () => {
               db={db}
               appId={appId}
               user={user}
+              onHelp={() => openGuide('pvp')}
             />
           )}
 
@@ -1687,6 +1788,7 @@ const App = () => {
               addLog={addLog}
               summonDragon={summonDragon}
               dragonTimeLeft={dragonTimeLeft}
+              onHelp={() => openGuide('dragons_ground')}
             />
           )}
         </div>
@@ -1732,6 +1834,12 @@ const App = () => {
         .animate-flinch { animation: flinch 0.15s ease-out; }
         .animate-impact { animation: impact-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
       `}</style>
+      <GuideModal 
+        isOpen={showGuide} 
+        onClose={() => setShowGuide(false)} 
+        title={`${guideType.replace('_', ' ')} manual`} 
+        content={GUIDE_CONTENT[guideType] || []} 
+      />
     </div>
   );
 };

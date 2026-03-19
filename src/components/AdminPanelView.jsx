@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X } from 'lucide-react';
-import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup } from 'firebase/firestore';
+import { ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target } from 'lucide-react';
+import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 
 export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance' or 'players'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', or 'system'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
@@ -211,6 +211,51 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     }
   };
 
+  const [editingPlayer, setEditingPlayer] = useState(null);
+
+  const updatePlayerData = async (e) => {
+    e.preventDefault();
+    if (!editingPlayer) return;
+
+    setLoading(true);
+    setMessage(null);
+    try {
+      const { id, sourceAppId, name, level, tokens, totalBossDamage, maxDepth } = editingPlayer;
+      const profileRef = doc(db, 'artifacts', sourceAppId || appId, 'users', id, 'profile', 'data');
+      
+      const updateData = {
+        name,
+        level: Number(level),
+        tokens: Number(tokens),
+        totalBossDamage: Number(totalBossDamage),
+        maxDepth: Number(maxDepth)
+      };
+
+      await updateDoc(profileRef, updateData);
+      
+      // Also update leaderboard if the player is on it
+      const lbRef = doc(db, 'artifacts', sourceAppId || appId, 'public', 'data', 'leaderboard', id);
+      const lbSnap = await getDoc(lbRef);
+      if (lbSnap.exists()) {
+        await updateDoc(lbRef, {
+          name,
+          level: Number(level),
+          score: Number(totalBossDamage),
+          maxDepth: Number(maxDepth)
+        });
+      }
+
+      setMessage({ type: 'success', text: `Unit ${id} re-calibrated successfully.` });
+      setEditingPlayer(null);
+      await fetchStats();
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Calibration failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4 bg-slate-950">
@@ -228,7 +273,90 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
   }
 
   return (
-    <div className="flex-1 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto">
+    <div className="flex-1 p-6 flex flex-col gap-6 bg-slate-950 overflow-y-auto relative">
+      {/* Edit Modal Overlay */}
+      {editingPlayer && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border-4 border-cyan-600 p-8 max-w-md w-full shadow-[12px_12px_0_rgba(0,0,0,1)] animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-cyan-500 pl-4">Re-Calibrating Hunter</h2>
+              <button onClick={() => setEditingPlayer(null)} className="text-slate-500 hover:text-white"><X /></button>
+            </div>
+            
+            <form onSubmit={updatePlayerData} className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase">Unit Name</label>
+                <input 
+                  type="text" 
+                  value={editingPlayer.name}
+                  onChange={e => setEditingPlayer({...editingPlayer, name: e.target.value})}
+                  className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Unit Level</label>
+                  <input 
+                    type="number" 
+                    value={editingPlayer.level}
+                    onChange={e => setEditingPlayer({...editingPlayer, level: e.target.value})}
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">GX Balance</label>
+                  <input 
+                    type="number" 
+                    value={editingPlayer.tokens}
+                    onChange={e => setEditingPlayer({...editingPlayer, tokens: e.target.value})}
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Boss DMG</label>
+                  <input 
+                    type="number" 
+                    value={editingPlayer.totalBossDamage}
+                    onChange={e => setEditingPlayer({...editingPlayer, totalBossDamage: e.target.value})}
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Peak Depth</label>
+                  <input 
+                    type="number" 
+                    value={editingPlayer.maxDepth}
+                    onChange={e => setEditingPlayer({...editingPlayer, maxDepth: e.target.value})}
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-cyan-600 text-white py-3 font-black uppercase italic border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-500 transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : 'Apply Changes'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setEditingPlayer(null)}
+                  className="flex-1 bg-slate-800 text-white py-3 font-black uppercase italic border-2 border-black hover:bg-slate-700 transition-all"
+                >
+                  Discard
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-4 border-red-600 pb-6">
         <div>
@@ -315,6 +443,12 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
         >
           Player Registry
         </button>
+        <button 
+          onClick={() => setActiveTab('system')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'system' ? 'bg-emerald-600 text-white border-emerald-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          System Health
+        </button>
       </div>
 
       {activeTab === 'maintenance' ? (
@@ -383,7 +517,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
             </div>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'players' ? (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-cyan-600 pl-4">
             <h2 className="text-xl font-black text-white uppercase italic">Player Registry</h2>
@@ -409,6 +543,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Boss Damage</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Floor</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Inventory</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/50">
@@ -459,11 +594,19 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                           <td className="py-4 px-4">
                             <span className="text-[10px] font-black text-slate-400">{(player.inventory || []).length} Items</span>
                           </td>
+                          <td className="py-4 px-4 text-center">
+                            <button 
+                              onClick={() => setEditingPlayer(player)}
+                              className="p-2 bg-slate-800 text-cyan-400 border border-slate-700 hover:bg-cyan-600 hover:text-white transition-all shadow-md group/edit"
+                            >
+                               <RefreshCw size={14} className="group-hover/edit:rotate-180 transition-transform duration-500" />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                       {paginated.length === 0 && (
                         <tr>
-                          <td colSpan="5" className="py-12 text-center text-slate-600 font-black uppercase italic tracking-widest">Sector Empty: No Hunters Detected</td>
+                          <td colSpan="7" className="py-12 text-center text-slate-600 font-black uppercase italic tracking-widest">Sector Empty: No Hunters Detected</td>
                         </tr>
                       )}
                     </>
@@ -520,6 +663,97 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
               </div>
             );
           })()}
+        </div>
+      ) : (
+        <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
+           <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-emerald-600 pl-4">Metametrics Analyzer</h2>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Loot Drop Section */}
+              <div className="space-y-4">
+                 <div className="flex items-center gap-2 text-cyan-400 font-black uppercase italic text-sm">
+                    <TrendingUp size={18} />
+                    Dungeon Assets (Standard Drop Rates)
+                 </div>
+                 <div className="grid grid-cols-1 gap-2">
+                    {[
+                      { rarity: 'Common', weight: 100, odds: 'High', floor: 1 },
+                      { rarity: 'Uncommon', weight: 40, odds: 'Medium', floor: 1 },
+                      { rarity: 'Rare', weight: 15, odds: 'Low', floor: 5 },
+                      { rarity: 'Epic', weight: 4, odds: 'Very Low', floor: 10 },
+                      { rarity: 'Legendary', weight: 1, odds: 'Ultra Rare', floor: 20 }
+                    ].map(r => (
+                      <div key={r.rarity} className="bg-slate-900/50 border border-white/5 p-3 flex justify-between items-center group hover:bg-slate-800 transition-colors">
+                        <div>
+                          <p className={`text-xs font-black uppercase ${r.rarity === 'Legendary' ? 'text-amber-500' : r.rarity === 'Epic' ? 'text-purple-500' : 'text-white'}`}>{r.rarity}</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Gated: Floor {r.floor}+</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-black text-white italic">{r.odds}</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Weight: {r.weight}</p>
+                        </div>
+                      </div>
+                    ))}
+                 </div>
+                 <p className="text-[9px] font-black text-slate-500 leading-relaxed italic">
+                    * Bonus: Global drop chance scales +0.5% per Hunter Level. Base chance: 35%.
+                 </p>
+              </div>
+
+              {/* Success Rates Section */}
+              <div className="space-y-6">
+                 {/* Boss Relics */}
+                 <div className="p-4 bg-red-950/20 border-2 border-red-900/40 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-red-500 font-black uppercase italic text-sm">
+                       <Flame size={18} /> Boss Relic Extraction
+                    </div>
+                    <div className="flex justify-between items-end">
+                       <div>
+                          <p className="text-2xl font-black text-white italic">10%</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Base Success Probability</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs font-black text-red-500 uppercase italic">Scales x2.0</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Per 1 Million DMG Milestone</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Forging Success */}
+                 <div className="p-4 bg-amber-950/20 border-2 border-amber-900/40 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-amber-500 font-black uppercase italic text-sm">
+                       <Sparkles size={18} /> Lab: Forging Success
+                    </div>
+                    <div className="flex justify-between items-end">
+                       <div>
+                          <p className="text-2xl font-black text-white italic">50%</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Base Mechanical Success</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs font-black text-amber-500 uppercase italic">+ DEX / 2</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Bonus Success Probability (Cap 95%)</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 {/* Dragon Ground */}
+                 <div className="p-4 bg-emerald-950/20 border-2 border-emerald-900/40 rounded-xl space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-500 font-black uppercase italic text-sm">
+                       <Target size={18} /> Scavenging: Mystic Fruits
+                    </div>
+                    <div className="flex justify-between items-end">
+                       <div>
+                          <p className="text-2xl font-black text-white italic">15%</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Per Encounter Drop Rate</p>
+                       </div>
+                       <div className="text-right">
+                          <p className="text-xs font-black text-emerald-500 uppercase italic">Weighted Rarity</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Aligned with Dungeon Assets</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+           </div>
         </div>
       )}
 

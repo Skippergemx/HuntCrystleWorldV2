@@ -1,16 +1,98 @@
 import React from 'react';
-import { X, Sparkles, PlusCircle } from 'lucide-react';
+import { X, Sparkles, PlusCircle, HelpCircle } from 'lucide-react';
 
-export const Header = React.memo(({ title, onClose }) => (
+export const Header = React.memo(({ title, onClose, onHelp }) => (
   <div className="flex justify-between items-center mb-4 md:mb-6 w-full relative z-20">
-    <div className="bg-white text-black px-3 md:px-4 py-0.5 md:py-1 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1 max-w-[70%]">
+    <div className="bg-white text-black px-3 md:px-4 py-0.5 md:py-1 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1 max-w-[60%] md:max-w-[70%]">
       <h2 className="text-sm md:text-xl font-black uppercase tracking-tighter italic truncate">{title}</h2>
     </div>
-    <button onClick={onClose} className="p-1.5 md:p-2 bg-black border-[2px] md:border-[3px] border-black text-white hover:text-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0">
-      <X size={16} md:size={20} strokeWidth={3} />
-    </button>
+    <div className="flex gap-2 shrink-0">
+      {onHelp && (
+        <button 
+          onClick={onHelp} 
+          className="p-1.5 md:p-2 bg-cyan-600 border-[2px] md:border-[3px] border-black text-black hover:bg-cyan-400 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+          title="Open Guide"
+        >
+          <HelpCircle size={16} md:size={20} strokeWidth={3} />
+        </button>
+      )}
+      <button 
+        onClick={onClose} 
+        className="p-1.5 md:p-2 bg-black border-[2px] md:border-[3px] border-black text-white hover:text-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+      >
+        <X size={16} md:size={20} strokeWidth={3} />
+      </button>
+    </div>
   </div>
 ));
+
+export const GuideModal = React.memo(({ isOpen, onClose, title, content = [] }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
+      <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col">
+        {/* Comic Panel Shadow */}
+        <div className="absolute inset-0 bg-cyan-800 rounded-3xl transform translate-x-2 translate-y-2"></div>
+        
+        <div className="relative bg-white border-[4px] border-black rounded-3xl overflow-hidden shadow-2xl flex flex-col flex-1">
+          {/* Halftone Overlay */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+          
+          {/* Header Banner */}
+          <div className="w-full bg-cyan-600 py-4 md:py-6 border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg">
+            <h2 className="text-2xl md:text-4xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
+              {title || 'ENROLLMENT GUIDE'}
+            </h2>
+            <div className="absolute -bottom-3 right-8 bg-black text-white px-3 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] transform rotate-2 border-2 border-white">
+              Tactical Intelligence Brief
+            </div>
+            
+            <button 
+              onClick={onClose}
+              className="absolute top-2 right-4 text-white hover:text-black transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {/* Guide Content */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 custom-scrollbar relative z-10">
+            {content.map((item, idx) => (
+              <div key={idx} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="bg-black text-white text-[10px] font-black px-2 py-0.5 transform -rotate-2 border-2 border-black inline-block">
+                    SECTION {idx + 1}
+                  </div>
+                  <h3 className="text-lg font-black text-black uppercase tracking-tight italic">{item.topic}</h3>
+                </div>
+                <div className="bg-slate-50 border-l-[6px] border-cyan-500 p-3 md:p-4 text-xs md:text-sm font-bold text-slate-700 leading-relaxed uppercase tracking-tight italic">
+                  {item.text}
+                </div>
+              </div>
+            ))}
+            
+            <div className="bg-amber-100 border-[3px] border-black p-4 rounded-xl transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+              <p className="text-[10px] font-black text-amber-700 uppercase leading-tight italic">
+                PRO TIP: "Always check your dragon buff timers and companion status before venturing into Sector 7. The Metaverse is unforgiving to the unprepared."
+              </p>
+            </div>
+          </div>
+
+          {/* Footer Close */}
+          <div className="p-4 md:p-6 bg-slate-50 border-t-[4px] border-black flex justify-center">
+            <button 
+              onClick={onClose}
+              className="w-full max-w-xs bg-black text-white py-3 md:py-4 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-sm md:text-base"
+            >
+              UNDERSTOOD
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop }) => (
   <button 

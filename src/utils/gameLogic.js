@@ -73,7 +73,27 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     stats.dex += dragonBonus;
   }
 
+  // Apply GEMX Bonuses (New Elemental System)
+  if (player.gemx && player.gemx.level > 0) {
+    const lvl = player.gemx.level;
+    const element = player.gemxElement;
+    if (element === 'Pyro') { stats.str += lvl; stats.agi += lvl; }
+    else if (element === 'Earthen') { stats.dex += 2 * lvl; }
+    else if (element === 'Hydro') { stats.str += lvl; stats.dex += lvl; }
+    else if (element === 'Gale') { stats.agi += 2 * lvl; }
+  }
+
   return stats;
+};
+
+/**
+ * Elemental Affinity System
+ */
+export const ELEMENT_ADVANTAGE = {
+  'Pyro': 'Earthen',
+  'Earthen': 'Hydro',
+  'Hydro': 'Gale',
+  'Gale': 'Pyro'
 };
 
 /**

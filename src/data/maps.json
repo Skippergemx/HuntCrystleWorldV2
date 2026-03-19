@@ -46,5 +46,35 @@
       "time_drift", "phase_module", "void_beacon", "dark_energy_cell", "void_fang",
       "void_essence", "core_pulse", "omega_crystle", "ancient_gear", "titanium_link"
     ]
+  },
+  {
+    "id": "inferno_crater",
+    "name": "Inferno Crater",
+    "description": "High-rank sector where lava-imbued beasts roam. Elemental resonance required.",
+    "minLevel": 100,
+    "difficulty": "Master",
+    "element": "Pyro",
+    "unlocked": false,
+    "lootTable": ["magma_core", "fire_essence", "scorched_bone", "ember_shard", "crystle_shard", "beast_hide"]
+  },
+  {
+    "id": "tectonic_ridge",
+    "name": "Tectonic Ridge",
+    "description": "Crystalline mountains of vibrating earth. Density over steel required.",
+    "minLevel": 200,
+    "difficulty": "Grandmaster",
+    "element": "Earthen",
+    "unlocked": false,
+    "lootTable": ["quake_stone", "earth_essence", "petrified_wood", "granite_fragment", "crystle_shard", "beast_hide"]
+  },
+  {
+    "id": "abyssal_trench",
+    "name": "Abyssal Trench",
+    "description": "The deep pressure zone of the primordial oceans. Pure pressure resistance needed.",
+    "minLevel": 300,
+    "difficulty": "Legendary",
+    "element": "Hydro",
+    "unlocked": false,
+    "lootTable": ["ocean_pearl", "water_essence", "coral_spine", "sea_salt", "crystle_shard", "beast_hide"]
   }
 ]

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock } from 'lucide-react';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle } from 'lucide-react';
+import { Header } from './GameUI';
 
-export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOTS, FRUITS, addLog, summonDragon, dragonTimeLeft }) => {
+export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOTS, FRUITS, addLog, summonDragon, dragonTimeLeft, onHelp }) => {
   const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
   const [dragonStats, setDragonStats] = useState(player.dragon || { level: 1, fruitsFed: 0 });
   const [fruits, setFruits] = useState([]);
@@ -202,99 +203,21 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
 
   return (
     <div className="flex-1 flex flex-col h-full bg-emerald-950/40 relative">
-      {/* Sanctuary Guide Modal */}
-      {showInfo && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="max-w-md w-full bg-slate-900 border-4 border-black shadow-[12px_12px_0_rgba(0,0,0,1)] rounded-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="bg-emerald-600 p-4 border-b-4 border-black flex justify-between items-center">
-              <h2 className="text-xl font-black text-white italic uppercase tracking-tighter flex items-center gap-2">
-                <Sparkles size={20} /> Sanctuary Guide
-              </h2>
-              <button
-                onClick={() => setShowInfo(false)}
-                className="p-1 bg-black/20 hover:bg-black/40 rounded-full transition-colors"
-              >
-                <X size={20} className="text-white" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
-              <section className="space-y-2">
-                <h3 className="text-emerald-400 font-black uppercase text-xs tracking-widest italic">What is Dragons Ground?</h3>
-                <p className="text-slate-300 text-xs leading-relaxed font-medium">
-                  The Dragons Ground is a sacred sanctuary where hunters sync their energy with the <span className="text-cyan-400 font-bold">GEMX Sentinel</span> and nurture the <span className="text-amber-400 font-bold">Great Drake</span>. It is a place of passive growth and immense stat boosts.
-                </p>
-              </section>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-400 font-black uppercase text-[10px]">
-                    <Gem size={14} /> The GEMX Sentinel
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">
-                    Feed <span className="text-white">Crystle Shards</span> to GEMX to increase its Sentinel Level. Higher levels attract more monsters to the sanctuary and unlock new Sentinel appearances.
-                  </p>
-                </div>
-
-                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
-                  <div className="flex items-center gap-2 text-amber-400 font-black uppercase text-[10px]">
-                    <ShoppingBag size={14} /> The Great Drake
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">
-                    Level up the Dragon using <span className="text-white">Mystic Fruits</span>. Every Dragon Level provides a permanent <span className="text-emerald-400 font-bold">+2 bonus to ALL stats</span> (STR, AGI, DEX).
-                  </p>
-                </div>
-
-                <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-[10px]">
-                    <Ghost size={14} /> Wild Encounters
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight">
-                    Wild monsters are attracted to the sanctuary based on GEMX's level (3 monsters per level). These monsters roam the Wild Encounter Zone and <span className="text-white">drop Mystic Fruits (15% rate)</span> as they travel. Click the fruits to harvest them!
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <button
-                  onClick={() => setShowInfo(false)}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 transition-all italic"
-                >
-                  Got it, Hunter!
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b border-white/10 bg-slate-900/90 backdrop-blur-md z-30">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setView('menu')} className="p-2 hover:bg-white/10 rounded-full transition-all">
-            <ArrowLeft className="text-white" size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-black text-white italic uppercase tracking-tighter">Dragons Ground</h1>
-            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Sacred Sanctuary</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowInfo(true)}
-            className="p-2 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-full border border-emerald-500/30 text-emerald-400 transition-all flex items-center gap-2 group"
-          >
-            <Sparkles size={16} className="group-hover:rotate-12 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Info</span>
-          </button>
-          <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
+      <div className="p-4 z-30">
+        <Header 
+          title="Dragons Ground" 
+          onClose={() => setView('menu')} 
+          onHelp={onHelp}
+        />
+        <div className="flex items-center gap-2 mt-2">
+          <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
             <Gem size={14} className="text-cyan-400" />
             <div>
               <p className="text-[7px] font-black text-slate-500 uppercase">Crystle Shards</p>
               <p className="text-xs font-black text-white">{crystalsInInventory}</p>
             </div>
           </div>
-          <div className="bg-black/60 border-2 border-amber-500/50 px-3 py-1 rounded-lg flex items-center gap-2">
+          <div className="bg-black/60 border-2 border-amber-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
             <ShoppingBag size={14} className="text-amber-400" />
             <div>
               <p className="text-[7px] font-black text-slate-500 uppercase">Dragon Fruits</p>

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
 import { Trophy, Skull, Star, ChevronUp, Swords, Medal, Coins } from 'lucide-react';
 
-export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTimeLeft, TAVERN_MATES, setView }) => {
+export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTimeLeft, TAVERN_MATES, setView, onHelp }) => {
   const [activeTab, setActiveTab] = useState('boss'); // 'boss', 'level', 'depth'
 
   const sortedData = useMemo(() => {
@@ -36,7 +36,7 @@ export const LeaderboardView = React.memo(({ leaderboard, user, player, dragonTi
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none"></div>
 
-      <Header title="ELITE HALL OF FAME" onClose={() => setView('menu')} icon={<Trophy className="text-amber-400" />} />
+      <Header title="ELITE HALL OF FAME" onClose={() => setView('menu')} onHelp={onHelp} icon={<Trophy className="text-amber-400" />} />
 
       {/* Hero Tabs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 mt-4">

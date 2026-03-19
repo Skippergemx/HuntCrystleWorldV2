@@ -2,10 +2,10 @@ import React from 'react';
 import { User } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 
-export const IdentityView = React.memo(({ player, syncPlayer, setView, addLog }) => (
+export const IdentityView = React.memo(({ player, syncPlayer, setView, addLog, onHelp }) => (
   <div className="flex-1 p-6 space-y-6 flex flex-col items-center justify-start overflow-y-auto max-h-[600px] relative">
     <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-    <Header title="Identity Core" onClose={() => setView('menu')} />
+    <Header title="Identity Core" onClose={() => setView('menu')} onHelp={onHelp} />
     <div className="w-full max-w-sm flex flex-col items-center">
 
       <div className="w-40 h-56 mb-4 rounded-2xl border-[3px] border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)] overflow-hidden relative group">

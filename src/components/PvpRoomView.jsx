@@ -3,7 +3,7 @@ import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send
 import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getFirestore, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
 
-export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, syncPlayer, setView, addLog, totalStats, db, appId, user }) => {
+export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, syncPlayer, setView, addLog, totalStats, db, appId, user, onHelp }) => {
   const [players, setPlayers] = useState([]);
   const [penaltyTime, setPenaltyTime] = useState(0);
   const [combatAnim, setCombatAnim] = useState(null); // { targetId, type }
@@ -232,7 +232,7 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
         <Header 
           title="PVP HOLO-GRID" 
           onClose={() => setView('menu')} 
-          icon={<Users size={20} className="text-blue-400" />}
+          onHelp={onHelp}
         />
 
         <div className="flex justify-between items-center mb-4 px-2 bg-black/20 p-2 border-b border-white/5 border-[4px] border-black rounded-xl">

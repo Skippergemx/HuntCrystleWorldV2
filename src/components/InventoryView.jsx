@@ -2,10 +2,10 @@ import React from 'react';
 import { Coffee, MousePointer } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const InventoryView = React.memo(({ player, setView, sellItem }) => (
+export const InventoryView = React.memo(({ player, setView, sellItem, onHelp }) => (
   <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-     <Header title="STORAGE CORE: BAG" onClose={() => setView('menu')} />
+     <Header title="STORAGE CORE: BAG" onClose={() => setView('menu')} onHelp={onHelp} />
      <div className="grid grid-cols-2 gap-4 relative z-10 overflow-y-auto max-h-[85vh] pr-2">
         <div className="bg-white border-[4px] border-black p-4 shadow-[6px_6px_0_rgba(0,0,0,1)] transform -rotate-1">
            <div className="flex justify-between items-start mb-2">

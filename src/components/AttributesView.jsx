@@ -1,11 +1,11 @@
 import React from 'react';
 import { Header, AttributeRow } from './GameUI';
 
-export const AttributesView = React.memo(({ player, allocateStat, setView }) => (
+export const AttributesView = React.memo(({ player, allocateStat, setView, onHelp }) => (
   <div className="flex-1 p-6 space-y-8 flex flex-col items-center justify-start overflow-y-auto relative">
     <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
     
-    <Header title="IDENTITY CORE: STATS" onClose={() => setView('menu')} />
+    <Header title="IDENTITY CORE: STATS" onClose={() => setView('menu')} onHelp={onHelp} />
     
     <div className="relative z-10 w-full max-w-sm">
       <div className="bg-amber-400 border-[4px] border-black p-8 shadow-[10px_10px_0_rgba(0,0,0,1)] w-full text-center transform -rotate-1 relative mb-12">

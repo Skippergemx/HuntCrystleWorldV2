@@ -1,4 +1,4 @@
-﻿[
+[
     {
         "str": 3,
         "id": "goblin",
@@ -215,7 +215,7 @@
         "loot": 150,
         "taunts": [
             "Thunder rolls!",
-            "Shocking, isn\u0027t it?"
+            "Shocking, isn't it?"
         ],
         "agi": 35,
         "name": "Storm Bringer",
@@ -1318,5 +1318,755 @@
         "dex": 110,
         "hp": 3000,
         "xp": 2500
+    },
+    {
+        "id": "pyro_1",
+        "name": "Magma Creeper",
+        "str": 255,
+        "agi": 204,
+        "dex": 153,
+        "hp": 15500,
+        "xp": 10200,
+        "loot": 5100,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_2",
+        "name": "Lava Lurker",
+        "str": 260,
+        "agi": 208,
+        "dex": 156,
+        "hp": 16000,
+        "xp": 10400,
+        "loot": 5200,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_3",
+        "name": "Ember Shade",
+        "str": 265,
+        "agi": 212,
+        "dex": 159,
+        "hp": 16500,
+        "xp": 10600,
+        "loot": 5300,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_4",
+        "name": "Cinder Wyrm",
+        "str": 270,
+        "agi": 216,
+        "dex": 162,
+        "hp": 17000,
+        "xp": 10800,
+        "loot": 5400,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_5",
+        "name": "Scorched Behemoth",
+        "str": 275,
+        "agi": 220,
+        "dex": 165,
+        "hp": 17500,
+        "xp": 11000,
+        "loot": 5500,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_6",
+        "name": "Flame Prowler",
+        "str": 280,
+        "agi": 224,
+        "dex": 168,
+        "hp": 18000,
+        "xp": 11200,
+        "loot": 5600,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_7",
+        "name": "Blaze Sentinel",
+        "str": 285,
+        "agi": 228,
+        "dex": 171,
+        "hp": 18500,
+        "xp": 11400,
+        "loot": 5700,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_8",
+        "name": "Pyre Guardian",
+        "str": 290,
+        "agi": 232,
+        "dex": 174,
+        "hp": 19000,
+        "xp": 11600,
+        "loot": 5800,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_9",
+        "name": "Ash Walker",
+        "str": 295,
+        "agi": 236,
+        "dex": 177,
+        "hp": 19500,
+        "xp": 11800,
+        "loot": 5900,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_10",
+        "name": "Igneous Imp",
+        "str": 300,
+        "agi": 240,
+        "dex": 180,
+        "hp": 20000,
+        "xp": 12000,
+        "loot": 6000,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_11",
+        "name": "Molten Titan",
+        "str": 305,
+        "agi": 244,
+        "dex": 183,
+        "hp": 20500,
+        "xp": 12200,
+        "loot": 6100,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_12",
+        "name": "Radiant Scorcher",
+        "str": 310,
+        "agi": 248,
+        "dex": 186,
+        "hp": 21000,
+        "xp": 12400,
+        "loot": 6200,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_13",
+        "name": "Searing Stalker",
+        "str": 315,
+        "agi": 252,
+        "dex": 189,
+        "hp": 21500,
+        "xp": 12600,
+        "loot": 6300,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_14",
+        "name": "Thermal Terror",
+        "str": 320,
+        "agi": 256,
+        "dex": 192,
+        "hp": 22000,
+        "xp": 12800,
+        "loot": 6400,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_15",
+        "name": "Volcanic Viper",
+        "str": 325,
+        "agi": 260,
+        "dex": 195,
+        "hp": 22500,
+        "xp": 13000,
+        "loot": 6500,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_16",
+        "name": "Sulfuric Fiend",
+        "str": 330,
+        "agi": 264,
+        "dex": 198,
+        "hp": 23000,
+        "xp": 13200,
+        "loot": 6600,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_17",
+        "name": "Obsidian Overlord",
+        "str": 335,
+        "agi": 268,
+        "dex": 201,
+        "hp": 23500,
+        "xp": 13400,
+        "loot": 6700,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_18",
+        "name": "Basalt Basher",
+        "str": 340,
+        "agi": 272,
+        "dex": 204,
+        "hp": 24000,
+        "xp": 13600,
+        "loot": 6800,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_19",
+        "name": "Glow Golem",
+        "str": 345,
+        "agi": 276,
+        "dex": 207,
+        "hp": 24500,
+        "xp": 13800,
+        "loot": 6900,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "pyro_20",
+        "name": "Solar Singularity",
+        "str": 350,
+        "agi": 280,
+        "dex": 210,
+        "hp": 25000,
+        "xp": 14000,
+        "loot": 7000,
+        "taunts": [
+            "Eternal fire!",
+            "Ashes to ashes."
+        ],
+        "folder": "Inferno Crater"
+    },
+    {
+        "id": "earthen_1",
+        "name": "Rock Crusher",
+        "str": 410,
+        "agi": 305,
+        "dex": 358,
+        "hp": 52000,
+        "xp": 50500,
+        "loot": 15200,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_2",
+        "name": "Stone Sentinel",
+        "str": 420,
+        "agi": 310,
+        "dex": 366,
+        "hp": 54000,
+        "xp": 51000,
+        "loot": 15400,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_3",
+        "name": "Earth Eater",
+        "str": 430,
+        "agi": 315,
+        "dex": 374,
+        "hp": 56000,
+        "xp": 51500,
+        "loot": 15600,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_4",
+        "name": "Terra Titan",
+        "str": 440,
+        "agi": 320,
+        "dex": 382,
+        "hp": 58000,
+        "xp": 52000,
+        "loot": 15800,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_5",
+        "name": "Quake Golem",
+        "str": 450,
+        "agi": 325,
+        "dex": 390,
+        "hp": 60000,
+        "xp": 52500,
+        "loot": 16000,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_6",
+        "name": "Seismic Shaker",
+        "str": 460,
+        "agi": 330,
+        "dex": 398,
+        "hp": 62000,
+        "xp": 53000,
+        "loot": 16200,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_7",
+        "name": "Granite Guardian",
+        "str": 470,
+        "agi": 335,
+        "dex": 406,
+        "hp": 64000,
+        "xp": 53500,
+        "loot": 16400,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_8",
+        "name": "Slate Smasher",
+        "str": 480,
+        "agi": 340,
+        "dex": 414,
+        "hp": 66000,
+        "xp": 54000,
+        "loot": 16600,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_9",
+        "name": "Shale Shifter",
+        "str": 490,
+        "agi": 345,
+        "dex": 422,
+        "hp": 68000,
+        "xp": 54500,
+        "loot": 16800,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_10",
+        "name": "Boulder Beast",
+        "str": 500,
+        "agi": 350,
+        "dex": 430,
+        "hp": 70000,
+        "xp": 55000,
+        "loot": 17000,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_11",
+        "name": "Pebble Prowler",
+        "str": 510,
+        "agi": 355,
+        "dex": 438,
+        "hp": 72000,
+        "xp": 55500,
+        "loot": 17200,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_12",
+        "name": "Geode Giant",
+        "str": 520,
+        "agi": 360,
+        "dex": 446,
+        "hp": 74000,
+        "xp": 56000,
+        "loot": 17400,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_13",
+        "name": "Core Captivator",
+        "str": 530,
+        "agi": 365,
+        "dex": 454,
+        "hp": 76000,
+        "xp": 56500,
+        "loot": 17600,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_14",
+        "name": "Mantle Mauler",
+        "str": 540,
+        "agi": 370,
+        "dex": 462,
+        "hp": 78000,
+        "xp": 57000,
+        "loot": 17800,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_15",
+        "name": "Tectonic Terror",
+        "str": 550,
+        "agi": 375,
+        "dex": 470,
+        "hp": 80000,
+        "xp": 57500,
+        "loot": 18000,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_16",
+        "name": "Lithic Lurker",
+        "str": 560,
+        "agi": 380,
+        "dex": 478,
+        "hp": 82000,
+        "xp": 58000,
+        "loot": 18200,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_17",
+        "name": "Stalactite Stinger",
+        "str": 570,
+        "agi": 385,
+        "dex": 486,
+        "hp": 84000,
+        "xp": 58500,
+        "loot": 18400,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_18",
+        "name": "Stalagmite Striker",
+        "str": 580,
+        "agi": 390,
+        "dex": 494,
+        "hp": 86000,
+        "xp": 59000,
+        "loot": 18600,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_19",
+        "name": "Sand Swallower",
+        "str": 590,
+        "agi": 395,
+        "dex": 502,
+        "hp": 88000,
+        "xp": 59500,
+        "loot": 18800,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "earthen_20",
+        "name": "Dust Demon",
+        "str": 600,
+        "agi": 400,
+        "dex": 510,
+        "hp": 90000,
+        "xp": 60000,
+        "loot": 19000,
+        "taunts": [
+            "The earth trembles.",
+            "Solid as rock."
+        ],
+        "folder": "Tectonic Ridge"
+    },
+    {
+        "id": "hydro_1",
+        "name": "Abyssal Angler",
+        "str": 820,
+        "agi": 615,
+        "dex": 710,
+        "hp": 160000,
+        "xp": 155000,
+        "loot": 51000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_2",
+        "name": "Trench Terror",
+        "str": 840,
+        "agi": 630,
+        "dex": 720,
+        "hp": 170000,
+        "xp": 160000,
+        "loot": 52000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_3",
+        "name": "Deep Sea Dweller",
+        "str": 860,
+        "agi": 645,
+        "dex": 730,
+        "hp": 180000,
+        "xp": 165000,
+        "loot": 53000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_4",
+        "name": "Marine Mauler",
+        "str": 880,
+        "agi": 660,
+        "dex": 740,
+        "hp": 190000,
+        "xp": 170000,
+        "loot": 54000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_5",
+        "name": "Pelagic Predator",
+        "str": 900,
+        "agi": 675,
+        "dex": 750,
+        "hp": 200000,
+        "xp": 175000,
+        "loot": 55000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_6",
+        "name": "Benthic Behemoth",
+        "str": 920,
+        "agi": 690,
+        "dex": 760,
+        "hp": 210000,
+        "xp": 180000,
+        "loot": 56000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_7",
+        "name": "Coral Crusher",
+        "str": 940,
+        "agi": 705,
+        "dex": 770,
+        "hp": 220000,
+        "xp": 185000,
+        "loot": 57000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_8",
+        "name": "Salt Stalker",
+        "str": 960,
+        "agi": 720,
+        "dex": 780,
+        "hp": 230000,
+        "xp": 190000,
+        "loot": 58000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_9",
+        "name": "Brine Beast",
+        "str": 980,
+        "agi": 735,
+        "dex": 790,
+        "hp": 240000,
+        "xp": 195000,
+        "loot": 59000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
+    },
+    {
+        "id": "hydro_10",
+        "name": "Pressure Phantom",
+        "str": 1000,
+        "agi": 750,
+        "dex": 800,
+        "hp": 250000,
+        "xp": 200000,
+        "loot": 60000,
+        "taunts": [
+            "Drown in the depths.",
+            "Silence of the abyss."
+        ],
+        "folder": "Abyssal Trench"
     }
 ]

@@ -2,7 +2,7 @@ import React from 'react';
 import { Lock } from 'lucide-react';
 import { Header } from './GameUI';
 
-export const ForgeView = ({ CRYSTLE_RECIPES, player, forgeCrystle, setView, LOOTS }) => {
+export const ForgeView = ({ CRYSTLE_RECIPES, player, forgeCrystle, setView, LOOTS, onHelp }) => {
   const stats = Object.values(player.equipped || {}).reduce((acc, item) => {
     if (item && item.stats) {
       acc.dex += item.stats.dex || 0;
@@ -14,7 +14,7 @@ export const ForgeView = ({ CRYSTLE_RECIPES, player, forgeCrystle, setView, LOOT
     <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[1000px] relative custom-scrollbar">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
       
-      <Header title="Identity Lab: Forge" onClose={() => setView('menu')} />
+      <Header title="Identity Lab: Forge" onClose={() => setView('menu')} onHelp={onHelp} />
       
       <div className="bg-amber-100 border-2 border-amber-900/20 p-3 rounded-lg flex items-center gap-3 relative z-10">
         <div className="w-10 h-10 bg-amber-500 border-2 border-black flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)]">

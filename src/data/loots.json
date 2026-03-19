@@ -82,5 +82,20 @@
   { "id": "phase_module", "name": "Phase Module", "rarity": "Rare", "icon": "📡", "description": "Allows walking through walls.", "type": "Component", "sellValue": 820 },
   { "id": "void_beacon", "name": "Void Beacon", "rarity": "Rare", "icon": "🗼", "description": "Call for reinforcements.", "type": "Tool", "sellValue": 680 },
   { "id": "dark_energy_cell", "name": "Dark Energy Cell", "rarity": "Uncommon", "icon": "🔋", "description": "High capacity storage.", "type": "Energy", "sellValue": 520 },
-  { "id": "void_fang", "name": "Void Fang", "rarity": "Common", "icon": "🦷", "description": "Serrated and biting.", "type": "Material", "sellValue": 220 }
+  { "id": "void_fang", "name": "Void Fang", "rarity": "Common", "icon": "🦷", "description": "Serrated and biting.", "type": "Material", "sellValue": 220 },
+  
+  { "id": "magma_core", "name": "Magma Core", "rarity": "Epic", "icon": "🔥", "description": "The pulsating heart of a volcano.", "type": "Material", "sellValue": 1500 },
+  { "id": "fire_essence", "name": "Fire Essence", "rarity": "Rare", "icon": "🧨", "description": "Pure heat in crystallized form.", "type": "Material", "sellValue": 500 },
+  { "id": "scorched_bone", "name": "Scorched Bone", "rarity": "Uncommon", "icon": "🦴", "description": "Remains of a fire-dwelling beast.", "type": "Material", "sellValue": 150 },
+  { "id": "ember_shard", "name": "Ember Shard", "rarity": "Common", "icon": "🔥", "description": "A small flake of eternal fire.", "type": "Material", "sellValue": 50 },
+
+  { "id": "quake_stone", "name": "Quake Stone", "rarity": "Epic", "icon": "💎", "description": "Vibrates with tectonic energy.", "type": "Material", "sellValue": 1500 },
+  { "id": "earth_essence", "name": "Earth Essence", "rarity": "Rare", "icon": "🌿", "description": "The purest form of terrestrial power.", "type": "Material", "sellValue": 500 },
+  { "id": "petrified_wood", "name": "Petrified Wood", "rarity": "Uncommon", "icon": "🌲", "description": "Tree bark turned into solid rock.", "type": "Material", "sellValue": 150 },
+  { "id": "granite_fragment", "name": "Granite Fragment", "rarity": "Common", "icon": "⛰️", "description": "A piece of a resilient mountain.", "type": "Material", "sellValue": 50 },
+
+  { "id": "ocean_pearl", "name": "Ocean Pearl", "rarity": "Epic", "icon": "🐚", "description": "Gleams with a deep blue light.", "type": "Material", "sellValue": 1500 },
+  { "id": "water_essence", "name": "Water Essence", "rarity": "Rare", "icon": "💧", "description": "A droplet from the primordial ocean.", "type": "Material", "sellValue": 500 },
+  { "id": "coral_spine", "name": "Coral Spine", "rarity": "Uncommon", "icon": "🌊", "description": "Sharp growth from the sub-zero depths.", "type": "Material", "sellValue": 150 },
+  { "id": "sea_salt", "name": "Sea Salt", "rarity": "Common", "icon": "🧂", "description": "High concentration of aquatic power.", "type": "Material", "sellValue": 50 }
 ]

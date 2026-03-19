@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 
-export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem, setView, currentMate, buffTimeLeft }) => {
+export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem, setView, currentMate, buffTimeLeft, onHelp }) => {
   const equipment = useMemo(() => player.inventory?.filter(i => 
     i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic'
   ) || [], [player.inventory]);
@@ -59,7 +59,7 @@ export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 relative overflow-hidden bg-slate-950">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <Header title="TACTICAL LOADOUT" onClose={() => setView('menu')} icon={<Zap className="text-cyan-400" />} />
+      <Header title="TACTICAL LOADOUT" onClose={() => setView('menu')} onHelp={onHelp} icon={<Zap className="text-cyan-400" />} />
 
       <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6">
         

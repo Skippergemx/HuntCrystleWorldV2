@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock } from 'lucide-react';
+import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD } from './GameUI';
 
@@ -23,7 +23,7 @@ const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => 
 export const BossView = ({
   isHurt, enemyFlinch, bossAvatarIdx, showBossVideo, setShowBossVideo, BOSS_MEDIA_FILES, impactSplash, BOSS, player, dragonTimeLeft, TAVERN_MATES, autoTimeLeft, activateAutoScroll, handleHeal, handleAttack, setView, syncPlayer,
   currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, isStunned, stunTimeLeft, isMissed, missTimeLeft,
-  autoUseScroll, setAutoUseScroll
+  autoUseScroll, setAutoUseScroll, onHelp
 }) => {
   const isAutoActive = autoTimeLeft > 0;
 
@@ -35,6 +35,7 @@ export const BossView = ({
       {/* --- HUD TOP: INTENSE BOSS TITLE --- */}
       <div className="w-full flex justify-between items-start z-10 px-2">
           <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-3 px-5 py-3 bg-black border-[4px] border-red-600 rounded-lg shadow-[5px_5px_0_rgba(0,0,0,1)] transform -rotate-1">
               <TrendingUp size={18} className="text-red-500 animate-pulse" />
               <div className="flex flex-col gap-0.5 leading-none">
@@ -42,6 +43,14 @@ export const BossView = ({
                   <span className="text-xs font-black text-white tracking-tighter uppercase">Ω-LEVEL GUARDIAN</span>
               </div>
             </div>
+            <button 
+              onClick={onHelp} 
+              className="p-3 bg-red-600 border-[4px] border-black text-white shadow-[5px_5px_0_rgba(0,0,0,1)] hover:bg-red-400 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
+              title="Tactical Intel"
+            >
+              <HelpCircle size={18} strokeWidth={4} />
+            </button>
+          </div>
           </div>
 
           <div className="flex flex-col items-end gap-2 text-sm font-black">
