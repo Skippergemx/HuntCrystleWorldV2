@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { scaleMonster } from '../utils/gameLogic';
 import MONSTERS from '../data/monsters.json';
+import MAPS from '../data/maps.json';
 
 export const useAdventure = () => {
   const [view, setView] = useState('menu');
@@ -9,19 +10,17 @@ export const useAdventure = () => {
   const [enemyFlinch, setEnemyFlinch] = useState(false);
   const [isHurt, setIsHurt] = useState(false);
   
-  const [selectedMap, setSelectedMap] = useState(null);
+  const [selectedMap, setSelectedMap] = useState(MAPS[0]);
   
   const enemyInternalRef = useRef(null);
   
   const spawnNewEnemy = useCallback((currentDepth = 1) => {
     // Filter monsters by the current map's name if available
-    const folderName = selectedMap?.name;
-    const pool = folderName 
-      ? MONSTERS.filter(m => m.folder === folderName)
-      : MONSTERS;
+    const folderName = selectedMap?.name || 'Neon Slums';
+    const pool = MONSTERS.filter(m => m.folder === folderName);
       
-    // Fallback to full pool if no monsters match the specific map folder
-    const finalPool = pool.length > 0 ? pool : MONSTERS;
+    // Fallback to Neon Slums ONLY if the specific map has 0 monsters defined
+    const finalPool = pool.length > 0 ? pool : MONSTERS.filter(m => m.folder === 'Neon Slums');
     
     const base = finalPool[Math.floor(Math.random() * finalPool.length)];
     const scaled = scaleMonster(base, currentDepth);

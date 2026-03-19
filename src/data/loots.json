@@ -97,5 +97,10 @@
   { "id": "ocean_pearl", "name": "Ocean Pearl", "rarity": "Epic", "icon": "🐚", "description": "Gleams with a deep blue light.", "type": "Material", "sellValue": 1500 },
   { "id": "water_essence", "name": "Water Essence", "rarity": "Rare", "icon": "💧", "description": "A droplet from the primordial ocean.", "type": "Material", "sellValue": 500 },
   { "id": "coral_spine", "name": "Coral Spine", "rarity": "Uncommon", "icon": "🌊", "description": "Sharp growth from the sub-zero depths.", "type": "Material", "sellValue": 150 },
-  { "id": "sea_salt", "name": "Sea Salt", "rarity": "Common", "icon": "🧂", "description": "High concentration of aquatic power.", "type": "Material", "sellValue": 50 }
+  { "id": "sea_salt", "name": "Sea Salt", "rarity": "Common", "icon": "🧂", "description": "High concentration of aquatic power.", "type": "Material", "sellValue": 50 },
+  
+  { "id": "gale_feather", "name": "Gale Feather", "rarity": "Epic", "icon": "🪶", "description": "Lighter than air, charged with static.", "type": "Material", "sellValue": 1500 },
+  { "id": "storm_essence", "name": "Storm Essence", "rarity": "Rare", "icon": "🌩️", "description": "A bottle of bottled lightning.", "type": "Material", "sellValue": 500 },
+  { "id": "cloud_silk", "name": "Cloud Silk", "rarity": "Uncommon", "icon": "☁️", "description": "Fabric woven from condensed vapor.", "type": "Material", "sellValue": 150 },
+  { "id": "mist_vial", "name": "Mist Vial", "rarity": "Common", "icon": "🌫️", "description": "Slightly damp, slightly charged.", "type": "Material", "sellValue": 50 }
 ]

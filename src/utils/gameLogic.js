@@ -1,6 +1,6 @@
 // Game Constants and Math Utilities
 
-export const DIFFICULTY_MULTIPLIER = 1.15;
+export const DIFFICULTY_MULTIPLIER = 1.04;
 export const XP_BASE = 100;
 export const AP_PER_LEVEL = 5;
 export const MAX_CRIT_CHANCE = 0.5;

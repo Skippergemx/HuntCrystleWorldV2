@@ -1,4 +1,4 @@
-[
+﻿[
     {
         "str": 3,
         "id": "goblin",
@@ -1322,12 +1322,12 @@
     {
         "id": "pyro_1",
         "name": "Magma Creeper",
-        "str": 255,
-        "agi": 204,
-        "dex": 153,
-        "hp": 15500,
-        "xp": 10200,
-        "loot": 5100,
+        "str": 182,
+        "agi": 151,
+        "dex": 121,
+        "hp": 36000,
+        "xp": 2600,
+        "loot": 1250,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1337,12 +1337,12 @@
     {
         "id": "pyro_2",
         "name": "Lava Lurker",
-        "str": 260,
-        "agi": 208,
-        "dex": 156,
-        "hp": 16000,
-        "xp": 10400,
-        "loot": 5200,
+        "str": 184,
+        "agi": 152,
+        "dex": 122,
+        "hp": 37000,
+        "xp": 2700,
+        "loot": 1300,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1352,12 +1352,12 @@
     {
         "id": "pyro_3",
         "name": "Ember Shade",
-        "str": 265,
-        "agi": 212,
-        "dex": 159,
-        "hp": 16500,
-        "xp": 10600,
-        "loot": 5300,
+        "str": 186,
+        "agi": 153,
+        "dex": 123,
+        "hp": 38000,
+        "xp": 2800,
+        "loot": 1350,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1367,12 +1367,12 @@
     {
         "id": "pyro_4",
         "name": "Cinder Wyrm",
-        "str": 270,
-        "agi": 216,
-        "dex": 162,
-        "hp": 17000,
-        "xp": 10800,
-        "loot": 5400,
+        "str": 188,
+        "agi": 154,
+        "dex": 124,
+        "hp": 39000,
+        "xp": 2900,
+        "loot": 1400,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1382,12 +1382,12 @@
     {
         "id": "pyro_5",
         "name": "Scorched Behemoth",
-        "str": 275,
-        "agi": 220,
-        "dex": 165,
-        "hp": 17500,
-        "xp": 11000,
-        "loot": 5500,
+        "str": 190,
+        "agi": 155,
+        "dex": 125,
+        "hp": 40000,
+        "xp": 3000,
+        "loot": 1450,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1397,12 +1397,12 @@
     {
         "id": "pyro_6",
         "name": "Flame Prowler",
-        "str": 280,
-        "agi": 224,
-        "dex": 168,
-        "hp": 18000,
-        "xp": 11200,
-        "loot": 5600,
+        "str": 192,
+        "agi": 156,
+        "dex": 126,
+        "hp": 41000,
+        "xp": 3100,
+        "loot": 1500,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1412,12 +1412,12 @@
     {
         "id": "pyro_7",
         "name": "Blaze Sentinel",
-        "str": 285,
-        "agi": 228,
-        "dex": 171,
-        "hp": 18500,
-        "xp": 11400,
-        "loot": 5700,
+        "str": 194,
+        "agi": 157,
+        "dex": 127,
+        "hp": 42000,
+        "xp": 3200,
+        "loot": 1550,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1427,12 +1427,12 @@
     {
         "id": "pyro_8",
         "name": "Pyre Guardian",
-        "str": 290,
-        "agi": 232,
-        "dex": 174,
-        "hp": 19000,
-        "xp": 11600,
-        "loot": 5800,
+        "str": 196,
+        "agi": 158,
+        "dex": 128,
+        "hp": 43000,
+        "xp": 3300,
+        "loot": 1600,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1442,12 +1442,12 @@
     {
         "id": "pyro_9",
         "name": "Ash Walker",
-        "str": 295,
-        "agi": 236,
-        "dex": 177,
-        "hp": 19500,
-        "xp": 11800,
-        "loot": 5900,
+        "str": 198,
+        "agi": 159,
+        "dex": 129,
+        "hp": 44000,
+        "xp": 3400,
+        "loot": 1650,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1457,12 +1457,12 @@
     {
         "id": "pyro_10",
         "name": "Igneous Imp",
-        "str": 300,
-        "agi": 240,
-        "dex": 180,
-        "hp": 20000,
-        "xp": 12000,
-        "loot": 6000,
+        "str": 200,
+        "agi": 160,
+        "dex": 130,
+        "hp": 45000,
+        "xp": 3500,
+        "loot": 1700,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1472,12 +1472,12 @@
     {
         "id": "pyro_11",
         "name": "Molten Titan",
-        "str": 305,
-        "agi": 244,
-        "dex": 183,
-        "hp": 20500,
-        "xp": 12200,
-        "loot": 6100,
+        "str": 202,
+        "agi": 161,
+        "dex": 131,
+        "hp": 46000,
+        "xp": 3600,
+        "loot": 1750,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1487,12 +1487,12 @@
     {
         "id": "pyro_12",
         "name": "Radiant Scorcher",
-        "str": 310,
-        "agi": 248,
-        "dex": 186,
-        "hp": 21000,
-        "xp": 12400,
-        "loot": 6200,
+        "str": 204,
+        "agi": 162,
+        "dex": 132,
+        "hp": 47000,
+        "xp": 3700,
+        "loot": 1800,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1502,12 +1502,12 @@
     {
         "id": "pyro_13",
         "name": "Searing Stalker",
-        "str": 315,
-        "agi": 252,
-        "dex": 189,
-        "hp": 21500,
-        "xp": 12600,
-        "loot": 6300,
+        "str": 206,
+        "agi": 163,
+        "dex": 133,
+        "hp": 48000,
+        "xp": 3800,
+        "loot": 1850,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1517,12 +1517,12 @@
     {
         "id": "pyro_14",
         "name": "Thermal Terror",
-        "str": 320,
-        "agi": 256,
-        "dex": 192,
-        "hp": 22000,
-        "xp": 12800,
-        "loot": 6400,
+        "str": 208,
+        "agi": 164,
+        "dex": 134,
+        "hp": 49000,
+        "xp": 3900,
+        "loot": 1900,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1532,12 +1532,12 @@
     {
         "id": "pyro_15",
         "name": "Volcanic Viper",
-        "str": 325,
-        "agi": 260,
-        "dex": 195,
-        "hp": 22500,
-        "xp": 13000,
-        "loot": 6500,
+        "str": 210,
+        "agi": 165,
+        "dex": 135,
+        "hp": 50000,
+        "xp": 4000,
+        "loot": 1950,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1547,12 +1547,12 @@
     {
         "id": "pyro_16",
         "name": "Sulfuric Fiend",
-        "str": 330,
-        "agi": 264,
-        "dex": 198,
-        "hp": 23000,
-        "xp": 13200,
-        "loot": 6600,
+        "str": 212,
+        "agi": 166,
+        "dex": 136,
+        "hp": 51000,
+        "xp": 4100,
+        "loot": 2000,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1562,12 +1562,12 @@
     {
         "id": "pyro_17",
         "name": "Obsidian Overlord",
-        "str": 335,
-        "agi": 268,
-        "dex": 201,
-        "hp": 23500,
-        "xp": 13400,
-        "loot": 6700,
+        "str": 214,
+        "agi": 167,
+        "dex": 137,
+        "hp": 52000,
+        "xp": 4200,
+        "loot": 2050,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1577,12 +1577,12 @@
     {
         "id": "pyro_18",
         "name": "Basalt Basher",
-        "str": 340,
-        "agi": 272,
-        "dex": 204,
-        "hp": 24000,
-        "xp": 13600,
-        "loot": 6800,
+        "str": 216,
+        "agi": 168,
+        "dex": 138,
+        "hp": 53000,
+        "xp": 4300,
+        "loot": 2100,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1592,12 +1592,12 @@
     {
         "id": "pyro_19",
         "name": "Glow Golem",
-        "str": 345,
-        "agi": 276,
-        "dex": 207,
-        "hp": 24500,
-        "xp": 13800,
-        "loot": 6900,
+        "str": 218,
+        "agi": 169,
+        "dex": 139,
+        "hp": 54000,
+        "xp": 4400,
+        "loot": 2150,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1607,12 +1607,12 @@
     {
         "id": "pyro_20",
         "name": "Solar Singularity",
-        "str": 350,
-        "agi": 280,
-        "dex": 210,
-        "hp": 25000,
-        "xp": 14000,
-        "loot": 7000,
+        "str": 220,
+        "agi": 170,
+        "dex": 140,
+        "hp": 55000,
+        "xp": 4500,
+        "loot": 2200,
         "taunts": [
             "Eternal fire!",
             "Ashes to ashes."
@@ -1622,12 +1622,12 @@
     {
         "id": "earthen_1",
         "name": "Rock Crusher",
-        "str": 410,
-        "agi": 305,
-        "dex": 358,
-        "hp": 52000,
-        "xp": 50500,
-        "loot": 15200,
+        "str": 323,
+        "agi": 252,
+        "dex": 222,
+        "hp": 81500,
+        "xp": 8200,
+        "loot": 3600,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1637,12 +1637,12 @@
     {
         "id": "earthen_2",
         "name": "Stone Sentinel",
-        "str": 420,
-        "agi": 310,
-        "dex": 366,
-        "hp": 54000,
-        "xp": 51000,
-        "loot": 15400,
+        "str": 326,
+        "agi": 254,
+        "dex": 224,
+        "hp": 83000,
+        "xp": 8400,
+        "loot": 3700,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1652,12 +1652,12 @@
     {
         "id": "earthen_3",
         "name": "Earth Eater",
-        "str": 430,
-        "agi": 315,
-        "dex": 374,
-        "hp": 56000,
-        "xp": 51500,
-        "loot": 15600,
+        "str": 329,
+        "agi": 256,
+        "dex": 226,
+        "hp": 84500,
+        "xp": 8600,
+        "loot": 3800,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1667,12 +1667,12 @@
     {
         "id": "earthen_4",
         "name": "Terra Titan",
-        "str": 440,
-        "agi": 320,
-        "dex": 382,
-        "hp": 58000,
-        "xp": 52000,
-        "loot": 15800,
+        "str": 332,
+        "agi": 258,
+        "dex": 228,
+        "hp": 86000,
+        "xp": 8800,
+        "loot": 3900,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1682,12 +1682,12 @@
     {
         "id": "earthen_5",
         "name": "Quake Golem",
-        "str": 450,
-        "agi": 325,
-        "dex": 390,
-        "hp": 60000,
-        "xp": 52500,
-        "loot": 16000,
+        "str": 335,
+        "agi": 260,
+        "dex": 230,
+        "hp": 87500,
+        "xp": 9000,
+        "loot": 4000,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1697,12 +1697,12 @@
     {
         "id": "earthen_6",
         "name": "Seismic Shaker",
-        "str": 460,
-        "agi": 330,
-        "dex": 398,
-        "hp": 62000,
-        "xp": 53000,
-        "loot": 16200,
+        "str": 338,
+        "agi": 262,
+        "dex": 232,
+        "hp": 89000,
+        "xp": 9200,
+        "loot": 4100,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1712,12 +1712,12 @@
     {
         "id": "earthen_7",
         "name": "Granite Guardian",
-        "str": 470,
-        "agi": 335,
-        "dex": 406,
-        "hp": 64000,
-        "xp": 53500,
-        "loot": 16400,
+        "str": 341,
+        "agi": 264,
+        "dex": 234,
+        "hp": 90500,
+        "xp": 9400,
+        "loot": 4200,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1727,12 +1727,12 @@
     {
         "id": "earthen_8",
         "name": "Slate Smasher",
-        "str": 480,
-        "agi": 340,
-        "dex": 414,
-        "hp": 66000,
-        "xp": 54000,
-        "loot": 16600,
+        "str": 344,
+        "agi": 266,
+        "dex": 236,
+        "hp": 92000,
+        "xp": 9600,
+        "loot": 4300,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1742,12 +1742,12 @@
     {
         "id": "earthen_9",
         "name": "Shale Shifter",
-        "str": 490,
-        "agi": 345,
-        "dex": 422,
-        "hp": 68000,
-        "xp": 54500,
-        "loot": 16800,
+        "str": 347,
+        "agi": 268,
+        "dex": 238,
+        "hp": 93500,
+        "xp": 9800,
+        "loot": 4400,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1757,12 +1757,12 @@
     {
         "id": "earthen_10",
         "name": "Boulder Beast",
-        "str": 500,
-        "agi": 350,
-        "dex": 430,
-        "hp": 70000,
-        "xp": 55000,
-        "loot": 17000,
+        "str": 350,
+        "agi": 270,
+        "dex": 240,
+        "hp": 95000,
+        "xp": 10000,
+        "loot": 4500,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1772,12 +1772,12 @@
     {
         "id": "earthen_11",
         "name": "Pebble Prowler",
-        "str": 510,
-        "agi": 355,
-        "dex": 438,
-        "hp": 72000,
-        "xp": 55500,
-        "loot": 17200,
+        "str": 353,
+        "agi": 272,
+        "dex": 242,
+        "hp": 96500,
+        "xp": 10200,
+        "loot": 4600,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1787,12 +1787,12 @@
     {
         "id": "earthen_12",
         "name": "Geode Giant",
-        "str": 520,
-        "agi": 360,
-        "dex": 446,
-        "hp": 74000,
-        "xp": 56000,
-        "loot": 17400,
+        "str": 356,
+        "agi": 274,
+        "dex": 244,
+        "hp": 98000,
+        "xp": 10400,
+        "loot": 4700,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1802,12 +1802,12 @@
     {
         "id": "earthen_13",
         "name": "Core Captivator",
-        "str": 530,
-        "agi": 365,
-        "dex": 454,
-        "hp": 76000,
-        "xp": 56500,
-        "loot": 17600,
+        "str": 359,
+        "agi": 276,
+        "dex": 246,
+        "hp": 99500,
+        "xp": 10600,
+        "loot": 4800,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1817,12 +1817,12 @@
     {
         "id": "earthen_14",
         "name": "Mantle Mauler",
-        "str": 540,
-        "agi": 370,
-        "dex": 462,
-        "hp": 78000,
-        "xp": 57000,
-        "loot": 17800,
+        "str": 362,
+        "agi": 278,
+        "dex": 248,
+        "hp": 101000,
+        "xp": 10800,
+        "loot": 4900,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1832,12 +1832,12 @@
     {
         "id": "earthen_15",
         "name": "Tectonic Terror",
-        "str": 550,
-        "agi": 375,
-        "dex": 470,
-        "hp": 80000,
-        "xp": 57500,
-        "loot": 18000,
+        "str": 365,
+        "agi": 280,
+        "dex": 250,
+        "hp": 102500,
+        "xp": 11000,
+        "loot": 5000,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1847,12 +1847,12 @@
     {
         "id": "earthen_16",
         "name": "Lithic Lurker",
-        "str": 560,
-        "agi": 380,
-        "dex": 478,
-        "hp": 82000,
-        "xp": 58000,
-        "loot": 18200,
+        "str": 368,
+        "agi": 282,
+        "dex": 252,
+        "hp": 104000,
+        "xp": 11200,
+        "loot": 5100,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1862,12 +1862,12 @@
     {
         "id": "earthen_17",
         "name": "Stalactite Stinger",
-        "str": 570,
-        "agi": 385,
-        "dex": 486,
-        "hp": 84000,
-        "xp": 58500,
-        "loot": 18400,
+        "str": 371,
+        "agi": 284,
+        "dex": 254,
+        "hp": 105500,
+        "xp": 11400,
+        "loot": 5200,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1877,12 +1877,12 @@
     {
         "id": "earthen_18",
         "name": "Stalagmite Striker",
-        "str": 580,
-        "agi": 390,
-        "dex": 494,
-        "hp": 86000,
-        "xp": 59000,
-        "loot": 18600,
+        "str": 374,
+        "agi": 286,
+        "dex": 256,
+        "hp": 107000,
+        "xp": 11600,
+        "loot": 5300,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1892,12 +1892,12 @@
     {
         "id": "earthen_19",
         "name": "Sand Swallower",
-        "str": 590,
-        "agi": 395,
-        "dex": 502,
-        "hp": 88000,
-        "xp": 59500,
-        "loot": 18800,
+        "str": 377,
+        "agi": 288,
+        "dex": 258,
+        "hp": 108500,
+        "xp": 11800,
+        "loot": 5400,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1907,12 +1907,12 @@
     {
         "id": "earthen_20",
         "name": "Dust Demon",
-        "str": 600,
-        "agi": 400,
-        "dex": 510,
-        "hp": 90000,
-        "xp": 60000,
-        "loot": 19000,
+        "str": 380,
+        "agi": 290,
+        "dex": 260,
+        "hp": 110000,
+        "xp": 12000,
+        "loot": 5500,
         "taunts": [
             "The earth trembles.",
             "Solid as rock."
@@ -1922,12 +1922,12 @@
     {
         "id": "hydro_1",
         "name": "Abyssal Angler",
-        "str": 820,
-        "agi": 615,
-        "dex": 710,
-        "hp": 160000,
-        "xp": 155000,
-        "loot": 51000,
+        "str": 555,
+        "agi": 453,
+        "dex": 403,
+        "hp": 152500,
+        "xp": 25500,
+        "loot": 12250,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -1937,12 +1937,12 @@
     {
         "id": "hydro_2",
         "name": "Trench Terror",
-        "str": 840,
-        "agi": 630,
-        "dex": 720,
-        "hp": 170000,
-        "xp": 160000,
-        "loot": 52000,
+        "str": 560,
+        "agi": 456,
+        "dex": 406,
+        "hp": 155000,
+        "xp": 26000,
+        "loot": 12500,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -1952,12 +1952,12 @@
     {
         "id": "hydro_3",
         "name": "Deep Sea Dweller",
-        "str": 860,
-        "agi": 645,
-        "dex": 730,
-        "hp": 180000,
-        "xp": 165000,
-        "loot": 53000,
+        "str": 565,
+        "agi": 459,
+        "dex": 409,
+        "hp": 157500,
+        "xp": 26500,
+        "loot": 12750,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -1967,12 +1967,12 @@
     {
         "id": "hydro_4",
         "name": "Marine Mauler",
-        "str": 880,
-        "agi": 660,
-        "dex": 740,
-        "hp": 190000,
-        "xp": 170000,
-        "loot": 54000,
+        "str": 570,
+        "agi": 462,
+        "dex": 412,
+        "hp": 160000,
+        "xp": 27000,
+        "loot": 13000,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -1982,12 +1982,12 @@
     {
         "id": "hydro_5",
         "name": "Pelagic Predator",
-        "str": 900,
-        "agi": 675,
-        "dex": 750,
-        "hp": 200000,
-        "xp": 175000,
-        "loot": 55000,
+        "str": 575,
+        "agi": 465,
+        "dex": 415,
+        "hp": 162500,
+        "xp": 27500,
+        "loot": 13250,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -1997,12 +1997,12 @@
     {
         "id": "hydro_6",
         "name": "Benthic Behemoth",
-        "str": 920,
-        "agi": 690,
-        "dex": 760,
-        "hp": 210000,
-        "xp": 180000,
-        "loot": 56000,
+        "str": 580,
+        "agi": 468,
+        "dex": 418,
+        "hp": 165000,
+        "xp": 28000,
+        "loot": 13500,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -2012,12 +2012,12 @@
     {
         "id": "hydro_7",
         "name": "Coral Crusher",
-        "str": 940,
-        "agi": 705,
-        "dex": 770,
-        "hp": 220000,
-        "xp": 185000,
-        "loot": 57000,
+        "str": 585,
+        "agi": 471,
+        "dex": 421,
+        "hp": 167500,
+        "xp": 28500,
+        "loot": 13750,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -2027,12 +2027,12 @@
     {
         "id": "hydro_8",
         "name": "Salt Stalker",
-        "str": 960,
-        "agi": 720,
-        "dex": 780,
-        "hp": 230000,
-        "xp": 190000,
-        "loot": 58000,
+        "str": 590,
+        "agi": 474,
+        "dex": 424,
+        "hp": 170000,
+        "xp": 29000,
+        "loot": 14000,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -2042,12 +2042,12 @@
     {
         "id": "hydro_9",
         "name": "Brine Beast",
-        "str": 980,
-        "agi": 735,
-        "dex": 790,
-        "hp": 240000,
-        "xp": 195000,
-        "loot": 59000,
+        "str": 595,
+        "agi": 477,
+        "dex": 427,
+        "hp": 172500,
+        "xp": 29500,
+        "loot": 14250,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
@@ -2057,16 +2057,176 @@
     {
         "id": "hydro_10",
         "name": "Pressure Phantom",
-        "str": 1000,
-        "agi": 750,
-        "dex": 800,
-        "hp": 250000,
-        "xp": 200000,
-        "loot": 60000,
+        "str": 600,
+        "agi": 480,
+        "dex": 430,
+        "hp": 175000,
+        "xp": 30000,
+        "loot": 14500,
         "taunts": [
             "Drown in the depths.",
             "Silence of the abyss."
         ],
         "folder": "Abyssal Trench"
+    },
+    {
+        "id": "gale_1",
+        "name": "Zephyr Scout",
+        "str": 810,
+        "agi": 608,
+        "dex": 555,
+        "hp": 255000,
+        "xp": 51000,
+        "loot": 25500,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_2",
+        "name": "Mist Strider",
+        "str": 820,
+        "agi": 616,
+        "dex": 560,
+        "hp": 260000,
+        "xp": 52000,
+        "loot": 26000,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_3",
+        "name": "Cloud Chaser",
+        "str": 830,
+        "agi": 624,
+        "dex": 565,
+        "hp": 265000,
+        "xp": 53000,
+        "loot": 26500,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_4",
+        "name": "Aero Aviator",
+        "str": 840,
+        "agi": 632,
+        "dex": 570,
+        "hp": 270000,
+        "xp": 54000,
+        "loot": 27000,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_5",
+        "name": "Sky Sentinel",
+        "str": 850,
+        "agi": 640,
+        "dex": 575,
+        "hp": 275000,
+        "xp": 55000,
+        "loot": 27500,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_6",
+        "name": "Gale Griffin",
+        "str": 860,
+        "agi": 648,
+        "dex": 580,
+        "hp": 280000,
+        "xp": 56000,
+        "loot": 28000,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_7",
+        "name": "Thunder Talon",
+        "str": 870,
+        "agi": 656,
+        "dex": 585,
+        "hp": 285000,
+        "xp": 57000,
+        "loot": 28500,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_8",
+        "name": "Storm Sovereign",
+        "str": 880,
+        "agi": 664,
+        "dex": 590,
+        "hp": 290000,
+        "xp": 58000,
+        "loot": 29000,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_9",
+        "name": "Vortex Vanguard",
+        "str": 890,
+        "agi": 672,
+        "dex": 595,
+        "hp": 295000,
+        "xp": 59000,
+        "loot": 29500,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
+    },
+    {
+        "id": "gale_10",
+        "name": "Empire Emperor",
+        "str": 900,
+        "agi": 680,
+        "dex": 600,
+        "hp": 300000,
+        "xp": 60000,
+        "loot": 30000,
+        "taunts": [
+            "The wind obeys me!",
+            "You are weighted down by gravity.",
+            "Drift into the void."
+        ],
+        "folder": "Gale Empire"
     }
 ]

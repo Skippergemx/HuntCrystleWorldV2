@@ -924,7 +924,7 @@ const App = () => {
 
     // --- Loot Drop Logic (Optimized for Depth & Rarity) ---
     if (selectedMap && selectedMap.lootTable) {
-      const dropChance = 0.35 + (p.level * 0.005);
+      const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));
       if (Math.random() < dropChance) {
         // Filter loots based on rarity vs floor (depth)
         // Rare: > Floor 5, Epic: > Floor 10, Legendary: > Floor 20
@@ -1060,12 +1060,14 @@ const App = () => {
         // Cosmic is neutral, but the user said "normal damage will hardly cut" 
         // requiring "proper GEMX element". So we enforce the advantage system here.
         if (!isEffective) {
-            addLog(`⛔ SYNC ERROR: Attacks nullified!`);
-            addLog(`💡 Strategy: Imbuement with ${
+            addLog(`🛡️ DEFENSE ERROR: The monster is unaffected!`);
+            addLog(`💡 Tip: Only the ${
                 monsterElement === 'Earthen' ? 'Pyro' : 
                 monsterElement === 'Hydro' ? 'Earthen' : 
                 monsterElement === 'Pyro' ? 'Gale' : 'Hydro'
-            } resonance required.`);
+            } GEMX imbuement will cut damage to this monster!`);
+            
+            setPlayerTaunt("My attacks are doing nothing!");
             
             // Missing imbuement results in an automatic strike failure
             setMissTimeLeft(1.2);
@@ -1149,6 +1151,12 @@ const App = () => {
       addLog(`Equipped ${item.name}! Old gear moved to Storage.`);
     }
   };
+
+  const handleSkip = useCallback(() => {
+    if (isActionProcessing || showDefeatedWindow) return;
+    addLog(`🔄 Sector Re-scan: Neutralizing local signals...`);
+    spawnNewEnemy(depth);
+  }, [isActionProcessing, showDefeatedWindow, spawnNewEnemy, depth, addLog]);
 
   const equipItem = (item) => {
     const oldItem = player.equipped?.[item.type];
@@ -1588,6 +1596,7 @@ const App = () => {
               strikingSide={strikingSide}
               totalStats={totalStats}
               lastLoot={lastLoot}
+              handleSkip={handleSkip}
               onHelp={() => openGuide('dungeon')}
             />
           )}

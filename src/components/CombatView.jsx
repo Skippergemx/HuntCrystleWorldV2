@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle } from 'lucide-react';
+import { TrendingUp, Sparkles, MousePointer, Coffee, User, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD } from './GameUI';
 
 export const CombatView = React.memo(({ 
   enemy, depth, buffTimeLeft, isAutoActive, autoTimeLeft, player, dragonTimeLeft, TAVERN_MATES, handleHeal, activateAutoScroll, isHurt, impactSplash, isStunned, stunTimeLeft, isMissed, missTimeLeft, showDefeatedWindow, handleAttack, setView, syncPlayer, setDepth, selectedMap,
-  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot, onHelp
+  autoUseScroll, setAutoUseScroll, killsInFloor, LOOTS, currentTaunt, playerTaunt, playerImpactSplash, strikingSide, totalStats, lastLoot, onHelp, handleSkip
 }) => {
   if (!enemy) return null;
 
@@ -15,16 +15,37 @@ export const CombatView = React.memo(({
 
   const arenaTheme = React.useMemo(() => {
     const el = selectedMap?.element;
-    if (el === 'Pyro') return { bg: 'bg-red-950', dot: '#f97316', hud: 'border-orange-500', text: 'text-orange-400', banner: 'bg-orange-600' };
-    if (el === 'Earthen') return { bg: 'bg-emerald-950', dot: '#10b981', hud: 'border-emerald-500', text: 'text-emerald-400', banner: 'bg-emerald-600' };
-    if (el === 'Hydro') return { bg: 'bg-blue-950', dot: '#0ea5e9', hud: 'border-blue-500', text: 'text-blue-400', banner: 'bg-blue-600' };
+    if (el === 'Pyro') return { 
+      bg: 'bg-red-950', dot: '#f97316', hud: 'border-orange-500', text: 'text-orange-400', banner: 'bg-orange-600',
+      backdrop: '/assets/dungeonsground/PyroGroundBackdrop.jpg'
+    };
+    if (el === 'Earthen') return { 
+      bg: 'bg-emerald-950', dot: '#10b981', hud: 'border-emerald-500', text: 'text-emerald-400', banner: 'bg-emerald-600',
+      backdrop: '/assets/dungeonsground/EearthenGroundBackdrop.jpg'
+    };
+    if (el === 'Hydro') return { 
+      bg: 'bg-blue-950', dot: '#0ea5e9', hud: 'border-blue-500', text: 'text-blue-400', banner: 'bg-blue-600',
+      backdrop: '/assets/dungeonsground/HydroGroundBackdrop.jpg'
+    };
+    if (el === 'Gale') return { 
+      bg: 'bg-purple-950', dot: '#a855f7', hud: 'border-purple-500', text: 'text-purple-400', banner: 'bg-purple-600',
+      backdrop: '/assets/dungeonsground/GaleGroundBackdrop.jpg'
+    };
     return { bg: 'bg-slate-950/40', dot: '#0ea5e9', hud: 'border-cyan-500', text: 'text-cyan-400', banner: 'bg-cyan-600' };
   }, [selectedMap]);
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}>
+      {/* Dynamic Background Backdrop */}
+      {arenaTheme.backdrop && (
+        <div className="absolute inset-0 z-0 select-none">
+          <img src={arenaTheme.backdrop} className="w-full h-full object-cover opacity-40 mix-blend-luminosity" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black/80"></div>
+        </div>
+      )}
+
       {/* Halftone Overlay HUD */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: `radial-gradient(circle, ${arenaTheme.dot} 1px, transparent 1px)`, backgroundSize: '8px 8px' }}></div>
+      <div className="absolute inset-0 opacity-10 pointer-events-none z-10" style={{ backgroundImage: `radial-gradient(circle, ${arenaTheme.dot} 1px, transparent 1px)`, backgroundSize: '8px 8px' }}></div>
       
       {/* --- HUD TOP --- */}
       <div className="w-full flex justify-between items-start z-10 px-2">
@@ -60,6 +81,14 @@ export const CombatView = React.memo(({
               <div className="flex flex-col items-start bg-transparent leading-none">
                 <span className="text-[7px] font-black uppercase text-white/70 italic">Heal</span>
                 <span className="text-xs font-black text-white italic">{player.potions || 0}</span>
+              </div>
+            </button>
+            
+            <button onClick={handleSkip} className="flex items-center gap-2 bg-slate-800 border-[3px] border-black px-4 py-2 rounded-xl hover:bg-slate-700 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group">
+              <RotateCw size={14} className="text-cyan-400 group-hover:rotate-45 transition-transform" />
+              <div className="flex flex-col items-start bg-transparent leading-none">
+                <span className="text-[7px] font-black uppercase text-white/70 italic">Skip</span>
+                <span className="text-xs font-black text-white italic">SCAN</span>
               </div>
             </button>
             

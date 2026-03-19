@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Map as MapIcon, ChevronRight, Lock, Star, Skull, TrendingUp, Flame, ShieldAlert, Droplets } from 'lucide-react';
+import { Map as MapIcon, ChevronRight, Lock, Star, Skull, TrendingUp, Flame, ShieldAlert, Droplets, Zap } from 'lucide-react';
 import { Header } from './GameUI';
 
 export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy, setSelectedMap, isPenalized, penaltyRemaining, onHelp }) => {
@@ -33,6 +33,7 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                 case 'Pyro': return { bg: 'bg-orange-200', border: 'border-red-950', accent: 'text-orange-900', hue: 'from-orange-600/40', icon: <Flame size={18} className="text-orange-800" />, shadow: 'shadow-orange-950/40', mapBg: 'bg-red-600', subBg: 'bg-orange-300/60' };
                 case 'Earthen': return { bg: 'bg-emerald-200', border: 'border-emerald-950', accent: 'text-emerald-900', hue: 'from-emerald-600/40', icon: <TrendingUp size={18} className="text-emerald-800" />, shadow: 'shadow-emerald-950/40', mapBg: 'bg-emerald-700', subBg: 'bg-emerald-300/60' };
                 case 'Hydro': return { bg: 'bg-blue-200', border: 'border-blue-950', accent: 'text-blue-900', hue: 'from-blue-600/40', icon: <Droplets size={18} className="text-blue-800" />, shadow: 'shadow-blue-950/40', mapBg: 'bg-blue-600', subBg: 'bg-blue-300/60' };
+                case 'Gale': return { bg: 'bg-purple-200', border: 'border-purple-950', accent: 'text-purple-900', hue: 'from-purple-600/40', icon: <Zap size={18} className="text-purple-800" />, shadow: 'shadow-purple-950/40', mapBg: 'bg-purple-600', subBg: 'bg-purple-300/60' };
                 default: return { bg: 'bg-white', border: 'border-black', accent: 'text-slate-600', hue: 'from-slate-900/40', icon: <MapIcon size={18} className="text-slate-600" />, shadow: 'shadow-black/20', mapBg: 'bg-slate-500', subBg: 'bg-slate-100' };
               }
             };
@@ -54,7 +55,8 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                         <span className="text-[8px] font-black text-white uppercase italic">Needs {
                               map.element === 'Pyro' ? 'Gale' : 
                               map.element === 'Earthen' ? 'Pyro' : 
-                              map.element === 'Hydro' ? 'Earthen' : 'proper'
+                              map.element === 'Hydro' ? 'Earthen' : 
+                              map.element === 'Gale' ? 'Hydro' : 'proper'
                           } Imbuement</span>
                       </div>
                   </div>
@@ -139,7 +141,8 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                              'void_sector': 'Void Sector 7',
                              'inferno_crater': 'Inferno Crater',
                              'tectonic_ridge': 'Tectonic Ridge',
-                             'abyssal_trench': 'Abyssal Trench'
+                             'abyssal_trench': 'Abyssal Trench',
+                             'gale_empire': 'Gale Empire'
                            };
                            const folder = folderMap[map.id] || 'Neon Slums';
                            const denizens = map.id === 'neon_slums' ? ['Venomhide Drake', 'Bone Dragon', 'Ember Drake'] : 
@@ -147,6 +150,7 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                                             map.id === 'void_sector' ? ['Null Stalker', 'Void Wraith', 'Abyssal Crawler'] :
                                             map.id === 'inferno_crater' ? ['Magma Creeper', 'Lava Lurker', 'Ember Shade'] :
                                             map.id === 'tectonic_ridge' ? ['Rock Crusher', 'Stone Sentinel', 'Earth Eater'] :
+                                            map.id === 'gale_empire' ? ['Zephyr Scout', 'Sky Sentinel', 'Storm Sovereign'] :
                                             ['Abyssal Angler', 'Trench Terror', 'Deep Sea Dweller'];
                            
                            return denizens.map((name, di) => (

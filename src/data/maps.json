@@ -76,5 +76,15 @@
     "element": "Hydro",
     "unlocked": false,
     "lootTable": ["ocean_pearl", "water_essence", "coral_spine", "sea_salt", "crystle_shard", "beast_hide"]
+  },
+  {
+    "id": "gale_empire",
+    "name": "Gale Empire",
+    "description": "High-altitude kingdom floating above the clouds. Constant hurricane-force winds mandate Gale resonance.",
+    "minLevel": 400,
+    "difficulty": "Master",
+    "element": "Gale",
+    "unlocked": false,
+    "lootTable": ["gale_feather", "storm_essence", "cloud_silk", "mist_vial", "crystle_shard", "beast_hide"]
   }
 ]

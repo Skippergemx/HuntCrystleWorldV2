@@ -696,7 +696,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                     ))}
                  </div>
                  <p className="text-[9px] font-black text-slate-500 leading-relaxed italic">
-                    * Bonus: Global drop chance scales +0.5% per Hunter Level. Base chance: 35%.
+                    * Bonus: Multiplier scales +4% (exponential) per Floor. Drop chance scales +1.5% per Floor.
                  </p>
               </div>
 
