@@ -256,6 +256,59 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     }
   };
 
+  const masterResetPlayer = async () => {
+    if (!editingPlayer) return;
+    if (!window.confirm(`MASTER RESET: Are you sure you want to completely erase progression for ${editingPlayer.name || editingPlayer.id}? This cannot be undone.`)) return;
+    
+    setLoading(true);
+    setMessage(null);
+    try {
+      const { id, sourceAppId } = editingPlayer;
+      const profileRef = doc(db, 'artifacts', sourceAppId || appId, 'users', id, 'profile', 'data');
+      
+      const resetData = {
+          uid: id,
+          email: editingPlayer.email || '',
+          name: editingPlayer.name || `Hunter_${id.slice(0, 4)}`,
+          level: 1, xp: 0, tokens: 100,
+          hp: 150, maxHp: 150,
+          baseStats: { str: 10, agi: 10, dex: 10 },
+          abilityPoints: 5,
+          potions: 5,
+          autoScrolls: 0,
+          autoUntil: 0,
+          hiredMate: null,
+          buffUntil: 0,
+          equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
+          recipes: [],
+          inventory: [],
+          totalBossDamage: 0,
+          maxDepth: 1,
+          penaltyUntil: 0,
+          autoMode: null,
+          gemx: { level: 1, crystalsFed: 0 },
+          dragon: { level: 1, fruitsFed: 0 }
+      };
+
+      await updateDoc(profileRef, resetData);
+      
+      const lbRef = doc(db, 'artifacts', sourceAppId || appId, 'public', 'data', 'leaderboard', id);
+      const lbSnap = await getDoc(lbRef);
+      if (lbSnap.exists()) {
+        await deleteDoc(lbRef);
+      }
+
+      setMessage({ type: 'success', text: `Master Reset complete for ${id}.` });
+      setEditingPlayer(null);
+      await fetchStats();
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Master Reset failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4 bg-slate-950">
@@ -336,20 +389,30 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                 </div>
               </div>
 
-              <div className="pt-4 flex gap-3">
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-cyan-600 text-white py-3 font-black uppercase italic border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-500 transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Processing...' : 'Apply Changes'}
-                </button>
+              <div className="pt-4 flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <button 
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-cyan-600 text-white py-3 font-black uppercase italic border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-500 transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Processing...' : 'Apply Changes'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setEditingPlayer(null)}
+                    className="flex-1 bg-slate-800 text-white py-3 font-black uppercase italic border-2 border-black hover:bg-slate-700 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
                 <button 
                   type="button"
-                  onClick={() => setEditingPlayer(null)}
-                  className="flex-1 bg-slate-800 text-white py-3 font-black uppercase italic border-2 border-black hover:bg-slate-700 transition-all"
+                  onClick={masterResetPlayer}
+                  disabled={loading}
+                  className="w-full bg-red-950 text-red-500 py-2 mt-2 font-black uppercase italic border-2 border-red-900 shadow-[4px_4px_0_rgba(239,68,68,0.2)] hover:bg-red-900 hover:text-white transition-all disabled:opacity-50"
                 >
-                  Discard
+                  Initiate Master Reset
                 </button>
               </div>
             </form>

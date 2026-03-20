@@ -98,19 +98,13 @@ const BOSS_MEDIA_FILES = [
 ];
 const forgeableIDs = CRYSTLE_RECIPES.map(r => r.id);
 const SHOP_ITEMS = [...SHOP_CONSUMABLES, ...EQUIPMENT.filter(e => e.type !== 'Relic' && !forgeableIDs.includes(e.id))];
-const SOUNDS = {
-  mainBGM: ['/assets/sounds/Main-BGM01.mp3', '/assets/sounds/Main-BGM02.mp3'],
-  dungeonBGM: ['/assets/sounds/Dungeon-BGM01.mp3', '/assets/sounds/Dungeon-BGM02.mp3'],
-  bossBGM: ['/assets/sounds/Boss-BGM01.mp3', '/assets/sounds/Boss-BMG02.mp3'],
-  playerAttack: '/assets/sounds/Player-Attack.wav',
-  monsterAttack: '/assets/sounds/Monster-Attack.wav',
-  obtainLoot: '/assets/sounds/Obtain-Loot.wav',
-  useHeal: '/assets/sounds/Use-Heal-Potion.wav'
-};
+import { useAudioEngine, SOUNDS } from './hooks/useAudioEngine';
+import { GUIDE_CONTENT } from './data/guideContent';
+import { usePlayerSync } from './hooks/usePlayerSync';
 
 const App = () => {
   const [user, setUser] = useState(null);
-  const [player, setPlayer] = useState(null);
+  const { player, setPlayer, syncPlayer } = usePlayerSync(user, db, appId);
   const [leaderboard, setLeaderboard] = useState([]);
   const [marketplace, setMarketplace] = useState([]);
   const [logs, setLogs] = useState(["Synchronizing with Metaverse.DungeonsWithGems.Quest..."]);
@@ -142,66 +136,13 @@ const App = () => {
   const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
   const [killsInFloor, setKillsInFloor] = useState(0);
   const [autoUseScroll, setAutoUseScroll] = useState(false);
-  const [isMusicOn, setIsMusicOn] = useState(true);
-  const [isSfxOn, setIsSfxOn] = useState(true);
+  const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX } = useAudioEngine(view, enemy?.isBoss);
   const [dragonTimeLeft, setDragonTimeLeft] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showGuide, setShowGuide] = useState(false);
   const [guideType, setGuideType] = useState('menu');
 
-  const GUIDE_CONTENT = {
-    menu: [
-      { topic: 'Nexus Hub', text: 'This is your central command. Access all sectors, manage your equipment, and trade in the marketplace from here.' },
-      { topic: 'World Progression', text: 'Unlock new sectors by reaching specific level milestones. Rust Canyon (Lvl 10) and Void Sector 7 (Lvl 25) await elite hunters.' },
-      { topic: 'Combat Arena', text: 'Enter the PVP Holo-Grid to test your strength against other active hunters in real-time synchronized combat.' }
-    ],
-    dungeon: [
-      { topic: 'Floor Scaling', text: 'Every floor you clear increases GX and XP rewards by 15% (exponential). However, monster health and damage scale at the same rate!' },
-      { topic: 'Loot Gating', text: 'Rare items drop after Floor 5, Epic after Floor 10, and Legendary after Floor 20. Higher floors significantly increase drop chances.' },
-      { topic: 'Combat Stats', text: 'STR increases damage. AGI increases your defense and dodge chance. DEX improves your hit rate and critical strike chance.' }
-    ],
-    boss: [
-      { topic: 'Relic Protocol', text: 'The Boss has a 10% base chance to drop a Relic. This chance DOUBLES for every 1 Million cumulative damage deal to the system.' },
-      { topic: 'Stun Cycles', text: 'High damage strikes can stun the boss. Use these windows to maximize your damage output without fear of retaliation.' }
-    ],
-    dragons_ground: [
-      { topic: 'Dragon Empowerment', text: 'Feed Mystic Fruits to your dragon to level it up. Each level provides a permanent +2 bonus to ALL player stats when summoned.' },
-      { topic: 'Gemx Sentinels', text: 'Feed Crystle Materials to your Gemx to increase its level. Higher level Gemx provide better passive bonuses and visual evolution.' },
-      { topic: 'Fruit Scavenging', text: 'Monsters in the Dragons Ground have a 15% chance to drop Mystic Fruits. Clear floors quickly to stockpile reserves.' }
-    ],
-    forge: [
-      { topic: 'Crystle Forging', text: 'Combine raw materials and GX to create powerful Crystle-tier equipment. Forged items are more powerful than standard shop gear.' },
-      { topic: 'Success Calculus', text: 'Success rate starts at 50% and improves based on your total DEX. High-tier gear has high failure risks—equip DEX gear before forging!' }
-    ],
-    shop: [
-      { topic: 'Equipment Procurement', text: 'The shop provides basic and advanced gear. Note that Relics and forged Crystle items CANNOT be bought here—they must be found or crafted.' },
-      { topic: 'Potion Reserves', text: 'Always keep at least 10 HP Potions and a few Auto-Scrolls. Combat in higher floors will drain your resources rapidly.' }
-    ],
-    marketplace: [
-      { topic: 'Player Trading', text: 'Trade your found loot with other hunters for GX. Use this to find rare materials you need for forging without grinding.' },
-      { topic: 'Meta-Tax', text: 'The Metaverse Union takes a 5% tax on all completed sales. Payouts are claimed automatically the next time you access the terminal.' }
-    ],
-    pvp: [
-      { topic: 'Holo-Grid Combat', text: 'Real-time combat where you can challenge any active hunter. Strikes consume current HP. Defeat results in a 30-second expulsion penalty.' },
-      { topic: 'Combat Sync', text: 'Your current total stats, including dragon buffs and companion perks, are synchronized upon entry. Counter-attacks are automated based on agility levels.' }
-    ],
-    leaderboard: [
-      { topic: 'Ranking Metrics', text: 'Hunters are ranked by Combat Score (Boss Damage), Hunter Level, Peak Depth (Highest Floor), and Wealth (Total GX).' },
-      { topic: 'Baron Status', text: 'The top wealth earners are tracked in the Wealth tab. Use the marketplace to flip items and climb the economic rankings.' }
-    ],
-    attributes: [
-      { topic: 'Evolution Points', text: 'Gain 5 Ability Points every time you level up. Spend them here to permanently increase your base stats.' },
-      { topic: 'Scaling Returns', text: 'DEX is critical early game for hit rating. STR becomes vital as monster HP increases exponentially in the deep dungeon.' }
-    ],
-    database: [
-      { topic: 'Archive Wiki', text: 'The totality of the In-Game items is documented here. Use this as a wiki to study monster behaviors, drop probabilities, and item tech specs.' },
-      { topic: 'Asset Analysis', text: 'Switch tabs to scan Beast Lore, Crystle Materials, and Equipment tiers. Live probability scanners show real-time drop chances per sector.' }
-    ],
-    attributes: [
-      { topic: 'Tech Installation', text: 'Manage currently equipped gear. Installing new tech will move your old equipment back to storage.' },
-      { topic: 'Relic Slots', text: 'You have one Relic slot for ultra-rare items found from Bosses. These provide unique, game-changing passive stats.' }
-    ]
-  };
+
 
   const openGuide = (type) => {
     setGuideType(type || view);
@@ -221,48 +162,10 @@ const App = () => {
   const depthRef = useRef(1);
   const buffRef = useRef(0);
   const processingRef = useRef(false);
-  const bgmRef = useRef(new Audio());
-
-  // Throttled sync mechanism
-  const syncTimeoutRef = useRef(null);
-  const pendingUpdatesRef = useRef({});
 
   // --- INFRASTRUCTURE FUNCTIONS ---
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
 
-  const playSFX = (soundPath) => {
-    if (!isSfxOn) return;
-    const audio = new Audio(soundPath);
-    audio.volume = 0.5;
-    audio.play().catch(() => { });
-  };
-
-  const syncPlayer = useCallback(async (updates) => {
-    if (!user) return;
-
-    // Immediate local update for UI responsiveness
-    setPlayer(prev => {
-      const next = { ...prev, ...updates };
-
-      // Batch updates for remote sync
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
-
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-
-      syncTimeoutRef.current = setTimeout(async () => {
-        try {
-          const identifier = user.email || user.uid;
-          const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
-          await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
-          pendingUpdatesRef.current = {};
-        } catch (e) {
-          console.error("Sync error:", e);
-        }
-      }, 2000); // Wait 2s of silence before syncing to Firebase
-
-      return next;
-    });
-  }, [user, db, appId]);
 
   const updateLeaderboard = useCallback(async (updates = {}) => {
     if (!user || !player) return;
@@ -294,47 +197,7 @@ const App = () => {
   }, []);
 
 
-  const updateBGM = useCallback(() => {
-    if (!isMusicOn) {
-      bgmRef.current.pause();
-      return;
-    }
-
-    let tracks = [];
-    const isCombatView = view === 'dungeon' || view === 'boss';
-
-    if (isCombatView) {
-      tracks = (view === 'boss' || enemy?.isBoss) ? SOUNDS.bossBGM : SOUNDS.dungeonBGM;
-    } else {
-      tracks = SOUNDS.mainBGM;
-    }
-
-    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-
-    // Check if we need to change the track source
-    const currentSrc = bgmRef.current.src ? decodeURIComponent(bgmRef.current.src) : "";
-    const isCombatTrack = currentSrc.includes('Dungeon') || currentSrc.includes('Boss');
-    const isMainTrack = currentSrc.includes('Main');
-
-    const shouldChange = (isCombatView && !isCombatTrack) ||
-      (!isCombatView && !isMainTrack) ||
-      (!bgmRef.current.src);
-
-    if (shouldChange) {
-      bgmRef.current.pause();
-      bgmRef.current.src = randomTrack;
-      bgmRef.current.loop = true;
-      bgmRef.current.volume = 0.3;
-      bgmRef.current.play().catch(e => console.log("BGM play error", e));
-    } else if (bgmRef.current.paused && isMusicOn) {
-      // If it's the right track but just paused (from a toggle), play it
-      bgmRef.current.play().catch(e => console.log("BGM resume error", e));
-    }
-  }, [view, isMusicOn, enemy?.isBoss]);
-
-  useEffect(() => {
-    updateBGM();
-  }, [updateBGM]);
+  // URL routing for Admin
 
   useEffect(() => {
     playerRef.current = player;
@@ -409,8 +272,12 @@ const App = () => {
   };
 
   const activateAutoScroll = async () => {
+    // Prevents redundant scroll usage caused by rapid state synchronization delays
+    if (window._autoScrollLock && Date.now() - window._autoScrollLock < 2000) return;
+    window._autoScrollLock = Date.now();
+
     const p = playerRef.current || player;
-    const scrollIdx = p.inventory?.findIndex(i => i.id === 'auto_scroll');
+    const scrollIdx = p.inventory?.findIndex(i => i && i.id === 'auto_scroll');
     const hasCounter = (p.autoScrolls || 0) > 0;
 
     if (scrollIdx === -1 && !hasCounter) {
@@ -846,7 +713,7 @@ const App = () => {
       setIsActionProcessing(false);
       return;
     }
-    const stats = totalStats;
+    const stats = { ...totalStats };
 
     // Trigger Strike Animation (after a slight delay to let player finish)
     setTimeout(() => {
@@ -1037,8 +904,8 @@ const App = () => {
 
     setIsActionProcessing(true);
 
-    // COMPANION BUFF CHANCE
-    let stats = totalStats;
+    // COMPANION BUFF CHANCE (Deep copy to avoid mutating the memoized totalStats per turn)
+    let stats = { ...totalStats };
     if (p.hiredMate && buffTimeLeft <= 0 && Math.random() < 0.5) {
       const mate = TAVERN_MATES.find(m => m.id === p.hiredMate);
       syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
