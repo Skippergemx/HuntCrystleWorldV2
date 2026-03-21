@@ -4,27 +4,33 @@
     "name": "Sylvan Scout",
     "cost": 500,
     "type": "AGI",
-    "desc": "50% chance to double Agility for 20s.",
+    "desc": "50% chance to double Agility for 10s.",
     "rarity": "Common",
-    "icon": "🏹"
+    "icon": "🏹",
+    "multiplier": 2,
+    "procChance": 0.5
   },
   {
     "id": "dwarf",
     "name": "Ironclad Berserker",
     "cost": 500,
     "type": "STR",
-    "desc": "50% chance to double Strength for 20s.",
+    "desc": "50% chance to double Strength for 10s.",
     "rarity": "Common",
-    "icon": "🪓"
+    "icon": "🪓",
+    "multiplier": 2,
+    "procChance": 0.5
   },
   {
     "id": "dragon",
     "name": "Crimson Hatchling",
     "cost": 1000,
     "type": "DEX",
-    "desc": "50% chance to double Dexterity for 20s.",
+    "desc": "50% chance to double Dexterity for 10s.",
     "rarity": "Uncommon",
-    "icon": "🐲"
+    "icon": "🐲",
+    "multiplier": 2,
+    "procChance": 0.5
   },
   {
     "id": "mage",
@@ -33,7 +39,9 @@
     "type": "STR",
     "desc": "75% chance to amplify Strength by 2.5x.",
     "rarity": "Rare",
-    "icon": "✨"
+    "icon": "✨",
+    "multiplier": 2.5,
+    "procChance": 0.75
   },
   {
     "id": "shadow",
@@ -42,15 +50,20 @@
     "type": "AGI",
     "desc": "80% chance for triple Agility.",
     "rarity": "Epic",
-    "icon": "👤"
+    "icon": "👤",
+    "multiplier": 3,
+    "procChance": 0.8
   },
   {
     "id": "titan",
     "name": "Colossal Guardian",
     "cost": 15000,
     "type": "STR",
-    "desc": "Guaranteed double Strength and massive HP bonus.",
+    "desc": "Persistent double Strength and +1000 HP bonus.",
     "rarity": "Legendary",
-    "icon": "🛡️"
+    "icon": "🛡️",
+    "multiplier": 2,
+    "procChance": 1.0,
+    "hpBonus": 1000
   }
 ]

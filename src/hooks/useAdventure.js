@@ -65,6 +65,7 @@ export const useAdventure = () => {
     triggerFlinch,
     triggerHurt,
     selectedMap,
-    setSelectedMap
+    setSelectedMap,
+    handleSkip: () => spawnNewEnemy(depth)
   };
 };

@@ -17,8 +17,14 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const MenuView = React.memo(({ setView, isPenalized, penaltyRemaining, setDepth, spawnNewEnemy, autoUntil, syncPlayer, onHelp }) => {
+export const MenuView = React.memo(() => {
+  const { adventure, gameLoop, syncPlayer, openGuide } = useGame();
+  const { setView } = adventure;
+  const { penaltyRemaining, autoTimeLeft } = gameLoop;
+  const isPenalized = penaltyRemaining > 0;
+
   const startDungeon = () => {
     if (!isPenalized) {
       setView('map');
@@ -28,7 +34,7 @@ export const MenuView = React.memo(({ setView, isPenalized, penaltyRemaining, se
   const startBoss = () => {
     if (!isPenalized) {
       setView('boss');
-      if (autoUntil > 0) syncPlayer({ autoUntil: 0 });
+      if (autoTimeLeft > 0) syncPlayer({ autoUntil: 0 });
     }
   };
 
@@ -36,7 +42,7 @@ export const MenuView = React.memo(({ setView, isPenalized, penaltyRemaining, se
     <div className="flex-1 p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative overflow-hidden">
       {/* Floating Guide Button */}
       <button 
-        onClick={() => onHelp('menu')}
+        onClick={() => openGuide('menu')}
         className="absolute top-2 right-2 z-[60] p-2 bg-cyan-600 border-[3px] border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-cyan-400 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
         title="Knowledge Base"
       >

@@ -1,0 +1,385 @@
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { BOSS, getHitChance, getDamage } from '../utils/gameLogic';
+
+export const useCombat = (
+  user,
+  player,
+  syncPlayer,
+  enemy,
+  setEnemy,
+  enemyRef,
+  spawnNewEnemy,
+  totalStats,
+  addLog,
+  playSFX,
+  SOUNDS,
+  updateLeaderboard,
+  selectedMap,
+  STUN_DURATION_NORMAL,
+  STUN_DURATION_CRIT,
+  PENALTY_DURATION,
+  DEFEAT_WINDOW_DURATION,
+  COMPANION_BUFF_DURATION,
+  ELEMENT_ADVANTAGE,
+  XP_BASE,
+  AP_PER_LEVEL,
+  EQUIPMENT,
+  LOOTS,
+  depth,
+  setDepth,
+  view,
+  setView,
+  triggerFlinch,
+  triggerHurt,
+  TAVERN_MATES
+) => {
+  const [critAlert, setCritAlert] = useState(false);
+  const [stunTimeLeft, setStunTimeLeft] = useState(0);
+  const [missTimeLeft, setMissTimeLeft] = useState(0);
+  const [combatState, setCombatState] = useState('IDLE');
+  const [impactSplash, setImpactSplash] = useState(null);
+  const [playerImpactSplash, setPlayerImpactSplash] = useState(null);
+  const [strikingSide, setStrikingSide] = useState(null); // 'player' or 'monster'
+  const [currentTaunt, setCurrentTaunt] = useState("");
+  const [playerTaunt, setPlayerTaunt] = useState("");
+  const [showDefeatedWindow, setShowDefeatedWindow] = useState(false);
+  const [showVictoryWindow, setShowVictoryWindow] = useState(false);
+  const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
+  const [killsInFloor, setKillsInFloor] = useState(0);
+  const [lastLoot, setLastLoot] = useState(null);
+  const [penaltyRemaining, setPenaltyRemaining] = useState(0);
+
+  const stunRef = useRef(0);
+  const missRef = useRef(0);
+  const killsRef = useRef(0);
+  const processingRef = useRef('IDLE');
+
+  useEffect(() => {
+    if (currentTaunt) {
+      const timer = setTimeout(() => setCurrentTaunt(""), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentTaunt]);
+
+  useEffect(() => {
+    if (playerTaunt) {
+      const timer = setTimeout(() => setPlayerTaunt(""), 2200);
+      return () => clearTimeout(timer);
+    }
+  }, [playerTaunt]);
+
+  useEffect(() => {
+    stunRef.current = stunTimeLeft;
+    missRef.current = missTimeLeft;
+    killsRef.current = killsInFloor;
+    processingRef.current = combatState;
+  }, [stunTimeLeft, missTimeLeft, killsInFloor, combatState]);
+
+  const triggerHitEffects = useCallback((dmg, isCrit, side = 'monster', triggerFlinch, triggerHurt) => {
+    const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!", "CRUNCH!", "KRAK!"];
+    const word = impactWords[Math.floor(Math.random() * impactWords.length)];
+    const id = Date.now();
+
+    if (side === 'monster') {
+      setImpactSplash({ text: word, dmg, isCrit, id });
+      setTimeout(() => setImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
+      triggerFlinch();
+      const ouchWords = ["Ouch!", "Gah!", "No!", "Stop!", "Critical Hit!", "Ack!", "My circuits!", "System Failure!"];
+      setCurrentTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
+    } else {
+      setPlayerImpactSplash({ text: word, dmg, isCrit, id });
+      setTimeout(() => setPlayerImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
+      triggerHurt();
+      const ouchWords = ["Ugh!", "Ack!", "Too strong!", "Healing needed!", "Pain...", "Vision blurring!", "Armor cracked!"];
+      setPlayerTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
+    }
+  }, []);
+
+  const enemyTurn = useCallback((target, isBoss = false) => {
+    if (showDefeatedWindow) {
+      setCombatState('IDLE');
+      return;
+    }
+    if (!target || !player || player.hp <= 0) {
+      setCombatState('IDLE');
+      return;
+    }
+    setCombatState('ENEMY_TURN');
+    const stats = { ...totalStats };
+
+    setTimeout(() => {
+      setStrikingSide('monster');
+      playSFX(SOUNDS.monsterAttack);
+      setTimeout(() => setStrikingSide(null), 300);
+    }, 400);
+
+    const hitChance = getHitChance(target.dex, stats.agi);
+    
+    if (Math.random() * 100 < hitChance) {
+      const isCrit = Math.random() < (isBoss ? BOSS.critChance : target.critChance);
+      const dmg = getDamage(target.str, stats.agi, isCrit);
+
+      if (isCrit) { 
+        addLog(`⚠️ CRIT!`); 
+        setCritAlert(true); 
+        setTimeout(() => setCritAlert(false), 800); 
+        setStunTimeLeft(STUN_DURATION_CRIT / 1000); 
+      } else {
+        setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
+      }
+
+      addLog(`⚠️ ${target.name} hit you for ${dmg} DMG!`);
+      const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
+      setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
+
+      triggerHitEffects(dmg, isCrit, 'player', triggerFlinch, triggerHurt);
+
+      setTimeout(() => {
+        const newHp = Math.max(0, player.hp - dmg);
+        if (newHp <= 0) {
+          setShowDefeatedWindow(true);
+          setCombatState('DEFEATED');
+          syncPlayer({ hp: player.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
+          setTimeout(() => { 
+            setShowDefeatedWindow(false); 
+            setDepth(1); 
+            setView('menu'); 
+          }, DEFEAT_WINDOW_DURATION);
+        } else {
+          syncPlayer({ hp: newHp });
+          setCombatState('IDLE');
+        }
+      }, 500);
+    } else {
+      addLog(`🛡️ Dodged ${target.name}'s strike!`);
+      setTimeout(() => {
+        setCurrentTaunt("Drat! Slipped!");
+        setPlayerTaunt("Nice try!");
+        setCombatState('IDLE');
+      }, 500);
+    }
+  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView]);
+
+  const processKill = useCallback(() => {
+    const e = enemyRef.current || enemy;
+    addLog(`Victory! Found ${e.loot} GX.`);
+
+    let nextXp = player.xp + e.xp, nextLvl = player.level, nextMaxHp = player.maxHp, nextAP = player.abilityPoints || 0;
+    let didLevelUp = false;
+    while (nextXp >= nextLvl * XP_BASE) {
+      nextXp -= nextLvl * XP_BASE;
+      nextLvl++;
+      nextMaxHp += 50;
+      nextAP += AP_PER_LEVEL;
+      addLog(`LVL UP! +5 AP.`);
+      didLevelUp = true;
+    }
+
+    const updates = {
+      tokens: player.tokens + e.loot,
+      xp: nextXp,
+      level: nextLvl,
+      maxHp: nextMaxHp,
+      hp: Math.min(nextMaxHp, player.hp + 25),
+      abilityPoints: nextAP
+    };
+
+    if (selectedMap && selectedMap.lootTable) {
+      const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));
+      if (Math.random() < dropChance) {
+        const possibleLoots = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
+          if (!l) return false;
+          if (l.rarity === 'Legendary' && depth < 20) return false;
+          if (l.rarity === 'Epic' && depth < 10) return false;
+          if (l.rarity === 'Rare' && depth < 5) return false;
+          return true;
+        });
+
+        if (possibleLoots.length > 0) {
+          const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
+          const pool = [];
+          possibleLoots.forEach(l => {
+            const weight = rarityWeights[l.rarity] || 10;
+            for (let i = 0; i < weight; i++) pool.push(l);
+          });
+
+          const lootItem = pool[Math.floor(Math.random() * pool.length)];
+          if (lootItem) {
+            updates.inventory = [...(player.inventory || []), lootItem];
+            addLog(`🎁 LOOT: Found ${lootItem.name}!`);
+            playSFX(SOUNDS.obtainLoot);
+            setLastLoot(lootItem);
+            setTimeout(() => setLastLoot(null), 3000);
+          }
+        }
+      }
+    }
+
+    syncPlayer(updates);
+
+    const droppedItem = updates.inventory ? updates.inventory[updates.inventory.length - 1] : null;
+    setSessionRewards(prev => ({
+      tokens: prev.tokens + e.loot,
+      xp: prev.xp + e.xp,
+      loots: droppedItem ? [...prev.loots, droppedItem] : prev.loots
+    }));
+
+    setShowVictoryWindow(true);
+    setCombatState('VICTORY');
+
+    setTimeout(() => {
+      setShowVictoryWindow(false);
+      setCombatState('IDLE');
+      
+      const newKills = killsRef.current + 1;
+      if (newKills >= 10) {
+        setKillsInFloor(0);
+        const nextDepth = depth + 1;
+        setDepth(nextDepth);
+        addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
+        if (nextDepth > (player.maxDepth || 1)) updates.maxDepth = nextDepth;
+        spawnNewEnemy(nextDepth);
+      } else {
+        setKillsInFloor(newKills);
+        spawnNewEnemy(depth);
+      }
+    }, 1500);
+
+    if (didLevelUp || updates.maxDepth) {
+      updateLeaderboard({
+        level: nextLvl,
+        maxDepth: updates.maxDepth || player.maxDepth || 1
+      });
+    }
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, XP_BASE, AP_PER_LEVEL, LOOTS]);
+
+  const processBossHit = useCallback(async (dmg, isCrit) => {
+    const newTotal = (player.totalBossDamage || 0) + dmg;
+    const updates = { totalBossDamage: newTotal };
+    
+    const milestoneMult = Math.pow(2, Math.floor(newTotal / 1000000));
+    const currentDropChance = BOSS.baseDropRate * milestoneMult;
+
+    if (Math.random() < currentDropChance) {
+      const relics = EQUIPMENT.filter(e => e.type === 'Relic');
+      if (relics.length > 0) {
+        const drop = relics[Math.floor(Math.random() * relics.length)];
+        updates.inventory = [...(player.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        addLog(`💎 BOSS RELIC DROP: ${drop.name}!`);
+        playSFX(SOUNDS.obtainLoot);
+      }
+    }
+
+    syncPlayer(updates);
+    updateLeaderboard({ score: newTotal });
+    enemyTurn(BOSS, true);
+  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard]);
+
+  const handleAttack = useCallback((isBoss = false) => {
+    if (player.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE' || (!isBoss && !enemy)) {
+      return;
+    }
+
+    setCombatState('PLAYER_ATTACKING');
+
+    let stats = { ...totalStats };
+    // Mate Proc Logic
+    if (player.hiredMate && player.buffUntil <= 0) {
+      const mate = TAVERN_MATES.find(m => m.id === player.hiredMate);
+      if (mate && mate.procChance < 1.0) { // Only proc-based mates can trigger the timer
+        if (Math.random() < mate.procChance) {
+          syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
+          addLog(`✨ ${mate.name} activated their power!`);
+        }
+      }
+    }
+
+    const target = isBoss ? BOSS : enemy;
+
+    const monsterElement = selectedMap?.element;
+    if (monsterElement) {
+        const playerElement = player.gemxElement || 'Cosmic';
+        const isEffective = playerElement && ELEMENT_ADVANTAGE[playerElement] === monsterElement;
+        
+        if (!isEffective) {
+            addLog(`🛡️ DEFENSE ERROR: The monster is unaffected!`);
+            setPlayerTaunt("My attacks are doing nothing!");
+            setMissTimeLeft(1.2);
+            enemyTurn(target, isBoss);
+            setCombatState('IDLE');
+            return;
+        }
+    }
+
+    setStrikingSide('player');
+    playSFX(SOUNDS.playerAttack);
+    setTimeout(() => setStrikingSide(null), 300);
+
+    const hitChance = getHitChance(stats.dex, target.agi);
+    if (Math.random() * 100 < hitChance) {
+      const isCrit = Math.random() < 0.15;
+      const dmg = getDamage(stats.str, target.agi, isCrit);
+
+      triggerHitEffects(dmg, isCrit, 'monster', triggerFlinch, triggerHurt);
+
+      const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
+      setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
+      addLog(`Struck ${target.name} for ${dmg} DMG.`);
+
+      setTimeout(() => {
+        if (isBoss) {
+          processBossHit(dmg, isCrit);
+        } else {
+          const newHp = Math.max(0, target.hp - dmg);
+          if (newHp <= 0) {
+            setEnemy({ ...target, hp: 0 });
+            processKill();
+            setCombatState('IDLE');
+          } else {
+            setEnemy({ ...target, hp: newHp });
+            enemyTurn({ ...target, hp: newHp }, isBoss);
+          }
+        }
+      }, 500);
+    } else {
+      addLog(`Missed strike on ${target.name}!`);
+      setMissTimeLeft(1.5);
+      setPlayerTaunt("Darn, missed!");
+      setCurrentTaunt("Ha! Too slow!");
+      enemyTurn(target, isBoss);
+    }
+  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt]);
+
+  return {
+    critAlert,
+    stunTimeLeft,
+    missTimeLeft,
+    combatState,
+    impactSplash,
+    playerImpactSplash,
+    strikingSide,
+    currentTaunt,
+    playerTaunt,
+    showDefeatedWindow,
+    showVictoryWindow,
+    sessionRewards,
+    killsInFloor,
+    lastLoot,
+    penaltyRemaining,
+    setStunTimeLeft,
+    setMissTimeLeft,
+    setKillsInFloor,
+    setPenaltyRemaining,
+    setCombatState,
+    handleAttack,
+    enemyTurn,
+    processKill,
+    processBossHit,
+    triggerHitEffects,
+    setSessionRewards,
+    enemyRef,
+    stunRef,
+    missRef,
+    processingRef
+  };
+};

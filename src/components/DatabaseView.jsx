@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown, Globe, Map as MapIcon, Target, TrendingUp } from 'lucide-react';
 import { Header } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, onHelp }) => {
+export const DatabaseView = React.memo(() => {
+  const { adventure, openGuide, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS } = useGame();
+  const { setView } = adventure;
+
   const [activeTab, setActiveTab] = useState('monsters');
   const [filter, setFilter] = useState('');
 
@@ -31,7 +35,7 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
   return (
     <div className="flex-1 p-6 space-y-4 relative overflow-hidden flex flex-col max-h-screen">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-      <Header title="DATABASE: ARCHIVE INFONET" onClose={() => setView('menu')} onHelp={onHelp} />
+      <Header title="DATABASE: ARCHIVE INFONET" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} />
       
       {/* Search & Tabs */}
       <div className="z-10 space-y-4">
@@ -273,4 +277,4 @@ export const DatabaseView = ({ depth, setView, MONSTERS, LOOTS, EQUIPMENT, MAPS,
       </div>
     </div>
   );
-};
+});

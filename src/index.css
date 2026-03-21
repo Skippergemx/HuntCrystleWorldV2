@@ -127,11 +127,62 @@
     animation: float-slow 8s ease-in-out infinite;
 }
 
-@keyframes scroll-diag {
-    from { transform: translate(-10%, -10%) rotate(12deg); }
-    to { transform: translate(-30%, -30%) rotate(12deg); }
+@keyframes action-lines {
+    0% { transform: scale(1) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.8; }
+    100% { transform: scale(1.5) rotate(5deg); opacity: 0; }
+}
+
+.animate-action-lines {
+    animation: action-lines 0.5s linear infinite;
+}
+
+@keyframes kapow {
+    0% { transform: scale(0.5) rotate(-30deg); opacity: 0; }
+    50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+    70% { transform: scale(0.9) rotate(-5deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-kapow {
+    animation: kapow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(-1deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+.animate-float {
+    animation: float 4s ease-in-out infinite;
+}
+
+@keyframes flinch {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-15px) rotate(-5deg); filter: brightness(2); }
+    50% { transform: translateX(10px) rotate(3deg); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+.animate-flinch {
+    animation: flinch 0.3s ease-out;
+}
+
+.comic-halftone {
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 6px 6px;
 }
 
 .animate-scroll-diag {
     animation: scroll-diag 60s linear infinite;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }

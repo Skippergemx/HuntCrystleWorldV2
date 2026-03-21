@@ -13,8 +13,13 @@ import {
   ArrowRightLeft
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const MarketplaceView = React.memo(({ player, listings, purchaseItem, listItem, cancelListing, setView, addLog, onHelp }) => {
+export const MarketplaceView = React.memo(() => {
+  const { player, market, adventure, actions, openGuide } = useGame();
+  const { setView } = adventure;
+  const { marketplace: listings, purchaseMarketItem: purchaseItem, listMarketItem: listItem, cancelMarketListing: cancelListing } = market;
+  
   const [activeTab, setActiveTab] = useState('browse'); // 'browse', 'sell', 'my_listings'
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,16 +28,25 @@ export const MarketplaceView = React.memo(({ player, listings, purchaseItem, lis
   const [sellPrice, setSellPrice] = useState(100);
 
   const filteredListings = useMemo(() => {
-    return listings.filter(l => {
+    return (listings || []).filter(l => {
       if (l.sellerUid === player.uid && activeTab !== 'my_listings') return false; 
       const matchesType = filterType === 'all' || l.item.type === filterType;
       const matchesSearch = l.item.name.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesType && matchesSearch;
-    }).sort((a, b) => b.createdAt - a.createdAt);
+    }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }, [listings, filterType, searchQuery, player.uid, activeTab]);
 
+  const filteredInventory = useMemo(() => {
+    return (player.inventory || []).filter(item => {
+      if (!item || typeof item !== 'object') return false;
+      const matchesType = filterType === 'all' || item.type === filterType;
+      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesType && matchesSearch;
+    });
+  }, [player.inventory, filterType, searchQuery]);
+
   const myListings = useMemo(() => {
-    return listings.filter(l => l.sellerUid === player.uid);
+    return (listings || []).filter(l => l.sellerUid === player.uid);
   }, [listings, player.uid]);
 
   const inventoryForSale = useMemo(() => {
@@ -48,51 +62,52 @@ export const MarketplaceView = React.memo(({ player, listings, purchaseItem, lis
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <Header title="OPEN GRID: MARKET" onClose={() => setView('menu')} onHelp={onHelp} icon={<ArrowRightLeft className="text-amber-500" />} />
+      <Header title="OPEN GRID: MARKET" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} icon={<ArrowRightLeft className="text-amber-500" />} />
 
       {/* ACTION TABS */}
-      <div className="flex gap-2 mb-6 relative z-10 overflow-x-auto pb-2 no-scrollbar">
+      <div className="flex gap-2 mb-4 relative z-10 overflow-x-auto pb-1 no-scrollbar shrink-0">
         {[
-          { id: 'browse', label: 'Browse Market', icon: <Search size={14} /> },
-          { id: 'sell', label: 'Post Listing', icon: <Plus size={14} /> },
-          { id: 'my_listings', label: 'My Terminal', icon: <History size={14} /> }
+          { id: 'browse', label: 'Acquire', icon: <ShoppingBag size={14} /> },
+          { id: 'sell', label: 'Sell Signal', icon: <Plus size={14} /> },
+          { id: 'my_listings', label: 'Current Broadcasts', icon: <History size={14} /> }
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase italic tracking-widest border-2 transition-all shrink-0 ${activeTab === tab.id ? 'bg-amber-500 border-black text-black shadow-[4px_4px_0_rgba(0,0,0,1)] -translate-y-0.5' : 'bg-slate-900 border-white/10 text-slate-400 hover:border-amber-500/50'}`}
+            onClick={() => { setActiveTab(tab.id); setFilterType('all'); setSearchQuery(''); }}
+            className={`flex items-center gap-2 px-4 py-2 text-[9px] font-black uppercase italic tracking-widest border-2 transition-all shrink-0 ${activeTab === tab.id ? 'bg-amber-500 border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] -translate-y-0.5' : 'bg-slate-900 border-white/10 text-slate-400 hover:border-amber-500/50'}`}
           >
             {tab.icon} {tab.label}
           </button>
         ))}
       </div>
 
+      {/* GLOBAL FILTERS */}
+      <div className="flex flex-wrap gap-2 md:gap-4 items-center bg-black/40 p-2 md:p-3 rounded-lg border border-white/5 relative z-10 mb-4 shrink-0">
+        <div className="flex items-center gap-2 flex-1 min-w-[150px] md:min-w-[200px]">
+           <Search size={14} className="text-slate-500" />
+           <input 
+             type="text" 
+             placeholder="FILTER SIGNAL SOURCE..." 
+             className="bg-transparent text-[9px] md:text-[10px] font-black uppercase text-white placeholder:text-slate-700 w-full focus:outline-none"
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+           />
+        </div>
+        <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
+           {['Weapon', 'Armor', 'Material', 'Jewelry'].map(t => (
+             <button
+               key={t}
+               onClick={() => setFilterType(filterType === t ? 'all' : t)}
+               className={`px-2 py-1 text-[7px] md:text-[8px] font-black uppercase rounded border transition-all whitespace-nowrap ${filterType === t ? 'bg-amber-500 border-amber-600 text-black' : 'bg-slate-900 border-white/5 text-slate-600'}`}
+             >
+               {t}
+             </button>
+           ))}
+        </div>
+      </div>
+
       {activeTab === 'browse' && (
         <div className="space-y-4 flex-1 flex flex-col min-h-0 relative z-10">
-          {/* FILTERS */}
-          <div className="flex flex-wrap gap-4 items-center bg-black/40 p-3 rounded-lg border border-white/5">
-            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-               <Search size={16} className="text-slate-500" />
-               <input 
-                 type="text" 
-                 placeholder="SEARCH SIGNAL..." 
-                 className="bg-transparent text-[10px] font-black uppercase text-white placeholder:text-slate-700 w-full focus:outline-none"
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-               />
-            </div>
-            <div className="flex gap-2">
-               {['all', 'Weapon', 'Armor', 'Headgear', 'Footwear', 'Material'].map(t => (
-                 <button
-                   key={t}
-                   onClick={() => setFilterType(t)}
-                   className={`px-2 py-1 text-[8px] font-black uppercase rounded border transition-all ${filterType === t ? 'bg-amber-500/20 border-amber-500 text-amber-500' : 'bg-slate-900 border-white/5 text-slate-600 hover:text-slate-400'}`}
-                 >
-                   {t}
-                 </button>
-               ))}
-            </div>
-          </div>
 
           {/* LISTINGS GRID */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -122,10 +137,10 @@ export const MarketplaceView = React.memo(({ player, listings, purchaseItem, lis
                     </div>
                     <button
                       onClick={() => purchaseItem(l)}
-                      disabled={player.tokens < l.price}
-                      className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
+                      disabled={player.tokens < l.price || l.sellerUid === player.uid}
+                      className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
                     >
-                      ACQUIRE
+                      {l.sellerUid === player.uid ? 'YOUR ITEM' : 'ACQUIRE'}
                     </button>
                  </div>
               </div>
@@ -141,43 +156,37 @@ export const MarketplaceView = React.memo(({ player, listings, purchaseItem, lis
 
       {activeTab === 'sell' && (
         <div className="flex-1 flex flex-col min-h-0 relative z-10">
-           <div className="bg-amber-500/10 border-2 border-amber-500/30 p-4 rounded-xl mb-6 flex gap-4 items-center">
-              <AlertTriangle className="text-amber-500 shrink-0" />
-              <p className="text-[10px] font-black text-amber-500 uppercase italic leading-tight">
-                NOTICE: Marketplace listings are permanent until sold or canceled. A 5% transaction tax is applied to all successful sales.
+           <div className="bg-amber-500/5 border border-amber-500/20 p-2 md:p-3 rounded-lg mb-3 flex gap-3 items-center">
+              <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+              <p className="text-[7px] md:text-[9px] font-black text-amber-500 uppercase italic leading-tight">
+                NOTICE: Listings carry a 5% terminal tax upon successful exchange.
               </p>
            </div>
 
-           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {inventoryForSale.map((item, i) => (
+           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 pb-20">
+              {filteredInventory.map((item, i) => (
                 <div 
                   key={i}
                   onClick={() => handleOpenListModal(item)}
-                  className="bg-slate-900 border-2 border-white/5 p-4 rounded-lg flex flex-col group cursor-pointer hover:border-amber-500/50 transition-all hover:-translate-y-1 shadow-lg"
+                  className="bg-slate-900 border border-white/5 p-2 md:p-4 rounded flex flex-col group cursor-pointer hover:border-amber-500 transition-all hover:-translate-y-1 shadow-[4px_4px_0_rgba(0,0,0,1)]"
                 >
-                   <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 bg-black flex items-center justify-center text-3xl opacity-50 transition-opacity group-hover:opacity-100">{item.icon}</div>
-                      <div>
-                        <h4 className="text-xs font-black text-white uppercase italic leading-none">{item.name}</h4>
-                        <span className="text-[7px] text-slate-500 font-bold uppercase">{item.type}</span>
+                   <div className="flex flex-col items-center text-center gap-1 md:gap-2">
+                      <div className="w-10 h-10 md:w-16 md:h-16 bg-black flex items-center justify-center text-2xl md:text-5xl group-hover:scale-110 transition-transform">{item.icon}</div>
+                      <div className="min-h-[40px] flex flex-col justify-center">
+                        <h4 className="text-[8px] md:text-xs font-black text-white uppercase italic leading-tight line-clamp-2">{item.name}</h4>
+                        <span className="text-[6px] md:text-[8px] text-slate-500 font-bold uppercase">{item.type}</span>
                       </div>
                    </div>
-                   <div className="flex gap-2 mb-4 h-4">
-                      {Object.entries(item.stats || {}).map(([s, v]) => v !== 0 && (
-                        <span key={s} className="text-[7px] font-black text-cyan-400">+{v} {s}</span>
-                      ))}
-                   </div>
-                   <div className="mt-auto flex justify-between items-center opacity-60 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[8px] font-black text-slate-500 italic">Inventory Item</span>
-                      <button className="text-[9px] font-black text-amber-500 uppercase italic flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        Sell Now <ArrowRightLeft size={10} />
+                   <div className="mt-2 pt-2 border-t border-white/5 flex justify-center opacity-60 group-hover:opacity-100 transition-opacity">
+                      <button className="text-[7px] md:text-[10px] font-black text-amber-500 uppercase italic flex items-center gap-1">
+                        SELL NOW <ArrowRightLeft size={8} className="md:w-3 md:h-3" />
                       </button>
                    </div>
                 </div>
               ))}
-              {inventoryForSale.length === 0 && (
-                <div className="col-span-full py-20 text-center opacity-20">
-                   <p className="text-xs font-black uppercase italic tracking-widest">Storage empty: Nothing to broadcast</p>
+              {filteredInventory.length === 0 && (
+                <div className="col-span-full py-10 text-center opacity-20">
+                   <p className="text-[10px] font-black uppercase italic tracking-widest">No targetable assets in current sector</p>
                 </div>
               )}
            </div>

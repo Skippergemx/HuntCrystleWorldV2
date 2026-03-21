@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { Map as MapIcon, ChevronRight, Lock, Star, Skull, TrendingUp, Flame, ShieldAlert, Droplets, Zap } from 'lucide-react';
 import { Header } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy, setSelectedMap, isPenalized, penaltyRemaining, onHelp }) => {
+export const MapView = () => {
+  const { player, adventure, gameLoop, openGuide, MAPS, LOOTS } = useGame();
+  const { setView, setDepth, spawnNewEnemy, setSelectedMap } = adventure;
+  const { penaltyRemaining } = gameLoop;
+  const isPenalized = penaltyRemaining > 0;
+
   const handleMapSelect = (map) => {
     if (player.level < map.minLevel) return;
     if (isPenalized) return;
@@ -19,7 +25,7 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
       <Header 
         title="World Sectors" 
         onClose={() => setView('menu')} 
-        onHelp={onHelp}
+        onHelp={() => openGuide('menu')}
       />
 
       <div className="flex-1 overflow-y-auto space-y-6 z-10 pr-2 pb-10">
@@ -85,7 +91,6 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                             }}
                           />
                           <div className={`absolute inset-0 bg-gradient-to-r ${theme.hue} via-transparent to-black/80`} />
-                          {/* Scanline FX */}
                           <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[size:100%_2px,3px_100%] pointer-events-none opacity-20" />
                        </div>
                     );
@@ -109,7 +114,6 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                 <p className="text-[10px] font-black text-slate-500 uppercase italic leading-tight mb-4 relative z-10">{map.description}</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4 relative z-10">
-                  {/* Left: Loot Assets */}
                   <div className="space-y-2">
                     <p className={`text-[8px] font-black ${theme.accent} uppercase tracking-widest italic flex items-center gap-1`}>
                       <TrendingUp size={10} /> Obtainable Assets:
@@ -128,7 +132,6 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                     </div>
                   </div>
 
-                  {/* Middle: Sector Denizens */}
                   <div className="space-y-2">
                     <p className={`text-[8px] font-black ${theme.accent} uppercase tracking-widest italic flex items-center gap-1`}>
                       <Skull size={10} /> Sector Denizens:
@@ -172,7 +175,6 @@ export const MapView = ({ MAPS, LOOTS, player, setView, setDepth, spawnNewEnemy,
                     </div>
                   </div>
 
-                  {/* Right: Prized Items (New) */}
                   <div className="space-y-2">
                     <p className={`text-[8px] font-black ${theme.accent} uppercase tracking-widest italic flex items-center gap-1`}>
                       <Star size={10} /> Prized Item Drops:

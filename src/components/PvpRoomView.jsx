@@ -2,8 +2,13 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send, MessageSquare } from 'lucide-react';
 import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getFirestore, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, syncPlayer, setView, addLog, totalStats, db, appId, user, onHelp }) => {
+export const PvpRoomView = React.memo(() => {
+  const { player, syncPlayer, adventure, gameLoop, TAVERN_MATES, totalStats, db, appId, user, addLog, openGuide } = useGame();
+  const { setView } = adventure;
+  const { dragonTimeLeft } = gameLoop;
+
   const [players, setPlayers] = useState([]);
   const [penaltyTime, setPenaltyTime] = useState(0);
   const [combatAnim, setCombatAnim] = useState(null); // { targetId, type }
@@ -53,7 +58,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
           hp: player.maxHp,
           maxHp: player.maxHp,
           stats: totalStats,
-          // Sync Squad to other players
           hiredMate: player.hiredMate,
           dragonSummoned: dragonTimeLeft > 0,
           gemx: player.gemx,
@@ -73,7 +77,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
 
     joinRoom();
 
-    // Leave room on unmount
     return () => {
       deleteDoc(pvpDocRef).catch(console.error);
     };
@@ -86,7 +89,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
       const pList = snapshot.docs.map(d => d.data());
       setPlayers(pList);
 
-      // Check if self is defeated or hit
       const selfId = user.email || user.uid;
       const self = pList.find(p => p.uid === selfId);
       
@@ -146,45 +148,39 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
     const selfId = user.email || user.uid;
     const targetRef = doc(db, 'artifacts', appId, 'public', 'data', 'pvp_room', selfId);
     
-    // Mark as defeated in the room first
     await updateDoc(targetRef, { isDefeated: true });
     
-    // Set penalty in profile
-    const penaltyDuration = 30 * 1000; // 30 seconds
+    const penaltyDuration = 30 * 1000;
     const until = Date.now() + penaltyDuration;
     await syncPlayer({ [pvpPenaltyKey]: until });
 
     addLog("💀 YOU WERE DEFEATED! Core Recharging...");
     
-    // Wait for the "greyed out" phase before expulsion
     setTimeout(async () => {
       await deleteDoc(targetRef).catch(() => {});
       setView('menu');
-    }, 5000); // 5 seconds of being "greyed out" in the room
+    }, 5000);
   };
 
   const processCounterAttack = async (attackerId) => {
-    const attacker = players.find(p => p.uid === attackerId);
+    const attacker = (players || []).find(p => p.uid === attackerId);
     if (!attacker || attacker.isDefeated) return;
 
-    // Small delay for "reaction" feel
     setTimeout(() => {
       addLog(`⚡ Counter-attacking ${attacker.name}!`);
-      attackPlayer(attacker, true); // Pass true to avoid infinite counter loops
+      attackPlayer(attacker, true);
     }, 800);
   };
 
   const attackPlayer = async (target, isCounter = false) => {
     if (target.uid === (user.email || user.uid) || target.isDefeated) return;
 
-    // Accuracy Check
     const hitChance = Math.min(98, (totalStats.dex / (totalStats.dex + target.stats.agi * 0.4)) * 100);
     const isHit = Math.random() * 100 < hitChance;
 
     const selfId = user.email || user.uid;
     const targetRef = doc(db, 'artifacts', appId, 'public', 'data', 'pvp_room', target.uid);
 
-    // Visual Feedback
     setCombatAnim({ targetId: target.uid, type: isHit ? 'hit' : 'miss' });
     setTimeout(() => setCombatAnim(null), 600);
 
@@ -224,7 +220,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900">
-      {/* Background FX */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
 
@@ -232,7 +227,7 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
         <Header 
           title="PVP HOLO-GRID" 
           onClose={() => setView('menu')} 
-          onHelp={onHelp}
+          onHelp={() => openGuide('menu')}
         />
 
         <div className="flex justify-between items-center mb-4 px-2 bg-black/20 p-2 border-b border-white/5 border-[4px] border-black rounded-xl">
@@ -246,11 +241,9 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
           </div>
         </div>
 
-
-        {/* Players Grid */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pb-6">
-            {players.map((p) => {
+            {(players || []).map((p) => {
               const isSelf = p.uid === (user.email || user.uid);
               const hpPercent = Math.max(0, (p.hp / p.maxHp) * 100);
               const isBeingHit = combatAnim?.targetId === p.uid;
@@ -261,11 +254,9 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
                   onClick={() => !isSelf && attackPlayer(p)}
                   className={`relative group cursor-pointer transition-all duration-300 ${isSelf ? 'ring-2 ring-blue-500/50' : 'hover:scale-[1.02]'} ${p.hp <= 0 ? 'opacity-50 grayscale' : ''}`}
                 >
-                  {/* Card Background */}
                   <div className={`absolute inset-0 border-[3px] border-black transition-colors ${isBeingHit ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
                   <div className="absolute inset-0 border-r-[6px] border-b-[6px] border-black/30 pointer-events-none"></div>
                   
-                  {/* Player Info */}
                   <div className="relative p-2 flex flex-col items-center">
                     <div className="w-full flex justify-between items-start mb-2 px-1">
                       <span className="bg-black text-white text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase tracking-tighter italic">LVL {p.level}</span>
@@ -273,26 +264,24 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
                     </div>
 
                     <div className="flex flex-col items-center mb-2 w-full gap-2">
-                      <div className={`w-20 h-24 border-2 border-black overflow-hidden bg-slate-900 group-hover:border-white/50 transition-colors relative ${isBeingHit ? 'animate-shake' : ''}`}>
-                         <AvatarMedia num={p.avatar} animated={!isSelf} className="w-full h-full object-cover grayscale-[0.2]" />
-                         {p.hp <= 0 && (
-                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-                              <Skull size={32} className="text-white/80 animate-pulse" />
-                           </div>
-                         )}
-                         {isBeingHit && (
-                           <div className="absolute inset-0 flex items-center justify-center animate-ping">
-                             <Sword size={40} className="text-white drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
-                           </div>
-                         )}
-                      </div>
-                      {/* Compact horizontal squad Beneath avatar */}
-                      <SquadHUD player={p} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
+                       <div className={`w-20 h-24 border-2 border-black overflow-hidden bg-slate-900 group-hover:border-white/50 transition-colors relative ${isBeingHit ? 'animate-shake' : ''}`}>
+                          <AvatarMedia num={p.avatar} animated={!isSelf} className="w-full h-full object-cover grayscale-[0.2]" />
+                          {p.hp <= 0 && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+                               <Skull size={32} className="text-white/80 animate-pulse" />
+                            </div>
+                          )}
+                          {isBeingHit && (
+                            <div className="absolute inset-0 flex items-center justify-center animate-ping">
+                              <Sword size={40} className="text-white drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                            </div>
+                          )}
+                       </div>
+                       <SquadHUD player={p} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
                     </div>
 
                     <h3 className="text-[10px] font-black text-white uppercase italic tracking-tighter truncate w-full text-center mb-2 drop-shadow-md">{p.name}</h3>
 
-                    {/* HP Bar */}
                     <div className="w-full bg-black/50 border border-white/10 h-3 rounded-full overflow-hidden p-0.5 relative">
                       <div 
                         className={`h-full rounded-full transition-all duration-300 ${hpPercent < 30 ? 'bg-red-500' : 'bg-blue-500'}`}
@@ -303,7 +292,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
                       </div>
                     </div>
 
-                    {/* Quick Stats Overlay (Mobile friendly) */}
                     <div className="flex gap-2 mt-2 opacity-40">
                        <div className="flex items-center gap-1">
                          <Sword size={8} className="text-red-400" />
@@ -316,7 +304,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
                     </div>
                   </div>
 
-                  {/* Combat Effect Overlay */}
                   {combatAnim?.targetId === p.uid && (
                     <div className="absolute -top-4 -right-2 z-[100] animate-bounce text-xs font-black italic uppercase text-red-500 drop-shadow-[0_0_4px_rgba(0,0,0,1)]">
                        {combatAnim.type === 'hit' ? 'DIRECT HIT!' : 'DEFLECTED!'}
@@ -328,7 +315,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
           </div>
         </div>
 
-        {/* Global Arena Chat */}
         {showChat && (
           <div className="flex flex-col h-48 bg-black/60 border-2 border-black rounded-lg overflow-hidden mb-3 shadow-[4px_4px_0_rgba(0,0,0,0.5)] transform -rotate-0.5">
             <div className="bg-slate-800/80 px-2 py-1 flex justify-between items-center border-b border-white/5">
@@ -380,7 +366,6 @@ export const PvpRoomView = React.memo(({ player, dragonTimeLeft, TAVERN_MATES, s
           </button>
         )}
 
-        {/* Footer Info */}
         <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center px-2">
            <div className="flex items-center gap-4">
              <div className="flex items-center gap-1.5 grayscale opacity-50">

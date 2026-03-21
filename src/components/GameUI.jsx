@@ -98,7 +98,7 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
   <button 
     onClick={onClick} 
     disabled={disabled} 
-    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-950 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)]'} transition-transform`}
+    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-950 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)]'} transition-all duration-200`}
   >
     {backdrop && (
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -123,7 +123,7 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
 ));
 
 export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed }) => (
-  <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all h-full transform md:-rotate-1 relative overflow-hidden ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>
+  <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all h-full transform md:-rotate-1 relative overflow-hidden ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>
     {isBuffed && (
        <div className="absolute top-0 right-0 p-1 bg-purple-500 text-white leading-none">
           <Sparkles size={8} className="animate-spin" />

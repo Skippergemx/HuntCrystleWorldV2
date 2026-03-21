@@ -17,10 +17,18 @@ import {
   Package
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem, setView, currentMate, buffTimeLeft, onHelp }) => {
+export const GearView = React.memo(() => {
+  const { player, totalStats, actions, adventure, gameLoop, TAVERN_MATES, openGuide } = useGame();
+  const { setView } = adventure;
+  const { equipItem, unequipItem } = actions;
+  const { buffTimeLeft, dragonTimeLeft } = gameLoop;
+
+  const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
+
   const equipment = useMemo(() => player.inventory?.filter(i => 
-    i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic'
+    i && (i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic')
   ) || [], [player.inventory]);
 
   const slots = [
@@ -53,13 +61,13 @@ export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem
        if (currentMate.type === 'DEX') mateMult.dex = 2;
     }
 
-    return { base, gear, dragon, mateMult };
-  }, [player, currentMate, buffTimeLeft]);
+    return { base, gear, dragon, mateMult, totalStats };
+  }, [player, currentMate, buffTimeLeft, totalStats]);
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 relative overflow-hidden bg-slate-950">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <Header title="TACTICAL LOADOUT" onClose={() => setView('menu')} onHelp={onHelp} icon={<Zap className="text-cyan-400" />} />
+      <Header title="TACTICAL LOADOUT" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} icon={<Zap className="text-cyan-400" />} />
 
       <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6">
         
@@ -73,49 +81,47 @@ export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem
              
              <div className="grid grid-cols-3 gap-3">
                {slots.map(slot => {
-                 const eq = player.equipped?.[slot.id];
-                 return (
-                   <div key={slot.id} className="flex flex-col items-center gap-2">
-                      <div 
-                        onClick={() => eq && unequipItem(slot.id)}
-                        className={`w-16 h-16 border-4 flex items-center justify-center relative cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0_rgba(0,0,0,1)] ${eq ? 'bg-slate-800 border-cyan-500' : 'bg-black border-slate-800 opacity-40'}`}
-                      >
-                         {eq ? (
-                           <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
-                             {slot.id === 'Weapon' ? '⚔️' : slot.id === 'Armor' ? '🛡️' : slot.id === 'Headgear' ? '🦹' : slot.id === 'Footwear' ? '👞' : '💠'}
-                           </span>
-                         ) : slot.icon}
-                         {eq && <div className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 border border-black"><Trash2 size={8} /></div>}
-                      </div>
-                       <div className="text-center w-full min-h-[50px] flex flex-col items-center mt-1 group">
-                          <span className="text-[7px] font-black uppercase text-cyan-500/50 tracking-tighter mb-0.5 border-b border-white/5 pb-0.5 w-[40px]">{slot.label}</span>
+                  const eq = player.equipped?.[slot.id];
+                  return (
+                    <div key={slot.id} className="flex flex-col items-center gap-2">
+                       <div 
+                         onClick={() => eq && unequipItem(slot.id)}
+                         className={`w-16 h-16 border-4 flex items-center justify-center relative cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0_rgba(0,0,0,1)] ${eq ? 'bg-slate-800 border-cyan-500' : 'bg-black border-slate-800 opacity-40'}`}
+                       >
                           {eq ? (
-                            <div className="flex flex-col items-center w-full px-1">
-                              <span className="text-[10px] font-black text-white uppercase italic leading-none text-center w-full truncate mb-1" title={eq.name}>
-                                {eq.name}
-                              </span>
-                              
-                              {/* Stat Badges */}
-                              <div className="flex gap-x-1 justify-center scale-[0.85] origin-center">
-                                 {Object.entries(eq.stats || {}).map(([s, v]) => v !== 0 && (
-                                   <div key={s} className={`flex items-center px-1 py-0.5 rounded border border-black/20 shadow-[1px_1px_0_rgba(0,0,0,1)] ${s === 'str' ? 'bg-red-900/40 border-red-500/30' : s === 'agi' ? 'bg-emerald-900/40 border-emerald-500/30' : 'bg-blue-900/40 border-blue-500/30'}`}>
-                                      <span className="text-[6px] font-black text-white uppercase leading-none mr-0.5">{s[0]}</span>
-                                      <span className="text-[7px] font-black text-white leading-none">+{v}</span>
-                                   </div>
-                                 ))}
-                              </div>
-
-                              {/* Readable Description */}
-                              <p className="text-[6.5px] font-bold text-slate-500 italic mt-1.5 leading-[1.2] uppercase tracking-tight text-center max-w-[85px]">
-                                {eq.desc}
-                              </p>
-                            </div>
-                          ) : (
-                            <span className="text-[7px] font-black text-slate-800 uppercase tracking-widest mt-2 italic opacity-50">Link Disconnected</span>
-                          )}
+                            <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+                              {slot.id === 'Weapon' ? '⚔️' : slot.id === 'Armor' ? '🛡️' : slot.id === 'Headgear' ? '🦹' : slot.id === 'Footwear' ? '👞' : '💠'}
+                            </span>
+                          ) : slot.icon}
+                          {eq && <div className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 border border-black"><Trash2 size={8} /></div>}
                        </div>
-                   </div>
-                 );
+                        <div className="text-center w-full min-h-[50px] flex flex-col items-center mt-1 group">
+                           <span className="text-[7px] font-black uppercase text-cyan-500/50 tracking-tighter mb-0.5 border-b border-white/5 pb-0.5 w-[40px]">{slot.label}</span>
+                           {eq ? (
+                             <div className="flex flex-col items-center w-full px-1">
+                               <span className="text-[10px] font-black text-white uppercase italic leading-none text-center w-full truncate mb-1" title={eq.name}>
+                                 {eq.name}
+                               </span>
+                               
+                               <div className="flex gap-x-1 justify-center scale-[0.85] origin-center">
+                                  {Object.entries(eq.stats || {}).map(([s, v]) => v !== 0 && (
+                                    <div key={s} className={`flex items-center px-1 py-0.5 rounded border border-black/20 shadow-[1px_1px_0_rgba(0,0,0,1)] ${s === 'str' ? 'bg-red-900/40 border-red-500/30' : s === 'agi' ? 'bg-emerald-900/40 border-emerald-500/30' : 'bg-blue-900/40 border-blue-500/30'}`}>
+                                       <span className="text-[6px] font-black text-white uppercase leading-none mr-0.5">{s[0]}</span>
+                                       <span className="text-[7px] font-black text-white leading-none">+{v}</span>
+                                    </div>
+                                  ))}
+                               </div>
+
+                               <p className="text-[6.5px] font-bold text-slate-500 italic mt-1.5 leading-[1.2] uppercase tracking-tight text-center max-w-[85px]">
+                                 {eq.desc}
+                               </p>
+                             </div>
+                           ) : (
+                             <span className="text-[7px] font-black text-slate-800 uppercase tracking-widest mt-2 italic opacity-50">Link Disconnected</span>
+                           )}
+                        </div>
+                    </div>
+                  );
                })}
              </div>
           </div>
@@ -200,7 +206,6 @@ export const GearView = React.memo(({ player, totalStats, equipItem, unequipItem
                       </div>
                    </div>
                    
-                   {/* Background Glow */}
                    <div className={`absolute -right-4 -bottom-4 w-12 h-12 blur-2xl opacity-10 group-hover:opacity-30 transition-opacity ${item.rarity === 'Legendary' ? 'bg-amber-500' : 'bg-cyan-500'}`}></div>
                 </div>
               )) : (

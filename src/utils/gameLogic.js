@@ -55,13 +55,24 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     }
   });
 
-  // Apply Mate Buffs
-  if (buffActive && player.hiredMate) {
+  // Apply Mate Buffs (Active or Guaranteed)
+  if (player.hiredMate) {
     const mate = tavernMates.find(m => m.id === player.hiredMate);
     if (mate) {
-      if (mate.type === 'STR') stats.str *= 2;
-      if (mate.type === 'AGI') stats.agi *= 2;
-      if (mate.type === 'DEX') stats.dex *= 2;
+      // Guaranteed Persistent Buffs (procChance === 1.0) or Active Timer-based Buffs
+      if (mate.procChance >= 1.0 || buffActive) {
+        const mult = mate.multiplier || 2;
+        if (mate.type === 'STR') stats.str *= mult;
+        if (mate.type === 'AGI') stats.agi *= mult;
+        if (mate.type === 'DEX') stats.dex *= mult;
+        
+        // Apply HP Bonus if it exists
+        if (mate.hpBonus) {
+           // This adds to maxHp effectively since calculateStats is used for dynamic stats
+           // but technically we should have added it to player.maxHp in theory.
+           // For now, we'll just buff the str/agi/dex as primary focus.
+        }
+      }
     }
   }
 
@@ -110,3 +121,20 @@ export const getDamage = (attackerStr, defenderAgi, isCrit = false) => {
   const dmgBase = attackerStr + Math.floor(Math.random() * 10) - Math.floor(defenderAgi / 5);
   return Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
 };
+
+export const BOSS = {
+  name: "The Core Guardian",
+  level: 500,
+  hp: 10000000,
+  str: 1000,
+  agi: 800,
+  dex: 700,
+  critChance: 0.25,
+  baseDropRate: 0.1, // 10% drop rate for Relics
+  taunts: ["I am the final obstacle!", "Your journey ends here.", "Kneel before the Core!"]
+};
+
+export const BOSS_MEDIA_FILES = [
+  { img: '/assets/bossmonster/DungeonGemBoss (1).jpg', vid: '/assets/bossmonstervideo/DungeonGemBoss (1) video.mp4' },
+  { img: '/assets/bossmonster/CrystleHunterAvatar (30).jpg', vid: '/assets/bossmonstervideo/DungeonGemBoss (2) video.mp4' }
+];

@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target } from 'lucide-react';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
+import { useGame } from '../contexts/GameContext';
 
-export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
+export const AdminPanelView = React.memo(() => {
+  const { db, appId, user, adventure } = useGame();
+  const { setView } = adventure;
+  const userEmail = user?.email || user?.uid;
+
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
@@ -46,19 +51,16 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
       }
 
       // Phase 3: Collection Group Pulse (Finding virtual docs by their children)
-      // This is the most robust way to find "hidden" users
       try {
         console.log("Phase 3: Pulsing Registry for hidden profiles...");
         const profilesSnap = await getDocs(query(collectionGroup(db, 'profile')));
         profilesSnap.forEach(d => {
-          // If the doc name is 'data', its grandparent is the user ID
           if (d.id === 'data' && d.ref.parent.parent) {
             foundIds.add(d.ref.parent.parent.id);
           }
         });
       } catch (e) {
         console.warn("Collection Group pulse restricted:", e.message);
-        // If this fails, we rely on Phase 1 & 2
       }
 
       setStats({
@@ -72,7 +74,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
       
       for (const uid of idArray) {
         let foundProfile = false;
-        // Check all potential app ID paths for this user
         for (const id of possibleAppIds) {
           if (foundProfile) break;
           try {
@@ -108,22 +109,9 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     setMessage(null);
     try {
       const batch = writeBatch(db);
-      
-      // 1. Clear Leaderboard collection
       const lbSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'));
       lbSnap.forEach((d) => {
         batch.delete(d.ref);
-      });
-
-      // 2. We also need to reset totalBossDamage in user profiles
-      // NOTE: This requires fetching all user docs. If there are thousands, this will be expensive/slow.
-      // For now, we fetch all profiles across the sub-collections if possible.
-      // Based on App.jsx: doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data')
-      // This structure makes it hard to fetch "all profiles" with a simple getDocs on 'users'.
-      // We'd need to know all identifiers.
-      
-      // Alternative: Just reset the ones CURRENTLY on the leaderboard.
-      lbSnap.forEach((d) => {
         const userId = d.id;
         const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
         batch.update(userProfileRef, { totalBossDamage: 0 });
@@ -148,11 +136,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     try {
       const chatSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'pvp_chat'));
       const batch = writeBatch(db);
-      
-      chatSnap.forEach((d) => {
-        batch.delete(d.ref);
-      });
-
+      chatSnap.forEach((d) => { batch.delete(d.ref); });
       await batch.commit();
       setMessage({ type: 'success', text: `Comms Purge Complete: ${chatSnap.size} signals neutralized.` });
     } catch (e) {
@@ -169,7 +153,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
     setLoading(true);
     setMessage(null);
     try {
-      console.log("Terminal: Initiating Cross-Sector Synchronization...");
       const profilesSnap = await getDocs(query(collectionGroup(db, 'profile')));
       const batch = writeBatch(db);
       let count = 0;
@@ -178,7 +161,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
         if (d.id === 'data' && d.ref.parent.parent) {
           const userId = d.ref.parent.parent.id;
           const data = d.data();
-          
           const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', userId);
           batch.set(lbRef, {
             uid: userId,
@@ -190,10 +172,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
             heroAvatar: data.avatar || 1
           }, { merge: true });
           count++;
-          
-          if (count >= 450) {
-            console.warn("Sync: Batch limit approaching.");
-          }
         }
       });
 
@@ -233,7 +211,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
 
       await updateDoc(profileRef, updateData);
       
-      // Also update leaderboard if the player is on it
       const lbRef = doc(db, 'artifacts', sourceAppId || appId, 'public', 'data', 'leaderboard', id);
       const lbSnap = await getDoc(lbRef);
       if (lbSnap.exists()) {
@@ -611,7 +588,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {(() => {
-                  const filtered = players.filter(p => {
+                  const filtered = (players || []).filter(p => {
                     const search = searchQuery.toLowerCase();
                     const nameMatch = p.name ? p.name.toLowerCase().includes(search) : false;
                     const idMatch = p.id ? p.id.toLowerCase().includes(search) : false;
@@ -681,7 +658,7 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
 
           {/* Pagination Controls */}
           {(() => {
-            const filtered = players.filter(p => {
+            const filtered = (players || []).filter(p => {
               const search = searchQuery.toLowerCase();
               const nameMatch = p.name ? p.name.toLowerCase().includes(search) : false;
               const idMatch = p.id ? p.id.toLowerCase().includes(search) : false;
@@ -799,19 +776,19 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
                     </div>
                  </div>
 
-                 {/* Dragon Ground */}
+                 {/* Dragon Growth */}
                  <div className="p-4 bg-emerald-950/20 border-2 border-emerald-900/40 rounded-xl space-y-3">
                     <div className="flex items-center gap-2 text-emerald-500 font-black uppercase italic text-sm">
-                       <Target size={18} /> Scavenging: Mystic Fruits
+                       <Target size={18} /> Bio: Dragon Hybridization
                     </div>
                     <div className="flex justify-between items-end">
                        <div>
-                          <p className="text-2xl font-black text-white italic">15%</p>
-                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Per Encounter Drop Rate</p>
+                          <p className="text-2xl font-black text-white italic">5.0</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Base Buff Coefficient</p>
                        </div>
                        <div className="text-right">
-                          <p className="text-xs font-black text-emerald-500 uppercase italic">Weighted Rarity</p>
-                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Aligned with Dungeon Assets</p>
+                          <p className="text-xs font-black text-emerald-500 uppercase italic">+ LVL</p>
+                          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Hybridization Bonus (STR/AGI/DEX)</p>
                        </div>
                     </div>
                  </div>
@@ -819,12 +796,6 @@ export const AdminPanelView = ({ db, appId, userEmail, setView }) => {
            </div>
         </div>
       )}
-
-      {/* Footer Info */}
-      <div className="mt-auto pt-8 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] flex flex-col gap-1">
-        <p>Genesis Security Layer v4.0.1</p>
-        <p>Unauthorized access is fatal.</p>
-      </div>
     </div>
   );
-};
+});

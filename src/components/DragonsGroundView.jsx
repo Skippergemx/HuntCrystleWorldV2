@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle } from 'lucide-react';
 import { Header } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOTS, FRUITS, addLog, summonDragon, dragonTimeLeft, onHelp }) => {
+export const DragonsGroundView = React.memo(() => {
+  const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, summonDragon, openGuide } = useGame();
+  const { setView } = adventure;
+  const { dragonTimeLeft } = gameLoop;
+
   const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
   const [dragonStats, setDragonStats] = useState(player.dragon || { level: 1, fruitsFed: 0 });
   const [fruits, setFruits] = useState([]);
   const [monsters, setMonsters] = useState([]);
   const [message, setMessage] = useState(null);
-  const [showInfo, setShowInfo] = useState(false);
   const groundRef = useRef(null);
 
   const MONSTER_POOL = [
@@ -134,7 +138,6 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
           if (dist < 2) {
             // Drop fruit! (Adjusted to 15% drop rate)
             if (Math.random() < 0.15) {
-              // Rarity-based weighted drop logic
               const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
               const pool = [];
               FRUITS.forEach(f => {
@@ -173,11 +176,7 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
 
   const collectFruit = (fruit) => {
     setFruits(prev => prev.filter(f => f.id !== fruit.id));
-
-    syncPlayer({
-      inventory: [...(player.inventory || []), fruit.data]
-    });
-
+    syncPlayer({ inventory: [...(player.inventory || []), fruit.data] });
     setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
   };
 
@@ -207,7 +206,7 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
         <Header 
           title="Dragons Ground" 
           onClose={() => setView('menu')} 
-          onHelp={onHelp}
+          onHelp={() => openGuide('menu')}
         />
         <div className="flex items-center gap-2 mt-2">
           <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
@@ -227,12 +226,8 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
         </div>
       </div>
 
-      {/* Main Functional Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
-
-        {/* Top Section: Management Headers (Streamlined) */}
         <div className="flex-none p-2 md:p-3 grid grid-cols-2 gap-2 md:gap-4 bg-emerald-950/40 border-b-2 border-black z-20 relative">
-          {/* HUD Messages */}
           {message && (
             <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
               <div className={`px-4 py-1.5 rounded-lg border-2 font-black uppercase italic text-[10px] shadow-xl backdrop-blur-md ${message.type === 'success' ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' :
@@ -244,7 +239,6 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
             </div>
           )}
 
-          {/* Gemx Compact HUD */}
           <div className="bg-black/40 border-2 border-cyan-500/30 rounded-xl p-2 flex items-center gap-3">
             <div className="relative group cursor-pointer shrink-0" onClick={feedGem}>
               <div className="absolute inset-0 bg-cyan-400 blur-xl opacity-30 animate-pulse"></div>
@@ -274,7 +268,6 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
             </div>
           </div>
 
-          {/* Dragon Compact HUD */}
           <div className={`bg-black/60 border-2 border-${activeGemx.color}-500/30 rounded-xl p-2 flex items-center gap-3 transition-colors duration-500`}>
             <div className="relative group cursor-pointer shrink-0" onClick={feedDragon}>
               <div className={`absolute inset-0 bg-${activeGemx.color}-400 blur-xl opacity-20 animate-pulse`}></div>
@@ -324,13 +317,8 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
           </div>
         </div>
 
-        {/* Bottom Section: Roaming Ground (Original Portrait Orientation, 50% Scale) */}
         <div className="flex-[8] relative border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-x-hidden overflow-y-auto custom-scrollbar bg-emerald-950 flex flex-col items-center">
-          
-          {/* Proportional Arena Container (Max 540x960, scales naturally on mobile) */}
           <div className="relative w-full max-w-[540px] aspect-[9/16] flex-shrink-0 overflow-hidden shadow-2xl border-x-4 border-black bg-emerald-900 mx-auto">
-            
-            {/* Background Layer (Static or Animated Video based on Global Settings) */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
               {player.avatarAnimated !== false ? (
                 <video 
@@ -355,16 +343,13 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
               )}
             </div>
 
-            {/* Label for the ground */}
             <div className="absolute top-4 left-6 z-10 bg-black/60 px-4 py-2 rounded-lg border border-emerald-500/30 backdrop-blur-sm shadow-md">
               <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] flex items-center gap-2">
                 <Trees size={14} /> Sacred Wild Encounter Zone
               </p>
             </div>
 
-            {/* Roaming Entities Area */}
             <div className="absolute inset-0 pointer-events-none">
-            {/* Monsters */}
             {monsters.map(m => (
               <div
                 key={m.id}
@@ -384,7 +369,6 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
               </div>
             ))}
 
-            {/* Fruits (Interactive) */}
             {fruits.map(f => (
               <button
                 key={f.id}
@@ -402,12 +386,10 @@ export const DragonsGroundView = React.memo(({ player, syncPlayer, setView, LOOT
               </button>
             ))}
           </div>
-
           </div>
         </div>
       </div>
 
-      {/* Footer Instructions (Compact) */}
       <div className="p-2 md:p-4 bg-slate-950 border-t border-white/10 flex justify-center gap-4 md:gap-8 z-30">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 md:w-8 md:h-8 rounded bg-cyan-600/20 border border-cyan-500 flex items-center justify-center text-cyan-400 font-black text-xs md:text-base">1</div>

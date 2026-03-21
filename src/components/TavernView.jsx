@@ -1,12 +1,17 @@
 import React from 'react';
 import { User, Sparkles } from 'lucide-react';
 import { Header } from './GameUI';
+import { useGame } from '../contexts/GameContext';
 
-export const TavernView = ({ TAVERN_MATES, player, hireMate, dismissMate, setView, onHelp }) => {
+export const TavernView = () => {
+  const { player, TAVERN_MATES, actions, adventure, openGuide } = useGame();
+  const { setView } = adventure;
+  const { hireMate, dismissMate } = actions;
+
   return (
     <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-      <Header title="Hero for Hire: Tavern" onClose={() => setView('menu')} onHelp={onHelp} />
+      <Header title="Hero for Hire: Tavern" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} />
       
       {player.hiredMate && (
         <div className="bg-purple-950 border-2 border-purple-500 p-2 mb-2 flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
@@ -68,10 +73,10 @@ export const TavernView = ({ TAVERN_MATES, player, hireMate, dismissMate, setVie
                 </div>
                 <button 
                   onClick={() => hireMate(mate)} 
-                  disabled={!!player.hiredMate}
-                  className={`px-8 py-3 border-[3px] border-black text-black font-black text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${player.hiredMate === mate.id ? 'bg-purple-600 text-white border-black' : !!player.hiredMate ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-amber-400 text-black hover:bg-amber-300'}`}
+                  disabled={player.hiredMate === mate.id}
+                  className={`px-8 py-3 border-[3px] border-black text-black font-black text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${player.hiredMate === mate.id ? 'bg-purple-600 text-white border-black' : 'bg-amber-400 text-black hover:bg-amber-300'}`}
                 >
-                  {player.hiredMate === mate.id ? 'HIRED' : !!player.hiredMate ? 'LOCKED' : 'RECRUIT'}
+                  {player.hiredMate === mate.id ? 'HIRED' : 'RECRUIT'}
                 </button>
               </div>
             </div>
