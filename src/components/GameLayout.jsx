@@ -10,7 +10,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-import { BOSS, BOSS_MEDIA_FILES, XP_BASE, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
+import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
 import { Header, NavBtn, StatTile, AttributeRow, AvatarMedia, SquadHUD, GuideModal } from './GameUI';
 import { ImpactSplash, BossImpactSplash } from './CombatEffects';
 import { MenuView } from './MenuView';
@@ -320,7 +320,7 @@ export const GameLayout = ({ onLogout }) => {
                      <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{player.xp}</span>
                   </div>
                   <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                     <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / (player.level * XP_BASE)) * 100)}%` }} />
+                     <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
                   </div>
                </div>

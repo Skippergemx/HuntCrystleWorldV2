@@ -10,8 +10,8 @@ import MAPS from '../data/maps.json';
 import FRUITS from '../data/fruits.json';
 
 import {
-  DIFFICULTY_MULTIPLIER, XP_BASE, AP_PER_LEVEL, PENALTY_DURATION,
-  STUN_DURATION_NORMAL, STUN_DURATION_CRIT, DEFEAT_WINDOW_DURATION,
+  DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
+  STUN_DURATION_NORMAL, STUN_DURATION_CRIT, DEFEAT_WINDOW_DURATION, PENALTY_DURATION,
   AUTO_SCROLL_DURATION, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE,
   BOSS, BOSS_MEDIA_FILES, scaleMonster, calculateStats, getHitChance, getDamage
 } from '../utils/gameLogic';
@@ -75,7 +75,7 @@ export const GameProvider = ({ children, user }) => {
     adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy,
     totalStats, addLog, audio.playSFX, SOUNDS, leaderboardObj.updateLeaderboard, adventure.selectedMap,
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
-    COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, XP_BASE, AP_PER_LEVEL, EQUIPMENT, LOOTS,
+    COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES
   );

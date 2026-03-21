@@ -20,16 +20,45 @@ import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const GearView = React.memo(() => {
-  const { player, totalStats, actions, adventure, gameLoop, TAVERN_MATES, openGuide } = useGame();
+  const { player, totalStats, actions, adventure, gameLoop, TAVERN_MATES, openGuide, EQUIPMENT, LOOTS } = useGame();
   const { setView } = adventure;
   const { equipItem, unequipItem } = actions;
   const { buffTimeLeft, dragonTimeLeft } = gameLoop;
 
+  const getBaseItemData = (item) => {
+    const baseId = item.id?.split('_')[0];
+    const baseEquip = EQUIPMENT.find(e => e.id === baseId);
+    if (baseEquip) return baseEquip;
+    const baseLoot = LOOTS.find(l => l.id === baseId);
+    if (baseLoot) return baseLoot;
+    return item;
+  };
+
+  const getItemIcon = (item) => {
+    const base = getBaseItemData(item);
+    if (base && base.icon) return base.icon;
+    return item.icon || '📦';
+  };
+
   const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
 
-  const equipment = useMemo(() => player.inventory?.filter(i => 
-    i && (i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic')
-  ) || [], [player.inventory]);
+  const equipment = useMemo(() => {
+    const raw = player.inventory?.filter(i => 
+      i && (i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic')
+    ) || [];
+    
+    // Grouping by Base ID for stacking
+    return raw.reduce((acc, item) => {
+      const baseId = item.id?.split('_')[0];
+      const existing = acc.find(i => i.id?.split('_')[0] === baseId);
+      if (existing) {
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        acc.push({ ...item, count: 1 });
+      }
+      return acc;
+    }, []);
+  }, [player.inventory, EQUIPMENT, LOOTS]);
 
   const slots = [
     { id: 'Headgear', label: 'Head', icon: <HardHat className="text-blue-400" /> },
@@ -45,10 +74,13 @@ export const GearView = React.memo(() => {
     const gear = { str: 0, agi: 0, dex: 0 };
     
     Object.values(player.equipped || {}).forEach(item => {
-      if (item && item.stats) {
-        gear.str += item.stats.str || 0;
-        gear.agi += item.stats.agi || 0;
-        gear.dex += item.stats.dex || 0;
+      if (item) {
+          // Sync stats from master DB if they are missing (for items obtained before loots update)
+          const master = getBaseItemData(item);
+          const stats = master.stats || item.stats || {};
+          gear.str += stats.str || 0;
+          gear.agi += stats.agi || 0;
+          gear.dex += stats.dex || 0;
       }
     });
 
@@ -62,7 +94,7 @@ export const GearView = React.memo(() => {
     }
 
     return { base, gear, dragon, mateMult, totalStats };
-  }, [player, currentMate, buffTimeLeft, totalStats]);
+  }, [player, currentMate, buffTimeLeft, totalStats, EQUIPMENT, LOOTS]);
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 relative overflow-hidden bg-slate-950">
@@ -82,39 +114,47 @@ export const GearView = React.memo(() => {
              <div className="grid grid-cols-3 gap-3">
                {slots.map(slot => {
                   const eq = player.equipped?.[slot.id];
+                  const master = eq ? getBaseItemData(eq) : null;
+                  const stats = master?.stats || eq?.stats || {};
+                  const effect = master?.effect || eq?.effect;
+
                   return (
                     <div key={slot.id} className="flex flex-col items-center gap-2">
                        <div 
                          onClick={() => eq && unequipItem(slot.id)}
-                         className={`w-16 h-16 border-4 flex items-center justify-center relative cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0_rgba(0,0,0,1)] ${eq ? 'bg-slate-800 border-cyan-500' : 'bg-black border-slate-800 opacity-40'}`}
+                         className={`w-16 h-16 border-4 flex items-center justify-center relative cursor-pointer transition-all hover:scale-105 active:scale-95 shadow-[4px_4px_0_rgba(0,0,0,1)] ${eq ? 'bg-slate-800 border-cyan-500 shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'bg-black border-slate-800 opacity-40'}`}
                        >
                           {eq ? (
-                            <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
-                              {slot.id === 'Weapon' ? '⚔️' : slot.id === 'Armor' ? '🛡️' : slot.id === 'Headgear' ? '🦹' : slot.id === 'Footwear' ? '👞' : '💠'}
-                            </span>
-                          ) : slot.icon}
+                             <span className="text-3xl filter drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+                               {getItemIcon(eq)}
+                             </span>
+                           ) : slot.icon}
                           {eq && <div className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 border border-black"><Trash2 size={8} /></div>}
                        </div>
                         <div className="text-center w-full min-h-[50px] flex flex-col items-center mt-1 group">
                            <span className="text-[7px] font-black uppercase text-cyan-500/50 tracking-tighter mb-0.5 border-b border-white/5 pb-0.5 w-[40px]">{slot.label}</span>
                            {eq ? (
                              <div className="flex flex-col items-center w-full px-1">
-                               <span className="text-[10px] font-black text-white uppercase italic leading-none text-center w-full truncate mb-1" title={eq.name}>
+                               <span className="text-[9px] font-black text-white uppercase italic leading-none text-center w-full truncate mb-1" title={eq.name}>
                                  {eq.name}
                                </span>
                                
-                               <div className="flex gap-x-1 justify-center scale-[0.85] origin-center">
-                                  {Object.entries(eq.stats || {}).map(([s, v]) => v !== 0 && (
+                               <div className="flex gap-x-1 justify-center scale-[0.8] origin-center">
+                                  {Object.entries(stats).map(([s, v]) => v !== 0 && (
                                     <div key={s} className={`flex items-center px-1 py-0.5 rounded border border-black/20 shadow-[1px_1px_0_rgba(0,0,0,1)] ${s === 'str' ? 'bg-red-900/40 border-red-500/30' : s === 'agi' ? 'bg-emerald-900/40 border-emerald-500/30' : 'bg-blue-900/40 border-blue-500/30'}`}>
                                        <span className="text-[6px] font-black text-white uppercase leading-none mr-0.5">{s[0]}</span>
                                        <span className="text-[7px] font-black text-white leading-none">+{v}</span>
                                     </div>
                                   ))}
                                </div>
-
-                               <p className="text-[6.5px] font-bold text-slate-500 italic mt-1.5 leading-[1.2] uppercase tracking-tight text-center max-w-[85px]">
-                                 {eq.desc}
-                               </p>
+ 
+                                {effect && (
+                                  <div className="mt-1 bg-cyan-500 text-black px-1 rounded-sm">
+                                    <span className="text-[6.5px] font-black uppercase italic tracking-tighter">
+                                       ⚡ {effect.type} {effect.mult ? `(x${effect.mult})` : ''}
+                                    </span>
+                                  </div>
+                                )}
                              </div>
                            ) : (
                              <span className="text-[7px] font-black text-slate-800 uppercase tracking-widest mt-2 italic opacity-50">Link Disconnected</span>
@@ -172,7 +212,13 @@ export const GearView = React.memo(() => {
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {equipment.length > 0 ? equipment.map((item, idx) => (
+              {equipment.length > 0 ? equipment.map((item, idx) => {
+                const master = getBaseItemData(item);
+                const stats = master.stats || item.stats || {};
+                const effect = master.effect || item.effect;
+                const desc = master.description || master.desc || item.desc || item.description || "Experimental relic fragment.";
+
+                return (
                 <div 
                   key={idx}
                   className="bg-slate-950 border-2 border-white/5 p-3 flex group hover:border-cyan-500/50 transition-all cursor-pointer relative overflow-hidden"
@@ -180,26 +226,38 @@ export const GearView = React.memo(() => {
                 >
                    <div className="w-12 h-12 bg-slate-900 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_rgba(0,0,0,1)] relative z-10 transition-transform group-hover:scale-110">
                       <span className="text-2xl filter drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]">
-                        {item.id.includes('blade') || item.id.includes('edge') || item.id.includes('hammer') ? '⚔️' : 
-                         item.id.includes('plate') || item.id.includes('vest') ? '🛡️' :
-                         item.id.includes('helm') || item.id.includes('cap') || item.id.includes('visor') ? '🦹' : 
-                         item.id.includes('boots') || item.id.includes('sandals') ? '👞' : 
-                         item.id.includes('core') || item.id.includes('sigil') || item.id.includes('capacitor') ? '💠' : '📦'}
+                        {getItemIcon(item)}
                       </span>
+                      {item.count > 1 && (
+                        <span className="absolute -bottom-1 -right-1 bg-black text-white text-[7px] font-black px-1 border border-white/20 z-20">x{item.count}</span>
+                      )}
                    </div>
                    
                    <div className="ml-3 flex-1 min-w-0">
                       <div className="flex justify-between items-start">
-                         <h4 className="text-[10px] font-black text-white uppercase italic tracking-tighter truncate md:max-w-[100px]">{item.name}</h4>
+                         <div className="flex flex-col min-w-0">
+                            <h4 className="text-[10px] font-black text-white uppercase italic tracking-tighter truncate md:max-w-[120px]">{item.name}</h4>
+                            <span className="text-[6px] font-black text-slate-500 uppercase">[{item.type || 'TECH'}]</span>
+                         </div>
                          <span className={`text-[6px] font-black px-1 border border-black uppercase ${item.rarity === 'Legendary' ? 'bg-amber-500 text-black' : item.rarity === 'Epic' ? 'bg-purple-600 text-white' : item.rarity === 'Rare' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}>
                            {item.rarity || 'Common'}
                          </span>
                       </div>
-                      <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
-                         {Object.entries(item.stats || {}).map(([s, v]) => v !== 0 && (
-                           <span key={s} className="text-[7px] font-black text-cyan-400 uppercase italic">+{v} {s}</span>
-                         ))}
-                      </div>
+                       <div className="flex flex-wrap gap-x-2 gap-y-1 mt-1">
+                          {Object.entries(stats).map(([s, v]) => v !== 0 && (
+                            <span key={s} className="text-[7px] font-black text-cyan-400 uppercase italic">+{v} {s}</span>
+                          ))}
+                          {effect && (
+                            <span className="text-[7px] font-black text-amber-500 uppercase italic border-l border-white/10 pl-2">
+                               ⚡ {effect.type}
+                               {effect.mult ? ` (x${effect.mult})` : ''}
+                               {effect.chance ? ` (${Math.round(effect.chance * 100)}%)` : ''}
+                            </span>
+                          )}
+                       </div>
+                       
+                       <p className="text-[7px] font-black text-slate-400 uppercase leading-tight mt-1 opacity-80 group-hover:opacity-100 transition-opacity italic">"{desc}"</p>
+
                       <div className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                          <span className="text-[7px] font-black text-white bg-cyan-600 px-2 py-0.5 rounded-sm uppercase italic">Install Tech</span>
                          <ChevronRight size={8} className="text-cyan-400" />
@@ -208,7 +266,8 @@ export const GearView = React.memo(() => {
                    
                    <div className={`absolute -right-4 -bottom-4 w-12 h-12 blur-2xl opacity-10 group-hover:opacity-30 transition-opacity ${item.rarity === 'Legendary' ? 'bg-amber-500' : 'bg-cyan-500'}`}></div>
                 </div>
-              )) : (
+                );
+              }) : (
                 <div className="col-span-full py-12 flex flex-col items-center opacity-30 italic">
                    <Users size={32} />
                    <p className="text-[10px] font-black uppercase mt-2">No Combat Units in Storage</p>

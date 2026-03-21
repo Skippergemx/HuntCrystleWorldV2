@@ -239,37 +239,47 @@ export const DatabaseView = React.memo(() => {
                };
 
                return (
-                 <div key={idx} className="bg-white border-[4px] border-black p-4 shadow-[8px_8px_0_rgba(0,0,0,1)] flex items-center gap-6 group transform transition-all hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none min-h-[100px]">
+                 <div key={idx} className="bg-white border-[4px] border-black p-4 shadow-[8px_8px_0_rgba(0,0,0,1)] flex items-center gap-6 group transform transition-all hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none min-h-[120px]">
                     {/* Icon Container */}
                     <div className={`w-20 h-20 grow-0 shrink-0 ${typeColors[item.type] || 'bg-slate-400'} border-[4px] border-black rounded-2xl flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] relative overflow-hidden transform -rotate-2 group-hover:rotate-0 transition-transform`}>
                        <div className="absolute inset-0 bg-white/20 skew-x-12 translate-x-[-150%] group-hover:translate-x-[150%] transition-transform duration-1000"></div>
                        <div className="relative z-10 text-black drop-shadow-md">
-                          {typeIcons[item.type]}
+                          <span className="text-4xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">
+                            {item.icon || (typeIcons[item.type])}
+                          </span>
                        </div>
                     </div>
-
+ 
                     {/* Info Section */}
                     <div className="flex-1 min-w-0">
                        <h3 className="text-xl font-black text-black uppercase italic tracking-tighter leading-none mb-1 group-hover:text-cyan-600 transition-colors truncate">
                           {item.name}
                        </h3>
-                       <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-1">
-                             LVL {item.reqLvl || item.level || 1} <span className="text-slate-200">|</span> {item.type}
+                       <div className="flex flex-col gap-1">
+                          <span className={`text-[10px] font-black uppercase tracking-widest italic flex items-center gap-1 ${item.rarity === 'Legendary' ? 'text-amber-500' : item.rarity === 'Epic' ? 'text-purple-600' : 'text-slate-400'}`}>
+                             {item.rarity || 'Common'} {item.type} <span className="text-slate-200">|</span> LVL {item.reqLvl || item.level || 1}
                           </span>
+                          {item.effect && (
+                            <div className="bg-slate-900 text-white px-2 py-0.5 border border-black inline-block self-start transform -rotate-1 shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                               <p className="text-[9px] font-black uppercase italic text-cyan-400">Tactical Proc: {item.effect.type}</p>
+                            </div>
+                          )}
+                          <p className="text-[10px] font-black text-slate-500 leading-tight uppercase italic line-clamp-2 mt-1">"{item.desc || 'Standard issue hunter gear.'}"</p>
                        </div>
                     </div>
-
+ 
                     {/* Stats Grid */}
                     <div className="flex gap-2 shrink-0">
                        {['str', 'dex', 'agi'].map(stat => (
                          <div key={stat} className="flex flex-col items-center bg-white border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_rgba(0,0,0,1)] min-w-[50px] transform rotate-1 group-hover:rotate-0 transition-transform">
                             <span className="text-[7px] font-black text-slate-400 uppercase leading-none mb-1 italic tracking-widest">{stat}</span>
-                            <span className="text-sm font-black text-black leading-none">+{item.stats?.[stat] || 0}</span>
+                            <span className={`text-sm font-black leading-none ${item.stats?.[stat] > 0 ? 'text-emerald-600' : item.stats?.[stat] < 0 ? 'text-red-500' : 'text-black'}`}>
+                              {item.stats?.[stat] > 0 ? `+${item.stats[stat]}` : item.stats?.[stat] || 0}
+                            </span>
                          </div>
                        ))}
                     </div>
-                 </div>
+                  </div>
                );
              })}
           </div>

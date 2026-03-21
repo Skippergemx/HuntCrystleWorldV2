@@ -21,7 +21,7 @@ export const useCombat = (
   DEFEAT_WINDOW_DURATION,
   COMPANION_BUFF_DURATION,
   ELEMENT_ADVANTAGE,
-  XP_BASE,
+  getXpRequired,
   AP_PER_LEVEL,
   EQUIPMENT,
   LOOTS,
@@ -166,8 +166,8 @@ export const useCombat = (
 
     let nextXp = player.xp + e.xp, nextLvl = player.level, nextMaxHp = player.maxHp, nextAP = player.abilityPoints || 0;
     let didLevelUp = false;
-    while (nextXp >= nextLvl * XP_BASE) {
-      nextXp -= nextLvl * XP_BASE;
+    while (nextXp >= getXpRequired(nextLvl)) {
+      nextXp -= getXpRequired(nextLvl);
       nextLvl++;
       nextMaxHp += 50;
       nextAP += AP_PER_LEVEL;
@@ -251,7 +251,7 @@ export const useCombat = (
         maxDepth: updates.maxDepth || player.maxDepth || 1
       });
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, XP_BASE, AP_PER_LEVEL, LOOTS]);
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
     const newTotal = (player.totalBossDamage || 0) + dmg;
@@ -318,7 +318,40 @@ export const useCombat = (
     const hitChance = getHitChance(stats.dex, target.agi);
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < 0.15;
-      const dmg = getDamage(stats.str, target.agi, isCrit);
+      let dmg = getDamage(stats.str, target.agi, isCrit);
+
+      // --- PHASE 4: Equipment Special Effects ---
+      const effects = Object.values(player.equipped || {}).filter(i => i?.effect).map(i => i.effect);
+      
+      // 1. Crit Spike (Passive)
+      const critSpike = effects.find(e => e.type === 'CritSpike');
+      if (isCrit && critSpike) {
+          dmg = Math.floor(dmg * (critSpike.mult / 2.5));
+          addLog(`✨ CRIT SPIKE!`);
+      }
+
+      // 2. Double Strike (Proc)
+      const doubleStrike = effects.find(e => e.type === 'DoubleStrike');
+      if (doubleStrike && Math.random() < doubleStrike.chance) {
+          dmg *= 2;
+          addLog(`⚔️ DOUBLE STRIKE!`);
+      }
+
+      // 3. Life Steal (Proc)
+      const lifesteal = effects.find(e => e.type === 'LifeSteal');
+      if (lifesteal && Math.random() < lifesteal.chance) {
+          const heal = Math.floor(dmg * lifesteal.amount);
+          syncPlayer({ hp: Math.min(player.maxHp, (player.hp || 0) + heal) });
+          addLog(`🩸 LIFESTEAL: +${heal} HP`);
+      }
+
+      // 4. All-In-One (Legendary Proc)
+      const allInOne = effects.find(e => e.type === 'AllInOne');
+      if (allInOne && Math.random() < allInOne.chance) {
+          dmg *= 4;
+          addLog(`🧿 OMEGA OVERLOAD: 4x DMG!`);
+      }
+      // ------------------------------------------
 
       triggerHitEffects(dmg, isCrit, 'monster', triggerFlinch, triggerHurt);
 

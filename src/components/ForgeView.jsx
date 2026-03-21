@@ -4,7 +4,7 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const ForgeView = React.memo(() => {
-  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide } = useGame();
+  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide, EQUIPMENT } = useGame();
   const { setView } = adventure;
   const { forgeCrystle } = actions;
 
@@ -54,16 +54,29 @@ export const ForgeView = React.memo(() => {
               <div className="flex justify-between items-start">
                 <div className="flex gap-4 items-center">
                   <div className={`w-14 h-14 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] bg-amber-500 transform -rotate-3`}>
-                    {hasRecipe ? <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{recipe.img}</span> : <Lock size={24} className="text-black/40" />}
+                    {hasRecipe ? <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{recipe.icon}</span> : <Lock size={24} className="text-black/40" />}
                   </div>
                   <div className="space-y-1 text-left">
                     <h4 className="font-black text-xl text-black uppercase tracking-tighter italic leading-none">
                       {hasRecipe ? recipe.name : 'Unknown Schematic'}
                     </h4>
-                    <div className="bg-amber-100/50 px-2 py-0.5 border border-black/10 inline-block">
-                      <div className="flex gap-2 text-[9px] font-black uppercase text-amber-900/60 italic">
-                        {Object.entries(recipe.stats).map(([k, v]) => <span key={k}>{k}+{v}</span>)}
+                    <div className="flex flex-col gap-1">
+                      <div className="bg-amber-100/50 px-2 py-0.5 border border-black/10 inline-block self-start">
+                        <div className="flex gap-2 text-[9px] font-black uppercase text-amber-900/60 italic">
+                          {Object.entries(recipe.stats).map(([k, v]) => <span key={k}>{k}+{v}</span>)}
+                        </div>
                       </div>
+                      {hasRecipe && (() => {
+                        const baseEquip = EQUIPMENT.find(e => e.id === recipe.id);
+                        return baseEquip?.effect ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] animate-pulse">⚡</span>
+                            <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-1 border border-amber-200">
+                              Effect: {baseEquip.effect.type}
+                            </span>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </div>

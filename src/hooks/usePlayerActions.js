@@ -164,22 +164,29 @@ export const usePlayerActions = (
       addLog("LOCK-ON ACTIVATED! (60s)");
     },
     forgeCrystle: (recipe) => {
+      console.log("🛠️ FORGE START:", recipe.name);
       if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
 
+      // Safety check: ensure inventory is an array
+      const currentInventory = Array.isArray(player.inventory) ? player.inventory : [];
+      const inventory = [...currentInventory];
+      
       // Check if player has all materials
-      const inventory = [...(player.inventory || [])];
       const hasMaterials = recipe.materials.every(mat => {
-        const count = inventory.filter(i => i.id === mat.id).length;
+        const count = inventory.filter(i => i && i.id === mat.id).length;
         return count >= mat.count;
       });
 
-      if (!hasMaterials) return addLog("Insufficient Materials!");
+      if (!hasMaterials) {
+        console.warn("🚫 FORGE FAILED: Insufficient Materials");
+        return addLog("Insufficient Materials!");
+      }
 
       // Consume materials
       let newInventory = [...inventory];
       recipe.materials.forEach(mat => {
         for (let i = 0; i < mat.count; i++) {
-          const idx = newInventory.findIndex(item => item.id === mat.id);
+          const idx = newInventory.findIndex(item => item && item.id === mat.id);
           if (idx !== -1) newInventory.splice(idx, 1);
         }
       });
@@ -187,8 +194,10 @@ export const usePlayerActions = (
       // Add forged item
       const forgedItem = { ...recipe, id: `${recipe.id}_${Date.now()}` };
       newInventory.push(forgedItem);
+      
+      console.log("📦 FORGE SYNCING:", recipe.name, "New Bag Size:", newInventory.length);
       syncPlayer({ tokens: player.tokens - (recipe.cost || 0), inventory: newInventory });
-      addLog(`Forged: ${recipe.name}!`);
+      addLog(`Forged: ${recipe.name}! Check Storage Bag.`);
       playSFX(SOUNDS.obtainLoot);
     }
 

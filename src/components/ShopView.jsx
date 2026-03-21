@@ -26,13 +26,17 @@ export const ShopView = React.memo(() => {
             >
               <div className="flex gap-4 items-center">
               <div className={`w-12 h-12 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] ${isOwned || isLocked ? 'bg-slate-400 grayscale' : item.type === 'Weapon' ? 'bg-red-500' : item.type === 'Armor' ? 'bg-cyan-500' : item.type === 'Headgear' ? 'bg-blue-500' : item.type === 'Footwear' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
-                  {isOwned || isLocked ? <Lock size={24} className="text-white" /> : (
-                    item.type === 'Weapon' ? <Sword size={24} className="text-white" /> : 
-                    item.type === 'Armor' ? <Shield size={24} className="text-white" /> : 
-                    item.type === 'Headgear' ? <HardHat size={24} className="text-white" /> : 
-                    item.type === 'Footwear' ? <Footprints size={24} className="text-white" /> : 
-                    <Package size={24} className="text-white" />
-                  )}
+                   {isOwned || isLocked ? <Lock size={24} className="text-white" /> : (
+                     <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                       {item.icon || (
+                         item.type === 'Weapon' ? <Sword size={24} className="text-white" /> : 
+                         item.type === 'Armor' ? <Shield size={24} className="text-white" /> : 
+                         item.type === 'Headgear' ? <HardHat size={24} className="text-white" /> : 
+                         item.type === 'Footwear' ? <Footprints size={24} className="text-white" /> : 
+                         <Package size={24} className="text-white" />
+                       )}
+                     </span>
+                   )}
                 </div>
                 <div className="space-y-1 text-left">
                   <div className="flex items-center gap-2">

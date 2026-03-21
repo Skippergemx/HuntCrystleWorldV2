@@ -123,12 +123,15 @@ export const MarketplaceView = React.memo(() => {
                           <span className={`text-[7px] font-black px-1 border border-black uppercase ${l.item.rarity === 'Legendary' ? 'bg-amber-500 text-black' : 'bg-slate-200 text-slate-500'}`}>{l.item.rarity || 'Common'}</span>
                        </div>
                        <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Vendor: {l.sellerName || 'Anon'}</p>
-                       <div className="flex gap-1 mt-1">
-                          {Object.entries(l.item.stats || {}).map(([s, v]) => v !== 0 && (
-                            <span key={s} className="text-[7px] font-black text-amber-600 uppercase">+{v} {s}</span>
-                          ))}
-                       </div>
-                    </div>
+                        <div className="flex gap-1 mt-1">
+                           {Object.entries(l.item.stats || {}).map(([s, v]) => v !== 0 && (
+                             <span key={s} className="text-[7px] font-black text-amber-600 uppercase">+{v} {s}</span>
+                           ))}
+                        </div>
+                        {l.item.desc && (
+                           <p className="text-[7px] font-bold text-slate-400 uppercase mt-1 leading-none italic max-w-[150px]">{l.item.desc}</p>
+                        )}
+                     </div>
                  </div>
 
                  <div className="flex flex-col items-end gap-2">

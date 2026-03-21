@@ -111,7 +111,7 @@ export const CombatView = React.memo(() => {
           <div className="flex gap-2 md:gap-4">
             <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
               <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-              <Coffee size={12} className="md:w-5 md:h-5 text-white group-hover:scale-110 transition-transform relative z-10" />
+              <span className="text-sm md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
               <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
                 <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Heal</span>
                 <span className="text-xs md:text-lg font-black text-white italic">{player.potions || 0}</span>
@@ -133,7 +133,7 @@ export const CombatView = React.memo(() => {
                   onClick={() => activateAutoScroll(view)} 
                   className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[2px] md:border-[4px] border-black px-2 md:px-5 py-1 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group"
                 >
-                  <MousePointer size={10} className="md:w-5 md:h-5 text-black group-hover:scale-110 transition-transform" />
+                  <span className="text-sm md:text-xl group-hover:scale-110 transition-transform">🪄</span>
                   <div className="flex flex-col items-start bg-transparent leading-none">
                     <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic">Link</span>
                     <span className="text-[10px] md:text-lg font-black text-black italic">{player.autoScrolls}</span>
@@ -144,7 +144,7 @@ export const CombatView = React.memo(() => {
           </div>
           {isAutoActive && (
             <div className="flex items-center gap-2 px-2 md:px-4 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[3px] md:border-[4px] border-black text-black rounded font-black text-[9px] md:text-xs animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1">
-              <MousePointer size={12} className="animate-bounce" /> {autoTimeLeft}s
+               <span className="animate-bounce">🪄</span> {autoTimeLeft}s
             </div>
           )}
         </div>

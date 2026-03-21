@@ -2,6 +2,10 @@
 
 export const DIFFICULTY_MULTIPLIER = 1.04;
 export const XP_BASE = 100;
+/**
+ * Calculates XP required for next level (Phase 3 Exponential Scaling)
+ */
+export const getXpRequired = (level) => Math.floor(XP_BASE * Math.pow(level, 1.5));
 export const AP_PER_LEVEL = 5;
 export const MAX_CRIT_CHANCE = 0.5;
 export const BASE_CRIT_CHANCE = 0.05;
@@ -19,7 +23,8 @@ export const COMPANION_BUFF_DURATION = 10000;
  */
 export const scaleMonster = (baseMonster, depth) => {
   const powerMultiplier = Math.pow(DIFFICULTY_MULTIPLIER, depth - 1);
-  const accuracyMultiplier = 1 + ((depth - 1) * 0.15);
+  // Phase 2: Softened monster AGI scaling (0.1 instead of 0.15) to keep DEX relevant.
+  const accuracyMultiplier = 1 + ((depth - 1) * 0.10);
   
   return {
     ...baseMonster,
@@ -109,16 +114,20 @@ export const ELEMENT_ADVANTAGE = {
 
 /**
  * Combat Math: Hit Chance
+ * Optimized (Phase 1): Added 35% hit floor and tuned AGI weight to 0.35 instead of 0.4.
  */
 export const getHitChance = (attackerDex, defenderAgi) => {
-  return Math.min(98, (attackerDex / (attackerDex + defenderAgi * 0.4)) * 100);
+  const chance = (attackerDex / (attackerDex + defenderAgi * 0.35)) * 100;
+  return Math.max(35, Math.min(98, chance));
 };
 
 /**
  * Combat Math: Damage
+ * Optimized (Phase 1): Buffed STR multiplier (1.2x) and reduced AGI mitigation weight (0.1 instead of 0.2).
  */
 export const getDamage = (attackerStr, defenderAgi, isCrit = false) => {
-  const dmgBase = attackerStr + Math.floor(Math.random() * 10) - Math.floor(defenderAgi / 5);
+  // STR has more weight than AGI mitigation now (Phase 1 Balance)
+  const dmgBase = (attackerStr * 1.2) + Math.floor(Math.random() * 10) - (defenderAgi * 0.1);
   return Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
 };
 
