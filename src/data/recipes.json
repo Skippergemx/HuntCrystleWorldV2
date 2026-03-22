@@ -1,68 +1,43 @@
 [
   {
     "id": "crystle_blade",
-    "name": "Crystle Blade",
-    "cost": 1000,
-    "reqLvl": 5,
-    "stats": { "str": 25, "dex": 15, "agi": 5 },
-    "type": "Weapon",
-    "icon": "⚔️",
     "materials": [
       { "id": "crystle_shard", "count": 5 },
       { "id": "slum_scrap", "count": 3 }
-    ]
+    ],
+    "cost": 1000
   },
   {
     "id": "neon_plate",
-    "name": "Neon Chestplate",
-    "cost": 1500,
-    "reqLvl": 8,
-    "stats": { "str": 10, "dex": 5, "agi": 30 },
-    "type": "Armor",
-    "icon": "👕",
     "materials": [
       { "id": "neon_dust", "count": 10 },
       { "id": "beast_hide", "count": 5 }
-    ]
+    ],
+    "cost": 1500
   },
   {
     "id": "tech_visor",
-    "name": "Tech Visor",
-    "cost": 800,
-    "reqLvl": 4,
-    "stats": { "str": 5, "dex": 20, "agi": 5 },
-    "type": "Headgear",
-    "icon": "🥽",
     "materials": [
       { "id": "broken_sensor", "count": 2 },
       { "id": "cypher_chip", "count": 1 }
-    ]
+    ],
+    "cost": 800
   },
   {
     "id": "kinetic_boots",
-    "name": "Kinetic Boots",
-    "cost": 1200,
-    "reqLvl": 6,
-    "stats": { "str": 5, "dex": 10, "agi": 25 },
-    "type": "Footwear",
-    "icon": "👟",
     "materials": [
       { "id": "rusty_wire", "count": 8 },
       { "id": "copper_piping", "count": 4 }
-    ]
+    ],
+    "cost": 1200
   },
   {
     "id": "void_edge",
-    "name": "Void Edge",
-    "cost": 5000,
-    "reqLvl": 20,
-    "stats": { "str": 100, "dex": 60, "agi": 20 },
-    "type": "Weapon",
-    "icon": "☄️",
     "materials": [
       { "id": "void_shard", "count": 15 },
       { "id": "void_essence", "count": 5 },
       { "id": "dark_matter", "count": 10 }
-    ]
+    ],
+    "cost": 5000
   }
 ]

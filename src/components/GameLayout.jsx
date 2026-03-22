@@ -279,7 +279,7 @@ export const GameLayout = ({ onLogout }) => {
             <div className="flex items-center gap-1.5 md:gap-3 bg-black/40 border-[1.5px] border-white/10 p-1 md:p-2 rounded-lg mb-1.5 md:mb-2 overflow-x-auto no-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
                <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-cyan-500/10">
                   <div className="bg-cyan-400 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-6"><Coins size={10} md:size={14} className="text-black" /></div>
-                  <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.tokens.toLocaleString()} <span className="text-[7px] md:text-[9px] text-cyan-400 opacity-60">GX</span></span>
+                  <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{Math.floor(player.tokens).toLocaleString()} <span className="text-[7px] md:text-[9px] text-cyan-400 opacity-60">GX</span></span>
                </div>
 
                <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-red-500/10">
@@ -307,7 +307,7 @@ export const GameLayout = ({ onLogout }) => {
                <div className="flex items-center gap-2 md:gap-3">
                   <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
                      <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{player.hp}</span>
+                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)}</span>
                   </div>
                   <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
                      <div className={`h-full transition-all duration-300 ${player.hp / player.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / player.maxHp) * 100}%` }} />
@@ -317,7 +317,7 @@ export const GameLayout = ({ onLogout }) => {
                <div className="flex items-center gap-2 md:gap-3">
                   <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
                      <Star size={10} md:size={14} className="text-cyan-400" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{player.xp}</span>
+                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.xp)}</span>
                   </div>
                   <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
                      <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />

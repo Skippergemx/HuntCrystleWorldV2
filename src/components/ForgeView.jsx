@@ -4,13 +4,18 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const ForgeView = React.memo(() => {
-  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide, EQUIPMENT } = useGame();
+  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide, ITEMS } = useGame();
   const { setView } = adventure;
   const { forgeCrystle } = actions;
 
+  const getMasterData = (id) => ITEMS.find(i => i.id === id);
+
   const stats = Object.values(player.equipped || {}).reduce((acc, item) => {
-    if (item && item.stats) {
-      acc.dex += item.stats.dex || 0;
+    if (item) {
+       // Lookup master stats to ensure accuracy
+       const master = getMasterData(item.id?.split('_')[0]);
+       const s = master?.stats || item.stats || {};
+       acc.dex += s.dex || 0;
     }
     return acc;
   }, { dex: player.baseStats?.dex || 0 });
@@ -34,13 +39,15 @@ export const ForgeView = React.memo(() => {
       <div className="grid gap-6 relative z-10 pb-20">
         {CRYSTLE_RECIPES.map((recipe, index) => {
           const hasRecipe = player.recipes?.includes(recipe.id);
-          const isOwned = player.equipped?.[recipe.type]?.id === recipe.id;
+          const materials = recipe.materials || [];
+          const master = getMasterData(recipe.id);
+          const type = master?.type || 'TECH';
+          const isOwned = player.equipped?.[type]?.id === recipe.id;
           
           // Calculate success rate: base 50% + dex/2, cap at 95%
           const successRate = Math.min(95, 50 + Math.floor(stats.dex / 2));
           
           // Check materials
-          const materials = recipe.materials || [];
           const hasMaterials = materials.every(mat => {
             const countInInv = player.inventory?.filter(i => i.id === mat.id).length || 0;
             return countInInv >= mat.count;
@@ -54,29 +61,26 @@ export const ForgeView = React.memo(() => {
               <div className="flex justify-between items-start">
                 <div className="flex gap-4 items-center">
                   <div className={`w-14 h-14 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] bg-amber-500 transform -rotate-3`}>
-                    {hasRecipe ? <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{recipe.icon}</span> : <Lock size={24} className="text-black/40" />}
+                    {hasRecipe ? <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{master?.icon || recipe.icon}</span> : <Lock size={24} className="text-black/40" />}
                   </div>
                   <div className="space-y-1 text-left">
                     <h4 className="font-black text-xl text-black uppercase tracking-tighter italic leading-none">
-                      {hasRecipe ? recipe.name : 'Unknown Schematic'}
+                      {hasRecipe ? (master?.name || recipe.name) : 'Unknown Schematic'}
                     </h4>
                     <div className="flex flex-col gap-1">
                       <div className="bg-amber-100/50 px-2 py-0.5 border border-black/10 inline-block self-start">
                         <div className="flex gap-2 text-[9px] font-black uppercase text-amber-900/60 italic">
-                          {Object.entries(recipe.stats).map(([k, v]) => <span key={k}>{k}+{v}</span>)}
+                          {Object.entries(master?.stats || recipe.stats || {}).map(([k, v]) => <span key={k}>{k}+{v}</span>)}
                         </div>
                       </div>
-                      {hasRecipe && (() => {
-                        const baseEquip = EQUIPMENT.find(e => e.id === recipe.id);
-                        return baseEquip?.effect ? (
+                      {hasRecipe && master?.effect && (
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] animate-pulse">⚡</span>
                             <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-1 border border-amber-200">
-                              Effect: {baseEquip.effect.type}
+                              Effect: {master.effect.type} {master.effect.mult ? `(x${master.effect.mult})` : ''}
                             </span>
                           </div>
-                        ) : null;
-                      })()}
+                      )}
                     </div>
                   </div>
                 </div>

@@ -20,17 +20,23 @@ import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const GearView = React.memo(() => {
-  const { player, totalStats, actions, adventure, gameLoop, TAVERN_MATES, openGuide, EQUIPMENT, LOOTS } = useGame();
+  const { player, totalStats, actions, adventure, gameLoop, TAVERN_MATES, openGuide, ITEMS, EQUIPMENT, LOOTS } = useGame();
   const { setView } = adventure;
   const { equipItem, unequipItem } = actions;
   const { buffTimeLeft, dragonTimeLeft } = gameLoop;
 
   const getBaseItemData = (item) => {
+    if (!item) return null;
     const baseId = item.id?.split('_')[0];
-    const baseEquip = EQUIPMENT.find(e => e.id === baseId);
-    if (baseEquip) return baseEquip;
-    const baseLoot = LOOTS.find(l => l.id === baseId);
-    if (baseLoot) return baseLoot;
+    
+    // Check Master Items DB
+    const fromItems = ITEMS.find(i => i.id === baseId);
+    if (fromItems) return fromItems;
+    
+    // Name match fallback
+    const byName = ITEMS.find(i => i.name?.toLowerCase() === item.name?.toLowerCase());
+    if (byName) return byName;
+    
     return item;
   };
 

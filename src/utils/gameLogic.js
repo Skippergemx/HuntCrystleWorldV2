@@ -70,13 +70,6 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
         if (mate.type === 'STR') stats.str *= mult;
         if (mate.type === 'AGI') stats.agi *= mult;
         if (mate.type === 'DEX') stats.dex *= mult;
-        
-        // Apply HP Bonus if it exists
-        if (mate.hpBonus) {
-           // This adds to maxHp effectively since calculateStats is used for dynamic stats
-           // but technically we should have added it to player.maxHp in theory.
-           // For now, we'll just buff the str/agi/dex as primary focus.
-        }
       }
     }
   }
@@ -99,6 +92,11 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     else if (element === 'Gale') { stats.agi += 2 * lvl; }
   }
 
+  // Final Safety Rounding
+  stats.str = Math.floor(stats.str);
+  stats.agi = Math.floor(stats.agi);
+  stats.dex = Math.floor(stats.dex);
+
   return stats;
 };
 
@@ -118,7 +116,7 @@ export const ELEMENT_ADVANTAGE = {
  */
 export const getHitChance = (attackerDex, defenderAgi) => {
   const chance = (attackerDex / (attackerDex + defenderAgi * 0.35)) * 100;
-  return Math.max(35, Math.min(98, chance));
+  return Math.max(35, Math.min(98, Math.floor(chance)));
 };
 
 /**
@@ -128,7 +126,8 @@ export const getHitChance = (attackerDex, defenderAgi) => {
 export const getDamage = (attackerStr, defenderAgi, isCrit = false) => {
   // STR has more weight than AGI mitigation now (Phase 1 Balance)
   const dmgBase = (attackerStr * 1.2) + Math.floor(Math.random() * 10) - (defenderAgi * 0.1);
-  return Math.max(5, isCrit ? Math.floor(dmgBase * 2.5) : dmgBase);
+  const finalDmg = isCrit ? Math.floor(dmgBase * 2.5) : Math.floor(dmgBase);
+  return Math.max(5, finalDmg);
 };
 
 export const BOSS = {

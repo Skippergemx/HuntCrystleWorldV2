@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ShoppingBag, 
   Tag, 
@@ -16,7 +17,7 @@ import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const MarketplaceView = React.memo(() => {
-  const { player, market, adventure, actions, openGuide } = useGame();
+  const { player, market, adventure, actions, openGuide, ITEMS } = useGame();
   const { setView } = adventure;
   const { marketplace: listings, purchaseMarketItem: purchaseItem, listMarketItem: listItem, cancelMarketListing: cancelListing } = market;
   
@@ -26,36 +27,59 @@ export const MarketplaceView = React.memo(() => {
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
   const [selectedToSell, setSelectedToSell] = useState(null);
   const [sellPrice, setSellPrice] = useState(100);
+  const [sellCount, setSellCount] = useState(1);
+
+  // Robust Item Data Resolver
+  const getMasterData = (itemOrId) => {
+    if (!itemOrId) return null;
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
+    const cleanId = id?.split('_')[0];
+    return ITEMS.find(i => i.id === cleanId) || (typeof itemOrId === 'object' ? itemOrId : null);
+  };
 
   const filteredListings = useMemo(() => {
     return (listings || []).filter(l => {
       if (l.sellerUid === player.uid && activeTab !== 'my_listings') return false; 
-      const matchesType = filterType === 'all' || l.item.type === filterType;
-      const matchesSearch = l.item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const master = getMasterData(l.item);
+      const matchesType = filterType === 'all' || master?.category === filterType || master?.type === filterType;
+      const matchesSearch = master?.name.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesType && matchesSearch;
     }).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }, [listings, filterType, searchQuery, player.uid, activeTab]);
+  }, [listings, filterType, searchQuery, player.uid, activeTab, ITEMS]);
 
-  const filteredInventory = useMemo(() => {
-    return (player.inventory || []).filter(item => {
+  const inventoryForSale = useMemo(() => {
+    // 1. Filter raw inventory
+    const raw = (player.inventory || []).filter(item => {
       if (!item || typeof item !== 'object') return false;
-      const matchesType = filterType === 'all' || item.type === filterType;
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const master = getMasterData(item);
+      const matchesType = filterType === 'all' || master?.category === filterType || master?.type === filterType;
+      const matchesSearch = master?.name.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesType && matchesSearch;
     });
-  }, [player.inventory, filterType, searchQuery]);
+
+    // 2. Stack items by ID
+    return raw.reduce((acc, item) => {
+      const baseId = item.id?.split('_')[0];
+      const existing = acc.find(i => i.id?.split('_')[0] === baseId);
+      if (existing) {
+        existing.count = (existing.count || 1) + 1;
+      } else {
+        acc.push({ ...item, count: 1 });
+      }
+      return acc;
+    }, []);
+  }, [player.inventory, filterType, searchQuery, ITEMS]);
 
   const myListings = useMemo(() => {
     return (listings || []).filter(l => l.sellerUid === player.uid);
   }, [listings, player.uid]);
 
-  const inventoryForSale = useMemo(() => {
-    return (player.inventory || []).filter(item => item && typeof item === 'object');
-  }, [player.inventory]);
-
   const handleOpenListModal = (item) => {
     setSelectedToSell(item);
-    setSellPrice(Math.floor((item.cost || 100) * 0.8)); // Default suggestion
+    setSellCount(1); // Default to 1
+    const master = getMasterData(item);
+    // Suggest 80% of cost if available, else 100
+    setSellPrice(master?.cost ? Math.floor(master.cost * 0.8) : 100); 
     setIsListingModalOpen(true);
   };
 
@@ -94,7 +118,7 @@ export const MarketplaceView = React.memo(() => {
            />
         </div>
         <div className="flex gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-           {['Weapon', 'Armor', 'Material', 'Jewelry'].map(t => (
+           {['Equipment', 'Material', 'Fruit', 'Consumable'].map(t => (
              <button
                key={t}
                onClick={() => setFilterType(filterType === t ? 'all' : t)}
@@ -108,46 +132,42 @@ export const MarketplaceView = React.memo(() => {
 
       {activeTab === 'browse' && (
         <div className="space-y-4 flex-1 flex flex-col min-h-0 relative z-10">
-
-          {/* LISTINGS GRID */}
           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredListings.length > 0 ? filteredListings.map((l) => (
-              <div key={l.id} className="bg-white border-[3px] border-black p-4 flex justify-between items-center group hover:-translate-y-1 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden">
-                 <div className="flex gap-4 items-center">
-                    <div className="w-12 h-12 bg-slate-950 flex items-center justify-center text-3xl border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)]">
-                       {l.item.icon || '📦'}
-                    </div>
-                    <div>
-                       <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-black text-black uppercase italic leading-none">{l.item.name}</h4>
-                          <span className={`text-[7px] font-black px-1 border border-black uppercase ${l.item.rarity === 'Legendary' ? 'bg-amber-500 text-black' : 'bg-slate-200 text-slate-500'}`}>{l.item.rarity || 'Common'}</span>
-                       </div>
-                       <p className="text-[9px] font-bold text-slate-500 uppercase mt-1">Vendor: {l.sellerName || 'Anon'}</p>
-                        <div className="flex gap-1 mt-1">
-                           {Object.entries(l.item.stats || {}).map(([s, v]) => v !== 0 && (
-                             <span key={s} className="text-[7px] font-black text-amber-600 uppercase">+{v} {s}</span>
-                           ))}
-                        </div>
-                        {l.item.desc && (
-                           <p className="text-[7px] font-bold text-slate-400 uppercase mt-1 leading-none italic max-w-[150px]">{l.item.desc}</p>
-                        )}
-                     </div>
-                 </div>
+            {filteredListings.length > 0 ? filteredListings.map((l) => {
+              const master = getMasterData(l.item);
+              const rarity = master?.rarity || 'Common';
+              return (
+                <div key={l.id} className="bg-white border-[3px] border-black p-4 flex justify-between items-center group hover:-translate-y-1 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden">
+                   <div className="flex gap-4 items-center">
+                      <div className={`w-12 h-12 bg-slate-950 flex items-center justify-center text-3xl border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
+                         {master?.icon || '📦'}
+                      </div>
+                      <div className="min-w-0">
+                         <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-black text-black uppercase italic leading-none truncate">{master?.name}</h4>
+                            {l.quantity > 1 && <span className="text-[10px] font-black text-amber-500 italic bg-black/5 px-1.5 border border-black/10">x{l.quantity}</span>}
+                            <span className={`text-[7px] font-black px-1 border border-black uppercase ${rarity === 'Legendary' ? 'bg-amber-400 text-black' : 'bg-slate-100 text-slate-400'}`}>{rarity}</span>
+                         </div>
+                         <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">SDR: {l.sellerName?.substring(0, 10) || 'ANON'}</p>
+                         <p className="text-[7px] font-bold text-slate-500 uppercase mt-1 leading-none italic line-clamp-1">{master?.description || "Signal source detected."}</p>
+                      </div>
+                   </div>
 
-                 <div className="flex flex-col items-end gap-2">
-                    <div className="bg-amber-100 px-3 py-1 border-2 border-black transform rotate-2">
-                       <span className="text-xs font-black text-black">{l.price} GX</span>
-                    </div>
-                    <button
-                      onClick={() => purchaseItem(l)}
-                      disabled={player.tokens < l.price || l.sellerUid === player.uid}
-                      className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
-                    >
-                      {l.sellerUid === player.uid ? 'YOUR ITEM' : 'ACQUIRE'}
-                    </button>
-                 </div>
-              </div>
-            )) : (
+                   <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="bg-amber-100 px-3 py-1 border-2 border-black transform rotate-2">
+                         <span className="text-xs font-black text-black">{l.price} GX</span>
+                      </div>
+                      <button
+                        onClick={() => purchaseItem(l)}
+                        disabled={player.tokens < l.price || l.sellerUid === player.uid}
+                        className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
+                      >
+                        {l.sellerUid === player.uid ? 'BROADCASTING' : 'ACQUIRE'}
+                      </button>
+                   </div>
+                </div>
+              );
+            }) : (
               <div className="col-span-full py-20 flex flex-col items-center opacity-20 grayscale">
                  <ShoppingBag size={48} />
                  <p className="text-xs font-black uppercase mt-4 italic tracking-[0.3em]">No valid signals in the grid</p>
@@ -159,37 +179,58 @@ export const MarketplaceView = React.memo(() => {
 
       {activeTab === 'sell' && (
         <div className="flex-1 flex flex-col min-h-0 relative z-10">
-           <div className="bg-amber-500/5 border border-amber-500/20 p-2 md:p-3 rounded-lg mb-3 flex gap-3 items-center">
+           <div className="bg-amber-500/5 border border-amber-500/20 p-2 md:p-3 rounded-lg mb-4 flex gap-3 items-center">
               <AlertTriangle size={14} className="text-amber-500 shrink-0" />
               <p className="text-[7px] md:text-[9px] font-black text-amber-500 uppercase italic leading-tight">
-                NOTICE: Listings carry a 5% terminal tax upon successful exchange.
+                NOTICE: Open Grid listings carry a 5% terminal tax upon successful exchange. Signals are persistent until acquired or terminated.
               </p>
            </div>
 
-           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 pb-20">
-              {filteredInventory.map((item, i) => (
-                <div 
-                  key={i}
-                  onClick={() => handleOpenListModal(item)}
-                  className="bg-slate-900 border border-white/5 p-2 md:p-4 rounded flex flex-col group cursor-pointer hover:border-amber-500 transition-all hover:-translate-y-1 shadow-[4px_4px_0_rgba(0,0,0,1)]"
-                >
-                   <div className="flex flex-col items-center text-center gap-1 md:gap-2">
-                      <div className="w-10 h-10 md:w-16 md:h-16 bg-black flex items-center justify-center text-2xl md:text-5xl group-hover:scale-110 transition-transform">{item.icon}</div>
-                      <div className="min-h-[40px] flex flex-col justify-center">
-                        <h4 className="text-[8px] md:text-xs font-black text-white uppercase italic leading-tight line-clamp-2">{item.name}</h4>
-                        <span className="text-[6px] md:text-[8px] text-slate-500 font-bold uppercase">{item.type}</span>
-                      </div>
-                   </div>
-                   <div className="mt-2 pt-2 border-t border-white/5 flex justify-center opacity-60 group-hover:opacity-100 transition-opacity">
-                      <button className="text-[7px] md:text-[10px] font-black text-amber-500 uppercase italic flex items-center gap-1">
-                        SELL NOW <ArrowRightLeft size={8} className="md:w-3 md:h-3" />
-                      </button>
-                   </div>
-                </div>
-              ))}
-              {filteredInventory.length === 0 && (
-                <div className="col-span-full py-10 text-center opacity-20">
-                   <p className="text-[10px] font-black uppercase italic tracking-widest">No targetable assets in current sector</p>
+           <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-3 pb-4">
+              {inventoryForSale.map((item, i) => {
+                const master = getMasterData(item);
+                const rarity = master?.rarity || 'Common';
+                const icon = master?.icon || '📦';
+                
+                return (
+                  <div 
+                    key={i}
+                    onClick={() => handleOpenListModal(item)}
+                    className="group bg-slate-900/50 border-2 border-white/5 p-3 flex items-center justify-between cursor-pointer hover:bg-slate-900 hover:border-amber-500/50 transition-all hover:translate-x-1"
+                  >
+                     <div className="flex items-center gap-4">
+                        <div className="relative">
+                           <div className={`w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-3xl group-hover:scale-110 transition-transform ${rarity === 'Legendary' ? 'border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : ''}`}>
+                              {icon}
+                           </div>
+                           {item.count > 1 && (
+                              <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] font-black px-1 rounded-sm border border-black">x{item.count}</div>
+                           )}
+                        </div>
+                        <div className="min-w-0">
+                           <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-black text-white uppercase italic leading-none truncate">{master?.name}</h4>
+                              <span className={`text-[6px] font-black px-1 border border-white/10 uppercase ${rarity === 'Legendary' ? 'text-amber-400' : 'text-slate-500'}`}>{rarity}</span>
+                           </div>
+                           <p className="text-[8px] font-black text-slate-500 uppercase mt-1 opacity-60">Source: {master?.category || master?.type || 'MATERIAL'}</p>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <div className="text-right hidden sm:block">
+                           <p className="text-[8px] font-black text-slate-600 uppercase">Valuation Suggestion</p>
+                           <p className="text-xs font-black text-amber-500 italic">{master?.cost ? `${Math.floor(master.cost * 0.8)} GX` : 'SIGNAL LOW'}</p>
+                        </div>
+                        <button className="h-10 px-4 bg-slate-800 border-2 border-white/10 text-[9px] font-black text-white uppercase tracking-tighter group-hover:bg-amber-500 group-hover:text-black group-hover:border-black transition-all">
+                           LIST SIGNAL
+                        </button>
+                     </div>
+                  </div>
+                );
+              })}
+              {inventoryForSale.length === 0 && (
+                <div className="py-20 text-center opacity-20 flex flex-col items-center">
+                   <Plus size={48} />
+                   <p className="text-[10px] font-black uppercase mt-4 italic tracking-widest">No targetable assets in current sector</p>
                 </div>
               )}
            </div>
@@ -231,65 +272,129 @@ export const MarketplaceView = React.memo(() => {
         </div>
       )}
 
-      {/* LISTING MODAL */}
-      {isListingModalOpen && selectedToSell && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-           <div className="bg-white border-[4px] border-black p-6 w-full max-w-sm relative shadow-[12px_12px_0_rgba(0,0,0,0.5)] animate-in zoom-in duration-200">
-              <button 
-                onClick={() => setIsListingModalOpen(false)}
-                className="absolute -top-4 -right-4 w-10 h-10 bg-black text-white border-4 border-black flex items-center justify-center hover:bg-red-500 transition-colors"
-              >
-                <X size={20} />
-              </button>
+      {/* LISTING MODAL PORTAL */}
+      {isListingModalOpen && selectedToSell && createPortal(
+        (() => {
+          const master = getMasterData(selectedToSell);
+          const rarity = master?.rarity || 'Common';
+          const stats = master?.stats || selectedToSell.stats || {};
+          
+          return (
+            <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
+               <div className="bg-slate-900 border-[3px] border-white/20 p-6 md:p-8 w-full max-w-md relative shadow-2xl animate-in zoom-in duration-200 rounded-3xl overflow-hidden shadow-amber-500/10 transition-all">
+                  {/* Visual Flair */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                  
+                  <button 
+                    onClick={() => setIsListingModalOpen(false)}
+                    className="absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full"
+                  >
+                    <X size={20} />
+                  </button>
 
-              <div className="text-center mb-6">
-                 <div className="text-5xl mb-4">{selectedToSell.icon}</div>
-                 <h2 className="text-2xl font-black text-black uppercase italic tracking-tighter">{selectedToSell.name}</h2>
-                 <p className="text-[10px] text-slate-500 font-black uppercase italic mt-1">Broadcast to Open Grid</p>
-              </div>
+                  <div className="text-center mb-6 relative">
+                     <div className={`w-24 h-24 mx-auto bg-black border-4 border-black flex items-center justify-center text-6xl mb-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
+                        {master?.icon || '📦'}
+                     </div>
+                     <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{master?.name}</h2>
+                     <div className="flex justify-center gap-2 mt-2">
+                        <span className={`text-[8px] font-black px-2 py-0.5 border border-white/10 uppercase rounded-sm ${rarity === 'Legendary' ? 'bg-amber-500 text-black' : 'text-slate-500'}`}>{rarity}</span>
+                        <span className="text-[8px] font-black px-2 py-0.5 border border-white/10 uppercase text-slate-400 rounded-sm italic">UNSTABLE BROADCAST</span>
+                     </div>
+                  </div>
 
-              <div className="space-y-6">
-                 <div>
-                    <label className="text-[10px] font-black text-black uppercase italic mb-2 block">Set Exchange Value (GX)</label>
-                    <div className="flex gap-2">
-                       <input 
-                         type="number" 
-                         value={sellPrice}
-                         onChange={(e) => setSellPrice(parseInt(e.target.value) || 0)}
-                         className="flex-1 bg-slate-100 border-2 border-black p-3 font-black text-black italic focus:outline-none"
-                       />
-                       <button 
-                         onClick={() => setSellPrice(prev => Math.floor(prev * 1.5))}
-                         className="px-4 bg-slate-900 text-amber-500 border-2 border-black font-black uppercase italic"
-                       >
-                         UP
-                       </button>
-                    </div>
-                 </div>
+                  <div className="space-y-6 relative">
+                     {/* Item Details */}
+                     <div className="bg-black/50 p-4 rounded-2xl border border-white/5 space-y-3">
+                        <p className="text-[9px] font-bold text-slate-500 uppercase italic text-center">"{master?.description || "Signal source validation pending."}"</p>
+                        
+                        {Object.keys(stats).length > 0 && (
+                          <div className="flex flex-wrap justify-center gap-3 pt-2 border-t border-white/5">
+                             {Object.entries(stats).map(([s, v]) => v !== 0 && (
+                               <div key={s} className="flex gap-1 items-center">
+                                  <span className="text-[7px] font-black text-slate-600 uppercase">{s}</span>
+                                  <span className="text-[9px] font-black text-amber-500">+{v}</span>
+                               </div>
+                             ))}
+                          </div>
+                        )}
+                     </div>
 
-                 <div className="bg-amber-100 p-3 border-2 border-black text-black">
-                    <div className="flex justify-between items-center text-[10px] font-black uppercase mb-1">
-                       <span>Market Tax (5%)</span>
-                       <span>- {Math.floor(sellPrice * 0.05)} GX</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs font-black uppercase pt-1 border-t border-black/10">
-                       <span>Projected Yield</span>
-                       <span className="text-emerald-600">{sellPrice - Math.floor(sellPrice * 0.05)} GX</span>
-                    </div>
-                 </div>
+                      <div className="flex gap-4">
+                         <div className="flex-1">
+                            <div className="flex justify-between items-end mb-2">
+                               <label className="text-[10px] font-black text-slate-400 uppercase italic">Signal Strength (Quantity)</label>
+                               <span className="text-[8px] font-black text-slate-600 uppercase">Max Avail: {selectedToSell.count}</span>
+                            </div>
+                            <div className="flex gap-2">
+                               <div className="flex-1 relative">
+                                  <input 
+                                    type="number" 
+                                    value={sellCount}
+                                    min="1"
+                                    max={selectedToSell.count}
+                                    onChange={(e) => setSellCount(Math.max(1, Math.min(selectedToSell.count, parseInt(e.target.value) || 1)))}
+                                    className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
+                                  />
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">Qty:</div>
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                  <button onClick={() => setSellCount(prev => Math.min(selectedToSell.count, prev + 1))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">+</button>
+                                  <button onClick={() => setSellCount(prev => Math.max(1, prev - 1))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">-</button>
+                                  <button onClick={() => setSellCount(selectedToSell.count)} className="px-2 bg-amber-500/20 text-amber-500 text-[6px] font-black border border-amber-500/20 rounded-md">MAX</button>
+                               </div>
+                            </div>
+                         </div>
 
-                 <button
-                   onClick={() => {
-                     listItem(selectedToSell, sellPrice);
-                     setIsListingModalOpen(false);
-                   }}
-                   className="w-full bg-amber-500 text-black py-4 border-[3px] border-black font-black uppercase italic text-lg shadow-[6px_6px_0_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all"
-                 >
-                   CONFIRM BROADCAST
-                 </button>
-              </div>
-           </div>
-        </div>
+                         <div className="flex-1">
+                            <div className="flex justify-between items-end mb-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase italic">Exchange Value (GX)</label>
+                              {master?.cost && <span className="text-[8px] font-black text-slate-600 uppercase">Sugg: {Math.floor(master.cost * 0.8)}</span>}
+                            </div>
+                            <div className="flex gap-2">
+                               <div className="flex-1 relative">
+                                  <input 
+                                    type="number" 
+                                    value={sellPrice}
+                                    onChange={(e) => setSellPrice(parseInt(e.target.value) || 0)}
+                                    className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
+                                  />
+                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">GX:</div>
+                               </div>
+                               <div className="flex flex-col gap-1">
+                                  <button onClick={() => setSellPrice(prev => Math.floor(prev * 1.2))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">UP</button>
+                                  <button onClick={() => setSellPrice(prev => Math.max(1, Math.floor(prev * 0.8)))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">DN</button>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+
+                     <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-amber-500">
+                        <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
+                           <span>Terminal Processing Tax (5%)</span>
+                           <span>- {Math.floor(sellPrice * 0.05)} GX</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-amber-500/20">
+                           <span>Projected Yield</span>
+                           <span className="text-white">{(sellPrice - Math.floor(sellPrice * 0.05)).toLocaleString()} GX</span>
+                        </div>
+                     </div>
+
+                     <button
+                       onClick={() => {
+                         listItem(selectedToSell, sellPrice, sellCount);
+                         setIsListingModalOpen(false);
+                       }}
+                       className="w-full bg-amber-500 text-black py-5 rounded-2xl font-black uppercase italic text-lg shadow-[0_10px_30px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all outline-none ring-offset-2 focus:ring-2 ring-amber-500"
+                     >
+                       CONFIRM BROADCAST
+                     </button>
+                  </div>
+               </div>
+            </div>
+          );
+        })(),
+        document.body
       )}
 
       <style>{`

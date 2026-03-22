@@ -7,7 +7,8 @@ export const usePlayerActions = (
   addLog,
   playSFX,
   SOUNDS,
-  TAVERN_MATES
+  TAVERN_MATES,
+  ITEMS
 ) => {
   const handleHeal = useCallback(() => {
     if ((player.potions || 0) <= 0) return addLog("Out of Potions!");
@@ -53,30 +54,43 @@ export const usePlayerActions = (
     setPlayer(prev => {
       if (!prev) return prev;
       const newInventory = [...(prev.inventory || [])];
+      
+      // Separate item being sold from those staying
+      const itemsToSell = [];
       const remainingItems = [];
-      let tokensGained = 0;
       let foundCount = 0;
       let itemName = "";
+      let totalGained = 0;
 
       newInventory.forEach(item => {
         if (item.id === itemId && foundCount < amount) {
-          const value = item.sellValue !== undefined ? item.sellValue : Math.floor((item.cost || 0) / 2);
-          tokensGained += value;
+          const baseId = item.id?.split('_')[0];
+          const master = ITEMS.find(i => i.id === baseId) || item;
+          
+          // Economic Standard: 40% of Master Cost
+          let value = 0;
+          if (master.cost) {
+            value = Math.floor(master.cost * 0.4);
+          } else {
+            value = master.sellValue || item.sellValue || 0;
+          }
+
+          totalGained += value;
           foundCount++;
-          itemName = item.name;
+          itemName = master.name || item.name;
         } else {
           remainingItems.push(item);
         }
       });
 
       if (foundCount > 0) {
-        syncPlayer({ tokens: prev.tokens + tokensGained, inventory: remainingItems });
-        addLog(`💰 Sold ${foundCount}x ${itemName} for ${tokensGained} GX`);
+        syncPlayer({ tokens: prev.tokens + totalGained, inventory: remainingItems });
+        addLog(`💰 Sold ${foundCount}x ${itemName} for ${totalGained} GX`);
         playSFX(SOUNDS.obtainLoot);
       }
-      return { ...prev, tokens: prev.tokens + tokensGained, inventory: remainingItems };
+      return { ...prev, tokens: prev.tokens + totalGained, inventory: remainingItems };
     });
-  }, [syncPlayer, addLog, playSFX, SOUNDS]);
+  }, [syncPlayer, addLog, playSFX, SOUNDS, ITEMS]);
 
   const equipItem = (item) => {
     const oldItem = player.equipped?.[item.type];
@@ -164,7 +178,10 @@ export const usePlayerActions = (
       addLog("LOCK-ON ACTIVATED! (60s)");
     },
     forgeCrystle: (recipe) => {
-      console.log("🛠️ FORGE START:", recipe.name);
+      const masterData = ITEMS.find(i => i.id === recipe.id);
+      const itemName = masterData?.name || recipe.name || "Unknown Tech";
+      
+      console.log("🛠️ FORGE START:", itemName);
       if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
 
       // Safety check: ensure inventory is an array
@@ -191,13 +208,17 @@ export const usePlayerActions = (
         }
       });
 
-      // Add forged item
-      const forgedItem = { ...recipe, id: `${recipe.id}_${Date.now()}` };
+      // Add forged item with master data merged
+      const forgedItem = { 
+        ...masterData, 
+        ...recipe, 
+        id: `${recipe.id}_${Date.now()}` 
+      };
       newInventory.push(forgedItem);
       
-      console.log("📦 FORGE SYNCING:", recipe.name, "New Bag Size:", newInventory.length);
+      console.log("📦 FORGE SYNCING:", itemName, "New Bag Size:", newInventory.length);
       syncPlayer({ tokens: player.tokens - (recipe.cost || 0), inventory: newInventory });
-      addLog(`Forged: ${recipe.name}! Check Storage Bag.`);
+      addLog(`Forged: ${itemName}! Check Storage Bag.`);
       playSFX(SOUNDS.obtainLoot);
     }
 

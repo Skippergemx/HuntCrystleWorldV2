@@ -80,12 +80,20 @@ export const usePlayerSync = (user, db, appId) => {
   const syncPlayer = useCallback(async (updates) => {
     if (!user) return;
 
+    // Sterilize updates: Round combat-critical numbers to prevent float jitter
+    const sterilized = { ...updates };
+    ['hp', 'maxHp', 'xp', 'tokens'].forEach(key => {
+        if (sterilized[key] !== undefined && typeof sterilized[key] === 'number') {
+            sterilized[key] = Math.floor(sterilized[key]);
+        }
+    });
+
     // Immediate local update for UI responsiveness
     setPlayer(prev => {
-      const next = { ...prev, ...updates };
+      const next = { ...prev, ...sterilized };
 
       // Batch updates for remote sync
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...updates };
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized };
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 

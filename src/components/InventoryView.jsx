@@ -12,32 +12,29 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const InventoryView = React.memo(() => {
-  const { player, actions, adventure, openGuide, EQUIPMENT, LOOTS, CRYSTLE_RECIPES } = useGame();
+  const { player, actions, adventure, openGuide, ITEMS, CRYSTLE_RECIPES } = useGame();
   const { setView } = adventure;
   const { sellItem, unequipItem } = actions;
   
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
 
-  // Robust Item Data Resolver
+  // Robust Item Data Resolver - Now powered by unified ITEMS list
   const getMasterData = (item) => {
     if (!item) return null;
     const cleanId = item.id?.split('_')[0];
     
-    const fromEquip = EQUIPMENT.find(e => e.id === cleanId);
-    if (fromEquip) return fromEquip;
+    // 1. Check Master Items DB
+    const fromItems = ITEMS.find(i => i.id === cleanId);
+    if (fromItems) return fromItems;
     
-    const fromLoot = LOOTS.find(l => l.id === cleanId);
-    if (fromLoot) return fromLoot;
-
+    // 2. Check Recipe List (for crafted items not in master)
     const fromRecipe = CRYSTLE_RECIPES.find(r => r.id === cleanId);
     if (fromRecipe) return fromRecipe;
 
-    const byNameEquip = EQUIPMENT.find(e => e.name?.toLowerCase() === item.name?.toLowerCase());
-    if (byNameEquip) return byNameEquip;
-
-    const byNameLoot = LOOTS.find(l => l.name?.toLowerCase() === item.name?.toLowerCase());
-    if (byNameLoot) return byNameLoot;
+    // 3. Last Resort: Name Match
+    const byName = ITEMS.find(i => i.name?.toLowerCase() === item.name?.toLowerCase());
+    if (byName) return byName;
 
     return item;
   };

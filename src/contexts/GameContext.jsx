@@ -1,13 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { db, appId } from '../firebase';
 import MONSTERS from '../data/monsters.json';
-import EQUIPMENT from '../data/equipment.json';
 import TAVERN_MATES from '../data/mates.json';
-import SHOP_CONSUMABLES from '../data/shop.json';
 import CRYSTLE_RECIPES from '../data/recipes.json';
-import LOOTS from '../data/loots.json';
 import MAPS from '../data/maps.json';
-import FRUITS from '../data/fruits.json';
+import ITEMS from '../data/items.json';
 
 import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
@@ -34,8 +31,11 @@ export const useGame = () => {
   return context;
 };
 
-const forgeableIDs = CRYSTLE_RECIPES.map(r => r.id);
-const SHOP_ITEMS = [...SHOP_CONSUMABLES, ...EQUIPMENT.filter(e => e.type !== 'Relic' && !forgeableIDs.includes(e.id))];
+// Derived master lists for backwards compatibility and internal context use
+const EQUIPMENT = ITEMS.filter(i => i.category === 'Equipment');
+const LOOTS = ITEMS.filter(i => i.category === 'Loot');
+const FRUITS = ITEMS.filter(i => i.category === 'Fruit');
+const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined && i.id !== 'crystle_blade' && i.id !== 'neon_plate');
 
 export const GameProvider = ({ children, user }) => {
   const [logs, setLogs] = useState(["Synchronizing with Metaverse..."]);
@@ -58,11 +58,11 @@ export const GameProvider = ({ children, user }) => {
   // --- CORE SYSTEM INITIALIZATION ---
   const { player, setPlayer, syncPlayer, loadingPlayer } = usePlayerSync(user, db, appId);
   
-  // Hooks initialization (these will execute even if loading, but result is handled below)
+  // Hooks initialization
   const leaderboardObj = useLeaderboard(user, player, db, appId);
   const adventure = useAdventure();
   const audio = useAudioEngine(adventure.view, adventure.enemy?.isBoss);
-  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES);
+  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS);
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
 
   const totalStats = useMemo(() => {
@@ -90,7 +90,6 @@ export const GameProvider = ({ children, user }) => {
     showDefeatedWindow: combat.showDefeatedWindow
   });
 
-  // Re-calculate stats with active buffs
   const dynamicStats = useMemo(() => {
     if (!player) return totalStats;
     return calculateStats(player, TAVERN_MATES, gameLoop.buffTimeLeft > 0, gameLoop.dragonTimeLeft > 0);
@@ -100,7 +99,6 @@ export const GameProvider = ({ children, user }) => {
     combat.setPenaltyRemaining(gameLoop.penaltyRemaining);
   }, [gameLoop.penaltyRemaining]);
 
-  // Loading Guard
   if (loadingPlayer || !player) return <LoadingScreen />;
 
   const openGuide = (type) => {
@@ -130,7 +128,7 @@ export const GameProvider = ({ children, user }) => {
     updateLeaderboard: leaderboardObj.updateLeaderboard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
-    TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS,
+    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS,
     BOSS, BOSS_MEDIA_FILES
   };
 

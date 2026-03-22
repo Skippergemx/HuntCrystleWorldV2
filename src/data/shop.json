@@ -1,4 +1,0 @@
-[
-  { "id": "hp_potion", "name": "Healing Potion", "cost": 50, "reqLvl": 1, "type": "Consumable", "desc": "Restores 50% Max HP." },
-  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "reqLvl": 1, "type": "Consumable", "desc": "1 min Auto Pilot." }
-]

@@ -10,7 +10,7 @@ export const ImpactSplash = React.memo(({ splash }) => {
           {splash.text}
         </div>
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white text-black font-black text-xs px-2 py-0.5 rounded-sm border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
-          -{splash.dmg}
+          -{Math.floor(splash.dmg)}
         </div>
       </div>
     </div>
@@ -27,7 +27,7 @@ export const BossImpactSplash = React.memo(({ splash }) => {
           {splash.text}
         </div>
         <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white text-black font-black text-sm px-3 py-1 rounded-sm border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)]">
-          -{splash.dmg}
+          -{Math.floor(splash.dmg)}
         </div>
       </div>
     </div>

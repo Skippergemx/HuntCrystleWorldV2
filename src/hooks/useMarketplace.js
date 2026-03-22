@@ -52,7 +52,13 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     try {
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id));
 
-      const newInventory = [...(player.inventory || []), listing.item];
+      const returnedItems = [];
+      const qty = listing.quantity || 1;
+      for (let i = 0; i < qty; i++) {
+        returnedItems.push({ ...listing.item, id: `${listing.item.id?.split('_')[0]}_${Date.now()}_${i}` });
+      }
+
+      const newInventory = [...(player.inventory || []), ...returnedItems];
       await syncPlayer({
         tokens: player.tokens - listing.price,
         inventory: newInventory
@@ -63,12 +69,12 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       await setDoc(payoutRef, {
         recipientEmail: listing.sellerEmail,
         amount: payout,
-        itemName: listing.item.name,
+        itemName: `${qty}x ${listing.item.name}`,
         buyerName: player.name,
         createdAt: Date.now()
       });
 
-      addLog(`\uD83E\uDD1D Market Deal: Acquired ${listing.item.name} for ${listing.price} GX.`);
+      addLog(`🤝 Market Deal: Acquired ${qty}x ${listing.item.name} for ${listing.price} GX.`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
@@ -76,27 +82,42 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     }
   }, [player, syncPlayer, addLog, db, appId, playSFX, SOUNDS]);
 
-  const listMarketItem = useCallback(async (item, price) => {
+  const listMarketItem = useCallback(async (item, price, quantity = 1) => {
     if (!user || !player) return;
 
     try {
-      const index = player.inventory.findIndex(i => i.id === item.id);
-      const newInventory = [...player.inventory];
-      newInventory.splice(index, 1);
+      const baseId = item.id?.split('_')[0];
+      const itemsToConsume = [];
+      const remainingInventory = [];
+      let found = 0;
 
-      await syncPlayer({ inventory: newInventory });
+      player.inventory.forEach(invItem => {
+         if (invItem.id?.split('_')[0] === baseId && found < quantity) {
+            itemsToConsume.push(invItem);
+            found++;
+         } else {
+            remainingInventory.push(invItem);
+         }
+      });
+
+      if (found < quantity) return addLog("Insufficient quantity!");
+
+      await syncPlayer({ inventory: remainingInventory });
 
       const listRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
       await setDoc(listRef, {
         sellerUid: user.uid,
         sellerEmail: user.email || user.uid,
         sellerName: player.name,
-        item: item,
-        price: price,
+        // If it's a stack, we store the first item as template + quantity
+        // The purchase logic needs to handle adding 'quantity' items back.
+        item: itemsToConsume[0], 
+        quantity: quantity,
+        price: price, // This is price per stack or per item? User said "put into sale", usually price is per stack in these UIs.
         createdAt: Date.now()
       });
 
-      addLog(`📡 Broadcast: ${item.name} listed for ${price} GX.`);
+      addLog(`📡 Broadcast: ${quantity}x ${itemsToConsume[0].name} listed for ${price} GX.`);
     } catch (e) {
       console.error(e);
       addLog("Broadcasting failed.");
@@ -111,8 +132,14 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listingId));
 
-      await syncPlayer({ inventory: [...(player.inventory || []), listing.item] });
-      addLog(`🚫 Signal Terminated: ${listing.item.name} returned to storage.`);
+      const returnedItems = [];
+      const qty = listing.quantity || 1;
+      for (let i = 0; i < qty; i++) {
+        returnedItems.push({ ...listing.item, id: `${listing.item.id?.split('_')[0]}_${Date.now()}_${i}` });
+      }
+
+      await syncPlayer({ inventory: [...(player.inventory || []), ...returnedItems] });
+      addLog(`🚫 Signal Terminated: ${returnedItems.length}x ${listing.item.name} returned to storage.`);
     } catch (e) {
       console.error(e);
     }

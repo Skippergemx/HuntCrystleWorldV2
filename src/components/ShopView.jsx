@@ -44,7 +44,7 @@ export const ShopView = React.memo(() => {
                     {isLocked && <span className="text-[7px] bg-red-600 text-white px-1 font-black transform rotate-6 border border-black shadow-sm tracking-tighter">LVL {item.reqLvl} REQ</span>}
                   </div>
                   <div className="space-y-2">
-                    <p className="text-[10px] text-slate-600 font-bold italic leading-tight uppercase mr-12">{item.desc}</p>
+                    <p className="text-[10px] text-slate-600 font-bold italic leading-tight uppercase mr-12">{item.description}</p>
                     
                     {item.stats && (
                       <div className="flex flex-wrap gap-1 mt-1">

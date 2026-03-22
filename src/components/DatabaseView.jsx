@@ -264,7 +264,7 @@ export const DatabaseView = React.memo(() => {
                                <p className="text-[9px] font-black uppercase italic text-cyan-400">Tactical Proc: {item.effect.type}</p>
                             </div>
                           )}
-                          <p className="text-[10px] font-black text-slate-500 leading-tight uppercase italic line-clamp-2 mt-1">"{item.desc || 'Standard issue hunter gear.'}"</p>
+                          <p className="text-[10px] font-black text-slate-500 leading-tight uppercase italic line-clamp-2 mt-1">"{item.description || 'Standard issue hunter gear.'}"</p>
                        </div>
                     </div>
  
