@@ -63,9 +63,11 @@ export const usePlayerActions = (
       let totalGained = 0;
 
       newInventory.forEach(item => {
-        if (item.id === itemId && foundCount < amount) {
-          const baseId = item.id?.split('_')[0];
-          const master = ITEMS.find(i => i.id === baseId) || item;
+        const itemBaseId = item.id?.split('_')[0];
+        const targetBaseId = itemId?.split('_')[0];
+
+        if (itemBaseId === targetBaseId && foundCount < amount) {
+          const master = ITEMS.find(i => i.id === itemBaseId) || item;
           
           // Economic Standard: 40% of Master Cost
           let value = 0;
@@ -155,7 +157,7 @@ export const usePlayerActions = (
     activateAutoScroll: (view) => {
       const hasInCounter = (player.autoScrolls || 0) > 0;
       const inventory = player.inventory || [];
-      const scrollIndex = inventory.findIndex(i => i && i.id === 'auto_scroll');
+      const scrollIndex = inventory.findIndex(i => i && i.id?.split('_')[0] === 'auto_scroll');
       
       if (!hasInCounter && scrollIndex === -1) return addLog("Out of Auto Scrolls!");
 
@@ -190,7 +192,7 @@ export const usePlayerActions = (
       
       // Check if player has all materials
       const hasMaterials = recipe.materials.every(mat => {
-        const count = inventory.filter(i => i && i.id === mat.id).length;
+        const count = inventory.filter(i => i && i.id?.split('_')[0] === mat.id).length;
         return count >= mat.count;
       });
 
@@ -199,11 +201,10 @@ export const usePlayerActions = (
         return addLog("Insufficient Materials!");
       }
 
-      // Consume materials
-      let newInventory = [...inventory];
+      // Consumption Phase
       recipe.materials.forEach(mat => {
         for (let i = 0; i < mat.count; i++) {
-          const idx = newInventory.findIndex(item => item && item.id === mat.id);
+          const idx = newInventory.findIndex(item => item && item.id?.split('_')[0] === mat.id);
           if (idx !== -1) newInventory.splice(idx, 1);
         }
       });

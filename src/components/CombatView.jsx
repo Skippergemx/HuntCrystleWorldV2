@@ -245,7 +245,7 @@ export const CombatView = React.memo(() => {
                 <div className="w-full group">
                    <div className="flex justify-between items-center mb-0.5 px-1">
                       <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase italic">Power Core</span>
-                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.round(enemy.hp)}/{enemy.maxHp}</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(enemy.hp)}/{Math.floor(enemy.maxHp)}</span>
                    </div>
                    <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] flex items-center">
                       <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300 relative" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}>
@@ -324,7 +324,7 @@ export const CombatView = React.memo(() => {
                 <div className="w-full group">
                    <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
                       <span className="text-[8px] md:text-[9px] font-black text-cyan-500 uppercase italic">Biological Core</span>
-                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.round(player.hp)}/{player.maxHp}</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
                    </div>
                    <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] md:shadow-[-6px_6px_0_rgba(6,182,212,0.3)] transition-all overflow-hidden flex items-center">
                       <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>

@@ -117,7 +117,7 @@ export const useCombat = (
     
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < (isBoss ? BOSS.critChance : target.critChance);
-      const dmg = getDamage(target.str, stats.agi, isCrit);
+      const dmg = Math.floor(getDamage(target.str, stats.agi, isCrit));
 
       if (isCrit) { 
         addLog(`⚠️ CRIT!`); 
@@ -135,7 +135,7 @@ export const useCombat = (
       triggerHitEffects(dmg, isCrit, 'player', triggerFlinch, triggerHurt);
 
       setTimeout(() => {
-        const newHp = Math.max(0, player.hp - dmg);
+        const newHp = Math.floor(Math.max(0, player.hp - dmg));
         if (newHp <= 0) {
           setShowDefeatedWindow(true);
           setCombatState('DEFEATED');
@@ -205,10 +205,11 @@ export const useCombat = (
 
           const lootItem = pool[Math.floor(Math.random() * pool.length)];
           if (lootItem) {
-            updates.inventory = [...(player.inventory || []), lootItem];
+            const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
+            updates.inventory = [...(player.inventory || []), itemWithId];
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
-            setLastLoot(lootItem);
+            setLastLoot(itemWithId);
             setTimeout(() => setLastLoot(null), 3000);
           }
         }
@@ -318,7 +319,7 @@ export const useCombat = (
     const hitChance = getHitChance(stats.dex, target.agi);
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < 0.15;
-      let dmg = getDamage(stats.str, target.agi, isCrit);
+      let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit));
 
       // --- PHASE 4: Equipment Special Effects ---
       const effects = Object.values(player.equipped || {}).filter(i => i?.effect).map(i => i.effect);
@@ -363,7 +364,7 @@ export const useCombat = (
         if (isBoss) {
           processBossHit(dmg, isCrit);
         } else {
-          const newHp = Math.max(0, target.hp - dmg);
+          const newHp = Math.floor(Math.max(0, target.hp - dmg));
           if (newHp <= 0) {
             setEnemy({ ...target, hp: 0 });
             processKill();

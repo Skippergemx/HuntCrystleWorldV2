@@ -25,9 +25,12 @@ export const MarketplaceView = React.memo(() => {
   const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isListingModalOpen, setIsListingModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [selectedToSell, setSelectedToSell] = useState(null);
+  const [selectedToBuy, setSelectedToBuy] = useState(null);
   const [sellPrice, setSellPrice] = useState(100);
   const [sellCount, setSellCount] = useState(1);
+  const [buyCount, setBuyCount] = useState(1);
 
   // Robust Item Data Resolver
   const getMasterData = (itemOrId) => {
@@ -78,9 +81,15 @@ export const MarketplaceView = React.memo(() => {
     setSelectedToSell(item);
     setSellCount(1); // Default to 1
     const master = getMasterData(item);
-    // Suggest 80% of cost if available, else 100
-    setSellPrice(master?.cost ? Math.floor(master.cost * 0.8) : 100); 
+    // Suggest 80% of cost if available, else 10
+    setSellPrice(master?.cost ? Math.max(1, Math.floor(master.cost * 0.1)) : 10); 
     setIsListingModalOpen(true);
+  };
+
+  const handleOpenPurchaseModal = (listing) => {
+    setSelectedToBuy(listing);
+    setBuyCount(1);
+    setIsPurchaseModalOpen(true);
   };
 
   return (
@@ -156,9 +165,10 @@ export const MarketplaceView = React.memo(() => {
                    <div className="flex flex-col items-end gap-2 shrink-0">
                       <div className="bg-amber-100 px-3 py-1 border-2 border-black transform rotate-2">
                          <span className="text-xs font-black text-black">{l.price} GX</span>
+                         <span className="text-[6px] font-bold text-slate-400 block tracking-widest text-center">PER UNIT</span>
                       </div>
                       <button
-                        onClick={() => purchaseItem(l)}
+                        onClick={() => handleOpenPurchaseModal(l)}
                         disabled={player.tokens < l.price || l.sellerUid === player.uid}
                         className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
                       >
@@ -201,10 +211,10 @@ export const MarketplaceView = React.memo(() => {
                      <div className="flex items-center gap-4">
                         <div className="relative">
                            <div className={`w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-3xl group-hover:scale-110 transition-transform ${rarity === 'Legendary' ? 'border-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.3)]' : ''}`}>
-                              {icon}
+                               {icon}
                            </div>
                            {item.count > 1 && (
-                              <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] font-black px-1 rounded-sm border border-black">x{item.count}</div>
+                               <div className="absolute -bottom-1 -right-1 bg-amber-500 text-black text-[8px] font-black px-1 rounded-sm border border-black">x{item.count}</div>
                            )}
                         </div>
                         <div className="min-w-0">
@@ -218,7 +228,7 @@ export const MarketplaceView = React.memo(() => {
                      <div className="flex items-center gap-3">
                         <div className="text-right hidden sm:block">
                            <p className="text-[8px] font-black text-slate-600 uppercase">Valuation Suggestion</p>
-                           <p className="text-xs font-black text-amber-500 italic">{master?.cost ? `${Math.floor(master.cost * 0.8)} GX` : 'SIGNAL LOW'}</p>
+                           <p className="text-xs font-black text-amber-500 italic">{master?.cost ? `${Math.floor(master.cost * 0.1)} GX` : 'SIGNAL LOW'}</p>
                         </div>
                         <button className="h-10 px-4 bg-slate-800 border-2 border-white/10 text-[9px] font-black text-white uppercase tracking-tighter group-hover:bg-amber-500 group-hover:text-black group-hover:border-black transition-all">
                            LIST SIGNAL
@@ -248,7 +258,7 @@ export const MarketplaceView = React.memo(() => {
                       </div>
                       <div>
                          <h4 className="text-sm font-black text-white uppercase italic leading-none">{l.item.name}{l.quantity > 1 && <span className="text-amber-500 font-bold not-italic ml-1 opacity-80">x{l.quantity}</span>}</h4>
-                         <p className="text-[10px] font-black text-amber-500 mt-1 uppercase italic">{l.price} GX LISTED</p>
+                         <p className="text-[10px] font-black text-amber-500 mt-1 uppercase italic">{l.price} GX PER UNIT</p>
                          <p className="text-[7px] font-bold text-slate-600 uppercase mt-1">
                            Listed {new Date(l.createdAt).toLocaleDateString()}
                          </p>
@@ -272,123 +282,172 @@ export const MarketplaceView = React.memo(() => {
         </div>
       )}
 
-      {/* LISTING MODAL PORTAL */}
+      {/* LISTING MODAL PORTAL (SELL) */}
       {isListingModalOpen && selectedToSell && createPortal(
         (() => {
           const master = getMasterData(selectedToSell);
           const rarity = master?.rarity || 'Common';
           const stats = master?.stats || selectedToSell.stats || {};
+          const totalValue = sellPrice * sellCount;
           
           return (
-            <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4">
-               <div className="bg-slate-900 border-[3px] border-white/20 p-6 md:p-8 w-full max-w-md relative shadow-2xl animate-in zoom-in duration-200 rounded-3xl overflow-hidden shadow-amber-500/10 transition-all">
-                  {/* Visual Flair */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-                  
-                  <button 
-                    onClick={() => setIsListingModalOpen(false)}
-                    className="absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full"
-                  >
-                    <X size={20} />
-                  </button>
+            <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 md:p-4 overflow-hidden">
+               <div className="bg-slate-900 border-[3px] border-white/20 p-5 md:p-8 w-full max-w-sm md:max-w-md relative shadow-2xl animate-in zoom-in duration-200 rounded-3xl transition-all max-h-[90vh] flex flex-col overflow-hidden">
+                  <div className="overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    
+                    <button 
+                      onClick={() => setIsListingModalOpen(false)}
+                      className="absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full z-50"
+                    >
+                      <X size={20} />
+                    </button>
 
-                  <div className="text-center mb-6 relative">
-                     <div className={`w-24 h-24 mx-auto bg-black border-4 border-black flex items-center justify-center text-6xl mb-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
-                        {master?.icon || '📦'}
-                     </div>
-                     <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{master?.name}</h2>
-                     <div className="flex justify-center gap-2 mt-2">
-                        <span className={`text-[8px] font-black px-2 py-0.5 border border-white/10 uppercase rounded-sm ${rarity === 'Legendary' ? 'bg-amber-500 text-black' : 'text-slate-500'}`}>{rarity}</span>
-                        <span className="text-[8px] font-black px-2 py-0.5 border border-white/10 uppercase text-slate-400 rounded-sm italic">UNSTABLE BROADCAST</span>
-                     </div>
-                  </div>
+                    <div className="text-center mb-6 relative mt-4">
+                       <div className={`w-24 h-24 mx-auto bg-black border-4 border-black flex items-center justify-center text-6xl mb-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
+                          {master?.icon || '📦'}
+                       </div>
+                       <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{master?.name}</h2>
+                       <p className="text-[10px] font-black text-amber-500 uppercase mt-2 tracking-widest">Constructing Sales Signal</p>
+                    </div>
 
-                  <div className="space-y-6 relative">
-                     {/* Item Details */}
-                     <div className="bg-black/50 p-4 rounded-2xl border border-white/5 space-y-3">
-                        <p className="text-[9px] font-bold text-slate-500 uppercase italic text-center">"{master?.description || "Signal source validation pending."}"</p>
-                        
-                        {Object.keys(stats).length > 0 && (
-                          <div className="flex flex-wrap justify-center gap-3 pt-2 border-t border-white/5">
-                             {Object.entries(stats).map(([s, v]) => v !== 0 && (
-                               <div key={s} className="flex gap-1 items-center">
-                                  <span className="text-[7px] font-black text-slate-600 uppercase">{s}</span>
-                                  <span className="text-[9px] font-black text-amber-500">+{v}</span>
-                               </div>
-                             ))}
+                    <div className="space-y-6 relative pb-4">
+                        <div className="flex gap-4">
+                           <div className="flex-1">
+                              <label className="text-[10px] font-black text-slate-400 uppercase italic block mb-2 text-center">Batch Size</label>
+                              <div className="flex gap-2">
+                                 <div className="flex-1 relative">
+                                    <input 
+                                      type="number" 
+                                      value={sellCount}
+                                      min="1"
+                                      max={selectedToSell.count}
+                                      onChange={(e) => setSellCount(Math.max(1, Math.min(selectedToSell.count, parseInt(e.target.value) || 1)))}
+                                      className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
+                                    />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">Qty:</div>
+                                 </div>
+                              </div>
+                           </div>
+
+                           <div className="flex-1">
+                              <label className="text-[10px] font-black text-slate-400 uppercase italic block mb-2 text-center">Price Per Unit</label>
+                              <div className="flex gap-2">
+                                 <div className="flex-1 relative">
+                                    <input 
+                                      type="number" 
+                                      value={sellPrice}
+                                      onChange={(e) => setSellPrice(Math.max(1, parseInt(e.target.value) || 0))}
+                                      className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
+                                    />
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">GX:</div>
+                                 </div>
+                              </div>
+                           </div>
+                        </div>
+
+                       <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-amber-500">
+                          <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
+                             <span>Signal Strength: {sellCount} Unit(s) @ {sellPrice} GX</span>
+                             <span>{totalValue.toLocaleString()} GX</span>
                           </div>
-                        )}
-                     </div>
+                          <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
+                             <span>Terminal Processing Tax (5%)</span>
+                             <span>- {Math.floor(totalValue * 0.05).toLocaleString()} GX</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-amber-500/20">
+                             <span>Net Credits Projected</span>
+                             <span className="text-white">{(totalValue - Math.floor(totalValue * 0.05)).toLocaleString()} GX</span>
+                          </div>
+                       </div>
 
-                      <div className="flex gap-4">
-                         <div className="flex-1">
-                            <div className="flex justify-between items-end mb-2">
-                               <label className="text-[10px] font-black text-slate-400 uppercase italic">Signal Strength (Quantity)</label>
-                               <span className="text-[8px] font-black text-slate-600 uppercase">Max Avail: {selectedToSell.count}</span>
-                            </div>
-                            <div className="flex gap-2">
-                               <div className="flex-1 relative">
-                                  <input 
-                                    type="number" 
-                                    value={sellCount}
-                                    min="1"
-                                    max={selectedToSell.count}
-                                    onChange={(e) => setSellCount(Math.max(1, Math.min(selectedToSell.count, parseInt(e.target.value) || 1)))}
-                                    className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
-                                  />
-                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">Qty:</div>
-                               </div>
-                               <div className="flex flex-col gap-1">
-                                  <button onClick={() => setSellCount(prev => Math.min(selectedToSell.count, prev + 1))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">+</button>
-                                  <button onClick={() => setSellCount(prev => Math.max(1, prev - 1))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">-</button>
-                                  <button onClick={() => setSellCount(selectedToSell.count)} className="px-2 bg-amber-500/20 text-amber-500 text-[6px] font-black border border-amber-500/20 rounded-md">MAX</button>
-                               </div>
-                            </div>
-                         </div>
+                       <button
+                         onClick={() => {
+                           listItem(selectedToSell, totalValue, sellCount);
+                           setIsListingModalOpen(false);
+                         }}
+                         className="w-full bg-amber-500 text-black py-5 rounded-2xl font-black uppercase italic text-lg shadow-[0_10px_30px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all outline-none"
+                       >
+                         CONFIRM BROADCAST
+                       </button>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
 
-                         <div className="flex-1">
-                            <div className="flex justify-between items-end mb-2">
-                              <label className="text-[10px] font-black text-slate-400 uppercase italic">Exchange Value (GX)</label>
-                              {master?.cost && <span className="text-[8px] font-black text-slate-600 uppercase">Sugg: {Math.floor(master.cost * 0.8)}</span>}
-                            </div>
-                            <div className="flex gap-2">
-                               <div className="flex-1 relative">
-                                  <input 
-                                    type="number" 
-                                    value={sellPrice}
-                                    onChange={(e) => setSellPrice(parseInt(e.target.value) || 0)}
-                                    className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-amber-500 transition-colors pl-12 rounded-2xl"
-                                  />
-                                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">GX:</div>
-                               </div>
-                               <div className="flex flex-col gap-1">
-                                  <button onClick={() => setSellPrice(prev => Math.floor(prev * 1.2))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">UP</button>
-                                  <button onClick={() => setSellPrice(prev => Math.max(1, Math.floor(prev * 0.8)))} className="px-3 bg-white/5 hover:bg-white/10 text-white text-[8px] font-black border border-white/10 rounded-md">DN</button>
-                               </div>
-                            </div>
-                         </div>
-                      </div>
+      {/* PURCHASE MODAL PORTAL (BUY) */}
+      {isPurchaseModalOpen && selectedToBuy && createPortal(
+        (() => {
+          const master = getMasterData(selectedToBuy.item);
+          const rarity = master?.rarity || 'Common';
+          const totalCost = selectedToBuy.price * buyCount;
+          
+          return (
+            <div className="fixed inset-0 z-[500] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 md:p-4 overflow-hidden">
+               <div className="bg-slate-900 border-[3px] border-cyan-500/20 p-5 md:p-8 w-full max-w-sm md:max-w-md relative shadow-2xl animate-in zoom-in duration-200 rounded-3xl transition-all max-h-[90vh] flex flex-col overflow-hidden">
+                  <div className="overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                    
+                    <button 
+                      onClick={() => setIsPurchaseModalOpen(false)}
+                      className="absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full z-50"
+                    >
+                      <X size={20} />
+                    </button>
 
-                     <div className="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-amber-500">
-                        <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
-                           <span>Terminal Processing Tax (5%)</span>
-                           <span>- {Math.floor(sellPrice * 0.05)} GX</span>
+                    <div className="text-center mb-6 relative mt-4">
+                       <div className={`w-24 h-24 mx-auto bg-black border-4 border-black flex items-center justify-center text-6xl mb-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
+                          {selectedToBuy.item.icon}
+                       </div>
+                       <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{selectedToBuy.item.name}</h2>
+                       <p className="text-[10px] font-black text-cyan-500 uppercase mt-2 tracking-widest">Initiating Asset Acquisition</p>
+                    </div>
+
+                    <div className="space-y-6 relative pb-4">
+                        <div>
+                           <label className="text-[10px] font-black text-slate-400 uppercase italic block mb-2 text-center">Target Quantity</label>
+                           <div className="flex gap-2">
+                              <div className="flex-1 relative">
+                                 <input 
+                                   type="number" 
+                                   value={buyCount}
+                                   min="1"
+                                   max={selectedToBuy.quantity}
+                                   onChange={(e) => setBuyCount(Math.max(1, Math.min(selectedToBuy.quantity, parseInt(e.target.value) || 1)))}
+                                   className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-cyan-500 transition-colors pl-12 rounded-2xl"
+                                 />
+                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">Qty:</div>
+                              </div>
+                              <button onClick={() => setBuyCount(selectedToBuy.quantity)} className="px-4 bg-cyan-500/10 text-cyan-500 text-[10px] font-black border border-cyan-500/20 rounded-2xl">MAX</button>
+                           </div>
                         </div>
-                        <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-amber-500/20">
-                           <span>Projected Yield</span>
-                           <span className="text-white">{(sellPrice - Math.floor(sellPrice * 0.05)).toLocaleString()} GX</span>
-                        </div>
-                     </div>
 
-                     <button
-                       onClick={() => {
-                         listItem(selectedToSell, sellPrice, sellCount);
-                         setIsListingModalOpen(false);
-                       }}
-                       className="w-full bg-amber-500 text-black py-5 rounded-2xl font-black uppercase italic text-lg shadow-[0_10px_30px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all outline-none ring-offset-2 focus:ring-2 ring-amber-500"
-                     >
-                       CONFIRM BROADCAST
-                     </button>
+                       <div className="bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20 text-cyan-500">
+                          <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
+                             <span>Signal Strength: {buyCount} Unit(s) @ {selectedToBuy.price} GX</span>
+                             <span>{totalCost.toLocaleString()} GX</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-cyan-500/20">
+                             <span>Total Credits Required</span>
+                             <span className="text-white">{totalCost.toLocaleString()} GX</span>
+                          </div>
+                       </div>
+
+                       <button
+                         onClick={() => {
+                           purchaseItem(selectedToBuy, buyCount);
+                           setIsPurchaseModalOpen(false);
+                         }}
+                         disabled={player.tokens < totalCost}
+                         className={`w-full py-5 rounded-2xl font-black uppercase italic text-lg transition-all outline-none ${player.tokens >= totalCost ? 'bg-cyan-400 text-black shadow-[0_10px_30px_rgba(34,211,238,0.2)] hover:scale-[1.02] active:scale-95' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed'}`}
+                       >
+                         {player.tokens >= totalCost ? 'AUTHORIZE TRANSFER' : 'INSUFFICIENT CREDITS'}
+                       </button>
+                    </div>
                   </div>
                </div>
             </div>

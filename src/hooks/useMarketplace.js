@@ -46,25 +46,40 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     claimPayouts();
   }, [user?.uid, player?.level, db, appId, addLog, syncPlayer, player?.tokens]); 
 
-  const purchaseMarketItem = useCallback(async (listing) => {
-    if (!player || player.tokens < listing.price) return addLog("Out of GX!");
+  const purchaseMarketItem = useCallback(async (listing, requestedQty = 1) => {
+    const qty = Math.min(requestedQty, listing.quantity || 1);
+    const totalCost = listing.price * qty;
+
+    if (!player || player.tokens < totalCost) return addLog("Out of GX!");
 
     try {
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id));
+      const remainingQty = (listing.quantity || 1) - qty;
+      
+      if (remainingQty <= 0) {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id));
+      } else {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id), {
+          ...listing,
+          quantity: remainingQty
+        });
+      }
 
       const returnedItems = [];
-      const qty = listing.quantity || 1;
+      const timestamp = Date.now();
       for (let i = 0; i < qty; i++) {
-        returnedItems.push({ ...listing.item, id: `${listing.item.id?.split('_')[0]}_${Date.now()}_${i}` });
+        returnedItems.push({ 
+          ...listing.item, 
+          id: `${listing.item.id?.split('_')[0]}_${timestamp}_${i}` 
+        });
       }
 
       const newInventory = [...(player.inventory || []), ...returnedItems];
       await syncPlayer({
-        tokens: player.tokens - listing.price,
+        tokens: player.tokens - totalCost,
         inventory: newInventory
       });
 
-      const payout = Math.floor(listing.price * 0.95);
+      const payout = Math.floor(totalCost * 0.95);
       const payoutRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'payouts'));
       await setDoc(payoutRef, {
         recipientEmail: listing.sellerEmail,
@@ -74,7 +89,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         createdAt: Date.now()
       });
 
-      addLog(`🤝 Market Deal: Acquired ${qty}x ${listing.item.name} for ${listing.price} GX.`);
+      addLog(`🤝 Market Deal: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
@@ -82,7 +97,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     }
   }, [player, syncPlayer, addLog, db, appId, playSFX, SOUNDS]);
 
-  const listMarketItem = useCallback(async (item, price, quantity = 1) => {
+  const listMarketItem = useCallback(async (item, totalPrice, quantity = 1) => {
     if (!user || !player) return;
 
     try {
@@ -104,20 +119,19 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
       await syncPlayer({ inventory: remainingInventory });
 
+      const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
       const listRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
       await setDoc(listRef, {
         sellerUid: user.uid,
         sellerEmail: user.email || user.uid,
         sellerName: player.name,
-        // If it's a stack, we store the first item as template + quantity
-        // The purchase logic needs to handle adding 'quantity' items back.
         item: itemsToConsume[0], 
         quantity: quantity,
-        price: price, // This is price per stack or per item? User said "put into sale", usually price is per stack in these UIs.
+        price: pricePerUnit, // Price per unit
         createdAt: Date.now()
       });
 
-      addLog(`📡 Broadcast: ${quantity}x ${itemsToConsume[0].name} listed for ${price} GX.`);
+      addLog(`📡 Broadcast: ${quantity}x ${itemsToConsume[0].name} listed for ${totalPrice} GX.`);
     } catch (e) {
       console.error(e);
       addLog("Broadcasting failed.");
@@ -134,8 +148,12 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
       const returnedItems = [];
       const qty = listing.quantity || 1;
+      const timestamp = Date.now();
       for (let i = 0; i < qty; i++) {
-        returnedItems.push({ ...listing.item, id: `${listing.item.id?.split('_')[0]}_${Date.now()}_${i}` });
+        returnedItems.push({ 
+          ...listing.item, 
+          id: `${listing.item.id?.split('_')[0]}_${timestamp}_${i}` 
+        });
       }
 
       await syncPlayer({ inventory: [...(player.inventory || []), ...returnedItems] });

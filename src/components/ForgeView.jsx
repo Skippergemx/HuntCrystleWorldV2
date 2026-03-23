@@ -49,7 +49,7 @@ export const ForgeView = React.memo(() => {
           
           // Check materials
           const hasMaterials = materials.every(mat => {
-            const countInInv = player.inventory?.filter(i => i.id === mat.id).length || 0;
+            const countInInv = player.inventory?.filter(i => i.id?.split('_')[0] === mat.id).length || 0;
             return countInInv >= mat.count;
           });
 
@@ -98,7 +98,7 @@ export const ForgeView = React.memo(() => {
                 <div className="bg-slate-50 border-2 border-black/5 p-3 rounded flex flex-wrap gap-2">
                   {materials.map(mat => {
                     const loot = LOOTS.find(l => l.id === mat.id);
-                    const countInInv = player.inventory?.filter(i => i.id === mat.id).length || 0;
+                    const countInInv = player.inventory?.filter(i => i.id?.split('_')[0] === mat.id).length || 0;
                     const isMet = countInInv >= mat.count;
                     return (
                       <div key={mat.id} className={`flex items-center gap-2 px-2 py-1 border-2 rounded shrink-0 ${isMet ? 'bg-emerald-50 border-emerald-500/30' : 'bg-red-50 border-red-500/30'}`}>

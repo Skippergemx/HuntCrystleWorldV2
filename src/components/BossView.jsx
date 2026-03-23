@@ -166,7 +166,7 @@ export const BossView = () => {
 
                 <div className="flex flex-col items-center p-1.5 md:p-3 bg-black/60 border-2 md:border-4 border-black transform -rotate-1 shadow-[3px_3px_0_rgba(0,0,0,1)]">
                    <p className="text-[7px] md:text-[10px] font-black text-red-500 uppercase italic opacity-70 mb-0.5 md:mb-1">Damage Record</p>
-                   <p className="text-xl md:text-4xl font-black text-white italic drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{(player.totalBossDamage || 0).toLocaleString()}</p>
+                   <p className="text-xl md:text-4xl font-black text-white italic drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">{Math.floor(player.totalBossDamage || 0).toLocaleString()}</p>
                 </div>
             </div>
         </div>
@@ -223,8 +223,8 @@ export const BossView = () => {
                 
                 <div className="w-full group">
                    <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
-                      <span className="text-[7px] md:text-[9px] font-black text-cyan-500 uppercase italic">Biological Core</span>
-                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.round(player.hp)}/{player.maxHp}</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-cyan-500 uppercase italic">Biological Core</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
                    </div>
                    <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] md:shadow-[-6px_6px_0_rgba(0,0,0,1)] transition-all overflow-hidden flex items-center">
                       <div className="h-full bg-gradient-to-r from-cyan-800 via-cyan-500 to-cyan-400 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
