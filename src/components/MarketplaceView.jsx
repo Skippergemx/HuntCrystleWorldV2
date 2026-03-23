@@ -247,7 +247,7 @@ export const MarketplaceView = React.memo(() => {
                          {l.item.icon}
                       </div>
                       <div>
-                         <h4 className="text-sm font-black text-white uppercase italic leading-none">{l.item.name}</h4>
+                         <h4 className="text-sm font-black text-white uppercase italic leading-none">{l.item.name}{l.quantity > 1 && <span className="text-amber-500 font-bold not-italic ml-1 opacity-80">x{l.quantity}</span>}</h4>
                          <p className="text-[10px] font-black text-amber-500 mt-1 uppercase italic">{l.price} GX LISTED</p>
                          <p className="text-[7px] font-bold text-slate-600 uppercase mt-1">
                            Listed {new Date(l.createdAt).toLocaleDateString()}

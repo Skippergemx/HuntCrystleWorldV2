@@ -35,7 +35,7 @@ export const useGame = () => {
 const EQUIPMENT = ITEMS.filter(i => i.category === 'Equipment');
 const LOOTS = ITEMS.filter(i => i.category === 'Loot');
 const FRUITS = ITEMS.filter(i => i.category === 'Fruit');
-const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined && i.id !== 'crystle_blade' && i.id !== 'neon_plate');
+const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined);
 
 export const GameProvider = ({ children, user }) => {
   const [logs, setLogs] = useState(["Synchronizing with Metaverse..."]);
