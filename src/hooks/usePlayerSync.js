@@ -32,6 +32,9 @@ export const usePlayerSync = (user, db, appId) => {
                 if (data.dragonAnimationEnabled === undefined) data.dragonAnimationEnabled = true;
                 if (data.performanceMode === undefined) data.performanceMode = false;
                 if (data.maxDepth === undefined) data.maxDepth = 1;
+                if (!data.recipes || data.recipes.length === 0) data.recipes = ['crystle_blade'];
+                if (!data.selectedPotionId) data.selectedPotionId = 'hp_potion';
+                if (!data.selectedScrollId) data.selectedScrollId = 'auto_scroll';
                 
                 setPlayer(data);
             } else {
@@ -51,6 +54,7 @@ export const usePlayerSync = (user, db, appId) => {
                     equipped: {
                         Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null
                     },
+                    recipes: ['crystle_blade'],
                     inventory: [],
                     totalBossDamage: 0,
                     maxDepth: 1,
@@ -60,7 +64,9 @@ export const usePlayerSync = (user, db, appId) => {
                     dragon: { level: 1, fruitsFed: 0 },
                     gemxAvatar: 'gemx (1).gif',
                     dragonAnimationEnabled: true,
-                    performanceMode: false
+                    performanceMode: false,
+                    selectedPotionId: 'hp_potion',
+                    selectedScrollId: 'auto_scroll'
                 };
                 setPlayer(newPlayer);
                 // Prompt initial sync for first-time profile creation

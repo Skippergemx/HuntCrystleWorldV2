@@ -14,7 +14,7 @@ import { useGame } from '../contexts/GameContext';
 export const InventoryView = React.memo(() => {
   const { player, actions, adventure, openGuide, ITEMS, CRYSTLE_RECIPES } = useGame();
   const { setView } = adventure;
-  const { sellItem, unequipItem } = actions;
+  const { sellItem, unequipItem, learnRecipe } = actions;
   
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
@@ -22,7 +22,7 @@ export const InventoryView = React.memo(() => {
   // Robust Item Data Resolver - Now powered by unified ITEMS list
   const getMasterData = (item) => {
     if (!item) return null;
-    const cleanId = item.id?.split('_')[0];
+    const cleanId = item.id?.replace(/(_\d+)+$/, '');
     
     // 1. Check Master Items DB
     const fromItems = ITEMS.find(i => i.id === cleanId);
@@ -117,18 +117,28 @@ export const InventoryView = React.memo(() => {
 
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
              {(() => {
-                const stacked = processedInventory.reduce((acc, item) => {
-                  const baseId = item.id?.split('_')[0] || item.name;
-                  const key = `${baseId}-${item.isEquipped}`;
-                  const existing = acc.find(i => `${i.id?.split('_')[0] || i.name}-${i.isEquipped}` === key);
-                  
-                  if (existing && !item.isEquipped) {
-                     existing.count += 1;
-                  } else {
-                     acc.push({ ...item, count: 1 });
-                  }
-                  return acc;
-                }, []);
+                 const stacked = processedInventory.reduce((acc, item) => {
+                   // Robust master-data resolution for stacking
+                   const cleanId = item.id?.replace(/(_\d+)+$/, '');
+                   const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
+                   const baseId = master?.id || cleanId || item.name;
+                   
+                   // Force isEquipped to boolean to prevent undefined vs false key mismatch
+                   const key = `${baseId}-${!!item.isEquipped}`;
+                   const existing = acc.find(i => {
+                      const iCleanId = i.id?.replace(/(_\d+)+$/, '');
+                      const iMaster = ITEMS.find(it => it.id === iCleanId || it.name?.toLowerCase() === i.name?.toLowerCase());
+                      const iBaseId = iMaster?.id || iCleanId || i.name;
+                      return `${iBaseId}-${!!i.isEquipped}` === key;
+                   });
+                   
+                   if (existing && !item.isEquipped) {
+                      existing.count += 1;
+                   } else {
+                      acc.push({ ...item, count: 1 });
+                   }
+                   return acc;
+                 }, []);
 
                 return stacked.length > 0 ? (
                   stacked.map((item, idx) => {
@@ -147,11 +157,11 @@ export const InventoryView = React.memo(() => {
                     }
 
                     return (
-                      <div key={`${item.id}-${idx}`} className={`group flex flex-col md:flex-row items-stretch md:items-center gap-4 p-3 border-2 transition-all ${item.isEquipped ? 'bg-cyan-50 border-cyan-500/40 shadow-[4px_4px_0_rgba(34,211,238,0.1)]' : 'bg-slate-50 border-slate-100 hover:border-black/20 hover:bg-white hover:translate-x-1'}`}>
+                      <div key={`${item.id}-${idx}`} className={`group flex flex-col md:flex-row items-stretch md:items-center gap-4 p-3 border-2 transition-all ${item.type === 'Schematic' ? 'bg-[#0b1b2b] border-cyan-500/50 shadow-[4px_4px_0_rgba(6,182,212,0.1)]' : item.isEquipped ? 'bg-cyan-50 border-cyan-500/40 shadow-[4px_4px_0_rgba(34,211,238,0.1)]' : 'bg-slate-50 border-slate-100 hover:border-black/20 hover:bg-white hover:translate-x-1'}`}>
                         <div className="flex items-center gap-3">
                            <div className="relative shrink-0">
-                              <div className={`w-14 h-14 border-2 border-black flex items-center justify-center bg-white shadow-[3px_3px_0_rgba(0,0,0,1)] transform group-hover:-rotate-3 transition-transform ${rarity === 'Legendary' ? 'border-amber-400 shadow-[3px_3px_0_rgba(245,158,11,1)]' : rarity === 'Epic' ? 'border-purple-400 shadow-[3px_3px_0_rgba(168,85,247,1)]' : ''}`}>
-                                 <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">{icon}</span>
+                              <div className={`w-14 h-14 border-2 border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform group-hover:-rotate-3 transition-transform ${item.type === 'Schematic' ? 'bg-cyan-900 border-cyan-400' : rarity === 'Legendary' ? 'border-amber-400 shadow-[3px_3px_0_rgba(245,158,11,1)]' : rarity === 'Epic' ? 'border-purple-400 shadow-[3px_3px_0_rgba(168,85,247,1)]' : 'bg-white'}`}>
+                                 <span className={`text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)] ${item.type === 'Schematic' ? 'text-cyan-200' : ''}`}>{icon}</span>
                               </div>
                               {item.count > 1 && (
                                 <span className="absolute -bottom-1 -right-1 bg-black text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm border-2 border-white/20 z-10">x{item.count}</span>
@@ -160,13 +170,14 @@ export const InventoryView = React.memo(() => {
                            <div className="flex flex-col min-w-0">
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                  {item.isEquipped && <div className="bg-black text-white px-1 py-0.5 text-[6px] font-black uppercase flex items-center gap-1 rounded-sm"><ShieldCheck size={8} /> ACTIVE</div>}
-                                 <h4 className="text-sm font-black uppercase italic tracking-tighter leading-none">{item.name || 'Unknown Item'}</h4>
+                                 {item.type === 'Schematic' && <div className="bg-cyan-500 text-black px-1 py-0.5 text-[6px] font-black uppercase flex items-center gap-1 rounded-sm">UNPRINTED BLUEPRINT</div>}
+                                 <h4 className={`text-sm font-black uppercase italic tracking-tighter leading-none ${item.type === 'Schematic' ? 'text-cyan-100' : 'text-black'}`}>{item.name || 'Unknown Item'}</h4>
                                  <div className="flex gap-1">
-                                    <span className="text-[7px] font-black px-1 border border-black/10 bg-slate-100 text-slate-400 uppercase">[{item.type || master.type || 'TECH'}]</span>
-                                    <span className={`text-[7px] font-black px-1 border border-black/10 uppercase ${rarity === 'Legendary' ? 'bg-amber-400 text-black' : rarity === 'Epic' ? 'bg-purple-600 text-white' : 'bg-slate-200 text-black'}`}>{rarity}</span>
+                                    <span className={`text-[7px] font-black px-1 border border-black/10 uppercase ${item.type === 'Schematic' ? 'bg-cyan-950 text-cyan-500' : 'bg-slate-100 text-slate-400'}`}>[{item.type || master.type || 'TECH'}]</span>
+                                    <span className={`text-[7px] font-black px-1 border border-black/10 uppercase ${item.type === 'Schematic' ? 'bg-cyan-400 text-black' : rarity === 'Legendary' ? 'bg-amber-400 text-black' : rarity === 'Epic' ? 'bg-purple-600 text-white' : 'bg-slate-200 text-black'}`}>{rarity}</span>
                                  </div>
                               </div>
-                              <p className="text-[8px] font-bold text-slate-400 uppercase leading-none italic mb-2">"{master.description || master.desc || item.desc || "Standard issue tech fragment."}"</p>
+                              <p className={`text-[8px] font-bold uppercase leading-none italic mb-2 ${item.type === 'Schematic' ? 'text-cyan-600' : 'text-slate-400'}`}>"{master.description || master.desc || item.desc || "Standard issue tech fragment."}"</p>
                               <div className="flex flex-wrap gap-x-3 gap-y-1">
                                  {Object.entries(master.stats || item.stats || {}).map(([s, v]) => v !== 0 && (
                                    <div key={s} className="flex items-center gap-1">
@@ -190,22 +201,27 @@ export const InventoryView = React.memo(() => {
                               <span className="text-[12px] font-black italic text-amber-600 leading-none">{basePrice} GX</span>
                               <span className="text-[6px] font-bold text-slate-300 uppercase tracking-widest mt-0.5">Yield Per Unit</span>
                            </div>
-                           <div className="flex gap-1">
-                              <button onClick={() => {
-                                   if (item.isEquipped) {
-                                      const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
-                                      if (slot) unequipItem(slot);
-                                   }
-                                   sellItem(item.id, 1);
-                                }}
-                                className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                              >Sell 1</button>
-                              {!item.isEquipped && item.count > 1 && (
-                                <button onClick={() => sellItem(item.id, item.count)}
-                                  className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                                >Sell All</button>
-                              )}
-                           </div>
+                            <div className="flex gap-1">
+                               {item.type === 'Schematic' && (
+                                 <button onClick={() => learnRecipe(item)}
+                                   className="px-3 py-1.5 bg-cyan-500 text-black hover:bg-cyan-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                 >Learn</button>
+                               )}
+                               <button onClick={() => {
+                                    if (item.isEquipped) {
+                                       const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
+                                       if (slot) unequipItem(slot);
+                                    }
+                                    sellItem(item.id, 1);
+                                 }}
+                                 className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                               >Sell 1</button>
+                               {!item.isEquipped && item.count > 1 && (
+                                 <button onClick={() => sellItem(item.id, item.count)}
+                                   className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                 >Sell All</button>
+                               )}
+                            </div>
                         </div>
                       </div>
                     );

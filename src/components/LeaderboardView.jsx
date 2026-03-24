@@ -43,8 +43,27 @@ export const LeaderboardView = React.memo(() => {
 
       <Header title="ELITE HALL OF FAME" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} icon={<Trophy className="text-amber-400" />} />
 
+      {/* Personal Sticky Rank - Moved to TOP below header */}
+      {selfRank && (
+        <div className="w-full bg-cyan-600 border-4 border-black p-3 mb-4 flex justify-between items-center shadow-[6px_6px_0_rgba(0,0,0,0.5)] relative z-20 animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-3">
+             <div className="w-8 h-8 bg-black flex items-center justify-center border-2 border-cyan-400 font-black italic text-cyan-400">
+               #{selfRank}
+             </div>
+             <div>
+               <p className="text-[8px] font-black text-white/70 uppercase italic tracking-widest leading-none">Your Standing</p>
+               <div className="flex items-center gap-3">
+                 <p className="text-xs font-black text-white uppercase italic tracking-tighter">Ready to Ascend?</p>
+                 <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
+               </div>
+             </div>
+          </div>
+          <Trophy size={20} className="text-cyan-200 animate-bounce" />
+        </div>
+      )}
+
       {/* Hero Tabs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 mt-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 mt-4 relative z-10">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -61,7 +80,7 @@ export const LeaderboardView = React.memo(() => {
       </div>
 
       {/* Hall of Fame List */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 pb-20">
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 pb-6 relative z-10">
         {sortedData.map((entry, idx) => {
           const isSelf = entry.uid === (user?.email || user?.uid);
           const isTop3 = idx < 3;
@@ -115,25 +134,6 @@ export const LeaderboardView = React.memo(() => {
           );
         })}
       </div>
-
-      {/* Personal Sticky Rank */}
-      {selfRank && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] bg-cyan-600 border-4 border-black p-3 flex justify-between items-center shadow-[6px_6px_0_rgba(0,0,0,0.5)] z-20">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-black flex items-center justify-center border-2 border-cyan-400 font-black italic text-cyan-400">
-               #{selfRank}
-             </div>
-             <div>
-               <p className="text-[8px] font-black text-white/70 uppercase italic tracking-widest leading-none">Your Standing</p>
-               <div className="flex items-center gap-3">
-                 <p className="text-xs font-black text-white uppercase italic tracking-tighter">Ready to Ascend?</p>
-                 <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} orientation="horizontal" />
-               </div>
-             </div>
-          </div>
-          <Trophy size={20} className="text-cyan-200 animate-bounce" />
-        </div>
-      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }

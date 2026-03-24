@@ -27,7 +27,7 @@ export const GearView = React.memo(() => {
 
   const getBaseItemData = (item) => {
     if (!item) return null;
-    const baseId = item.id?.split('_')[0];
+    const baseId = item.id?.replace(/(_\d+)+$/, '');
     
     // Check Master Items DB
     const fromItems = ITEMS.find(i => i.id === baseId);
@@ -55,8 +55,14 @@ export const GearView = React.memo(() => {
     
     // Grouping by Base ID for stacking
     return raw.reduce((acc, item) => {
-      const baseId = item.id?.split('_')[0];
-      const existing = acc.find(i => i.id?.split('_')[0] === baseId);
+      const base = getBaseItemData(item);
+      const baseId = base?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
+      const existing = acc.find(i => {
+        const iBase = getBaseItemData(i);
+        const iBaseId = iBase?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
+        return iBaseId === baseId;
+      });
+      
       if (existing) {
         existing.count = (existing.count || 1) + 1;
       } else {

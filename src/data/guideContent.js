@@ -19,8 +19,11 @@ export const GUIDE_CONTENT = {
     { topic: 'Fruit Scavenging', text: 'Monsters in the Dragons Ground have a 15% chance to drop Mystic Fruits. Clear floors quickly to stockpile reserves.' }
   ],
   forge: [
-    { topic: 'Crystle Forging', text: 'Combine raw materials and GX to create powerful Crystle-tier equipment. Forged items are more powerful than standard shop gear.' },
-    { topic: 'Success Calculus', text: 'Success rate starts at 50% and improves based on your total DEX. High-tier gear has high failure risks—equip DEX gear before forging!' }
+    { topic: 'Crystle Forging', text: 'Combine raw materials and GX to create powerful Crystle-tier equipment. Forged items are significantly more powerful than standard shop gear.' },
+    { topic: 'Success Calculus', text: 'Success rate is exactly 50% + (DEX / 2). A high Dexterity stat is CRITICAL for high-tier forged gear. Always equip your best DEX gear before attempting a forge!' },
+    { topic: 'Schematic Discovery', text: 'Crystle Blade is your starter. Advanced blueprints like Neon Plate or Void Edge can ONLY be found as rare drops in deep dungeon floors (5+) or as elite rewards from Boss milestones.' },
+    { topic: 'Material Integrity', text: 'The Lab uses a strict material consumption protocol. If a forge fails, the GX and materials are CONSUMED by the energy spike. There are no partial refunds for failure.' },
+    { topic: 'High-Tier Crafting', text: 'Legendary blueprints like the Void Edge require materials found only in the deepest sectors. Use the marketplace to acquire rare components from other hunters if needed.' }
   ],
   shop: [
     { topic: 'Equipment Procurement', text: 'The shop provides basic and advanced gear. Note that Relics and forged Crystle items CANNOT be bought here—they must be found or crafted.' },

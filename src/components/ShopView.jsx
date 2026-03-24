@@ -16,17 +16,17 @@ export const ShopView = React.memo(() => {
       
       <div className="grid gap-6 relative z-10">
         {SHOP_ITEMS.map((item, index) => {
-          const isOwned = item.type !== 'Consumable' && player.equipped?.[item.type]?.id === item.id;
+          const isEquipped = item.type !== 'Consumable' && player.equipped?.[item.type]?.id === item.id;
           const isLocked = player.level < (item.reqLvl || 1);
           
           return (
             <div 
               key={item.id} 
-              className={`p-5 bg-white border-[4px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] flex justify-between items-center group transition-transform hover:-translate-y-1 ${index % 2 === 0 ? '-rotate-1' : 'rotate-1'} ${isOwned || isLocked ? 'opacity-70' : ''}`}
+              className={`p-5 bg-white border-[4px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] flex justify-between items-center group transition-transform hover:-translate-y-1 ${index % 2 === 0 ? '-rotate-1' : 'rotate-1'} ${isLocked ? 'opacity-70' : ''}`}
             >
               <div className="flex gap-4 items-center">
-              <div className={`w-12 h-12 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] ${isOwned || isLocked ? 'bg-slate-400 grayscale' : item.type === 'Weapon' ? 'bg-red-500' : item.type === 'Armor' ? 'bg-cyan-500' : item.type === 'Headgear' ? 'bg-blue-500' : item.type === 'Footwear' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
-                   {isOwned || isLocked ? <Lock size={24} className="text-white" /> : (
+              <div className={`w-12 h-12 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] ${isEquipped || isLocked ? 'bg-slate-400 grayscale' : item.type === 'Weapon' ? 'bg-red-500' : item.type === 'Armor' ? 'bg-cyan-500' : item.type === 'Headgear' ? 'bg-blue-500' : item.type === 'Footwear' ? 'bg-emerald-500' : 'bg-orange-500'}`}>
+                   {isEquipped || isLocked ? <Lock size={24} className="text-white" /> : (
                      <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
                        {item.icon || (
                          item.type === 'Weapon' ? <Sword size={24} className="text-white" /> : 
@@ -81,16 +81,16 @@ export const ShopView = React.memo(() => {
               </div>
               
               <div className="flex flex-col items-end gap-3">
-                <div className={`bg-amber-100 px-3 py-1 border-2 border-black transform rotate-3 relative shadow-sm ${isOwned || isLocked ? 'grayscale opacity-50' : ''}`}>
+                <div className={`bg-amber-100 px-3 py-1 border-2 border-black transform rotate-3 relative shadow-sm ${isLocked ? 'grayscale opacity-50' : ''}`}>
                    <span className="text-xs font-black text-black">{item.cost} GX</span>
-                   {!isOwned && !isLocked && <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[6px] font-black px-1 border border-black transform -rotate-12">NEW!</div>}
+                   {!isEquipped && !isLocked && <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[6px] font-black px-1 border border-black transform -rotate-12">NEW!</div>}
                 </div>
                 <button 
                   onClick={() => buyItem(item)} 
-                  disabled={isOwned || isLocked}
-                  className={`px-6 py-2 border-[3px] border-black font-black text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${isOwned || isLocked ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-cyan-400 text-black hover:bg-cyan-300 hover:scale-105 active:scale-95'}`}
+                  disabled={isLocked}
+                  className={`px-6 py-2 border-[3px] border-black font-black text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${isLocked ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-cyan-400 text-black hover:bg-cyan-300 hover:scale-105 active:scale-95'}`}
                 >
-                  {isOwned ? 'OWNED' : isLocked ? 'LOCKED' : item.type === 'Consumable' ? 'STOCK UP' : 'BUY NOW'}
+                  {isLocked ? 'LOCKED' : isEquipped ? 'EQUIPPED' : 'BUY UNIT'}
                 </button>
               </div>
             </div>

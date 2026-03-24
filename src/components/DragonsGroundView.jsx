@@ -4,12 +4,15 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const DragonsGroundView = React.memo(() => {
-  const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, summonDragon, openGuide } = useGame();
+  const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, actions, openGuide } = useGame();
   const { setView } = adventure;
   const { dragonTimeLeft } = gameLoop;
+  const { summonDragon } = actions;
 
-  const [gemx, setGemx] = useState(player.gemx || { level: 1, crystalsFed: 0 });
-  const [dragonStats, setDragonStats] = useState(player.dragon || { level: 1, fruitsFed: 0 });
+  // Use player record directly as source of truth to prevent sync bugs
+  const gemx = player.gemx || { level: 1, crystalsFed: 0 };
+  const dragonStats = player.dragon || { level: 1, fruitsFed: 0 };
+
   const [fruits, setFruits] = useState([]);
   const [monsters, setMonsters] = useState([]);
   const [message, setMessage] = useState(null);
@@ -68,7 +71,6 @@ export const DragonsGroundView = React.memo(() => {
         setMessage({ type: 'info', text: 'GEMX absorbed the crystal energy.' });
       }
 
-      setGemx({ level: newLevel, crystalsFed: newCrystalsFed });
       syncPlayer({ inventory: newInventory, gemx: { level: newLevel, crystalsFed: newCrystalsFed } });
     }
   };
@@ -97,36 +99,38 @@ export const DragonsGroundView = React.memo(() => {
         setMessage({ type: 'info', text: `Dragon enjoyed the ${dragonFruit.name}.` });
       }
 
-      setDragonStats({ level: newLevel, fruitsFed: newFruitsFed });
-      syncPlayer({ inventory: newInventory, dragon: { level: newLevel, fruitsFed: newFruitsFed } });
+      syncPlayer({ inventory: newInventory, dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } });
     }
   };
 
-  // Spawn and Move logic
+  // Spawn and Move logic (Dependency-free interval for smooth roaming)
   useEffect(() => {
     const timer = setInterval(() => {
       // 1. Spawn monsters (Cap at 15 for performance)
-      if (monsters.length < Math.min(15, gemx.level * 3)) {
-        if (Math.random() < 0.4) {
-          const spawnSide = Math.floor(Math.random() * 4);
-          let x, y;
-          if (spawnSide === 0) { x = -10; y = Math.random() * 100; }
-          else if (spawnSide === 1) { x = 110; y = Math.random() * 100; }
-          else if (spawnSide === 2) { x = Math.random() * 100; y = -10; }
-          else { x = Math.random() * 100; y = 110; }
+      setMonsters(prev => {
+        if (prev.length < Math.min(15, gemx.level * 3)) {
+          if (Math.random() < 0.4) {
+            const spawnSide = Math.floor(Math.random() * 4);
+            let x, y;
+            if (spawnSide === 0) { x = -10; y = Math.random() * 100; }
+            else if (spawnSide === 1) { x = 110; y = Math.random() * 100; }
+            else if (spawnSide === 2) { x = Math.random() * 100; y = -10; }
+            else { x = Math.random() * 100; y = 110; }
 
-          const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
-          setMonsters(prev => [...prev, {
-            id: 'monster_' + Date.now() + Math.random(),
-            icon: mProto.icon,
-            name: mProto.name,
-            x, y,
-            targetX: 10 + Math.random() * 80,
-            targetY: 10 + Math.random() * 80,
-            speed: 0.3 + Math.random() * 0.7
-          }]);
+            const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
+            return [...prev, {
+              id: 'monster_' + Date.now() + Math.random(),
+              icon: mProto.icon,
+              name: mProto.name,
+              x, y,
+              targetX: 10 + Math.random() * 80,
+              targetY: 10 + Math.random() * 80,
+              speed: 0.3 + Math.random() * 0.7
+            }];
+          }
         }
-      }
+        return prev;
+      });
 
       // 2. Move monsters and drop fruits
       setMonsters(prev => {
@@ -172,7 +176,7 @@ export const DragonsGroundView = React.memo(() => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [monsters, gemx.level, dragonStats.level, FRUITS]);
+  }, [gemx.level, FRUITS]);
 
   const collectFruit = (fruit) => {
     setFruits(prev => prev.filter(f => f.id !== fruit.id));
@@ -293,7 +297,7 @@ export const DragonsGroundView = React.memo(() => {
               </div>
               <div className="mt-2 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 2} ALL STATS</p>
+                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 5} ALL STATS</p>
                   {dragonTimeLeft > 0 ? (
                     <div className={`flex items-center gap-1 text-[8px] font-black text-white bg-black/40 px-2 py-0.5 rounded border border-${activeGemx.color}-500/30 animate-pulse`}>
                       <Clock size={10} className="text-white" />

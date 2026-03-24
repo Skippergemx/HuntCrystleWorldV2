@@ -1,0 +1,50 @@
+[
+  {
+    "id": "auto_scroll_3m",
+    "materials": [
+      { "id": "slum_scrap", "count": 10 },
+      { "id": "neon_dust", "count": 5 }
+    ],
+    "cost": 500
+  },
+  {
+    "id": "auto_scroll_6m",
+    "materials": [
+      { "id": "slum_scrap", "count": 15 },
+      { "id": "neon_filament", "count": 10 }
+    ],
+    "cost": 1000
+  },
+  {
+    "id": "auto_scroll_9m",
+    "materials": [
+      { "id": "canyon_iron", "count": 20 },
+      { "id": "engine_bolt", "count": 15 }
+    ],
+    "cost": 1500
+  },
+  {
+    "id": "auto_scroll_12m",
+    "materials": [
+      { "id": "canyon_iron", "count": 25 },
+      { "id": "turbo_charger", "count": 5 }
+    ],
+    "cost": 2500
+  },
+  {
+    "id": "mega_hp_potion",
+    "materials": [
+      { "id": "toxic_sludge", "count": 10 },
+      { "id": "bio_vial", "count": 5 }
+    ],
+    "cost": 500
+  },
+  {
+    "id": "ultra_hp_potion",
+    "materials": [
+      { "id": "toxic_sludge", "count": 15 },
+      { "id": "oil_drum", "count": 10 }
+    ],
+    "cost": 1500
+  }
+]

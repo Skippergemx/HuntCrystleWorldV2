@@ -123,6 +123,19 @@
   { "id": "neon_orange", "name": "Neon Orange", "icon": "🍊", "rarity": "Epic", "description": "Glowing citrus that enhances a dragon's natural abilities.", "type": "Fruit", "category": "Fruit", "sellValue": 1200, "exp": 10 },
   { "id": "crystle_pear", "name": "Crystle Pear", "icon": "🍏", "rarity": "Legendary", "description": "The ultimate fruit found only in the deepest parts of the Dragon Ground.", "type": "Fruit", "category": "Fruit", "sellValue": 5000, "exp": 25 },
 
-  { "id": "hp_potion", "name": "Healing Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 50% Max HP." },
-  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." }
+  { "id": "hp_potion", "name": "Small Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 10% Max HP." },
+  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
+  
+  { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
+  { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
+  { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },
+  { "id": "auto_scroll_12m", "name": "Auto-Hunt (12m)", "sellValue": 1400, "type": "Consumable", "category": "Consumable", "duration": 720000, "description": "12 minutes of autonomous hunting." },
+  
+  { "id": "mega_hp_potion", "name": "Mega Potion", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
+  { "id": "ultra_hp_potion", "name": "Ultra Potion", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
+
+  { "id": "schema_neon_plate", "name": "Schematic: Neon Chestplate", "rarity": "Uncommon", "icon": "📜", "sellValue": 500, "type": "Schematic", "category": "Loot", "recipeId": "neon_plate", "description": "Detailed blueprints for an advanced neon-infused chestplate." },
+  { "id": "schema_tech_visor", "name": "Schematic: Tech Visor", "rarity": "Common", "icon": "📜", "sellValue": 300, "type": "Schematic", "category": "Loot", "recipeId": "tech_visor", "description": "Optical engineering data for a high-tech visor." },
+  { "id": "schema_kinetic_boots", "name": "Schematic: Kinetic Boots", "rarity": "Uncommon", "icon": "📜", "sellValue": 450, "type": "Schematic", "category": "Loot", "recipeId": "kinetic_boots", "description": "Conceptual designs for energy-recycling footwear." },
+  { "id": "schema_void_edge", "name": "Schematic: Void Edge", "rarity": "Epic", "icon": "📜", "sellValue": 2500, "type": "Schematic", "category": "Loot", "recipeId": "void_edge", "description": "Forbidden geometry required to forge a blade that cuts space." }
 ]

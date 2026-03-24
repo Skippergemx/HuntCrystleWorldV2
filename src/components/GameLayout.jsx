@@ -30,6 +30,7 @@ import { MapView } from './MapView';
 import { AdminPanelView } from './AdminPanelView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { PvpRoomView } from './PvpRoomView';
+import { LaboratoryView } from './LaboratoryView';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
@@ -47,7 +48,7 @@ export const GameLayout = ({ onLogout }) => {
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, handleAttack } = combat;
-  const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle } = actions;
+  const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem } = actions;
   const { autoTimeLeft, buffTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
   const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX } = audio;
   const { marketplace, purchaseMarketItem, listMarketItem, cancelMarketListing } = market;
@@ -269,9 +270,13 @@ export const GameLayout = ({ onLogout }) => {
                       <Target size={9} /> {player.abilityPoints} PTS
                    </div>
                  )}
-                 <button onClick={onLogoutWrapper} className="p-1 md:p-1.5 bg-slate-900 border-[1.5px] border-black text-slate-500 shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] hover:text-red-500 rounded-md group transition-all">
-                    <Lock size={10} md:size={14} className="group-hover:rotate-12" />
-                 </button>
+                  <button 
+                    onClick={onLogoutWrapper} 
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
+                  >
+                     <Lock size={10} md:size={14} className="group-hover:rotate-12" />
+                     <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
+                  </button>
               </div>
             </div>
 
@@ -315,9 +320,11 @@ export const GameLayout = ({ onLogout }) => {
                   </div>
                </div>
                <div className="flex items-center gap-2 md:gap-3">
-                  <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
+                  <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[120px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
                      <Star size={10} md:size={14} className="text-cyan-400" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.xp)}</span>
+                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">
+                        {Math.floor(player.xp)} / {getXpRequired(player.level)}
+                     </span>
                   </div>
                   <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
                      <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
@@ -422,6 +429,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'dragons_ground' && (
             <DragonsGroundView />
+          )}
+
+          {view === 'laboratory' && (
+            <LaboratoryView />
           )}
 
         </div>

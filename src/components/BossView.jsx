@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle } from 'lucide-react';
+import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -30,12 +30,27 @@ export const BossView = () => {
 
   const { view, setView, enemyFlinch } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt } = combat;
-  const { handleHeal, activateAutoScroll } = actions;
+  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
   const { autoTimeLeft, dragonTimeLeft } = gameLoop;
 
   const isAutoActive = autoTimeLeft > 0;
   const isStunned = stunTimeLeft > 0;
   const isMissed = missTimeLeft > 0;
+
+  const currentPotionCount = React.useMemo(() => {
+    const sel = player.selectedPotionId || 'hp_potion';
+    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    return sel === 'hp_potion' ? invCount + (player.potions || 0) : invCount;
+  }, [player.selectedPotionId, player.inventory, player.potions]);
+
+  const currentScrollCount = React.useMemo(() => {
+    const sel = player.selectedScrollId || 'auto_scroll';
+    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
+  }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
+
+  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || (player.inventory || []).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || (player.inventory || []).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}>
@@ -74,27 +89,47 @@ export const BossView = () => {
 
         <div className="flex flex-col items-end gap-1.5 md:gap-3 scale-90 sm:scale-100 origin-top-right">
             <div className="flex gap-2 md:gap-3">
-                <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[2px] md:border-[3px] border-black px-3 py-1.5 md:px-5 md:py-2.5 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
-                    <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-                    <Coffee size={14} className="text-white group-hover:scale-110 transition-transform relative z-10 md:w-[18px] md:h-[18px]" />
-                    <div className="flex flex-col items-start bg-transparent leading-none gap-0.5 relative z-10">
-                        <span className="text-[6px] md:text-[8px] font-black uppercase text-white/70 italic">Heal</span>
-                        <span className="text-xs md:text-sm font-black text-white italic">{player.potions || 0}</span>
-                    </div>
-                </button>
+                <div className="flex flex-col gap-1 items-end">
+                    <button onClick={handleHeal} disabled={currentPotionCount <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[2px] md:border-[3px] border-black px-3 py-1.5 md:px-5 md:py-2.5 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
+                        <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
+                        <Coffee size={14} className="text-white group-hover:scale-110 transition-transform relative z-10 md:w-[18px] md:h-[18px]" />
+                        <div className="flex flex-col items-start bg-transparent leading-none gap-0.5 relative z-10">
+                            <span className="text-[6px] md:text-[8px] font-black uppercase text-white/70 italic">
+                                {player.selectedPotionId === 'hp_potion' ? 'SMALL' : player.selectedPotionId?.replace('_hp_potion', '').toUpperCase() || 'HEAL'}
+                            </span>
+                            <span className="text-xs md:text-sm font-black text-white italic">{currentPotionCount}</span>
+                        </div>
+                    </button>
+                    <button onClick={cyclePotion} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">
+                       <RefreshCw size={8} /> SWAP
+                    </button>
+                </div>
                 
                 <div className="flex flex-col gap-1.5 md:gap-2 items-end">
-                  {player.autoScrolls > 0 && !isAutoActive && (
-                    <button 
-                      onClick={() => activateAutoScroll(view)} 
-                      className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[2px] md:border-[3px] border-black px-2 md:px-5 py-1 md:py-2.5 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group"
-                    >
-                      <MousePointer size={10} className="md:w-5 md:h-5 text-black group-hover:scale-110 transition-transform" />
-                      <div className="flex flex-col items-start bg-transparent leading-none">
-                        <span className="text-[6px] md:text-[8px] font-black uppercase text-black/70 italic">Link</span>
-                        <span className="text-[10px] md:text-sm font-black text-black italic">{player.autoScrolls}</span>
-                      </div>
-                    </button>
+                  {hasAnyScrolls && !isAutoActive && (
+                    <div className="flex flex-col gap-1 items-end">
+                      <button 
+                        onClick={() => activateAutoScroll(view)} 
+                        className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[2px] md:border-[3px] border-black px-2 md:px-5 py-1 md:py-2.5 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group"
+                      >
+                        <MousePointer size={10} className="md:w-5 md:h-5 text-black group-hover:scale-110 transition-transform" />
+                        <div className="flex flex-col items-start bg-transparent leading-none">
+                          <span className="text-[6px] md:text-[8px] font-black uppercase text-black/70 italic">
+                             {
+                               player.selectedScrollId === 'auto_scroll' ? '1M AUTO' :
+                               player.selectedScrollId === 'auto_scroll_3m' ? '3M AUTO' :
+                               player.selectedScrollId === 'auto_scroll_6m' ? '6M AUTO' :
+                               player.selectedScrollId === 'auto_scroll_9m' ? '9M AUTO' :
+                               player.selectedScrollId === 'auto_scroll_12m' ? '12M AUTO' : 'LINK'
+                             }
+                          </span>
+                          <span className="text-[10px] md:text-sm font-black text-black italic">{currentScrollCount}</span>
+                        </div>
+                      </button>
+                      <button onClick={cycleScroll} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">
+                         <RefreshCw size={8} /> SWAP
+                      </button>
+                    </div>
                   )}
                 </div>
             </div>

@@ -69,7 +69,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       for (let i = 0; i < qty; i++) {
         returnedItems.push({ 
           ...listing.item, 
-          id: `${listing.item.id?.split('_')[0]}_${timestamp}_${i}` 
+          id: `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${i}` 
         });
       }
 
@@ -101,17 +101,18 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     if (!user || !player) return;
 
     try {
-      const baseId = item.id?.split('_')[0];
+      const baseId = item.id?.replace(/(_\d+)+$/, '');
+      
+      // Select the exact amount of items to remove
       const itemsToConsume = [];
-      const remainingInventory = [];
       let found = 0;
-
-      player.inventory.forEach(invItem => {
-         if (invItem.id?.split('_')[0] === baseId && found < quantity) {
+      const remainingInventory = (player.inventory || []).filter(invItem => {
+         if (invItem.id?.replace(/(_\d+)+$/, '') === baseId && found < quantity) {
             itemsToConsume.push(invItem);
             found++;
+            return false; // Exclude this item from remainingInventory
          } else {
-            remainingInventory.push(invItem);
+            return true; // Include this item in remainingInventory
          }
       });
 
@@ -152,7 +153,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       for (let i = 0; i < qty; i++) {
         returnedItems.push({ 
           ...listing.item, 
-          id: `${listing.item.id?.split('_')[0]}_${timestamp}_${i}` 
+          id: `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${i}` 
         });
       }
 

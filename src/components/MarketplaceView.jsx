@@ -35,9 +35,19 @@ export const MarketplaceView = React.memo(() => {
   // Robust Item Data Resolver
   const getMasterData = (itemOrId) => {
     if (!itemOrId) return null;
+    const item = typeof itemOrId === 'object' ? itemOrId : null;
     const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
-    const cleanId = id?.split('_')[0];
-    return ITEMS.find(i => i.id === cleanId) || (typeof itemOrId === 'object' ? itemOrId : null);
+    const cleanId = id?.replace(/(_\d+)+$/, '');
+    
+    const byId = ITEMS.find(i => i.id === cleanId);
+    if (byId) return byId;
+
+    if (item && item.name) {
+      const byName = ITEMS.find(i => i.name?.toLowerCase() === item.name.toLowerCase());
+      if (byName) return byName;
+    }
+
+    return item;
   };
 
   const filteredListings = useMemo(() => {
@@ -60,10 +70,15 @@ export const MarketplaceView = React.memo(() => {
       return matchesType && matchesSearch;
     });
 
-    // 2. Stack items by ID
+    // 2. Stack items by Master ID or Name fallback
     return raw.reduce((acc, item) => {
-      const baseId = item.id?.split('_')[0];
-      const existing = acc.find(i => i.id?.split('_')[0] === baseId);
+      const master = getMasterData(item);
+      const baseId = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
+      const existing = acc.find(i => {
+         const iMaster = getMasterData(i);
+         const iBaseId = iMaster?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
+         return iBaseId === baseId;
+      });
       if (existing) {
         existing.count = (existing.count || 1) + 1;
       } else {

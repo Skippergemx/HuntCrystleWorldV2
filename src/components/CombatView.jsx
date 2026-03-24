@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight } from 'lucide-react';
+import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight, RefreshCw, FlaskConical } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -12,7 +12,7 @@ export const CombatView = React.memo(() => {
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, lastLoot } = combat;
-  const { handleHeal, activateAutoScroll } = actions;
+  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
 
   const isAutoActive = autoTimeLeft > 0;
@@ -24,6 +24,21 @@ export const CombatView = React.memo(() => {
   const possibleDrops = useMemo(() => {
     return selectedMap?.lootTable ? selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
   }, [selectedMap, LOOTS]);
+
+  const currentPotionCount = useMemo(() => {
+    const sel = player.selectedPotionId || 'hp_potion';
+    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    return sel === 'hp_potion' ? invCount + (player.potions || 0) : invCount;
+  }, [player.selectedPotionId, player.inventory, player.potions]);
+
+  const currentScrollCount = useMemo(() => {
+    const sel = player.selectedScrollId || 'auto_scroll';
+    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
+  }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
+
+  const hasAnyPotions = useMemo(() => (player.potions > 0) || (player.inventory || []).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || (player.inventory || []).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
   const categorizedLoot = useMemo(() => {
     const categories = {};
@@ -107,48 +122,69 @@ export const CombatView = React.memo(() => {
           </div>
         </div>
 
-        <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
-          <div className="flex gap-2 md:gap-4">
-            <button onClick={handleHeal} disabled={player.potions <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
-              <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-              <span className="text-sm md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
-              <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
-                <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Heal</span>
-                <span className="text-xs md:text-lg font-black text-white italic">{player.potions || 0}</span>
-              </div>
-            </button>
-            
-            <button onClick={handleSkip} className="flex items-center gap-1.5 md:gap-3 bg-slate-800 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-slate-700 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden">
-               <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-white"></div>
-              <RotateCw size={12} className="md:w-5 md:h-5 text-cyan-400 group-hover:rotate-45 transition-transform relative z-10" />
-              <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
-                <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Skip</span>
-                <span className="text-xs md:text-lg font-black text-white italic">RE-ID</span>
-              </div>
-            </button>
-            
-            <div className="flex flex-col gap-1.5 items-end">
-              {player.autoScrolls > 0 && !isAutoActive && (
-                <button 
-                  onClick={() => activateAutoScroll(view)} 
-                  className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[2px] md:border-[4px] border-black px-2 md:px-5 py-1 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group"
-                >
-                  <span className="text-sm md:text-xl group-hover:scale-110 transition-transform">🪄</span>
-                  <div className="flex flex-col items-start bg-transparent leading-none">
-                    <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic">Link</span>
-                    <span className="text-[10px] md:text-lg font-black text-black italic">{player.autoScrolls}</span>
+          <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
+            <div className="flex gap-2 md:gap-4">
+              <div className="flex flex-col gap-1 items-end">
+                <button onClick={handleHeal} disabled={currentPotionCount <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
+                  <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
+                  <span className="text-sm md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
+                  <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
+                    <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">
+                      {player.selectedPotionId === 'hp_potion' ? 'SMALL' : player.selectedPotionId?.replace('_hp_potion', '').toUpperCase() || 'HEAL'}
+                    </span>
+                    <span className="text-xs md:text-lg font-black text-white italic">{currentPotionCount}</span>
                   </div>
                 </button>
-              )}
+                <button onClick={cyclePotion} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">
+                   <RefreshCw size={8} /> SWAP
+                </button>
+              </div>
+              
+              <button onClick={handleSkip} className="flex items-center gap-1.5 md:gap-3 bg-slate-800 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-slate-700 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden h-fit">
+                 <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-white"></div>
+                <RotateCw size={12} className="md:w-5 md:h-5 text-cyan-400 group-hover:rotate-45 transition-transform relative z-10" />
+                <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
+                  <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Skip</span>
+                  <span className="text-xs md:text-lg font-black text-white italic">RE-ID</span>
+                </div>
+              </button>
+              
+              <div className="flex flex-col gap-1.5 items-end">
+                {hasAnyScrolls && !isAutoActive && (
+                  <div className="flex flex-col gap-1 items-end">
+                    <button 
+                      onClick={() => activateAutoScroll(view)} 
+                      className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[2px] md:border-[4px] border-black px-2 md:px-5 py-1 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group"
+                    >
+                      <span className="text-sm md:text-xl group-hover:scale-110 transition-transform">🪄</span>
+                      <div className="flex flex-col items-start bg-transparent leading-none">
+                        <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic">
+                          {
+                            player.selectedScrollId === 'auto_scroll' ? '1M AUTO' :
+                            player.selectedScrollId === 'auto_scroll_3m' ? '3M AUTO' :
+                            player.selectedScrollId === 'auto_scroll_6m' ? '6M AUTO' :
+                            player.selectedScrollId === 'auto_scroll_9m' ? '9M AUTO' :
+                            player.selectedScrollId === 'auto_scroll_12m' ? '12M AUTO' : 'LINK'
+                          }
+                        </span>
+                        <span className="text-[10px] md:text-lg font-black text-black italic">{currentScrollCount}</span>
+                      </div>
+                    </button>
+                    <button onClick={cycleScroll} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">
+                       <RefreshCw size={8} /> SWAP
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {isAutoActive && (
+              <div className="flex items-center gap-2 px-2 md:px-4 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[3px] md:border-[4px] border-black text-black rounded font-black text-[9px] md:text-xs animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1">
+                 <span className="animate-bounce">🪄</span> {autoTimeLeft}s
+              </div>
+            )}
           </div>
-          {isAutoActive && (
-            <div className="flex items-center gap-2 px-2 md:px-4 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[3px] md:border-[4px] border-black text-black rounded font-black text-[9px] md:text-xs animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1">
-               <span className="animate-bounce">🪄</span> {autoTimeLeft}s
-            </div>
-          )}
         </div>
-      </div>
 
 
       {/* --- BATTLE ARENA: SYMMETRICAL GRID --- */}

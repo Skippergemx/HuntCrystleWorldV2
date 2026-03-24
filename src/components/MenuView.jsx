@@ -14,7 +14,8 @@ import {
   Swords,
   Zap,
   Tag,
-  HelpCircle
+  HelpCircle,
+  FlaskConical
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -68,6 +69,7 @@ export const MenuView = React.memo(() => {
       <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" />
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
       <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Rust Canyon/Rust Cat 1-4.jpg" />
+      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-2.jpg" />
       <NavBtn 
         onClick={startBoss} 
         icon={<AlertCircle />} 

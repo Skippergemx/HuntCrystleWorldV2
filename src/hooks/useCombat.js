@@ -187,7 +187,8 @@ export const useCombat = (
     if (selectedMap && selectedMap.lootTable) {
       const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));
       if (Math.random() < dropChance) {
-        const possibleLoots = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
+        // Find possible loots from standard table PLUS a small chance for schematics
+        const standardLoots = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
           if (!l) return false;
           if (l.rarity === 'Legendary' && depth < 20) return false;
           if (l.rarity === 'Epic' && depth < 10) return false;
@@ -195,15 +196,23 @@ export const useCombat = (
           return true;
         });
 
-        if (possibleLoots.length > 0) {
+        const pool = [...standardLoots];
+        
+        // Rare chance for a schematic to appear in the pool if in deep floors
+        if (depth >= 5 && Math.random() < 0.05) {
+           const schematics = LOOTS.filter(l => l.type === 'Schematic');
+           if (schematics.length > 0) pool.push(...schematics);
+        }
+
+        if (pool.length > 0) {
           const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
-          const pool = [];
-          possibleLoots.forEach(l => {
+          const finalPool = [];
+          pool.forEach(l => {
             const weight = rarityWeights[l.rarity] || 10;
-            for (let i = 0; i < weight; i++) pool.push(l);
+            for (let i = 0; i < weight; i++) finalPool.push(l);
           });
 
-          const lootItem = pool[Math.floor(Math.random() * pool.length)];
+          const lootItem = finalPool[Math.floor(Math.random() * finalPool.length)];
           if (lootItem) {
             const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
             updates.inventory = [...(player.inventory || []), itemWithId];
@@ -267,6 +276,17 @@ export const useCombat = (
         const drop = relics[Math.floor(Math.random() * relics.length)];
         updates.inventory = [...(player.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
         addLog(`💎 BOSS RELIC DROP: ${drop.name}!`);
+        playSFX(SOUNDS.obtainLoot);
+      }
+    }
+
+    // High chance for schematics on boss damage milestones (Phase 2)
+    if (Math.random() < 0.3) {
+      const schematics = LOOTS.filter(l => l.type === 'Schematic');
+      if (schematics.length > 0) {
+        const drop = schematics[Math.floor(Math.random() * schematics.length)];
+        updates.inventory = [...(updates.inventory || player.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
     }

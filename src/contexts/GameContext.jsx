@@ -5,6 +5,7 @@ import TAVERN_MATES from '../data/mates.json';
 import CRYSTLE_RECIPES from '../data/recipes.json';
 import MAPS from '../data/maps.json';
 import ITEMS from '../data/items.json';
+import LAB_RECIPES from '../data/lab_recipes.json';
 
 import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
@@ -46,6 +47,7 @@ export const GameProvider = ({ children, user }) => {
   const [bossAvatarIdx, setBossAvatarIdx] = useState(0);
   const [showBossVideo, setShowBossVideo] = useState(false);
   const [showSuccessWindow, setShowSuccessWindow] = useState(false);
+  const [forgeResult, setForgeResult] = useState(null); // { success: boolean, item: object }
 
   // Sync Timer for UI Clock
   useEffect(() => {
@@ -62,7 +64,6 @@ export const GameProvider = ({ children, user }) => {
   const leaderboardObj = useLeaderboard(user, player, db, appId);
   const adventure = useAdventure();
   const audio = useAudioEngine(adventure.view, adventure.enemy?.isBoss);
-  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS);
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
 
   const totalStats = useMemo(() => {
@@ -79,6 +80,8 @@ export const GameProvider = ({ children, user }) => {
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES
   );
+  
+  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS, setForgeResult, totalStats);
 
   const gameLoop = useGameLoop({
     player,
@@ -123,12 +126,13 @@ export const GameProvider = ({ children, user }) => {
     showGuide, setShowGuide, guideType, setGuideType,
     bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showSuccessWindow, setShowSuccessWindow,
+    forgeResult, setForgeResult,
     adventure, combat, actions, gameLoop, market, audio,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
-    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS,
+    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES,
     BOSS, BOSS_MEDIA_FILES
   };
 
