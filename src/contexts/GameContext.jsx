@@ -22,6 +22,7 @@ import { useLeaderboard } from '../hooks/useLeaderboard';
 import { useCombat } from '../hooks/useCombat';
 import { usePlayerActions } from '../hooks/usePlayerActions';
 import { useGameLoop } from '../hooks/useGameLoop';
+import { useWallet } from '../hooks/useWallet';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 export const GameContext = createContext(null);
@@ -65,6 +66,7 @@ export const GameProvider = ({ children, user }) => {
   const adventure = useAdventure();
   const audio = useAudioEngine(adventure.view, adventure.enemy?.isBoss);
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
+  const wallet = useWallet(addLog);
 
   const totalStats = useMemo(() => {
     if (!player) return calculateStats({ level: 1, baseStats: { str: 10, agi: 10, dex: 10 }, equipped: {} }, TAVERN_MATES, false, false);
@@ -127,13 +129,13 @@ export const GameProvider = ({ children, user }) => {
     bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showSuccessWindow, setShowSuccessWindow,
     forgeResult, setForgeResult,
-    adventure, combat, actions, gameLoop, market, audio,
+    adventure, combat, actions, gameLoop, market, audio, wallet,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES,
-    BOSS, BOSS_MEDIA_FILES
+    BOSS, BOSS_MEDIA_FILES, SOUNDS
   };
 
   return (

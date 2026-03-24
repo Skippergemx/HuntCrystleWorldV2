@@ -1,10 +1,10 @@
 import React from 'react';
-import { User } from 'lucide-react';
+import { User, Wallet, Link, Unlink } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const IdentityView = React.memo(() => {
-  const { player, syncPlayer, adventure, addLog, openGuide } = useGame();
+  const { player, syncPlayer, adventure, addLog, openGuide, wallet } = useGame();
   const { setView } = adventure;
 
   return (
@@ -45,6 +45,39 @@ export const IdentityView = React.memo(() => {
               <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.performanceMode ? 'translate-x-4 shadow-[0_0_10px_rgba(245,158,11,0.8)]' : 'translate-x-0'}`}></div>
             </button>
           </div>
+        </div>
+
+        {/* WEB3 UPLINK */}
+        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-8 shadow-xl">
+           <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2"><Wallet size={14} /> Web3 Uplink (Base Chain)</h3>
+           
+           {!wallet.address ? (
+             <button 
+                onClick={wallet.connectWallet}
+                disabled={wallet.loading}
+                className="w-full bg-cyan-600 hover:bg-cyan-500 border-b-4 border-cyan-800 p-4 rounded-xl flex items-center justify-center gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
+             >
+                <Link size={18} className="text-black group-hover:rotate-45 transition-transform" />
+                <span className="font-black text-black uppercase italic text-sm">{wallet.loading ? 'Synchronizing...' : 'Establish Link'}</span>
+             </button>
+           ) : (
+             <div className="space-y-4">
+                <div className="bg-black/60 border border-cyan-500/20 p-3 rounded-lg flex items-center justify-between">
+                   <div className="flex flex-col">
+                      <span className="text-[8px] text-white/40 uppercase font-black font-center">Identity Hash</span>
+                      <span className="text-xs font-mono font-black text-cyan-400 text-center">{wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</span>
+                   </div>
+                   <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></div>
+                </div>
+                <button 
+                  onClick={wallet.disconnectWallet}
+                  className="w-full bg-slate-800 hover:bg-red-950 border-b-4 border-black p-3 rounded-lg flex items-center justify-center gap-2 transition-all group"
+                >
+                   <Unlink size={14} className="text-white/40 group-hover:text-red-500 transition-colors" />
+                   <span className="text-[10px] font-black text-white/40 uppercase italic group-hover:text-red-500 transition-colors">Terminate Uplink</span>
+                </button>
+             </div>
+           )}
         </div>
 
         <p className="text-[10px] text-slate-500 font-black uppercase text-center mb-4 tracking-widest border-b border-slate-800/50 pb-2 w-full">Select your combat avatar</p>

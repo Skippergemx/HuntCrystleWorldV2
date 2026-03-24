@@ -215,6 +215,16 @@ export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, 
           <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">GEMX</div>
         </div>
       )}
+      {player?.petId && (
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-cyan-900 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title={`Genesis Pet #${player.petId}`}>
+          <img
+             src={`/assets/pets/genesis-pets/Genesis Pets (${player.petId}).jpg`}
+             className="w-full h-full object-cover contrast-125 brightness-110"
+             alt="Pet"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-cyan-500 text-black text-[4px] md:text-[5px] font-black text-center py-0.5 truncate uppercase leading-none">GENESIS</div>
+        </div>
+      )}
     </div>
   );
 });

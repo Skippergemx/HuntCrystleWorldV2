@@ -43,12 +43,13 @@ export const scaleMonster = (baseMonster, depth) => {
  * Calculates player stats with equipment and buffs
  */
 export const calculateStats = (player, tavernMates, buffActive, dragonActive) => {
-  if (!player) return { str: 0, agi: 0, dex: 0 };
+  if (!player) return { str: 0, agi: 0, dex: 0, maxHp: 100 };
   
   const stats = { 
     str: player.baseStats?.str || 0, 
     agi: player.baseStats?.agi || 0, 
-    dex: player.baseStats?.dex || 0 
+    dex: player.baseStats?.dex || 0,
+    maxHp: player.maxHp || 100
   };
   
   // Add equipment stats
@@ -90,6 +91,11 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     else if (element === 'Earthen') { stats.dex += 2 * lvl; }
     else if (element === 'Hydro') { stats.str += lvl; stats.dex += lvl; }
     else if (element === 'Gale') { stats.agi += 2 * lvl; }
+  }
+
+  // Apply Genesis Pet Buffs
+  if (player.petId) {
+    stats.maxHp += 50;
   }
 
   // Final Safety Rounding

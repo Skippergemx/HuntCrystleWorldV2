@@ -162,9 +162,11 @@ export const useCombat = (
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
+    const earnedXp = Math.floor(e.xp * (player.petId ? 1.1 : 1.0));
     addLog(`Victory! Found ${e.loot} GX.`);
+    if (player.petId) addLog("✨ GENESIS PULSE: +10% XP Bonus!");
 
-    let nextXp = player.xp + e.xp, nextLvl = player.level, nextMaxHp = player.maxHp, nextAP = player.abilityPoints || 0;
+    let nextXp = player.xp + earnedXp, nextLvl = player.level, nextMaxHp = player.maxHp, nextAP = player.abilityPoints || 0;
     let didLevelUp = false;
     while (nextXp >= getXpRequired(nextLvl)) {
       nextXp -= getXpRequired(nextLvl);
@@ -230,7 +232,7 @@ export const useCombat = (
     const droppedItem = updates.inventory ? updates.inventory[updates.inventory.length - 1] : null;
     setSessionRewards(prev => ({
       tokens: prev.tokens + e.loot,
-      xp: prev.xp + e.xp,
+      xp: prev.xp + earnedXp,
       loots: droppedItem ? [...prev.loots, droppedItem] : prev.loots
     }));
 

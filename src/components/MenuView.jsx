@@ -16,7 +16,8 @@ import {
   Tag,
   HelpCircle,
   FlaskConical,
-  Shield
+  Shield,
+  Sparkles
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -88,6 +89,14 @@ export const MenuView = React.memo(() => {
         sub="Holo-Grid" 
         color="bg-red-900 border-red-500/50" 
         backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg"
+      />
+      <NavBtn 
+        onClick={() => setView('pets')} 
+        icon={<Sparkles />} 
+        title="Genesis Pets" 
+        sub="Web3" 
+        color="bg-cyan-900 border-cyan-400/30" 
+        backdrop="/assets/monsters/Rust Canyon/Iron Pet 1-1.jpg"
       />
     </div>
   );

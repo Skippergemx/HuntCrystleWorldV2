@@ -536,10 +536,17 @@ export const usePlayerActions = (
       }
     },
 
-    initiateSyndicateWar: async (targetGuildId) => {
+    initiateSyndicateWar: async (targetGuildId, defenderIds = []) => {
       if (!player.guildId || player.guildRole !== 'LEADER') return addLog("🚨 UNAUTHORIZED: Only Leaders can start a War.");
       
       try {
+        // Fetch defender snapshots to anchor stats
+        const defenderSnapshots = {};
+        for (const email of defenderIds) {
+           const pSnap = await getDoc(doc(db, 'artifacts', appId, 'users', email, 'profile', 'data'));
+           if (pSnap.exists()) defenderSnapshots[email.replace(/\./g, '_')] = pSnap.data();
+        }
+
         const warRef = doc(db, 'artifacts', appId, 'guild_wars', `war_${Date.now()}`);
         await setDoc(warRef, {
           guildA: player.guildId,
@@ -549,6 +556,9 @@ export const usePlayerActions = (
           guildB_Stars: 0,
           guildA_Attacks: {}, // {playerId: [results]}
           guildB_Attacks: {},
+          defendersA: defenderSnapshots, // Leaders must assign these in next phase
+          defendersB: {}, 
+          warSize: defenderIds.length,
           startedAt: serverTimestamp(),
           expiresAt: Date.now() + 86400000 // 24 hour duration
         });
@@ -564,26 +574,56 @@ export const usePlayerActions = (
       }
     },
 
-    recordWarResult: async (warId, stars, opponentId) => {
+    recordWarResult: async (warId, stars, opponentId, damageDealtPercent) => {
       if (!player.guildId || !warId) return;
       
+      // Calculate Stars based on HP reduction
+      let earnedStars = 0;
+      if (damageDealtPercent >= 25) earnedStars = 1; // 75% HP remaining
+      if (damageDealtPercent >= 50) earnedStars = 2; // 50% HP remaining
+      if (damageDealtPercent >= 75) earnedStars = 3; // 25-0% HP remaining
+
       try {
         const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
         const identifier = player.email || player.uid;
         
-        // Update total stars and track player attack
         await updateDoc(warRef, {
-          [`guildA_Stars`]: increment(stars),
+          [`guildA_Stars`]: increment(earnedStars),
           [`guildA_Attacks.${identifier.replace(/\./g, '_')}`]: arrayUnion({
-            stars,
+            stars: earnedStars,
             opponentId,
+            damageDealtPercent,
             timestamp: Date.now()
           })
         });
 
-        addLog(`🎖️ WAR CONTRIBUTION: +${stars} STARS secured for the Syndicate!`);
+        addLog(`🎖️ WAR CONTRIBUTION: +${earnedStars} STARS secured for the Syndicate!`);
       } catch (e) {
         console.error("War Update Error:", e);
+      }
+    },
+
+    assignWarDefenders: async (warId, defenderIds = []) => {
+      if (!player.guildId || player.guildRole !== 'LEADER') return addLog("🚨 UNAUTHORIZED: Only Leaders can assign defense.");
+      
+      try {
+        const defenderSnapshots = {};
+        for (const email of defenderIds) {
+           const pSnap = await getDoc(doc(db, 'artifacts', appId, 'users', email, 'profile', 'data'));
+           if (pSnap.exists()) defenderSnapshots[email.replace(/\./g, '_')] = pSnap.data();
+        }
+
+        const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
+        const warSnap = await getDoc(warRef);
+        const data = warSnap.data();
+        
+        // Match the side (A or B)
+        const sideField = data.guildA === player.guildId ? 'defendersA' : 'defendersB';
+        
+        await updateDoc(warRef, { [sideField]: defenderSnapshots });
+        addLog(`🛡️ DEFENSE PROTOCOL: ${defenderIds.length} Champions assigned to the Frontline!`);
+      } catch (e) {
+        console.error("Defender Assignment Error:", e);
       }
     }
 

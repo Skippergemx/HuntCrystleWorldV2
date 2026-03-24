@@ -32,6 +32,7 @@ import { DragonsGroundView } from './DragonsGroundView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
+import { PetsView } from './PetsView';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
@@ -313,10 +314,10 @@ export const GameLayout = ({ onLogout }) => {
                <div className="flex items-center gap-2 md:gap-3">
                   <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
                      <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)}</span>
+                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)} / {totalStats.maxHp}</span>
                   </div>
                   <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                     <div className={`h-full transition-all duration-300 ${player.hp / player.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / player.maxHp) * 100}%` }} />
+                     <div className={`h-full transition-all duration-300 ${player.hp / totalStats.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / totalStats.maxHp) * 100}%` }} />
                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
                   </div>
                </div>
@@ -438,6 +439,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'syndicate' && (
             <SyndicateView />
+          )}
+
+          {view === 'pets' && (
+            <PetsView />
           )}
 
         </div>
