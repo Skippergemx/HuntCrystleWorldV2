@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment } from 'firebase/firestore';
 
 export const usePlayerActions = (
   player,
@@ -10,7 +11,9 @@ export const usePlayerActions = (
   TAVERN_MATES,
   ITEMS,
   setForgeResult,
-  totalStats
+  totalStats,
+  db,
+  appId
 ) => {
   const handleHeal = useCallback(() => {
     if (player.hp >= player.maxHp) return;
@@ -392,6 +395,196 @@ export const usePlayerActions = (
       
       addLog(`✨ DECRYPTED: ${master.name}! New schematic synchronized with Identity Lab.`);
       playSFX(SOUNDS.obtainLoot);
+    },
+
+    createSyndicate: async (name, tag) => {
+      if ((player.tokens || 0) < 50000) return addLog("🚨 INSUFFICIENT GX: Need 50,000 GX!");
+      if (player.guildId) return addLog("🚨 ERROR: You already belong to a Syndicate.");
+      if (!name || name.length < 3) return addLog("🚨 INVALID NAME: Syndicate name must be at least 3 characters.");
+      
+      const guildId = `guild_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      
+      try {
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', guildId);
+        await setDoc(guildRef, {
+          id: guildId,
+          name,
+          tag: tag?.toUpperCase() || 'GX',
+          leaderId: player.email || player.uid,
+          members: [player.email || player.uid],
+          gxVault: 0,
+          level: 1,
+          xp: 0,
+          createdAt: serverTimestamp(),
+          settings: {
+            open: true,
+            minLevel: 1
+          }
+        });
+        
+        syncPlayer({ 
+          tokens: player.tokens - 50000,
+          guildId: guildId,
+          guildRole: 'LEADER'
+        });
+        
+        addLog(`🏮 SYNDICATE FORMED: Welcome, Leader of ${name}!`);
+        playSFX(SOUNDS.obtainLoot);
+      } catch (e) {
+        console.error("Guild Creation Error:", e);
+        addLog("🚨 SYSTEM FAILURE: Could not establish Syndicate uplink.");
+      }
+    },
+
+    joinSyndicate: async (guildId) => {
+      if (player.guildId) return addLog("🚨 ERROR: Terminate current uplink before re-linking.");
+      
+      try {
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', guildId);
+        const guildSnap = await getDoc(guildRef);
+        
+        if (!guildSnap.exists()) return addLog("🚨 ERROR: Syndicate signal lost. Target non-existent.");
+        const data = guildSnap.data();
+        
+        if (data.members?.length >= 30) return addLog("🚨 ERROR: Syndicate capacity exceeded (30/30).");
+        
+        const identifier = player.email || player.uid;
+        await updateDoc(guildRef, {
+          members: arrayUnion(identifier)
+        });
+        
+        syncPlayer({ 
+          guildId: guildId,
+          guildRole: 'MEMBER'
+        });
+        
+        addLog(`🏮 UPLINK SECURED: Joined ${data.name}!`);
+        playSFX(SOUNDS.obtainLevel);
+      } catch (e) {
+        console.error("Guild Join Error:", e);
+        addLog("🚨 SYSTEM FAILURE: Could not join Syndicate.");
+      }
+    },
+
+    leaveSyndicate: async () => {
+      if (!player.guildId) return;
+      if (player.guildRole === 'LEADER') return addLog("🚨 ERROR: Use 'Dissolve' protocol for Leaders.");
+      
+      try {
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', player.guildId);
+        const identifier = player.email || player.uid;
+        
+        await updateDoc(guildRef, {
+          members: arrayRemove(identifier)
+        });
+        
+        syncPlayer({ 
+          guildId: null,
+          guildRole: null
+        });
+        
+        addLog(`🏮 UPLINK TERMINATED: You have left the Syndicate.`);
+      } catch (e) {
+        console.error("Guild Leave Error:", e);
+        addLog("🚨 ERROR: Failed to detach Syndicate link.");
+      }
+    },
+
+    sendSyndicateMessage: async (text) => {
+      if (!player.guildId || !text) return;
+      
+      try {
+        const chatRef = collection(db, 'artifacts', appId, 'guilds', player.guildId, 'messages');
+        await addDoc(chatRef, {
+          senderId: player.email || player.uid,
+          senderName: player.name,
+          text,
+          timestamp: serverTimestamp()
+        });
+      } catch (e) {
+        console.error("Chat Error:", e);
+      }
+    },
+
+    donateToSyndicateLab: async (item) => {
+      if (!player.guildId) return;
+      
+      // Materials logic
+      const inventory = [...(player.inventory || [])];
+      const targetIdx = inventory.findIndex(i => i.id === item.id);
+      if (targetIdx === -1) return addLog("❌ ERROR: Material no longer in bag.");
+      
+      try {
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', player.guildId);
+        
+        // XP Multiplier: Higher rarity = more XP
+        const xpMap = { 'Common': 10, 'Uncommon': 25, 'Rare': 75, 'Epic': 200, 'Legendary': 1000 };
+        const gainedXp = xpMap[item.rarity] || 10;
+
+        await updateDoc(guildRef, {
+          xp: increment(gainedXp),
+          gxVault: increment(item.sellValue || 100)
+        });
+
+        inventory.splice(targetIdx, 1);
+        syncPlayer({ inventory });
+        addLog(`🧪 DONATION: Contributed ${item.name} to Syndicate Lab! (+${gainedXp} Syndicate XP)`);
+        playSFX(SOUNDS.obtainLoot);
+      } catch (e) {
+        console.error("Lab Donation Error:", e);
+        addLog("🚨 ERROR: Failed to process Lab donation.");
+      }
+    },
+
+    initiateSyndicateWar: async (targetGuildId) => {
+      if (!player.guildId || player.guildRole !== 'LEADER') return addLog("🚨 UNAUTHORIZED: Only Leaders can start a War.");
+      
+      try {
+        const warRef = doc(db, 'artifacts', appId, 'guild_wars', `war_${Date.now()}`);
+        await setDoc(warRef, {
+          guildA: player.guildId,
+          guildB: targetGuildId,
+          status: 'BATTLE',
+          guildA_Stars: 0,
+          guildB_Stars: 0,
+          guildA_Attacks: {}, // {playerId: [results]}
+          guildB_Attacks: {},
+          startedAt: serverTimestamp(),
+          expiresAt: Date.now() + 86400000 // 24 hour duration
+        });
+
+        // Track active war on both guilds
+        await updateDoc(doc(db, 'artifacts', appId, 'guilds', player.guildId), { activeWarId: warRef.id });
+        await updateDoc(doc(db, 'artifacts', appId, 'guilds', targetGuildId), { activeWarId: warRef.id });
+        
+        addLog(`⚔️ WAR DECLARED: Mobilizing for Syndicate War!`);
+        playSFX(SOUNDS.summonDragon);
+      } catch (e) {
+        console.error("War Initiation Error:", e);
+      }
+    },
+
+    recordWarResult: async (warId, stars, opponentId) => {
+      if (!player.guildId || !warId) return;
+      
+      try {
+        const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
+        const identifier = player.email || player.uid;
+        
+        // Update total stars and track player attack
+        await updateDoc(warRef, {
+          [`guildA_Stars`]: increment(stars),
+          [`guildA_Attacks.${identifier.replace(/\./g, '_')}`]: arrayUnion({
+            stars,
+            opponentId,
+            timestamp: Date.now()
+          })
+        });
+
+        addLog(`🎖️ WAR CONTRIBUTION: +${stars} STARS secured for the Syndicate!`);
+      } catch (e) {
+        console.error("War Update Error:", e);
+      }
     }
 
   };

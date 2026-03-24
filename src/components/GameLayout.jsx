@@ -31,6 +31,7 @@ import { AdminPanelView } from './AdminPanelView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
+import { SyndicateView } from './SyndicateView';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
@@ -433,6 +434,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'laboratory' && (
             <LaboratoryView />
+          )}
+
+          {view === 'syndicate' && (
+            <SyndicateView />
           )}
 
         </div>

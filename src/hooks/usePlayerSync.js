@@ -35,6 +35,8 @@ export const usePlayerSync = (user, db, appId) => {
                 if (!data.recipes || data.recipes.length === 0) data.recipes = ['crystle_blade'];
                 if (!data.selectedPotionId) data.selectedPotionId = 'hp_potion';
                 if (!data.selectedScrollId) data.selectedScrollId = 'auto_scroll';
+                if (data.guildId === undefined) data.guildId = null;
+                if (data.guildRole === undefined) data.guildRole = null;
                 
                 setPlayer(data);
             } else {
@@ -66,7 +68,9 @@ export const usePlayerSync = (user, db, appId) => {
                     dragonAnimationEnabled: true,
                     performanceMode: false,
                     selectedPotionId: 'hp_potion',
-                    selectedScrollId: 'auto_scroll'
+                    selectedScrollId: 'auto_scroll',
+                    guildId: null,
+                    guildRole: null
                 };
                 setPlayer(newPlayer);
                 // Prompt initial sync for first-time profile creation

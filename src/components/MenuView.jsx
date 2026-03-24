@@ -15,7 +15,8 @@ import {
   Zap,
   Tag,
   HelpCircle,
-  FlaskConical
+  FlaskConical,
+  Shield
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -79,6 +80,7 @@ export const MenuView = React.memo(() => {
         disabled={isPenalized} 
         backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 3-0.jpg"
       />
+      <NavBtn onClick={() => setView('syndicate')} icon={<Shield />} title="Syndicate" sub="Factions" color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-3.jpg" />
       <NavBtn 
         onClick={() => setView('pvp')} 
         icon={<Swords />} 

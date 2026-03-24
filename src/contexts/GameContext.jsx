@@ -81,7 +81,7 @@ export const GameProvider = ({ children, user }) => {
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES
   );
   
-  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS, setForgeResult, totalStats);
+  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId);
 
   const gameLoop = useGameLoop({
     player,
