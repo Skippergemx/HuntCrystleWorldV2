@@ -6,7 +6,7 @@ import {
   Hammer, Gem, Package, X, TrendingUp, Skull, Flame, Clock,
   PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
   Book, Globe, Database, HardHat, Footprints,
-  Volume2, VolumeX, Music, Music2,
+  Volume2, VolumeX, Music, Music2, SkipForward,
   Calendar
 } from 'lucide-react';
 
@@ -33,6 +33,7 @@ import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
 import { PetsView } from './PetsView';
+import { ManualView } from './ManualView';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
@@ -52,7 +53,7 @@ export const GameLayout = ({ onLogout }) => {
   const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, handleAttack } = combat;
   const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem } = actions;
   const { autoTimeLeft, buffTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
-  const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX } = audio;
+  const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX, skipTrack } = audio;
   const { marketplace, purchaseMarketItem, listMarketItem, cancelMarketListing } = market;
 
   const isPenalized = penaltyRemaining > 0;
@@ -303,6 +304,9 @@ export const GameLayout = ({ onLogout }) => {
                   <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1 md:p-1.5 rounded transition-all ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
                     {isMusicOn ? <Music size={12} md:size={14} /> : <Music2 size={12} md:size={14} />}
                   </button>
+                  <button onClick={skipTrack} className="p-1 md:p-1.5 rounded text-slate-400 hover:text-cyan-400 transition-all" title="Next Track">
+                    <SkipForward size={12} md:size={14} />
+                  </button>
                   <button onClick={() => setIsSfxOn(!isSfxOn)} className={`p-1 md:p-1.5 rounded transition-all ${isSfxOn ? 'text-amber-400' : 'text-slate-600'}`}>
                     {isSfxOn ? <Volume2 size={12} md:size={14} /> : <VolumeX size={12} md:size={14} />}
                   </button>
@@ -443,6 +447,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'pets' && (
             <PetsView />
+          )}
+
+          {view === 'manual' && (
+            <ManualView />
           )}
 
         </div>

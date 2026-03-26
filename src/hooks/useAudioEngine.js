@@ -1,7 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 export const SOUNDS = {
-  mainBGM: ['/assets/sounds/Main-BGM01.mp3', '/assets/sounds/Main-BGM02.mp3'],
+  mainBGM: [
+    '/assets/sounds/Main-BGM01.mp3', 
+    '/assets/sounds/Main-BGM02.mp3',
+    '/assets/sounds/Main-BGM03.mp3',
+    '/assets/sounds/Main-BGM04.mp3',
+    '/assets/sounds/Main-BGM05.mp3',
+    '/assets/sounds/Main-BGM06.mp3'
+  ],
   dungeonBGM: ['/assets/sounds/Dungeon-BGM01.mp3', '/assets/sounds/Dungeon-BGM02.mp3'],
   bossBGM: ['/assets/sounds/Boss-BGM01.mp3', '/assets/sounds/Boss-BMG02.mp3'],
   playerAttack: '/assets/sounds/Player-Attack.wav',
@@ -13,6 +20,7 @@ export const SOUNDS = {
 export const useAudioEngine = (view, enemyIsBoss) => {
   const [isMusicOn, setIsMusicOn] = useState(true);
   const [isSfxOn, setIsSfxOn] = useState(true);
+  const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
   const bgmRef = useRef(new Audio());
 
   const playSFX = useCallback((soundPath) => {
@@ -22,7 +30,7 @@ export const useAudioEngine = (view, enemyIsBoss) => {
     audio.play().catch(() => { });
   }, [isSfxOn]);
 
-  const updateBGM = useCallback(() => {
+  const updateBGM = useCallback((forceTrack = null) => {
     if (!isMusicOn) {
       bgmRef.current.pause();
       return;
@@ -37,19 +45,20 @@ export const useAudioEngine = (view, enemyIsBoss) => {
       tracks = SOUNDS.mainBGM;
     }
 
-    const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+    const selectedTrack = forceTrack || tracks[Math.floor(Math.random() * tracks.length)];
 
     const currentSrc = bgmRef.current.src ? decodeURIComponent(bgmRef.current.src) : "";
     const isCombatTrack = currentSrc.includes('Dungeon') || currentSrc.includes('Boss');
     const isMainTrack = currentSrc.includes('Main');
 
-    const shouldChange = (isCombatView && !isCombatTrack) ||
+    const shouldChange = forceTrack || 
+      (isCombatView && !isCombatTrack) ||
       (!isCombatView && !isMainTrack) ||
       (!bgmRef.current.src);
 
     if (shouldChange) {
       bgmRef.current.pause();
-      bgmRef.current.src = randomTrack;
+      bgmRef.current.src = selectedTrack;
       bgmRef.current.loop = true;
       bgmRef.current.volume = 0.3;
       bgmRef.current.play().catch(e => console.log("BGM play error", e));
@@ -58,12 +67,25 @@ export const useAudioEngine = (view, enemyIsBoss) => {
     }
   }, [view, isMusicOn, enemyIsBoss]);
 
+  const skipTrack = useCallback(() => {
+    const isCombatView = view === 'dungeon' || view === 'boss';
+    let tracks = [];
+    if (isCombatView) {
+      tracks = (view === 'boss' || enemyIsBoss) ? SOUNDS.bossBGM : SOUNDS.dungeonBGM;
+    } else {
+      tracks = SOUNDS.mainBGM;
+    }
+
+    const nextIdx = (currentTrackIdx + 1) % tracks.length;
+    setCurrentTrackIdx(nextIdx);
+    updateBGM(tracks[nextIdx]);
+  }, [view, enemyIsBoss, currentTrackIdx, updateBGM]);
+
   useEffect(() => {
     updateBGM();
   }, [updateBGM]);
 
   useEffect(() => {
-    // Cleanup on unmount
     return () => {
       if (bgmRef.current) {
         bgmRef.current.pause();
@@ -77,5 +99,6 @@ export const useAudioEngine = (view, enemyIsBoss) => {
     isSfxOn,
     setIsSfxOn,
     playSFX,
+    skipTrack
   };
 };

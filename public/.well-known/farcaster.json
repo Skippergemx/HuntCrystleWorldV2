@@ -1,0 +1,17 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOiIsImFkZHJlc3MiOiIsImNpZyI6IiJ9",
+    "payload": "eyJkb21haW4iOiJkdW5nZW9uc3dpdGhnZW1zLmlvIn0",
+    "signature": ""
+  },
+  "frame": {
+    "version": "1",
+    "name": "Dungeons With Gems",
+    "iconUrl": "https://dungeonswithgems.io/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg",
+    "homeUrl": "https://dungeonswithgems.io",
+    "imageUrl": "https://dungeonswithgems.io/assets/gamescreenshot/mainmenuscreenshot.png",
+    "buttonTitle": "Play Idle",
+    "splashImageUrl": "https://dungeonswithgems.io/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg",
+    "splashBackgroundColor": "#020617"
+  }
+}

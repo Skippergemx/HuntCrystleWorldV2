@@ -17,7 +17,8 @@ import {
   HelpCircle,
   FlaskConical,
   Shield,
-  Sparkles
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -43,14 +44,6 @@ export const MenuView = React.memo(() => {
 
   return (
     <div className="flex-1 p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative overflow-hidden">
-      {/* Floating Guide Button */}
-      <button 
-        onClick={() => openGuide('menu')}
-        className="absolute top-2 right-2 z-[60] p-2 bg-cyan-600 border-[3px] border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-cyan-400 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none"
-        title="Knowledge Base"
-      >
-        <HelpCircle size={18} strokeWidth={3} />
-      </button>
 
       <NavBtn 
         onClick={startDungeon} 
@@ -105,6 +98,14 @@ export const MenuView = React.memo(() => {
         sub="Web3" 
         color="bg-cyan-900 border-cyan-400/30" 
         backdrop="/assets/monsters/Rust Canyon/Iron Pet 1-1.jpg"
+      />
+      <NavBtn 
+        onClick={() => setView('manual')} 
+        icon={<BookOpen />} 
+        title="Manual" 
+        sub="How to Play" 
+        color="bg-cyan-600 border-cyan-400/50" 
+        backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-4.jpg"
       />
     </div>
   );
