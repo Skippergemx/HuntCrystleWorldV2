@@ -77,13 +77,16 @@ export const useGameLoop = ({
   }, [view, autoTimeLeft, buffTimeLeft, penaltyRemaining, dragonTimeLeft]);
 
   // --- Combat Auto-Loop ---
-  const isCombatActive = autoTimeLeft > 0;
+  const isCombatActive = autoTimeLeft > 0 || combat.battleMode === 'GVG';
   useEffect(() => {
     let autoLoop;
     if ((view === 'dungeon' || view === 'boss') && isCombatActive && !showDefeatedWindow) {
       autoLoop = setInterval(() => {
         const p = playerRef.current;
-        if (!p || p.autoMode !== view) return;
+        if (!p) return;
+        
+        // GvG mode ignores the p.autoMode restricted view check
+        if (combat.battleMode !== 'GVG' && p.autoMode !== view) return;
         
         const isBossView = view === 'boss';
         const c = combatRef.current;

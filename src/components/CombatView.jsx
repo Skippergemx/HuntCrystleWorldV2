@@ -93,11 +93,15 @@ export const CombatView = React.memo(() => {
       <div className="w-full flex justify-between items-start z-30 px-2 md:px-6 pt-2 md:pt-4">
         <div className="flex flex-col gap-1.5 md:gap-3">
           <div className="flex items-center gap-1.5 md:gap-3">
-            <div className={`flex items-center gap-1.5 md:gap-3 px-2 md:px-5 py-1.5 md:py-3 bg-black border-[3px] md:border-[4px] ${arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${arenaTheme.text} transform -rotate-1`}>
+            <div className={`flex items-center gap-1.5 md:gap-3 px-2 md:px-5 py-1.5 md:py-3 bg-black border-[3px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${arenaTheme.text} transform -rotate-1`}>
               <TrendingUp size={12} className="md:w-5 md:h-5 animate-pulse" />
               <div className="flex flex-col leading-none">
-                <span className="text-[6px] md:text-[10px] font-black uppercase opacity-70">Sector Alpha</span>
-                <span className="text-[10px] md:text-lg font-black tracking-widest italic uppercase">Floor {depth}</span>
+                <span className="text-[6px] md:text-[10px] font-black uppercase opacity-70">
+                  {combat.battleMode === 'GVG' ? `TARGET: [${enemy.syndicateTag || '???'}] ${enemy.syndicateName || 'SYN'}` : 'Sector Alpha'}
+                </span>
+                <span className="text-[10px] md:text-lg font-black tracking-widest italic uppercase">
+                  {combat.battleMode === 'GVG' ? 'SYNDICATE RAID' : `Floor ${depth}`}
+                </span>
               </div>
             </div>
             <button 
@@ -109,17 +113,19 @@ export const CombatView = React.memo(() => {
             </button>
           </div>
           
-          <div className="flex flex-col gap-1 p-1.5 bg-black/40 border border-white/5 rounded backdrop-blur-sm max-w-[120px] md:max-w-none">
-            <div className="flex justify-between items-center px-1">
-              <span className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase italic">Progress</span>
-              <span className="text-[7px] md:text-[8px] font-black text-cyan-400">{killsInFloor}/10</span>
+          {combat.battleMode !== 'GVG' && (
+            <div className="flex flex-col gap-1 p-1.5 bg-black/40 border border-white/5 rounded backdrop-blur-sm max-w-[120px] md:max-w-none">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase italic">Progress</span>
+                <span className="text-[7px] md:text-[8px] font-black text-cyan-400">{killsInFloor}/10</span>
+              </div>
+              <div className="flex gap-1">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className={`flex-1 h-1 md:h-2.5 border border-black transition-all duration-300 ${i < killsInFloor ? 'bg-cyan-500 shadow-[0_0_8px_#06b6d4]' : 'bg-slate-800'}`} />
+                ))}
+              </div>
             </div>
-            <div className="flex gap-1">
-              {[...Array(10)].map((_, i) => (
-                <div key={i} className={`flex-1 h-1 md:h-2.5 border border-black transition-all duration-300 ${i < killsInFloor ? 'bg-cyan-500 shadow-[0_0_8px_#06b6d4]' : 'bg-slate-800'}`} />
-              ))}
-            </div>
-          </div>
+          )}
         </div>
 
           <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
@@ -140,17 +146,19 @@ export const CombatView = React.memo(() => {
                 </button>
               </div>
               
-              <button onClick={handleSkip} className="flex items-center gap-1.5 md:gap-3 bg-slate-800 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-slate-700 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden h-fit">
-                 <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-white"></div>
-                <RotateCw size={12} className="md:w-5 md:h-5 text-cyan-400 group-hover:rotate-45 transition-transform relative z-10" />
-                <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
-                  <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Skip</span>
-                  <span className="text-xs md:text-lg font-black text-white italic">RE-ID</span>
-                </div>
-              </button>
+              {combat.battleMode !== 'GVG' && (
+                <button onClick={handleSkip} className="flex items-center gap-1.5 md:gap-3 bg-slate-800 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-slate-700 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden h-fit">
+                  <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-white"></div>
+                  <RotateCw size={12} className="md:w-5 md:h-5 text-cyan-400 group-hover:rotate-45 transition-transform relative z-10" />
+                  <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
+                    <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">Skip</span>
+                    <span className="text-xs md:text-lg font-black text-white italic">RE-ID</span>
+                  </div>
+                </button>
+              )}
               
               <div className="flex flex-col gap-1.5 items-end">
-                {hasAnyScrolls && !isAutoActive && (
+                {hasAnyScrolls && !isAutoActive && combat.battleMode !== 'GVG' && (
                   <div className="flex flex-col gap-1 items-end">
                     <button 
                       onClick={() => activateAutoScroll(view)} 
@@ -180,7 +188,7 @@ export const CombatView = React.memo(() => {
 
             {isAutoActive && (
               <div className="flex items-center gap-2 px-2 md:px-4 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[3px] md:border-[4px] border-black text-black rounded font-black text-[9px] md:text-xs animate-pulse shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1">
-                 <span className="animate-bounce">🪄</span> {autoTimeLeft}s
+                 <span className="animate-bounce">🪄</span> {combat.battleMode === 'GVG' ? 'SYNCED AUTO' : `${autoTimeLeft}s`}
               </div>
             )}
           </div>
@@ -212,16 +220,24 @@ export const CombatView = React.memo(() => {
               <div className={`group w-36 h-36 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : 'animate-float'}`}>
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
                   <div className="absolute inset-0 opacity-20 comic-halftone text-red-500 z-0"></div>
-                  <img
-                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.png`}
+                  {combat.battleMode === 'GVG' ? (
+                    <img 
+                      src={`/assets/playeravatar/CrystleHunterAvatar (${enemy.avatarNum || 1}).jpg`} 
+                      className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125" 
                       alt={enemy.name}
-                      className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
-                      onError={(e) => {
-                          const folder = enemy.folder || 'Neon Slums';
-                          if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.jpg`;
-                          else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
-                      }}
-                  />
+                    />
+                  ) : (
+                    <img
+                        src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.png`}
+                        alt={enemy.name}
+                        className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
+                        onError={(e) => {
+                            const folder = enemy.folder || 'Neon Slums';
+                            if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.jpg`;
+                            else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
+                        }}
+                    />
+                  )}
                 <div className="absolute top-1 right-1 sm:top-2 sm:right-2 z-30 flex flex-col gap-1 transform rotate-3 scale-75 sm:scale-100 origin-top-right">
                    <div className="bg-emerald-600 border-[3px] border-black px-2 py-0.5 sm:px-3 sm:py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-1 group overflow-hidden relative">
                       <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
@@ -246,7 +262,9 @@ export const CombatView = React.memo(() => {
                       <div className="bg-yellow-400 border-[4px] md:border-[6px] border-black px-6 py-3 md:px-10 md:py-6 transform -rotate-6 shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)]">
                         <p className="text-black font-black text-2xl md:text-5xl uppercase italic tracking-tighter drop-shadow-[2px_2px_0_#fff]">BATTLE WON!</p>
                       </div>
-                      <p className="text-white/60 font-black uppercase text-[8px] md:text-xs tracking-widest italic animate-pulse">Scanning Next Sector...</p>
+                      <p className="text-white/60 font-black uppercase text-[8px] md:text-xs tracking-widest italic animate-pulse">
+                        {combat.battleMode === 'GVG' ? 'SYNCING WAR RECORD...' : 'Scanning Next Sector...'}
+                      </p>
                    </div>
                 </div>
               )}
@@ -405,7 +423,7 @@ export const CombatView = React.memo(() => {
           </div>
           
           <button 
-            onClick={() => { setView('menu'); setDepth(1); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} 
+            onClick={combat.handleRetreat} 
             className={`px-6 md:px-14 py-3 md:py-6 rounded font-black uppercase text-xs md:text-lg tracking-widest border-[4px] md:border-[5px] border-black transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white flex items-center justify-center hover:shadow-[10px_10px_0_rgba(0,0,0,1)]`}
           >
             RETREAT

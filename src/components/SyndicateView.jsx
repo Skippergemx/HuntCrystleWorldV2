@@ -26,6 +26,7 @@ export const SyndicateView = () => {
   const [showFinder, setShowFinder] = useState(false);
   const [warManifestSize, setWarManifestSize] = useState(1);
   const [selectedDefenders, setSelectedDefenders] = useState([]);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   // Chat State
   const [messages, setMessages] = useState([]);
@@ -72,6 +73,23 @@ export const SyndicateView = () => {
     return () => unsubscribe();
   }, [player?.guildId, activeTab, db, appId]);
 
+  // --- WAR TIMER ---
+  useEffect(() => {
+    if (!warData?.expiresAt) return;
+    const interval = setInterval(() => {
+       const diff = warData.expiresAt - Date.now();
+       if (diff <= 0) {
+          setTimeLeft("00:00");
+          clearInterval(interval);
+       } else {
+          const mins = Math.floor(diff / 60000);
+          const secs = Math.floor((diff % 60000) / 1000);
+          setTimeLeft(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+       }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [warData?.expiresAt]);
+
   const fetchGuilds = async () => {
     setLoading(true);
     try {
@@ -84,19 +102,6 @@ export const SyndicateView = () => {
     setLoading(false);
   };
 
-  const handleRaid = async (opponentId) => {
-    const ident = (player.email || player.uid).replace(/\./g, '_');
-    const attacks = (warData.guildA === player.guildId ? warData.guildA_Attacks : warData.guildB_Attacks)?.[ident] || [];
-    if (attacks.length >= 2) return alert("NO ATTACK ENERGY REMAINING (2/2 USED)");
-
-    // Trigger Combat Simulation for now (Phase 5 will trigger Real CombatView)
-    setLoading(true);
-    const roll = Math.random() * 100;
-    // recordWarResult takes: warId, stars (calculated in hook), opponentId, damageDealtPercent
-    await actions.recordWarResult(warData.id, 0, opponentId, roll); 
-    setLoading(false);
-    audio.playSFX(SOUNDS.obtainItem);
-  };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -251,9 +256,11 @@ export const SyndicateView = () => {
                      <span className="text-3xl font-black text-amber-500 italic">{(guildData?.gxVault || 0).toLocaleString()} GX</span>
                   </div>
                </div>
-               {player.guildRole !== 'LEADER' && (
-                 <button onClick={() => actions.leaveSyndicate()} className="w-full bg-red-950/40 hover:bg-red-950 border-2 border-red-900/50 p-4 rounded-xl flex items-center justify-center gap-3 transition-all"><LogOut size={18} className="text-red-500" /><span className="font-black text-red-500 uppercase italic text-sm">Terminate Link</span></button>
-               )}
+                {player.guildRole === 'LEADER' ? (
+                  <button onClick={() => actions.dissolveSyndicate()} className="w-full bg-red-950/40 hover:bg-red-950 border-2 border-red-900/50 p-4 rounded-xl flex items-center justify-center gap-3 transition-all"><Skull size={18} className="text-red-500" /><span className="font-black text-red-500 uppercase italic text-sm text-center">Dissolve Protocol</span></button>
+                ) : (
+                  <button onClick={() => actions.leaveSyndicate()} className="w-full bg-red-950/40 hover:bg-red-950 border-2 border-red-900/50 p-4 rounded-xl flex items-center justify-center gap-3 transition-all"><LogOut size={18} className="text-red-500" /><span className="font-black text-red-500 uppercase italic text-sm text-center">Terminate Link</span></button>
+                )}
              </div>
           </div>
         )}
@@ -314,30 +321,101 @@ export const SyndicateView = () => {
                </div>
              ) : (
                 <div className="flex-1 flex flex-col gap-6 overflow-hidden w-full">
-                  {/* PREPARATION PHASE */}
-                  {((warData.guildA === player.guildId && Object.keys(warData.defendersA || {}).length === 0) || (warData.guildB === player.guildId && Object.keys(warData.defendersB || {}).length === 0)) && player.guildRole === 'LEADER' ? (
+                  
+                  {/* PENDING PHASE: Accept/Deny */}
+                  {warData.status === 'PENDING' && (
+                     <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-900 border-[4px] border-black rounded-3xl shadow-[8px_8px_0_rgba(0,0,0,1)] text-center">
+                        <AlertTriangle size={64} className="text-amber-500 mb-6 animate-bounce" />
+                        <h3 className="text-3xl font-black text-white uppercase italic mb-4">Incoming Declaration</h3>
+                        <p className="text-white/40 font-black uppercase text-[10px] italic mb-10 text-center">A rival syndicate has challenged your uplink to a {warData.warSize || 1}v{warData.warSize || 1} conflict.</p>
+                        
+                        {warData.guildA === player.guildId ? (
+                           <div className="bg-black/60 px-8 py-4 rounded-xl border-2 border-white/5 text-amber-500 font-black uppercase italic animate-pulse">Awaiting Rival Response...</div>
+                        ) : (
+                           player.guildRole === 'LEADER' ? (
+                              <div className="flex gap-4">
+                                 <button onClick={() => actions.respondToSyndicateWar(warData.id, true)} className="bg-red-600 hover:bg-red-500 border-[4px] border-black px-8 py-4 rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] text-white font-black uppercase italic">Accept Challenge</button>
+                                 <button onClick={() => actions.respondToSyndicateWar(warData.id, false)} className="bg-slate-800 hover:bg-slate-700 border-[4px] border-black px-8 py-4 rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] text-white font-black uppercase italic">Reject</button>
+                              </div>
+                           ) : (
+                              <div className="bg-black/60 px-8 py-4 rounded-xl border-2 border-white/5 text-white/40 font-black uppercase italic">Leader authorization required to respond.</div>
+                           )
+                        )}
+                     </div>
+                  )}
+
+                  {/* PREPARATION PHASE: Lock Defenders */}
+                  {warData.status === 'PREPARATION' && (
                      <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-900 border-[4px] border-black rounded-3xl shadow-[8px_8px_0_rgba(0,0,0,1)] text-center animate-in zoom-in duration-300">
                         <Users size={64} className="text-amber-500 mb-6" />
                         <h3 className="text-3xl font-black text-white uppercase italic mb-4">Preparation Phase</h3>
-                        <p className="text-white/40 font-black uppercase text-xs italic mb-10 max-w-sm">Assign {warData.warSize || 1} Champions to the defensive line. These hunters will be snapshotted as Nodes.</p>
-                        <div className="flex gap-2 mb-8"><span className="text-[10px] font-black text-white uppercase italic">Selected: {selectedDefenders.length} / {warData.warSize || 1}</span></div>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 w-full max-w-2xl overflow-y-auto max-h-[30vh] pr-2 custom-scrollbar">
-                           {guildData.members?.map(m => (
-                              <button key={m} onClick={() => setSelectedDefenders(prev => prev.includes(m) ? prev.filter(x => x !== m) : (prev.length < (warData.warSize || 1) ? [...prev, m] : prev))} className={`p-4 rounded-xl border-[3px] font-black uppercase italic text-[10px] transition-all ${selectedDefenders.includes(m) ? 'bg-amber-600 border-black scale-105' : 'bg-black/40 border-white/5 opacity-50'}`}>{m?.split('@')[0]}</button>
-                           ))}
-                        </div>
-                        <button onClick={() => { actions.assignWarDefenders(warData.id, selectedDefenders); setSelectedDefenders([]); }} disabled={selectedDefenders.length < (warData.warSize || 1)} className="bg-black text-white px-12 py-5 rounded-2xl border-[4px] border-white/20 font-black italic uppercase shadow-2xl hover:bg-white hover:text-black transition-all disabled:opacity-20">Lock Defensive Line</button>
+                        <p className="text-white/40 font-black uppercase text-xs italic mb-10 max-w-sm text-center">Assign {warData.warSize || 1} Champions to the defensive line. {Object.keys((warData.guildA === player.guildId ? warData.defendersA : warData.defendersB) || {}).length >= warData.warSize ? "Ready to Siege." : "Selection Required."}</p>
+                        
+                        {(warData.guildA === player.guildId ? Object.keys(warData.defendersA || {}).length : Object.keys(warData.defendersB || {}).length) < warData.warSize ? (
+                           player.guildRole === 'LEADER' ? (
+                              <>
+                                 <div className="flex gap-2 mb-8"><span className="text-[10px] font-black text-white uppercase italic">Selected: {selectedDefenders.length} / {warData.warSize || 1}</span></div>
+                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 w-full max-w-2xl overflow-y-auto max-h-[30vh] pr-2 custom-scrollbar">
+                                    {guildData.members?.map(m => (
+                                       <button key={m} onClick={() => setSelectedDefenders(prev => prev.includes(m) ? prev.filter(x => x !== m) : (prev.length < (warData.warSize || 1) ? [...prev, m] : prev))} className={`p-4 rounded-xl border-[3px] font-black uppercase italic text-[10px] transition-all ${selectedDefenders.includes(m) ? 'bg-amber-600 border-black scale-105' : 'bg-black/40 border-white/5 opacity-50'}`}>{m?.split('@')[0]}</button>
+                                    ))}
+                                 </div>
+                                 <button onClick={() => { actions.assignWarDefenders(warData.id, selectedDefenders); setSelectedDefenders([]); }} disabled={selectedDefenders.length < (warData.warSize || 1)} className="bg-black text-white px-12 py-5 rounded-2xl border-[4px] border-white/20 font-black italic uppercase shadow-2xl hover:bg-white hover:text-black transition-all disabled:opacity-20">Lock Defensive Line</button>
+                              </>
+                           ) : (
+                              <div className="bg-black/60 px-8 py-4 rounded-xl border-2 border-white/5 text-white/40 font-black uppercase italic">Awaiting Leader deployment...</div>
+                           )
+                        ) : (
+                           <div className="flex flex-col items-center gap-4">
+                              <div className="bg-green-600/20 border-2 border-green-500 px-8 py-4 rounded-xl text-green-500 font-black uppercase italic animate-pulse">Defensive Line Established</div>
+                              <p className="text-[10px] font-black text-white/20 uppercase italic">Waiting for enemy Syndicate to lock their champions.</p>
+                           </div>
+                        )}
                      </div>
-                  ) : (
+                  )}
+                  
+                  
+                  {/* BATTLE PHASE: Live Siege or Outcome Recognition */}
+                  {warData.status === 'BATTLE' && (
                     <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                       
+                       {/* Result Overlay when time is up */}
+                       {timeLeft === "00:00" && (
+                          <div className="absolute inset-x-8 inset-y-20 z-[80] bg-black/90 backdrop-blur-3xl border-[8px] border-black rounded-[40px] flex flex-col items-center justify-center p-10 text-center shadow-[0_0_100px_rgba(0,0,0,0.5)] animate-in zoom-in duration-500">
+                             <Trophy size={80} className={`${(warData.guildA === player.guildId ? warData.guildA_Stars : warData.guildB_Stars) >= (warData.guildA === player.guildId ? warData.guildB_Stars : warData.guildA_Stars) ? 'text-amber-500' : 'text-slate-500'} mb-6 animate-bounce`} />
+                             <h3 className="text-5xl font-black text-white uppercase italic mb-2">War Over</h3>
+                             <p className="text-white/40 font-black uppercase text-xs italic mb-10 tracking-widest">The grid has stabilized. Tallying final results.</p>
+                             
+                             <div className="flex gap-12 mb-12">
+                                <div className="text-center font-center">
+                                   <span className="text-[10px] font-black text-white/20 uppercase block mb-1">YOUR SYNDICATE</span>
+                                   <div className="text-6xl font-black text-amber-500 italic">{(warData.guildA === player.guildId ? warData.guildA_Stars : warData.guildB_Stars)} <Star className="inline mb-3" size={40} /></div>
+                                </div>
+                                <div className="text-center font-center">
+                                   <span className="text-[10px] font-black text-white/20 uppercase block mb-1">RIVAL NODE</span>
+                                   <div className="text-6xl font-black text-red-600 italic">{(warData.guildA === player.guildId ? warData.guildB_Stars : warData.guildA_Stars)} <Star className="inline mb-3" size={40} /></div>
+                                </div>
+                             </div>
+
+                             {player.guildRole === 'LEADER' ? (
+                                <button onClick={() => actions.finalizeSyndicateWar(warData.id)} className="bg-red-600 hover:bg-red-500 border-[6px] border-black px-12 py-6 rounded-3xl shadow-[10px_10px_0_rgba(0,0,0,1)] text-white text-2xl font-black uppercase italic transition-all active:translate-x-1 active:translate-y-1 active:shadow-none">Acknowledge & Finalize</button>
+                             ) : (
+                                <div className="bg-white/5 border-2 border-white/10 px-8 py-4 rounded-xl text-white/40 font-black uppercase italic">Leader Acknowledgment Pending...</div>
+                             )}
+                          </div>
+                       )}
+
                        <div className="bg-red-600 border-[6px] border-black rounded-3xl p-8 shadow-[10px_10px_0_rgba(0,0,0,1)] relative overflow-hidden shrink-0">
                           <div className="absolute inset-0 comic-halftone opacity-30"></div>
                           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
                              <div className="text-center md:text-left flex-1 text-center">
                                 <h2 className="text-4xl font-black text-white italic uppercase drop-shadow-lg truncate text-center font-center">{guildData?.name}</h2>
-                                <div className="text-5xl font-black text-white italic mt-2 text-center">{warData.guildA_Stars} <Star className="inline text-amber-400 mb-2" size={32} /></div>
+                                <div className="text-5xl font-black text-white italic mt-2 text-center">{(warData.guildA === player.guildId ? warData.guildA_Stars : warData.guildB_Stars)} <Star className="inline text-amber-400 mb-2" size={32} /></div>
                              </div>
-                             <div className="w-20 h-20 bg-black border-[4px] border-white/20 rounded-full flex items-center justify-center rotate-12 shadow-2xl shrink-0"><span className="text-2xl font-black text-red-500 italic uppercase">VS</span></div>
+                             <div className="w-20 h-20 bg-black border-[4px] border-white/20 rounded-full flex flex-col items-center justify-center rotate-12 shadow-2xl shrink-0">
+                                <span className="text-2xl font-black text-red-500 italic uppercase">VS</span>
+                                {timeLeft && <span className="text-[8px] font-black text-white/40 uppercase mt-1 animate-pulse">{timeLeft}</span>}
+                             </div>
                              <div className="text-center md:text-right flex-1 text-center font-center">
                                 <h2 className="text-4xl font-black text-white italic uppercase drop-shadow-lg truncate text-center font-center">RIVAL NODE</h2>
                                 <div className="text-5xl font-black text-white italic mt-2 text-center text-center">{(warData.guildA === player.guildId ? warData.guildB_Stars : warData.guildA_Stars)} <Star className="inline text-amber-400 mb-2" size={32} /></div>
@@ -359,16 +437,26 @@ export const SyndicateView = () => {
                                       <p className="text-[10px] font-black text-white/40 uppercase italic tracking-widest text-center font-center">LEVEL {snap.level || 1} DEFENDER</p>
                                       <h4 className="text-2xl font-black text-white uppercase italic truncate max-w-[160px] text-center font-center">{snap.name}</h4>
                                    </div>
-                                   <button onClick={() => handleRaid(email.replace(/_/g, '.'))} disabled={loading || (warData.guildA_Attacks?.[(player.email || player.uid).replace(/\./g, '_')]?.length || 0) >= 2} className="w-full bg-red-600 hover:bg-red-500 border-[4px] border-black py-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] font-black text-white uppercase italic text-sm transform group-hover:scale-105 transition-all flex items-center justify-center gap-3"><Swords size={20} /> INITIATE RAID</button>
+                                    <button 
+                                      onClick={() => actions.startGvGRaid(
+                                        warData.id, 
+                                        email.replace(/_/g, '.'), 
+                                        snap,
+                                        warData.guildA === player.guildId ? warData.guildB_Name : warData.guildA_Name,
+                                        warData.guildA === player.guildId ? warData.guildB_Tag : warData.guildA_Tag
+                                      )} 
+                                      disabled={loading || ((warData.guildA === player.guildId ? warData.guildA_Attacks : warData.guildB_Attacks)?.[(player.email || player.uid).replace(/\./g, '_')]?.length || 0) >= 2 || timeLeft === "00:00"} 
+                                      className="w-full bg-red-600 hover:bg-red-500 border-[4px] border-black py-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] font-black text-white uppercase italic text-sm transform group-hover:scale-105 transition-all flex items-center justify-center gap-3"
+                                    >
+                                      <Swords size={20} /> INITIATE RAID
+                                    </button>
                                 </div>
                              ))}
-                             {Object.keys((warData.guildA === player.guildId ? warData.defendersB : warData.defendersA) || {}).length === 0 && (
-                                <div className="col-span-full py-20 text-center opacity-20 font-black italic uppercase">The rival has not yet mobilized defensive units. Check back soon.</div>
-                             )}
                           </div>
                        </div>
                     </div>
                   )}
+
                 </div>
              )}
           </div>
@@ -393,7 +481,7 @@ export const SyndicateView = () => {
                         <div className="flex items-center gap-2 text-white/40"><Users size={12} /> <span className="text-[10px] font-black uppercase italic text-center text-center">{g.members?.length || 0}/30</span></div>
                       </div>
                       <h4 className="text-2xl font-black text-white uppercase italic mb-8 truncate group-hover:text-red-500 transition-colors text-center font-center">{g.name}</h4>
-                      <button onClick={() => { actions.initiateSyndicateWar(g.id, selectedDefenders); setShowFinder(false); }} className="w-full bg-white hover:bg-red-600 hover:text-white text-black p-4 rounded-2xl font-black uppercase italic border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,0.2)] transition-all flex items-center justify-center gap-3"><Flame size={20} /> COMMENCE {warManifestSize}v{warManifestSize} WARFARE</button>
+                      <button onClick={() => { actions.initiateSyndicateWar(g.id, warManifestSize, selectedDefenders); setShowFinder(false); }} className="w-full bg-white hover:bg-red-600 hover:text-white text-black p-4 rounded-2xl font-black uppercase italic border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,0.2)] transition-all flex items-center justify-center gap-3"><Flame size={20} /> COMMENCE {warManifestSize}v{warManifestSize} WARFARE</button>
                    </div>
                  ))}
                  {allGuilds.length <= 1 && <div className="col-span-full py-20 text-center opacity-20 font-black italic uppercase text-center">No rival syndicates detected in this sector.</div>}

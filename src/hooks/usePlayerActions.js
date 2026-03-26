@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc } from 'firebase/firestore';
 
 export const usePlayerActions = (
   player,
@@ -13,8 +13,28 @@ export const usePlayerActions = (
   setForgeResult,
   totalStats,
   db,
-  appId
+  appId,
+  gvgActions = {}
 ) => {
+  const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
+
+  const startGvGRaid = useCallback((warId, opponentId, defenderData, syndicateName = "Unknown", syndicateTag = "???") => {
+    if (!setBattleMode || !setGvgContext) return;
+    setBattleMode('GVG');
+    setGvgContext({ warId, opponentId });
+    setEnemy({
+       ...defenderData,
+       id: opponentId,
+       hp: defenderData.maxHp || 1000,
+       maxHp: defenderData.maxHp || 1000,
+       isPlayer: true,
+       syndicateName,
+       syndicateTag
+    });
+    setView('dungeon');
+    addLog(`🚩 BREACHING DEFENSES: Combat contact with ${defenderData.name}!`);
+  }, [setBattleMode, setGvgContext, setEnemy, setView, addLog]);
+
   const handleHeal = useCallback(() => {
     if (player.hp >= player.maxHp) return;
     const inventory = player.inventory || [];
@@ -490,6 +510,29 @@ export const usePlayerActions = (
       }
     },
 
+    dissolveSyndicate: async () => {
+      if (!player.guildId || player.guildRole !== 'LEADER') return;
+      if (!window.confirm("🚨 WARNING: This will PERMANENTLY delete the Syndicate and all its Lab progress. Continue?")) return;
+
+      try {
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', player.guildId);
+        const guildSnap = await getDoc(guildRef);
+        if (!guildSnap.exists()) return;
+        const data = guildSnap.data();
+
+        // 1. Alert all members (could be a notification collection, for now just clearing state)
+        // 2. Delete the doc
+        await deleteDoc(guildRef);
+        
+        // 3. Clear self state
+        syncPlayer({ guildId: null, guildRole: null });
+        addLog(`💥 PROTOCOL 66: ${data.name} has been dissolved. You are now a Ronin.`);
+      } catch (e) {
+        console.error("Guild Dissolve Error:", e);
+        addLog("🚨 ERROR: Failed to terminate Syndicate signal.");
+      }
+    },
+
     sendSyndicateMessage: async (text) => {
       if (!player.guildId || !text) return;
       
@@ -536,60 +579,85 @@ export const usePlayerActions = (
       }
     },
 
-    initiateSyndicateWar: async (targetGuildId, defenderIds = []) => {
+    initiateSyndicateWar: async (targetGuildId, warSize = 1, defenderIds = []) => {
       if (!player.guildId || player.guildRole !== 'LEADER') return addLog("🚨 UNAUTHORIZED: Only Leaders can start a War.");
       
       try {
-        // Fetch defender snapshots to anchor stats
-        const defenderSnapshots = {};
-        for (const email of defenderIds) {
-           const pSnap = await getDoc(doc(db, 'artifacts', appId, 'users', email, 'profile', 'data'));
-           if (pSnap.exists()) defenderSnapshots[email.replace(/\./g, '_')] = pSnap.data();
-        }
-
         const warRef = doc(db, 'artifacts', appId, 'guild_wars', `war_${Date.now()}`);
         await setDoc(warRef, {
           guildA: player.guildId,
           guildB: targetGuildId,
-          status: 'BATTLE',
+          status: 'PENDING', // Awaiting Target Guild Acceptance
           guildA_Stars: 0,
           guildB_Stars: 0,
-          guildA_Attacks: {}, // {playerId: [results]}
+          guildA_Attacks: {},
           guildB_Attacks: {},
-          defendersA: defenderSnapshots, // Leaders must assign these in next phase
+          defendersA: {}, 
           defendersB: {}, 
-          warSize: defenderIds.length,
-          startedAt: serverTimestamp(),
-          expiresAt: Date.now() + 86400000 // 24 hour duration
+          defenderStarsA: {},
+          defenderStarsB: {},
+          warSize: warSize || 1,
+          declaredAt: serverTimestamp(),
+          expiresAt: null // Set when battle starts
         });
 
         // Track active war on both guilds
         await updateDoc(doc(db, 'artifacts', appId, 'guilds', player.guildId), { activeWarId: warRef.id });
         await updateDoc(doc(db, 'artifacts', appId, 'guilds', targetGuildId), { activeWarId: warRef.id });
         
-        addLog(`⚔️ WAR DECLARED: Mobilizing for Syndicate War!`);
+        addLog(`⚔️ WAR DECLARED: Request sent for Syndicate War!`);
         playSFX(SOUNDS.summonDragon);
       } catch (e) {
         console.error("War Initiation Error:", e);
       }
     },
 
+    respondToSyndicateWar: async (warId, accepted) => {
+      if (!player.guildId || player.guildRole !== 'LEADER') return;
+      try {
+        const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
+        if (accepted) {
+          await updateDoc(warRef, { status: 'PREPARATION' });
+          addLog(`⚔️ WAR ACCEPTED: Entering Preparation Phase!`);
+        } else {
+          const warSnap = await getDoc(warRef);
+          const data = warSnap.data();
+          await deleteDoc(warRef);
+          await updateDoc(doc(db, 'artifacts', appId, 'guilds', data.guildA), { activeWarId: null });
+          await updateDoc(doc(db, 'artifacts', appId, 'guilds', data.guildB), { activeWarId: null });
+          addLog(`🛡️ WAR DECLINED: The challenge has been rejected.`);
+        }
+      } catch (e) {
+        console.error("War Response Error:", e);
+      }
+    },
+
     recordWarResult: async (warId, stars, opponentId, damageDealtPercent) => {
       if (!player.guildId || !warId) return;
       
-      // Calculate Stars based on HP reduction
       let earnedStars = 0;
-      if (damageDealtPercent >= 25) earnedStars = 1; // 75% HP remaining
-      if (damageDealtPercent >= 50) earnedStars = 2; // 50% HP remaining
-      if (damageDealtPercent >= 75) earnedStars = 3; // 25-0% HP remaining
+      if (damageDealtPercent >= 25) earnedStars = 1;
+      if (damageDealtPercent >= 50) earnedStars = 2;
+      if (damageDealtPercent >= 75) earnedStars = 3;
 
       try {
         const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
-        const identifier = player.email || player.uid;
+        const warSnap = await getDoc(warRef);
+        if (!warSnap.exists()) return;
+        const data = warSnap.data();
+
+        const side = data.guildA === player.guildId ? 'A' : 'B';
+        const opponentKey = opponentId.replace(/\./g, '_');
+        const opponentStarSide = `defenderStars${side === 'A' ? 'B' : 'A'}`;
+        const prevStars = (data[opponentStarSide] && data[opponentStarSide][opponentKey]) || 0;
+        const starDiff = Math.max(0, earnedStars - prevStars);
+
+        const identifier = (player.email || player.uid).replace(/\./g, '_');
         
         await updateDoc(warRef, {
-          [`guildA_Stars`]: increment(earnedStars),
-          [`guildA_Attacks.${identifier.replace(/\./g, '_')}`]: arrayUnion({
+          [`guild${side}_Stars`]: increment(starDiff),
+          [`defenderStars${side === 'A' ? 'B' : 'A'}.${opponentKey}`]: Math.max(prevStars, earnedStars),
+          [`guild${side}_Attacks.${identifier}`]: arrayUnion({
             stars: earnedStars,
             opponentId,
             damageDealtPercent,
@@ -597,7 +665,11 @@ export const usePlayerActions = (
           })
         });
 
-        addLog(`🎖️ WAR CONTRIBUTION: +${earnedStars} STARS secured for the Syndicate!`);
+        if (starDiff > 0) {
+           addLog(`🎖️ WAR CONTRIBUTION: +${starDiff} NEW STARS secured! (Total hit: ${earnedStars} Stars)`);
+        } else {
+           addLog(`⚔️ RAID COMPLETE: Yielded ${earnedStars} Stars (Best already recorded: ${prevStars})`);
+        }
       } catch (e) {
         console.error("War Update Error:", e);
       }
@@ -621,11 +693,76 @@ export const usePlayerActions = (
         const sideField = data.guildA === player.guildId ? 'defendersA' : 'defendersB';
         
         await updateDoc(warRef, { [sideField]: defenderSnapshots });
+        
+        // Auto-move to Battle if both ready
+        const updatedSnap = await getDoc(warRef);
+        const uData = updatedSnap.data();
+        if (Object.keys(uData.defendersA || {}).length >= uData.warSize && Object.keys(uData.defendersB || {}).length >= uData.warSize) {
+           await updateDoc(warRef, { 
+             status: 'BATTLE',
+             battleStartedAt: serverTimestamp(),
+             expiresAt: Date.now() + 180000 // 3 min duration
+           });
+           addLog(`📢 THE SIEGE BEGINS: Defensive lines established!`);
+        }
+
         addLog(`🛡️ DEFENSE PROTOCOL: ${defenderIds.length} Champions assigned to the Frontline!`);
       } catch (e) {
         console.error("Defender Assignment Error:", e);
       }
-    }
+    },
 
+    finalizeSyndicateWar: async (warId) => {
+      if (!player.guildId || player.guildRole !== 'LEADER') return;
+      try {
+        const warRef = doc(db, 'artifacts', appId, 'guild_wars', warId);
+        const warSnap = await getDoc(warRef);
+        if (!warSnap.exists()) return;
+        const data = warSnap.data();
+
+        // Determine outcome
+        const isGuildA = data.guildA === player.guildId;
+        const myStars = isGuildA ? data.guildA_Stars : data.guildB_Stars;
+        const enemyStars = isGuildA ? data.guildB_Stars : data.guildA_Stars;
+        const isWinner = myStars > enemyStars;
+        const isTie = myStars === enemyStars;
+
+        // Rewards
+        const xpGained = isWinner ? 500 : (isTie ? 200 : 50);
+        const gxGained = isWinner ? 10000 : (isTie ? 2500 : 0);
+
+        // Update Guild
+        const guildRef = doc(db, 'artifacts', appId, 'guilds', player.guildId);
+        await updateDoc(guildRef, {
+           activeWarId: null,
+           xp: increment(xpGained),
+           gxVault: increment(gxGained)
+        });
+
+        // Archive war data (Set to COMPLETED instead of deleting for history)
+        await updateDoc(warRef, { status: 'COMPLETED', finalizedAt: Date.now() });
+
+        // Broadcast to Syndicate Comms
+        try {
+          const chatRef = collection(db, 'artifacts', appId, 'guilds', player.guildId, 'messages');
+          const outcomeText = isWinner ? "VICTORY" : (isTie ? "STALEMATE" : "DEFEAT");
+          await addDoc(chatRef, {
+            senderId: 'SYSTEM_WAR_BOT',
+            senderName: 'WAR COMMAND',
+            text: `📢 WAR FINALIZED: ${outcomeText}! Final Score: ${myStars} - ${enemyStars}. Spoils: +${gxGained} GX and +${xpGained} Syndicate XP.`,
+            timestamp: serverTimestamp()
+          });
+        } catch (e) {
+          console.error("War Broadcast Error:", e);
+        }
+
+        addLog(`🏆 WAR FINALIZED: Received ${xpGained} Syndicate XP and ${gxGained} GX!`);
+        playSFX(isWinner ? SOUNDS.obtainLevel : SOUNDS.monsterAttack);
+      } catch (e) {
+        console.error("War Finalization Error:", e);
+      }
+    },
+
+    startGvGRaid
   };
 };

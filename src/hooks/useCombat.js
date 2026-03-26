@@ -31,8 +31,10 @@ export const useCombat = (
   setView,
   triggerFlinch,
   triggerHurt,
-  TAVERN_MATES
+  TAVERN_MATES,
+  gvgActions = {}
 ) => {
+  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult } = gvgActions;
   const [critAlert, setCritAlert] = useState(false);
   const [stunTimeLeft, setStunTimeLeft] = useState(0);
   const [missTimeLeft, setMissTimeLeft] = useState(0);
@@ -100,7 +102,7 @@ export const useCombat = (
       setCombatState('IDLE');
       return;
     }
-    if (!target || !player || player.hp <= 0) {
+    if (!target || !player?.hp || player?.hp <= 0) {
       setCombatState('IDLE');
       return;
     }
@@ -113,7 +115,8 @@ export const useCombat = (
       setTimeout(() => setStrikingSide(null), 300);
     }, 400);
 
-    const hitChance = getHitChance(target.dex, stats.agi);
+    let hitChance = getHitChance(target.dex, stats.agi);
+    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); // 85% Floor for GvG DECISIVE ACTION
     
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < (isBoss ? BOSS.critChance : target.critChance);
@@ -135,11 +138,19 @@ export const useCombat = (
       triggerHitEffects(dmg, isCrit, 'player', triggerFlinch, triggerHurt);
 
       setTimeout(() => {
-        const newHp = Math.floor(Math.max(0, player.hp - dmg));
+        const newHp = Math.floor(Math.max(0, (player?.hp || 0) - dmg));
         if (newHp <= 0) {
+          if (battleMode === 'GVG') {
+            const e = enemyRef.current || enemy;
+            const dmgPercent = Math.floor(((e.maxHp - e.hp) / e.maxHp) * 100);
+            recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, dmgPercent);
+            setBattleMode('DUNGEON');
+            setTimeout(() => setView('syndicate'), 1500);
+          }
+
           setShowDefeatedWindow(true);
           setCombatState('DEFEATED');
-          syncPlayer({ hp: player.maxHp, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
+          syncPlayer({ hp: player?.maxHp || 1000, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
           setTimeout(() => { 
             setShowDefeatedWindow(false); 
             setDepth(1); 
@@ -162,11 +173,11 @@ export const useCombat = (
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
-    const earnedXp = Math.floor(e.xp * (player.petId ? 1.1 : 1.0));
+    const earnedXp = Math.floor(e.xp * (player?.petId ? 1.1 : 1.0));
     addLog(`Victory! Found ${e.loot} GX.`);
-    if (player.petId) addLog("✨ GENESIS PULSE: +10% XP Bonus!");
+    if (player?.petId) addLog("✨ GENESIS PULSE: +10% XP Bonus!");
 
-    let nextXp = player.xp + earnedXp, nextLvl = player.level, nextMaxHp = player.maxHp, nextAP = player.abilityPoints || 0;
+    let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000, nextAP = player?.abilityPoints || 0;
     let didLevelUp = false;
     while (nextXp >= getXpRequired(nextLvl)) {
       nextXp -= getXpRequired(nextLvl);
@@ -178,11 +189,11 @@ export const useCombat = (
     }
 
     const updates = {
-      tokens: player.tokens + e.loot,
+      tokens: (player?.tokens || 0) + e.loot,
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
-      hp: Math.min(nextMaxHp, player.hp + 25),
+      hp: Math.min(nextMaxHp, (player?.hp || 0) + 25),
       abilityPoints: nextAP
     };
 
@@ -217,7 +228,7 @@ export const useCombat = (
           const lootItem = finalPool[Math.floor(Math.random() * finalPool.length)];
           if (lootItem) {
             const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
-            updates.inventory = [...(player.inventory || []), itemWithId];
+            updates.inventory = [...(player?.inventory || []), itemWithId];
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
             setLastLoot(itemWithId);
@@ -249,7 +260,7 @@ export const useCombat = (
         const nextDepth = depth + 1;
         setDepth(nextDepth);
         addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
-        if (nextDepth > (player.maxDepth || 1)) updates.maxDepth = nextDepth;
+        if (nextDepth > (player?.maxDepth || 1)) updates.maxDepth = nextDepth;
         spawnNewEnemy(nextDepth);
       } else {
         setKillsInFloor(newKills);
@@ -260,13 +271,19 @@ export const useCombat = (
     if (didLevelUp || updates.maxDepth) {
       updateLeaderboard({
         level: nextLvl,
-        maxDepth: updates.maxDepth || player.maxDepth || 1
+        maxDepth: updates.maxDepth || player?.maxDepth || 1
       });
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS]);
+
+    if (battleMode === 'GVG') {
+       recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, 100);
+       setBattleMode('DUNGEON');
+       setTimeout(() => setView('syndicate'), 1500);
+    }
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
-    const newTotal = (player.totalBossDamage || 0) + dmg;
+    const newTotal = (player?.totalBossDamage || 0) + dmg;
     const updates = { totalBossDamage: newTotal };
     
     const milestoneMult = Math.pow(2, Math.floor(newTotal / 1000000));
@@ -276,7 +293,7 @@ export const useCombat = (
       const relics = EQUIPMENT.filter(e => e.type === 'Relic');
       if (relics.length > 0) {
         const drop = relics[Math.floor(Math.random() * relics.length)];
-        updates.inventory = [...(player.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        updates.inventory = [...(player?.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
         addLog(`💎 BOSS RELIC DROP: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
@@ -287,7 +304,7 @@ export const useCombat = (
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
         const drop = schematics[Math.floor(Math.random() * schematics.length)];
-        updates.inventory = [...(updates.inventory || player.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        updates.inventory = [...(updates.inventory || player?.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
         addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
@@ -299,7 +316,7 @@ export const useCombat = (
   }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard]);
 
   const handleAttack = useCallback((isBoss = false) => {
-    if (player.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE' || (!isBoss && !enemy)) {
+    if (player?.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE' || (!isBoss && !enemy)) {
       return;
     }
 
@@ -307,8 +324,8 @@ export const useCombat = (
 
     let stats = { ...totalStats };
     // Mate Proc Logic
-    if (player.hiredMate && player.buffUntil <= 0) {
-      const mate = TAVERN_MATES.find(m => m.id === player.hiredMate);
+    if (player?.hiredMate && player?.buffUntil <= 0) {
+      const mate = TAVERN_MATES.find(m => m.id === player?.hiredMate);
       if (mate && mate.procChance < 1.0) { // Only proc-based mates can trigger the timer
         if (Math.random() < mate.procChance) {
           syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
@@ -321,7 +338,7 @@ export const useCombat = (
 
     const monsterElement = selectedMap?.element;
     if (monsterElement) {
-        const playerElement = player.gemxElement || 'Cosmic';
+        const playerElement = player?.gemxElement || 'Cosmic';
         const isEffective = playerElement && ELEMENT_ADVANTAGE[playerElement] === monsterElement;
         
         if (!isEffective) {
@@ -338,13 +355,15 @@ export const useCombat = (
     playSFX(SOUNDS.playerAttack);
     setTimeout(() => setStrikingSide(null), 300);
 
-    const hitChance = getHitChance(stats.dex, target.agi);
+    let hitChance = getHitChance(stats.dex, target.agi);
+    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); // 85% Floor for GvG DECISIVE ACTION
+
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < 0.15;
       let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit));
 
       // --- PHASE 4: Equipment Special Effects ---
-      const effects = Object.values(player.equipped || {}).filter(i => i?.effect).map(i => i.effect);
+      const effects = Object.values(player?.equipped || {}).filter(i => i?.effect).map(i => i.effect);
       
       // 1. Crit Spike (Passive)
       const critSpike = effects.find(e => e.type === 'CritSpike');
@@ -364,7 +383,7 @@ export const useCombat = (
       const lifesteal = effects.find(e => e.type === 'LifeSteal');
       if (lifesteal && Math.random() < lifesteal.chance) {
           const heal = Math.floor(dmg * lifesteal.amount);
-          syncPlayer({ hp: Math.min(player.maxHp, (player.hp || 0) + heal) });
+          syncPlayer({ hp: Math.min(player?.maxHp || 1000, (player?.hp || 0) + heal) });
           addLog(`🩸 LIFESTEAL: +${heal} HP`);
       }
 
@@ -399,12 +418,30 @@ export const useCombat = (
       }, 500);
     } else {
       addLog(`Missed strike on ${target.name}!`);
-      setMissTimeLeft(1.5);
+      setMissTimeLeft(battleMode === 'GVG' ? 0.8 : 1.5);
       setPlayerTaunt("Darn, missed!");
       setCurrentTaunt("Ha! Too slow!");
       enemyTurn(target, isBoss);
     }
-  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt]);
+  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt, battleMode, recordWarResult, gvgContext, setView, setBattleMode]);
+
+  const recordGvGResult = useCallback(() => {
+    if (battleMode !== 'GVG') return;
+    const damagePercent = Math.min(100, Math.floor(((enemy.maxHp - enemy.hp) / enemy.maxHp) * 100));
+    recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, damagePercent);
+    setBattleMode('DUNGEON');
+    setTimeout(() => setView('syndicate'), 1500);
+  }, [battleMode, enemy, gvgContext, recordWarResult, setBattleMode, setView]);
+
+  const handleRetreat = useCallback(() => {
+    if (battleMode === 'GVG') {
+      recordGvGResult();
+    } else {
+      setView('menu');
+      setDepth(1);
+      if (player?.autoUntil > 0) syncPlayer({ autoUntil: 0 });
+    }
+  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer]);
 
   return {
     critAlert,
@@ -436,6 +473,9 @@ export const useCombat = (
     enemyRef,
     stunRef,
     missRef,
-    processingRef
+    processingRef,
+    battleMode,
+    setBattleMode,
+    handleRetreat
   };
 };

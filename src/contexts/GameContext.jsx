@@ -61,17 +61,28 @@ export const GameProvider = ({ children, user }) => {
   // --- CORE SYSTEM INITIALIZATION ---
   const { player, setPlayer, syncPlayer, loadingPlayer } = usePlayerSync(user, db, appId);
   
+  // GvG Battle Context
+  const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
+  const [gvgContext, setGvgContext] = useState(null); // { warId, opponentId }
+
   // Hooks initialization
   const leaderboardObj = useLeaderboard(user, player, db, appId);
   const adventure = useAdventure();
   const audio = useAudioEngine(adventure.view, adventure.enemy?.isBoss);
-  const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
-  const wallet = useWallet(addLog);
-
+  
   const totalStats = useMemo(() => {
     if (!player) return calculateStats({ level: 1, baseStats: { str: 10, agi: 10, dex: 10 }, equipped: {} }, TAVERN_MATES, false, false);
     return calculateStats(player, TAVERN_MATES, false, false); 
   }, [player]);
+
+  const actions = usePlayerActions(
+    player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, 
+    TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId,
+    { setBattleMode, setGvgContext, setEnemy: adventure.setEnemy, setView: adventure.setView }
+  );
+
+  const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
+  const wallet = useWallet(addLog);
 
   const combat = useCombat(
     user, player, syncPlayer, 
@@ -80,11 +91,10 @@ export const GameProvider = ({ children, user }) => {
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
-    adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES
+    adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES,
+    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult }
   );
   
-  const actions = usePlayerActions(player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId);
-
   const gameLoop = useGameLoop({
     player,
     view: adventure.view,
