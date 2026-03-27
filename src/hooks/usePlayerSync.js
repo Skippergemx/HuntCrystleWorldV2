@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
-export const usePlayerSync = (user, db, appId) => {
+export const usePlayerSync = (user, db, appId, farcasterContext) => {
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   
@@ -19,7 +19,8 @@ export const usePlayerSync = (user, db, appId) => {
     const loadData = async () => {
         try {
             setLoadingPlayer(true);
-            const identifier = user.email || user.uid;
+            const isFarcasterUser = user.isAnonymous && farcasterContext?.user?.fid;
+            const identifier = isFarcasterUser ? `farcaster_${farcasterContext.user.fid}` : (user.email || user.uid);
             const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
             const docSnap = await getDoc(docRef);
             
@@ -37,13 +38,14 @@ export const usePlayerSync = (user, db, appId) => {
                 if (!data.selectedScrollId) data.selectedScrollId = 'auto_scroll';
                 if (data.guildId === undefined) data.guildId = null;
                 if (data.guildRole === undefined) data.guildRole = null;
+                if (data.farcasterFID === undefined) data.farcasterFID = farcasterContext?.user?.fid || null;
                 
                 setPlayer(data);
             } else {
                 const newPlayer = {
                     uid: user.uid,
                     email: user.email || '',
-                    name: user.displayName || `Hunter_${user.uid.slice(0, 4)}`,
+                    name: farcasterContext?.user?.username || farcasterContext?.user?.displayName || user.displayName || `Hunter_${user.uid.slice(0, 4)}`,
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
                     baseStats: { str: 10, agi: 10, dex: 10 },
@@ -70,7 +72,9 @@ export const usePlayerSync = (user, db, appId) => {
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     guildId: null,
-                    guildRole: null
+                    guildRole: null,
+                    farcasterFID: farcasterContext?.user?.fid || null,
+                    farcasterPfp: farcasterContext?.user?.pfpUrl || null
                 };
                 setPlayer(newPlayer);
                 // Prompt initial sync for first-time profile creation
@@ -84,7 +88,7 @@ export const usePlayerSync = (user, db, appId) => {
     };
 
     loadData();
-  }, [user, db, appId]);
+  }, [user, db, appId, farcasterContext]);
 
   // Throttled sync mechanism
   const syncPlayer = useCallback(async (updates) => {
@@ -109,7 +113,8 @@ export const usePlayerSync = (user, db, appId) => {
 
       syncTimeoutRef.current = setTimeout(async () => {
         try {
-          const identifier = user.email || user.uid;
+          const isFarcasterUser = user.isAnonymous && farcasterContext?.user?.fid;
+          const identifier = isFarcasterUser ? `farcaster_${farcasterContext.user.fid}` : (user.email || user.uid);
           const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
           await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
           pendingUpdatesRef.current = {};

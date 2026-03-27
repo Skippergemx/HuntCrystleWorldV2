@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@farcaster/frame-sdk": "^0.0.64",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "buffer": "^6.0.3",
     "ethers": "^6.16.0",
     "firebase": "^12.10.0",
     "lucide-react": "^0.577.0",

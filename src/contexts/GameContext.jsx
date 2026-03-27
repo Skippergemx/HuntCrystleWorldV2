@@ -39,7 +39,7 @@ const LOOTS = ITEMS.filter(i => i.category === 'Loot');
 const FRUITS = ITEMS.filter(i => i.category === 'Fruit');
 const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined);
 
-export const GameProvider = ({ children, user }) => {
+export const GameProvider = ({ children, user, farcasterContext }) => {
   const [logs, setLogs] = useState(["Synchronizing with Metaverse..."]);
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -59,7 +59,7 @@ export const GameProvider = ({ children, user }) => {
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer } = usePlayerSync(user, db, appId);
+  const { player, setPlayer, syncPlayer, loadingPlayer } = usePlayerSync(user, db, appId, farcasterContext);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -139,7 +139,8 @@ export const GameProvider = ({ children, user }) => {
     bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showSuccessWindow, setShowSuccessWindow,
     forgeResult, setForgeResult,
-    adventure, combat, actions, gameLoop, market, audio, wallet,
+    adventure, combat, actions, gameLoop, market, audio, wallet, 
+    farcasterContext,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
 
