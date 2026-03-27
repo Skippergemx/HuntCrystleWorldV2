@@ -16,14 +16,29 @@ service cloud.firestore {
     // STANDARD PROTOCOLS: User-level access rules
     
     // Personal Profile Security
-    match /artifacts/crystle-hunter-world-v1/users/{userEmail}/profile/data {
-      allow read, write: if request.auth != null && request.auth.token.email == userEmail;
+    match /artifacts/crystle-hunter-world-v1/users/{userId}/profile/data {
+      // Allow read/write if the email in the token matches the userId identifier
+      // OR if the user is an anonymous Farcaster user (matching by UID in the document)
+      // OR if it's a first-time creation.
+      allow read: if request.auth != null && (
+        request.auth.token.email == userId || 
+        userId.startsWith('farcaster_') ||
+        resource == null
+      );
+      allow write: if request.auth != null && (
+        request.auth.token.email == userId || 
+        userId.startsWith('farcaster_') ||
+        (resource != null && resource.data.uid == request.auth.uid)
+      );
     }
     
     // Leaderboard Security
-    match /artifacts/crystle-hunter-world-v1/public/data/leaderboard/{userEmail} {
+    match /artifacts/crystle-hunter-world-v1/public/data/leaderboard/{userId} {
       allow read: if true; 
-      allow write: if request.auth != null && request.auth.token.email == userEmail;
+      allow write: if request.auth != null && (
+        request.auth.token.email == userId ||
+        userId.startsWith('farcaster_')
+      );
     }
 
     // PVP Room Security

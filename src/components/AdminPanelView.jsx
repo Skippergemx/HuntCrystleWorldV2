@@ -4,7 +4,7 @@ import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collect
 import { useGame } from '../contexts/GameContext';
 
 export const AdminPanelView = React.memo(() => {
-  const { db, appId, user, adventure } = useGame();
+  const { db, appId, user, adventure, farcasterContext } = useGame();
   const { setView } = adventure;
   const userEmail = user?.email || user?.uid;
 
@@ -17,7 +17,7 @@ export const AdminPanelView = React.memo(() => {
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
 
-  const isAdmin = userEmail === 'skippergemx@gmail.com';
+  const isAdmin = userEmail === 'skippergemx@gmail.com' || farcasterContext?.user?.username === 'skippergemx';
 
   useEffect(() => {
     if (isAdmin) {
@@ -404,7 +404,9 @@ export const AdminPanelView = React.memo(() => {
             <ShieldAlert className="text-red-600" size={36} />
             Genesis Admin
           </h1>
-          <p className="text-red-500 font-black text-xs uppercase tracking-widest mt-1">System Authority: {userEmail}</p>
+          <p className="text-red-500 font-black text-[10px] uppercase tracking-widest mt-1">
+             Authority: {farcasterContext?.user?.username ? `@${farcasterContext.user.username}` : userEmail}
+          </p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -563,13 +565,13 @@ export const AdminPanelView = React.memo(() => {
             <h2 className="text-xl font-black text-white uppercase italic">Player Registry</h2>
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search Hunter ID..." 
-                className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-cyan-500 outline-none font-black italic"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              />
+                <input 
+                  type="text" 
+                  placeholder="Search Name, ID, or @Handle..." 
+                  className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-cyan-500 outline-none font-black italic"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                />
             </div>
           </div>
 
@@ -607,15 +609,20 @@ export const AdminPanelView = React.memo(() => {
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl grayscale group-hover:grayscale-0 transition-all shadow-[2px_2px_0_rgba(0,0,0,0.5)] overflow-hidden">
                                 <img 
-                                  src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  src={player.farcasterPfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
                                   className="w-full h-full object-cover" 
                                   alt="" 
                                 />
                               </div>
                               <div className="flex flex-col gap-0.5 text-left">
                                 <p className="text-sm font-black text-white italic leading-none">{player.name || 'Anonymous Hunter'}</p>
-                                <p className="text-[9px] text-cyan-500 font-bold tracking-wider">{player.email || 'No Email'}</p>
-                                <p className="text-[7px] text-slate-600 font-bold tracking-tighter uppercase">{player.id}</p>
+                                <p className="text-[9px] text-cyan-500 font-bold tracking-wider">
+                                   {player.farcasterUsername ? `@${player.farcasterUsername}` : (player.email || 'Anonymous Signal')}
+                                </p>
+                                <p className="text-[7px] text-slate-600 font-bold tracking-tighter uppercase flex items-center gap-1">
+                                   {player.id.startsWith('farcaster_') ? <Globe size={8} className="text-purple-500" /> : <ShieldAlert size={8} className="text-amber-500" />}
+                                   {player.id}
+                                </p>
                               </div>
                             </div>
                           </td>

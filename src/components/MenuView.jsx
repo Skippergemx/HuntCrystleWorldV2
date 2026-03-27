@@ -16,18 +16,19 @@ import {
   Tag,
   HelpCircle,
   FlaskConical,
-  Shield,
   Sparkles,
-  BookOpen
+  BookOpen,
+  ShieldAlert
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const MenuView = React.memo(() => {
-  const { adventure, gameLoop, syncPlayer, openGuide } = useGame();
+  const { adventure, gameLoop, syncPlayer, openGuide, user, farcasterContext } = useGame();
   const { setView } = adventure;
   const { penaltyRemaining, autoTimeLeft } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
+  const isAdmin = user?.email === 'skippergemx@gmail.com' || farcasterContext?.user?.username === 'skippergemx';
 
   const startDungeon = () => {
     if (!isPenalized) {
@@ -107,6 +108,16 @@ export const MenuView = React.memo(() => {
         color="bg-cyan-600 border-cyan-400/50" 
         backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-4.jpg"
       />
+      {isAdmin && (
+        <NavBtn 
+          onClick={() => setView('admin')} 
+          icon={<ShieldAlert />} 
+          title="Admin Panel" 
+          sub="Genesis Access" 
+          color="bg-red-600 border-red-500" 
+          backdrop="/assets/monsters/Rust Canyon/Boss-RustCat.jpg"
+        />
+      )}
     </div>
   );
 });
