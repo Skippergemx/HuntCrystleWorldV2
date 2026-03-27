@@ -161,31 +161,31 @@ export const MarketplaceView = React.memo(() => {
               const master = getMasterData(l.item);
               const rarity = master?.rarity || 'Common';
               return (
-                <div key={l.id} className="bg-white border-[3px] border-black p-4 flex justify-between items-center group hover:-translate-y-1 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden">
-                   <div className="flex gap-4 items-center">
-                      <div className={`w-12 h-12 bg-slate-950 flex items-center justify-center text-3xl border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
+                <div key={l.id} className="bg-white border-[3px] border-black p-4 flex flex-col md:flex-row gap-4 md:gap-0 justify-between items-center group hover:-translate-y-1 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden">
+                   <div className="flex gap-3 md:gap-4 items-center w-full md:w-auto">
+                      <div className={`w-12 h-12 md:w-14 md:h-14 shrink-0 bg-slate-950 flex items-center justify-center text-2xl md:text-3xl border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] ${rarity === 'Legendary' ? 'border-amber-400' : ''}`}>
                          {master?.icon || '📦'}
                       </div>
-                      <div className="min-w-0">
-                         <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black text-black uppercase italic leading-none truncate">{master?.name}</h4>
-                            {l.quantity > 1 && <span className="text-[10px] font-black text-amber-500 italic bg-black/5 px-1.5 border border-black/10">x{l.quantity}</span>}
-                            <span className={`text-[7px] font-black px-1 border border-black uppercase ${rarity === 'Legendary' ? 'bg-amber-400 text-black' : 'bg-slate-100 text-slate-400'}`}>{rarity}</span>
+                      <div className="min-w-0 flex-1">
+                         <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="text-sm md:text-base font-black text-black uppercase italic leading-none truncate max-w-[120px] md:max-w-none">{master?.name}</h4>
+                            {l.quantity > 1 && <span className="text-[9px] md:text-[10px] font-black text-amber-500 italic bg-black/5 px-1.5 border border-black/10">x{l.quantity}</span>}
+                            <span className={`text-[6px] md:text-[7px] font-black px-1 border border-black uppercase ${rarity === 'Legendary' ? 'bg-amber-400 text-black' : 'bg-slate-100 text-slate-400'}`}>{rarity}</span>
                          </div>
-                         <p className="text-[8px] font-bold text-slate-400 uppercase mt-1">SDR: {l.sellerName?.substring(0, 10) || 'ANON'}</p>
-                         <p className="text-[7px] font-bold text-slate-500 uppercase mt-1 leading-none italic line-clamp-1">{master?.description || "Signal source detected."}</p>
+                         <p className="text-[7px] md:text-[8px] font-bold text-slate-400 uppercase mt-0.5">SDR: {l.sellerName?.substring(0, 10) || 'ANON'}</p>
+                         <p className="text-[7px] font-bold text-slate-500 uppercase mt-0.5 leading-none italic line-clamp-1">{master?.description || "Signal source detected."}</p>
                       </div>
                    </div>
-
-                   <div className="flex flex-col items-end gap-2 shrink-0">
+ 
+                   <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-end gap-3 w-full md:w-auto pt-3 md:pt-0 border-t-2 md:border-t-0 border-black/5">
                       <div className="bg-amber-100 px-3 py-1 border-2 border-black transform rotate-2">
                          <span className="text-xs font-black text-black">{l.price} GX</span>
-                         <span className="text-[6px] font-bold text-slate-400 block tracking-widest text-center">PER UNIT</span>
+                         <span className="text-[6px] font-bold text-slate-400 block tracking-widest text-center leading-none">PER UNIT</span>
                       </div>
                       <button
                         onClick={() => handleOpenPurchaseModal(l)}
                         disabled={player.tokens < l.price || l.sellerUid === player.uid}
-                        className={`px-4 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
+                        className={`px-6 py-2 border-2 border-black text-[9px] font-black uppercase tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all ${player.tokens >= l.price && l.sellerUid !== player.uid ? 'bg-cyan-400 hover:bg-cyan-300 text-black' : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-50'}`}
                       >
                         {l.sellerUid === player.uid ? 'BROADCASTING' : 'ACQUIRE'}
                       </button>

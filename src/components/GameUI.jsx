@@ -3,8 +3,8 @@ import { X, Sparkles, PlusCircle, HelpCircle } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp }) => (
   <div className="flex justify-between items-center mb-4 md:mb-6 w-full relative z-20">
-    <div className="bg-white text-black px-3 md:px-4 py-0.5 md:py-1 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1 max-w-[60%] md:max-w-[70%]">
-      <h2 className="text-sm md:text-xl font-black uppercase tracking-tighter italic truncate">{title}</h2>
+    <div className="bg-white text-black px-3 md:px-4 py-0.5 md:py-1 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1 max-w-[75%] md:max-w-[70%]">
+      <h2 className="text-xs md:text-xl font-black uppercase tracking-tighter italic truncate">{title}</h2>
     </div>
     <div className="flex gap-2 shrink-0">
       {onHelp && (

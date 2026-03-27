@@ -197,7 +197,7 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
              )}
 
              {activeTab === 'modules' && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 animate-in fade-in slide-in-from-bottom-4">
                    {menuSections.map((item, i) => (
                       <div key={i} className="group relative bg-white border-[3px] border-black p-3 md:p-4 rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all flex flex-col items-center text-center overflow-hidden">
                          {/* Card Backdrop */}
