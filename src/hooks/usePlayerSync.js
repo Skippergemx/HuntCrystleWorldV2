@@ -29,7 +29,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                 // Migration: Ensure new fields exist
                 if (!data.gemx) data.gemx = { level: 1, crystalsFed: 0 };
                 if (!data.dragon) data.dragon = { level: 1, fruitsFed: 0 };
-                if (!data.gemxAvatar) data.gemxAvatar = 'gemx (1).gif';
+                if (!data.gemxAvatar) data.gemxAvatar = 'Cosmic gemx (1).gif';
+                if (!data.avatar) data.avatar = 1;
                 if (data.dragonAnimationEnabled === undefined) data.dragonAnimationEnabled = true;
                 if (data.performanceMode === undefined) data.performanceMode = false;
                 if (data.maxDepth === undefined) data.maxDepth = 1;
@@ -66,13 +67,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     autoMode: null,
                     gemx: { level: 1, crystalsFed: 0 },
                     dragon: { level: 1, fruitsFed: 0 },
-                    gemxAvatar: 'gemx (1).gif',
+                    gemxAvatar: 'Cosmic gemx (1).gif',
                     dragonAnimationEnabled: true,
                     performanceMode: false,
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     guildId: null,
                     guildRole: null,
+                    avatar: 1,
                     farcasterFID: farcasterContext?.user?.fid || null,
                     farcasterPfp: farcasterContext?.user?.pfpUrl || null
                 };

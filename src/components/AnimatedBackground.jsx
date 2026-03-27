@@ -44,13 +44,13 @@ export const AnimatedBackground = React.memo(({ MONSTERS, performanceMode }) => 
               <div className="absolute inset-0 z-10 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '4px 4px' }}></div>
               
               <img
-                src={`/assets/monsters/${monster.folder || 'Neon Slums'}/${monster.name}.png`}
+                src={`/assets/monsters/${monster.folder || 'Neon Slums'}/${monster.name}.jpg`}
                 alt=""
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   const folder = monster.folder || 'Neon Slums';
-                  if (e.target.src.endsWith('.png')) {
-                    e.target.src = `/assets/monsters/${folder}/${monster.name}.jpg`;
+                  if (e.target.src.endsWith('.jpg')) {
+                    e.target.src = `/assets/monsters/${folder}/${monster.name}.png`;
                   } else {
                     e.target.onerror = null;
                     e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + monster.name;

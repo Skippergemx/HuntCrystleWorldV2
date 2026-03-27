@@ -18,17 +18,19 @@ service cloud.firestore {
     // Personal Profile Security
     match /artifacts/crystle-hunter-world-v1/users/{userId}/profile/data {
       // Allow read/write if the email in the token matches the userId identifier
-      // OR if the user is an anonymous Farcaster user (matching by UID in the document)
-      // OR if it's a first-time creation.
+      // OR if the user is an anonymous Farcaster user
       allow read: if request.auth != null && (
         request.auth.token.email == userId || 
-        userId.startsWith('farcaster_') ||
+        userId.matches('^farcaster_.*') ||
+        userId == request.auth.uid ||
         resource == null
       );
       allow write: if request.auth != null && (
         request.auth.token.email == userId || 
-        userId.startsWith('farcaster_') ||
-        (resource != null && resource.data.uid == request.auth.uid)
+        userId.matches('^farcaster_.*') ||
+        userId == request.auth.uid ||
+        (resource != null && resource.data.uid == request.auth.uid) ||
+        (request.resource != null && request.resource.data.uid == request.auth.uid)
       );
     }
     
@@ -37,7 +39,8 @@ service cloud.firestore {
       allow read: if true; 
       allow write: if request.auth != null && (
         request.auth.token.email == userId ||
-        userId.startsWith('farcaster_')
+        userId.matches('^farcaster_.*') ||
+        userId == request.auth.uid
       );
     }
 

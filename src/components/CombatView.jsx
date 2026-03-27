@@ -228,12 +228,12 @@ export const CombatView = React.memo(() => {
                     />
                   ) : (
                     <img
-                        src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.png`}
+                        src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.jpg`}
                         alt={enemy.name}
                         className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
                         onError={(e) => {
                             const folder = enemy.folder || 'Neon Slums';
-                            if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.jpg`;
+                            if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.png`;
                             else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
                         }}
                     />

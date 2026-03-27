@@ -74,11 +74,11 @@ export const DatabaseView = React.memo(() => {
                 <div className="w-24 h-24 bg-slate-950 border-[4px] border-black shrink-0 overflow-hidden flex items-center justify-center relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-3 group-hover:rotate-0 transition-transform duration-300">
                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-40"></div>
                    <img 
-                    src={`/assets/monsters/${monster.folder || 'Neon Slums'}/${monster.name}.png`} 
+                    src={`/assets/monsters/${monster.folder || 'Neon Slums'}/${monster.name}.jpg`} 
                     className="w-full h-full object-cover relative z-10 group-hover:scale-110 transition-transform duration-500 contrast-125" 
                     onError={(e) => { 
                       const folder = monster.folder || 'Neon Slums';
-                      if (e.target.src.endsWith('.png')) e.target.src = `/assets/monsters/${folder}/${monster.name}.jpg`;
+                      if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${monster.name}.png`;
                       else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + monster.name; }
                     }} 
                    />

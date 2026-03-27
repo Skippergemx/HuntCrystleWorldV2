@@ -366,7 +366,10 @@ export const DragonsGroundView = React.memo(() => {
                       src={`/assets/monsters/Neon Slums/${m.name}.jpg`}
                       alt={m.name}
                       className="w-full h-full object-cover rounded-full opacity-80"
-                      onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }}
+                      onError={(e) => {
+                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/Neon Slums/${m.name}.png`;
+                        else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }
+                      }}
                     />
                   </div>
                 </div>
