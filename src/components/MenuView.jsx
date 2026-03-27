@@ -18,6 +18,7 @@ import {
   FlaskConical,
   Sparkles,
   BookOpen,
+  Shield,
   ShieldAlert
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
