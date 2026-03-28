@@ -1,8 +1,8 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOiIsImFkZHJlc3MiOiIsImNpZyI6IiJ9",
+    "header": "eyJmaWQiOjk3NjU3NCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDhkY2E4ZDdCMzUwMDQ2MzBGNDYwQjg1RjcwZDExODk3OTVDRGU2RmMifQ",
     "payload": "eyJkb21haW4iOiJtZXRhdmVyc2UuZHVuZ2VvbnN3aXRoZ2Vtcy5xdWVzdCJ9",
-    "signature": ""
+    "signature": "dkze0mQOSi26oOPzuWxj0XBFftljYuw9FGwuLJYD/pYEbUt1qsyu7Xop51lZ3rx1yGUK7wdobxTxQzxqnb3U5Rw="
   },
   "frame": {
     "name": "Dungeons With Gems",
