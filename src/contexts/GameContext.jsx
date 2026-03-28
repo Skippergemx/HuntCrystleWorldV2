@@ -114,6 +114,13 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     combat.setPenaltyRemaining(gameLoop.penaltyRemaining);
   }, [gameLoop.penaltyRemaining]);
 
+  // Sync wallet address to profile for airdrop tracking
+  useEffect(() => {
+    if (player && wallet.address && player.walletAddress !== wallet.address) {
+       syncPlayer({ walletAddress: wallet.address });
+    }
+  }, [wallet.address, player, syncPlayer]);
+
   if (loadingPlayer || !player) return <LoadingScreen />;
 
   const openGuide = (type) => {

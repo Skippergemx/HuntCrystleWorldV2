@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target } from 'lucide-react';
+import { ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Globe } from 'lucide-react';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 
@@ -12,7 +12,7 @@ export const AdminPanelView = React.memo(() => {
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', or 'system'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', or 'system'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
@@ -198,7 +198,7 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const { id, sourceAppId, name, level, tokens, totalBossDamage, maxDepth } = editingPlayer;
+      const { id, sourceAppId, name, level, tokens, totalBossDamage, maxDepth, walletAddress } = editingPlayer;
       const profileRef = doc(db, 'artifacts', sourceAppId || appId, 'users', id, 'profile', 'data');
       
       const updateData = {
@@ -206,7 +206,8 @@ export const AdminPanelView = React.memo(() => {
         level: Number(level),
         tokens: Number(tokens),
         totalBossDamage: Number(totalBossDamage),
-        maxDepth: Number(maxDepth)
+        maxDepth: Number(maxDepth),
+        walletAddress: walletAddress || null
       };
 
       await updateDoc(profileRef, updateData);
@@ -366,6 +367,17 @@ export const AdminPanelView = React.memo(() => {
                 </div>
               </div>
 
+              <div className="space-y-1">
+                <label className="text-[10px] font-black text-slate-500 uppercase">Wallet Address (Base)</label>
+                <input 
+                  type="text" 
+                  value={editingPlayer.walletAddress || ''}
+                  onChange={e => setEditingPlayer({...editingPlayer, walletAddress: e.target.value})}
+                  placeholder="0x..."
+                  className="w-full bg-black border-2 border-slate-800 p-2 text-amber-500 font-mono text-[10px] focus:border-amber-500 outline-none"
+                />
+              </div>
+
               <div className="pt-4 flex flex-col gap-3">
                 <div className="flex gap-3">
                   <button 
@@ -484,6 +496,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'players' ? 'bg-cyan-600 text-white border-cyan-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           Player Registry
+        </button>
+        <button 
+          onClick={() => { setActiveTab('wallets'); fetchStats(); }}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'wallets' ? 'bg-amber-500 text-black border-amber-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          Wallet Mapper
         </button>
         <button 
           onClick={() => setActiveTab('system')}
@@ -710,6 +728,128 @@ export const AdminPanelView = React.memo(() => {
               </div>
             );
           })()}
+        </div>
+      ) : activeTab === 'wallets' ? (
+        <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-amber-500 pl-4">
+            <div>
+               <h2 className="text-xl font-black text-white uppercase italic">Wallet Distribution Map</h2>
+               <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Cross-Platform Airdrop Readiness Analyzer</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+               <div className="relative w-full md:w-64">
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                   <input 
+                     type="text" 
+                     placeholder="Filter by Name, ID, or Address..." 
+                     className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-amber-500 outline-none font-black italic"
+                     value={searchQuery}
+                     onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                   />
+               </div>
+               <button 
+                 onClick={() => {
+                   const addresses = players.filter(p => p.walletAddress && p.walletAddress.startsWith('0x')).map(p => p.walletAddress).join('\n');
+                   navigator.clipboard.writeText(addresses);
+                   setMessage({ type: 'success', text: `COPIED TO CLIPBOARD: ${addresses.split('\n').filter(a => a).length} wallet addresses secured.` });
+                 }}
+                 className="px-6 py-2 bg-amber-500 text-black font-black uppercase italic text-xs flex items-center gap-2 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:scale-105 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+               >
+                 <Copy size={16} />
+                 Capture All Addresses
+               </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-separate border-spacing-y-2">
+              <thead>
+                <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest px-4">
+                  <th className="py-2 px-4">Subject identity</th>
+                  <th className="py-2 px-4">Origin Hub</th>
+                  <th className="py-2 px-4">Bound Wallet Address (Base Chain)</th>
+                  <th className="py-2 px-4 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="space-y-4">
+                {(() => {
+                  const filtered = (players || []).filter(p => {
+                    const search = searchQuery.toLowerCase();
+                    return !searchQuery || 
+                           (p.name?.toLowerCase().includes(search)) || 
+                           (p.id?.toLowerCase().includes(search)) || 
+                           (p.walletAddress?.toLowerCase().includes(search));
+                  });
+                  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                  const start = (currentPage - 1) * itemsPerPage;
+                  const paginated = filtered.slice(start, start + itemsPerPage);
+
+                  return (
+                    <>
+                      {paginated.map((player) => (
+                        <tr key={player.id} className="bg-slate-900/40 border-2 border-slate-800 hover:border-amber-500/50 transition-all group">
+                          <td className="py-4 px-4 text-left rounded-l-xl">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl overflow-hidden rounded-md">
+                                <img 
+                                  src={player.farcasterPfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  className="w-full h-full object-cover" 
+                                  alt="" 
+                                />
+                              </div>
+                              <div className="flex flex-col gap-0.5 min-w-0">
+                                <p className="text-xs font-black text-white italic truncate">{player.name || 'ANON_UNIT'}</p>
+                                <p className="text-[7px] text-slate-500 font-bold uppercase truncate">{player.id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center gap-1.5">
+                               {player.id.startsWith('farcaster_') ? (
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-950/40 border border-indigo-500/30 rounded text-indigo-400">
+                                     <Globe size={10} />
+                                     <span className="text-[8px] font-black uppercase">Farcaster</span>
+                                  </div>
+                               ) : (
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-red-500">
+                                     <FileText size={10} />
+                                     <span className="text-[8px] font-black uppercase">Google</span>
+                                  </div>
+                               )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4">
+                            {player.walletAddress ? (
+                               <div className="flex items-center gap-2">
+                                  <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 text-amber-500 font-mono text-[10px] transition-all group-hover:border-amber-500/30 group-hover:text-amber-400">
+                                     {player.walletAddress}
+                                  </code>
+                                  <button 
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(player.walletAddress);
+                                      setMessage({ type: 'success', text: `ADAPTOR PINNED: ${player.walletAddress.slice(0, 10)} copied.` });
+                                    }}
+                                    className="p-1 px-2 bg-slate-800 hover:bg-amber-500 hover:text-black text-slate-500 transition-all rounded text-[8px] font-black uppercase"
+                                  >
+                                     <Copy size={10} />
+                                  </button>
+                               </div>
+                            ) : (
+                               <span className="text-[8px] font-black text-slate-700 uppercase italic tracking-tighter">Unbound Signal: Waiting for Web3 Uplink</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 text-center rounded-r-xl">
+                             <div className={`w-2 h-2 rounded-full mx-auto ${player.walletAddress ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`}></div>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
