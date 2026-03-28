@@ -63,11 +63,6 @@ export const AdminPanelView = React.memo(() => {
         console.warn("Collection Group pulse restricted:", e.message);
       }
 
-      setStats({
-        totalUsers: foundIds.size,
-        leaderboardSize: foundIds.size 
-      });
-
       // Phase 4: Hydration (Reconstructing Profile Data)
       const profiles = [];
       const idArray = Array.from(foundIds);
@@ -87,6 +82,11 @@ export const AdminPanelView = React.memo(() => {
         }
       }
 
+      setStats({
+        totalUsers: profiles.length,
+        leaderboardSize: foundIds.size 
+      });
+
       setPlayers(profiles);
       
       if (foundIds.size === 0) {
@@ -103,22 +103,45 @@ export const AdminPanelView = React.memo(() => {
   };
 
   const resetLeaderboard = async () => {
-    if (!window.confirm("Are you sure? This will set all player damage to 0 and clear rankings.")) return;
+    if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL hydrated players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
     
     setLoading(true);
     setMessage(null);
     try {
       const batch = writeBatch(db);
+      
+      // Clear Leaderboard
       const lbSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'));
-      lbSnap.forEach((d) => {
-        batch.delete(d.ref);
-        const userId = d.id;
-        const userProfileRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'data');
-        batch.update(userProfileRef, { totalBossDamage: 0 });
+      lbSnap.forEach((d) => { batch.delete(d.ref); });
+
+      // Reset All Profiles
+      players.forEach(p => {
+        const profileRef = doc(db, 'artifacts', p.sourceAppId || appId, 'users', p.id, 'profile', 'data');
+        const cleanSlate = {
+          level: 1, xp: 0, tokens: 100,
+          hp: 150, maxHp: 150,
+          baseStats: { str: 10, agi: 10, dex: 10 },
+          abilityPoints: 5,
+          potions: 5,
+          autoScrolls: 0,
+          autoUntil: 0,
+          hiredMate: null,
+          buffUntil: 0,
+          equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
+          recipes: ['crystle_blade'],
+          inventory: [],
+          totalBossDamage: 0,
+          maxDepth: 1,
+          penaltyUntil: 0,
+          autoMode: null,
+          gemx: { level: 1, crystalsFed: 0 },
+          dragon: { level: 1, fruitsFed: 0 }
+        };
+        batch.update(profileRef, cleanSlate);
       });
 
       await batch.commit();
-      setMessage({ type: 'success', text: 'Leaderboard reset successfully!' });
+      setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void.` });
       await fetchStats();
     } catch (e) {
       console.error(e);
