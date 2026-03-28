@@ -65,8 +65,8 @@ export const MenuView = React.memo(() => {
       <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" />
       <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" />
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
-      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Rust Canyon/Rust Cat 1-4.jpg" />
-      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-2.jpg" />
+      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" />
+      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" />
       <NavBtn 
         onClick={startBoss} 
         icon={<AlertCircle />} 
@@ -74,7 +74,7 @@ export const MenuView = React.memo(() => {
         sub="High Yield" 
         color="bg-red-700" 
         disabled={isPenalized} 
-        backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 3-0.jpg"
+        backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
       />
       <NavBtn 
         onClick={() => setView('syndicate')} 
@@ -83,7 +83,7 @@ export const MenuView = React.memo(() => {
         sub="Maintenance" 
         color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" 
         disabled={true}
-        backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-3.jpg" 
+        backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
       />
       <NavBtn 
         onClick={() => setView('pvp')} 
@@ -91,7 +91,7 @@ export const MenuView = React.memo(() => {
         title="PVP Arena" 
         sub="Holo-Grid" 
         color="bg-red-900 border-red-500/50" 
-        backdrop="/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg"
+        backdrop="/assets/monsters/Gale Empire/Vortex Vanguard.jpg"
       />
       <NavBtn 
         onClick={() => setView('pets')} 
@@ -99,7 +99,7 @@ export const MenuView = React.memo(() => {
         title="Genesis Pets" 
         sub="Web3" 
         color="bg-cyan-900 border-cyan-400/30" 
-        backdrop="/assets/monsters/Rust Canyon/Iron Pet 1-1.jpg"
+        backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
       />
       <NavBtn 
         onClick={() => setView('manual')} 
@@ -107,7 +107,7 @@ export const MenuView = React.memo(() => {
         title="Manual" 
         sub="How to Play" 
         color="bg-cyan-600 border-cyan-400/50" 
-        backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-4.jpg"
+        backdrop="/assets/monsters/Void Sector 7/Rift Lurker.jpg"
       />
       {isAdmin && (
         <NavBtn 
@@ -116,7 +116,7 @@ export const MenuView = React.memo(() => {
           title="Admin Panel" 
           sub="Genesis Access" 
           color="bg-red-600 border-red-500" 
-          backdrop="/assets/monsters/Rust Canyon/Boss-RustCat.jpg"
+          backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg"
         />
       )}
     </div>

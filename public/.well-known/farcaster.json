@@ -7,11 +7,11 @@
   "frame": {
     "version": "1",
     "name": "Dungeons With Gems",
-    "iconUrl": "https://dungeonswithgems.io/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg",
+    "iconUrl": "https://dungeonswithgems.io/assets/monsters/Rust%20Canyon/Rust%20Cat%200-0.jpg",
     "homeUrl": "https://dungeonswithgems.io",
     "imageUrl": "https://dungeonswithgems.io/assets/gamescreenshot/mainmenuscreenshot.png",
     "buttonTitle": "Play Idle",
-    "splashImageUrl": "https://dungeonswithgems.io/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg",
+    "splashImageUrl": "https://dungeonswithgems.io/assets/monsters/Rust%20Canyon/Rust%20Cat%200-0.jpg",
     "splashBackgroundColor": "#020617"
   }
 }

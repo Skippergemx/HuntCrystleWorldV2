@@ -455,7 +455,7 @@ export const GameLayout = ({ onLogout }) => {
 
         </div>
 
-        <div className="bg-amber-400 border-[4px] border-black rounded-lg p-3 h-28 overflow-y-auto relative shadow-[4px_4px_0_rgba(0,0,0,1)]">
+        <div className="bg-amber-400 border-[4px] border-black rounded-lg p-3 h-28 overflow-y-auto relative shadow-[4px_4px_0_rgba(0,0,0,1)] custom-scrollbar">
           <div className="absolute top-2 right-4 text-[8px] font-black text-black opacity-30 uppercase tracking-[0.4em]">Battle Bulletin</div>
           <div className="space-y-1">
             {logs.map((log, i) => (

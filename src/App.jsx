@@ -19,7 +19,6 @@ const App = () => {
        try {
           const ctx = await sdk.context;
           setContext(ctx);
-          sdk.actions.ready();
           if (ctx) {
              console.log("Farcaster Frame Context Loaded:", ctx);
           } else {
@@ -36,6 +35,12 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      // Once auth is checked and loading is false, tell Farcaster we are ready
+      try {
+        sdk.actions.ready();
+      } catch (e) {
+        console.error("SDK ready call failed:", e);
+      }
     });
     return () => unsubscribe();
   }, []);

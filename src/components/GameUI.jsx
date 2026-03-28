@@ -106,6 +106,10 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
           src={backdrop} 
           className="w-full h-full object-cover grayscale-[0.4] contrast-150 opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700" 
           alt=""
+          onError={(e) => { 
+            e.target.onerror = null; 
+            e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + title; 
+          }}
         />
         <div className="absolute inset-0 bg-black/20" />
       </div>
@@ -173,7 +177,7 @@ export const AvatarMedia = React.memo(({ num, animated, className }) => {
       </video>
     );
   }
-return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" />;
+return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + num; }} />;
 });
 
 export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, orientation = 'vertical' }) => {
