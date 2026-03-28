@@ -52,14 +52,43 @@ export const IdentityView = React.memo(() => {
            <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2"><Wallet size={14} /> Web3 Uplink (Base Chain)</h3>
            
            {!wallet.address ? (
-             <button 
-                onClick={wallet.connectWallet}
-                disabled={wallet.loading}
-                className="w-full bg-cyan-600 hover:bg-cyan-500 border-b-4 border-cyan-800 p-4 rounded-xl flex items-center justify-center gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
-             >
-                <Link size={18} className="text-black group-hover:rotate-45 transition-transform" />
-                <span className="font-black text-black uppercase italic text-sm">{wallet.loading ? 'Synchronizing...' : 'Establish Link'}</span>
-             </button>
+             <div className="flex flex-col gap-3">
+                {/* Native Warpcast Link */}
+                {wallet.hasNativeProvider && (
+                  <button 
+                    onClick={() => wallet.connectWallet('NATIVE')}
+                    disabled={wallet.loading}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 border-b-4 border-indigo-900 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
+                  >
+                    <div className="flex items-center gap-3">
+                       <Globe size={18} className="text-white group-hover:rotate-12 transition-transform" />
+                       <div className="flex flex-col text-left">
+                          <span className="font-black text-white uppercase italic text-sm">Warpcast Wallet</span>
+                          <span className="text-[7px] text-indigo-200 font-bold uppercase">Native Frame Uplink</span>
+                       </div>
+                    </div>
+                    {wallet.loading && <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>}
+                  </button>
+                )}
+
+                {/* External Browser Link */}
+                {wallet.hasExternalProvider && (
+                   <button 
+                      onClick={() => wallet.connectWallet('EXTERNAL')}
+                      disabled={wallet.loading}
+                      className="w-full bg-cyan-600 hover:bg-cyan-500 border-b-4 border-cyan-800 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
+                   >
+                      <div className="flex items-center gap-3">
+                         <Link size={18} className="text-black group-hover:rotate-45 transition-transform" />
+                         <div className="flex flex-col text-left">
+                            <span className="font-black text-black uppercase italic text-sm">External Wallet</span>
+                            <span className="text-[7px] text-cyan-900 font-bold uppercase">MetaMask / Browser</span>
+                         </div>
+                      </div>
+                      {wallet.loading && <div className="w-2 h-2 rounded-full bg-black animate-ping"></div>}
+                   </button>
+                )}
+             </div>
            ) : (
              <div className="space-y-4">
                 <div className="bg-black/60 border border-cyan-500/20 p-3 rounded-lg flex items-center justify-between">
