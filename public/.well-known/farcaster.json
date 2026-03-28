@@ -5,13 +5,30 @@
     "signature": ""
   },
   "frame": {
-    "version": "1",
     "name": "Dungeons With Gems",
-    "iconUrl": "https://dungeonswithgems.io/assets/monsters/Rust%20Canyon/Rust%20Cat%200-0.jpg",
-    "homeUrl": "https://dungeonswithgems.io",
-    "imageUrl": "https://dungeonswithgems.io/assets/gamescreenshot/mainmenuscreenshot.png",
-    "buttonTitle": "Play Idle",
-    "splashImageUrl": "https://dungeonswithgems.io/assets/monsters/Rust%20Canyon/Rust%20Cat%200-0.jpg",
-    "splashBackgroundColor": "#020617"
+    "version": "1",
+    "iconUrl": "https://dungeonswithgems.quest/assets/gameicon/DWGX-Icon.png",
+    "homeUrl": "https://metaverse.dungeonswithgems.quest",
+    "imageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png",
+    "buttonTitle": "Join the Fun!",
+    "splashImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png",
+    "splashBackgroundColor": "#4C005E",
+    "webhookUrl": "https://metaverse.dungeonswithgems.quest/api/webhook",
+    "subtitle": "Idle Game for busy people. Web3 Gaming Reborn on Base.",
+    "description": "A hands-free idle game for busy people who are gamers by heart. Forge your legacy and return to legendary loot while the app auto-plays",
+    "primaryCategory": "games",
+    "screenshotUrls": [
+      "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png"
+    ],
+    "tagline": "Idle Game for busy people.",
+    "ogTitle": "Dungeon With Gems",
+    "tags": [
+      "idle",
+      "game",
+      "web3game",
+      "earn",
+      "clicker"
+    ],
+    "heroImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png"
   }
 }

@@ -469,8 +469,16 @@ export const GameLayout = ({ onLogout }) => {
 
       </main>
 
-      <footer className="text-center py-8 opacity-40">
-        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1">METAVERSE.DUNGEONSWITHGEMS.QUEST</p>
+      <footer className="w-full py-8 flex flex-col items-center gap-4 relative z-20">
+        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40">METAVERSE.DUNGEONSWITHGEMS.QUEST</p>
+        
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 bg-black/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-xl">
+           <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-wider transition-colors">Github</a>
+           <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-cyan-400 uppercase italic tracking-wider transition-colors">Twitter</a>
+           <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-blue-400 uppercase italic tracking-wider transition-colors">Telegram</a>
+           <div className="text-[10px] font-black text-slate-500 uppercase italic tracking-wider cursor-help" title="Discord: skippergemx">Discord: skippergemx</div>
+           <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>
+        </div>
       </footer>
 
       <style>{`

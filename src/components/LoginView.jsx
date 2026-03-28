@@ -2,24 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sword, Shield, Zap, Globe, Lock, ChevronRight, Info, ShieldCheck, Database, Award, 
   Coins, Hammer, Package, Activity, TrendingUp, Target, Sparkles, Users, Map as MapIcon, 
-  Trophy, MousePointer, Heart, Beer, ShoppingBag, Tag, Book, Trees, FlaskConical, Swords, AlertCircle
+  Trophy, MousePointer, Heart, Beer, ShoppingBag, Tag, Book, Trees, FlaskConical, Swords, AlertCircle,
+  Github, Twitter, MessageCircle, Send
 } from 'lucide-react';
 
 export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterContext }) => {
   const [activeTab, setActiveTab] = useState('mission');
-  const [activeShot, setActiveShot] = useState(0);
+  const [activeMobileShot, setActiveMobileShot] = useState(0);
+  const [activeDesktopShot, setActiveDesktopShot] = useState(0);
 
-  const gameShots = [
-    { src: '/assets/gamescreenshot/mainmenuscreenshot.png', title: 'Tactical Command Hub' },
-    { src: '/assets/gamescreenshot/battlegamescreenshot.png', title: 'Automated Combat Protocol' }
+  const mobileShots = [
+    '/assets/gamescreenshot/Mobilescreenshot (1).png',
+    '/assets/gamescreenshot/Mobilescreenshot (2).png',
+    '/assets/gamescreenshot/Mobilescreenshot (3).png',
+    '/assets/gamescreenshot/Mobilescreenshot (4).png'
+  ];
+
+  const desktopShots = [
+    '/assets/gamescreenshot/mainmenuscreenshot.png',
+    '/assets/gamescreenshot/battlegamescreenshot.png'
   ];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setActiveShot(prev => (prev + 1) % gameShots.length);
-    }, 5000);
+      setActiveMobileShot(prev => (prev + 1) % mobileShots.length);
+      setActiveDesktopShot(prev => (prev + 1) % desktopShots.length);
+    }, 4000);
     return () => clearInterval(timer);
-  }, [gameShots.length]);
+  }, []);
 
   const menuSections = [
     { id: 'dungeon', icon: <MapIcon size={14} />, title: 'Dungeon', desc: 'Deploy to lethal sectors for automated resource harvesting.', color: 'text-cyan-400', backdrop: '/assets/monsters/Rust Canyon/Rust Cat 2-1.jpg' },
@@ -84,16 +94,17 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
               <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none opacity-20"></div>
               <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full group-hover:bg-cyan-500/20 transition-all"></div>
               
-              <div className="text-center mb-6 relative z-10">
-                 <div className="w-16 h-16 bg-slate-950 border-[3px] border-cyan-500 rounded-2xl mx-auto flex items-center justify-center transform -rotate-12 shadow-xl mb-4 relative">
-                    <ShieldCheck size={32} className="text-cyan-400" />
-                    <div className="absolute -right-2 -bottom-2 w-7 h-7 bg-amber-500 border-2 border-black rounded-lg transform rotate-12 flex items-center justify-center shadow-lg">
-                       <Lock size={14} className="text-black" />
-                    </div>
-                 </div>
-                 <h2 className="text-xl font-black text-white uppercase italic tracking-tighter leading-none mb-1">Access Node</h2>
-                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.4em]">Initialize SECURE Login</p>
-              </div>
+               <div className="text-center mb-6 relative z-10">
+                  <div className="w-28 h-28 bg-slate-950 border-[4px] border-cyan-500 rounded-3xl mx-auto overflow-hidden transform -rotate-6 shadow-[0_0_30px_rgba(6,182,212,0.3)] mb-6 relative p-2 group-hover:rotate-0 transition-all duration-500">
+                     <div className="absolute inset-0 bg-cyan-500/10 animate-pulse"></div>
+                     <img src="/assets/gameicon/DWGX-Icon.png" className="w-full h-full object-contain relative z-10" alt="DWGX Icon" />
+                     <div className="absolute -right-3 -bottom-3 w-10 h-10 bg-amber-500 border-[3px] border-black rounded-xl transform rotate-12 flex items-center justify-center shadow-2xl z-20">
+                        <Lock size={18} className="text-black" />
+                     </div>
+                  </div>
+                  <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none mb-1">Access Node</h2>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Initialize SECURE Login</p>
+               </div>
 
               {farcasterContext ? (
                 <div className="space-y-3 relative z-10">
@@ -164,7 +175,7 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
            <div className="flex-1 overflow-y-auto no-scrollbar scroll-smooth relative z-10">
              
              {activeTab === 'mission' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center animate-in fade-in slide-in-from-bottom-4">
                    <div className="space-y-6">
                       <div className="flex flex-col gap-1">
                          <span className="text-[10px] font-black text-cyan-500 uppercase tracking-[0.4em]">Protocol Briefing</span>
@@ -186,12 +197,21 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
                          ))}
                       </div>
                    </div>
-                   <div className="aspect-video bg-black/60 border-[4px] border-black rounded-3xl overflow-hidden shadow-2xl relative group">
-                      <img src="/assets/gamescreenshot/battlegamescreenshot.png" className="w-full h-full object-cover grayscale-[0.3] group-hover:grayscale-0 transition-all duration-700" alt="Combat" />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6">
-                         <span className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-1">Live Combat Feed</span>
-                         <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Automated Combat</h3>
+
+                   {/* MOBILE FRAME (Moved from Intel) */}
+                   <div className="flex flex-col items-center gap-4">
+                      {/* Phone Body */}
+                      <div className="relative w-[210px] md:w-[240px] h-[420px] md:h-[480px] bg-slate-800 border-[8px] border-black rounded-[3rem] shadow-[20px_20px_0_rgba(0,0,0,0.4)] overflow-hidden group">
+                         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-black rounded-b-2xl z-30 flex items-center justify-center gap-2">
+                            <div className="w-2 h-2 bg-slate-800 rounded-full"></div>
+                            <div className="w-6 h-1 bg-slate-800 rounded-full"></div>
+                         </div>
+                         <div className="absolute inset-0 z-10">
+                            <img src={mobileShots[activeMobileShot]} className="w-full h-full object-cover" alt="Mobile UI" />
+                            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
+                         </div>
                       </div>
+                      <p className="text-[8px] font-black text-cyan-500 uppercase italic tracking-widest bg-cyan-900/20 px-3 py-1 rounded-full border border-cyan-500/20">Active Mobile Session</p>
                    </div>
                 </div>
              )}
@@ -218,51 +238,40 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
                 </div>
              )}
 
-             {activeTab === 'intel' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-4">
-                   <div className="lg:col-span-8 flex flex-col gap-4">
-                      <div className="flex items-center justify-between px-2">
-                         <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-red-600 rounded-full animate-ping"></div>
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest italic tracking-[0.3em]">Holo-Preview Alpha</span>
-                         </div>
-                         <div className="flex gap-2">
-                            {gameShots.map((_, i) => (
-                               <button key={i} onClick={() => setActiveShot(i)} className={`w-8 h-1 rounded-full transition-all ${activeShot === i ? 'bg-cyan-500 scale-x-125' : 'bg-slate-800'}`} />
-                            ))}
-                         </div>
-                      </div>
-                      <div className="aspect-video bg-black/60 border-[4px] border-black rounded-3xl overflow-hidden shadow-2xl relative">
-                         <img src={gameShots[activeShot].src} className="w-full h-full object-cover" alt="Preview" />
-                         <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
-                            <h3 className="text-xl font-black text-white uppercase italic tracking-tighter">{gameShots[activeShot].title}</h3>
-                         </div>
-                      </div>
-                   </div>
-                   <div className="lg:col-span-4 flex flex-col gap-4">
-                      <div className="flex flex-col gap-1">
-                         <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.4em]">Net Activity</span>
-                         <div className="w-16 h-1 bg-amber-500"></div>
-                      </div>
-                      <div className="bg-black/80 border-2 border-white/5 rounded-2xl p-4 flex flex-col gap-3 min-h-[220px]">
-                         {[
-                           { user: "Agent_Zero", action: "Found Legendary", item: "Void Blade" },
-                           { user: "GemHunter99", action: "Cleared Floor", item: "Sector 7" },
-                           { user: "CryptoPioneer", action: "Summoned", item: "Ancient Drake" },
-                           { user: "PixelKnight", action: "Forged Success", item: "Neon Plate" }
-                         ].map((feed, i) => (
-                            <div key={i} className="flex justify-between items-center text-[9px] font-black uppercase italic border-b border-white/5 pb-2">
-                               <div className="flex flex-col">
-                                  <span className="text-cyan-400">[{feed.user}]</span>
-                                  <span className="text-slate-500">ACTION_DETECTION</span>
-                                </div>
-                               <span className="text-slate-200">{feed.item}</span>
-                            </div>
-                         ))}
-                      </div>
-                   </div>
-                </div>
-             )}
+              {activeTab === 'intel' && (
+                 <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 py-4">
+                    
+                    <div className="flex items-center gap-2 mb-2">
+                       <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></div>
+                       <span className="text-[10px] font-black text-white uppercase tracking-widest italic tracking-[0.3em]">System Terminal Overview</span>
+                    </div>
+
+                    {/* HORIZONTAL DESKTOP TERMINAL (Full Width) */}
+                    <div className="relative w-full aspect-[21/9] flex flex-col items-center group">
+                       <div className="relative w-full h-[95%] bg-slate-900 border-[12px] border-black rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+                          <img 
+                            src={desktopShots[activeDesktopShot]} 
+                            className="w-full h-full object-cover animate-in fade-in duration-1000" 
+                            alt="Desktop UI" 
+                          />
+                          <div className="absolute inset-0 bg-scanline opacity-20 pointer-events-none"></div>
+                          <div className="absolute top-4 right-4 bg-black/60 text-[8px] font-black text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/30 backdrop-blur-md">TER-VUX-88</div>
+                       </div>
+                       
+                       <div className="w-32 h-6 bg-black transform perspective-1000 rotate-x-45 -mt-1 shadow-2xl"></div>
+                       <div className="w-64 h-2 bg-black rounded-full -mt-0.5 opacity-60"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                       <div className="bg-cyan-950/20 border-l-4 border-cyan-500 p-4 rounded-r-2xl backdrop-blur-md">
+                          <p className="text-[9px] font-black text-cyan-100 uppercase leading-tight italic">Hybrid L2 verification ensures that every battle results in legitimized on-chain progression data without user friction.</p>
+                       </div>
+                       <div className="bg-amber-950/20 border-l-4 border-amber-500 p-4 rounded-r-2xl backdrop-blur-md">
+                          <p className="text-[9px] font-black text-amber-100 uppercase leading-tight italic">Cross-platform synchronization verified. Gear, GX, and Mates propagate across all nodes in the decentralized network.</p>
+                       </div>
+                    </div>
+                 </div>
+              )}
 
              {activeTab === 'tech' && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4">
@@ -337,12 +346,42 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
            </div>
 
            {/* FOOTER STATUS */}
-           <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center opacity-40 gap-2 shrink-0 relative z-10">
-              <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-ping"></div>
-                 <span className="text-[8px] font-black text-white uppercase tracking-[0.3em]">Signal_Lock: Sector_Alpha</span>
+           <div className="mt-6 pt-4 border-t border-white/10 flex flex-col items-center gap-6 shrink-0 relative z-10">
+              <div className="flex flex-col items-center gap-2">
+                 <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-ping"></div>
+                    <span className="text-[8px] font-black text-white uppercase tracking-[0.3em] opacity-40">Signal_Lock: Sector_Alpha</span>
+                 </div>
+                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.6em] opacity-40 italic">DUNGEONS_WITH_GEMS // CORE_SYSTEM_2.1</p>
               </div>
-              <p className="text-[8px] font-black text-slate-500 uppercase tracking-[0.6em]">DUNGEONS_WITH_GEMS // CORE_SYSTEM_2.1</p>
+
+              {/* SOCIAL LINKS */}
+              <div className="flex flex-wrap justify-center gap-3 md:gap-6 bg-black/40 px-6 py-3 rounded-2xl border border-white/5 backdrop-blur-sm">
+                 <div className="flex items-center gap-2 border-r border-white/10 pr-6 mr-2 hidden md:flex">
+                    <span className="text-[10px] font-black text-slate-400 uppercase italic">Architect:</span>
+                    <span className="text-[10px] font-black text-cyan-500 uppercase italic tracking-wider">Skipper Gemx</span>
+                 </div>
+                 
+                 <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group">
+                    <Github size={14} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Github</span>
+                 </a>
+                 
+                 <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group">
+                    <Twitter size={14} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Twitter</span>
+                 </a>
+                 
+                 <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors group">
+                    <Send size={14} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Telegram</span>
+                 </a>
+                 
+                 <div className="flex items-center gap-2 text-slate-400 cursor-help group" title="Discord: skippergemx">
+                    <MessageCircle size={14} className="group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-black uppercase tracking-tight">Discord</span>
+                 </div>
+              </div>
            </div>
         </div>
       </div>
