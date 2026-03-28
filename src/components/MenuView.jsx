@@ -29,7 +29,7 @@ export const MenuView = React.memo(() => {
   const { setView } = adventure;
   const { penaltyRemaining, autoTimeLeft } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
-  const isAdmin = user?.email === 'skippergemx@gmail.com' || farcasterContext?.user?.username === 'skippergemx';
+  const isAdmin = user?.email === 'skippergemx@gmail.com';
 
   const startDungeon = () => {
     if (!isPenalized) {

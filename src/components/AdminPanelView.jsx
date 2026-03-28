@@ -17,7 +17,7 @@ export const AdminPanelView = React.memo(() => {
   const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 10;
 
-  const isAdmin = userEmail === 'skippergemx@gmail.com' || farcasterContext?.user?.username === 'skippergemx';
+  const isAdmin = userEmail === 'skippergemx@gmail.com';
 
   useEffect(() => {
     if (isAdmin) {
