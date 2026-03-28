@@ -4,7 +4,7 @@ import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const IdentityView = React.memo(() => {
-  const { player, syncPlayer, adventure, addLog, openGuide, wallet } = useGame();
+  const { player, syncPlayer, adventure, addLog, openGuide, wallet, farcasterContext } = useGame();
   const { setView } = adventure;
 
   return (
@@ -48,7 +48,7 @@ export const IdentityView = React.memo(() => {
         </div>
 
         {/* WEB3 UPLINK */}
-        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-8 shadow-xl">
+        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl">
            <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2"><Wallet size={14} /> Web3 Uplink (Base Chain)</h3>
            
            {!wallet.address ? (
@@ -79,6 +79,27 @@ export const IdentityView = React.memo(() => {
              </div>
            )}
         </div>
+
+        {/* FARCASTER LINK */}
+        {farcasterContext?.user && (
+          <div className="w-full bg-indigo-950/30 border-2 border-indigo-900/50 rounded-2xl p-4 mb-8">
+             <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg border-2 border-indigo-500 overflow-hidden shrink-0">
+                   <img src={farcasterContext.user.pfpUrl} className="w-full h-full object-cover" alt="FC Pfp" />
+                </div>
+                <div className="flex-1 min-w-0">
+                   <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-black text-white italic">@{farcasterContext.user.username}</span>
+                      <span className="text-[8px] font-black text-indigo-400 uppercase">FID: {farcasterContext.user.fid}</span>
+                   </div>
+                   <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">{farcasterContext.user.displayName}</p>
+                </div>
+                <div className="bg-indigo-500/20 text-indigo-400 text-[8px] font-black px-2 py-0.5 rounded border border-indigo-500/30">
+                   V2_FRAME
+                </div>
+             </div>
+          </div>
+        )}
 
         <p className="text-[10px] text-slate-500 font-black uppercase text-center mb-4 tracking-widest border-b border-slate-800/50 pb-2 w-full">Select your combat avatar</p>
 

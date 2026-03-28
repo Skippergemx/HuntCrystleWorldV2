@@ -5,6 +5,7 @@ import {
   Trophy, MousePointer, Heart, Beer, ShoppingBag, Tag, Book, Trees, FlaskConical, Swords, AlertCircle,
   Github, Twitter, MessageCircle, Send
 } from 'lucide-react';
+import { sdk } from "@farcaster/frame-sdk";
 
 export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterContext }) => {
   const [activeTab, setActiveTab] = useState('mission');
@@ -362,20 +363,29 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
                     <span className="text-[10px] font-black text-cyan-500 uppercase italic tracking-wider">Skipper Gemx</span>
                  </div>
                  
-                 <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group">
+                 <button 
+                   onClick={() => farcasterContext ? sdk.actions.openUrl("https://github.com/skippergemx") : window.open("https://github.com/skippergemx", "_blank")}
+                   className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group"
+                 >
                     <Github size={14} className="group-hover:scale-110 transition-transform" />
                     <span className="text-[9px] font-black uppercase tracking-tight">Github</span>
-                 </a>
+                 </button>
                  
-                 <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group">
+                 <button 
+                   onClick={() => farcasterContext ? sdk.actions.openUrl("https://x.com/skippergemx") : window.open("https://x.com/skippergemx", "_blank")}
+                   className="flex items-center gap-2 text-slate-400 hover:text-cyan-400 transition-colors group"
+                 >
                     <Twitter size={14} className="group-hover:scale-110 transition-transform" />
                     <span className="text-[9px] font-black uppercase tracking-tight">Twitter</span>
-                 </a>
+                 </button>
                  
-                 <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors group">
+                 <button 
+                   onClick={() => farcasterContext ? sdk.actions.openUrl("https://t.me/skippergemx") : window.open("https://t.me/skippergemx", "_blank")}
+                   className="flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors group"
+                 >
                     <Send size={14} className="group-hover:scale-110 transition-transform" />
                     <span className="text-[9px] font-black uppercase tracking-tight">Telegram</span>
-                 </a>
+                 </button>
                  
                  <div className="flex items-center gap-2 text-slate-400 cursor-help group" title="Discord: skippergemx">
                     <MessageCircle size={14} className="group-hover:scale-110 transition-transform" />

@@ -1,27 +1,27 @@
 {
   "accountAssociation": {
     "header": "eyJmaWQiOiIsImFkZHJlc3MiOiIsImNpZyI6IiJ9",
-    "payload": "eyJkb21haW4iOiJkdW5nZW9uc3dpdGhnZW1zLmlvIn0",
+    "payload": "eyJkb21haW4iOiJtZXRhdmVyc2UuZHVuZ2VvbnN3aXRoZ2Vtcy5xdWVzdCJ9",
     "signature": ""
   },
   "frame": {
     "name": "Dungeons With Gems",
     "version": "1",
-    "iconUrl": "https://dungeonswithgems.quest/assets/gameicon/DWGX-Icon.png",
+    "iconUrl": "https://metaverse.dungeonswithgems.quest/assets/gameicon/DWGX-Icon.png",
     "homeUrl": "https://metaverse.dungeonswithgems.quest",
-    "imageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png",
+    "imageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/mainmenuscreenshot.png",
     "buttonTitle": "Join the Fun!",
-    "splashImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png",
+    "splashImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/mainmenuscreenshot.png",
     "splashBackgroundColor": "#4C005E",
     "webhookUrl": "https://metaverse.dungeonswithgems.quest/api/webhook",
     "subtitle": "Idle Game for busy people. Web3 Gaming Reborn on Base.",
     "description": "A hands-free idle game for busy people who are gamers by heart. Forge your legacy and return to legendary loot while the app auto-plays",
     "primaryCategory": "games",
     "screenshotUrls": [
-      "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png"
+      "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/mainmenuscreenshot.png"
     ],
     "tagline": "Idle Game for busy people.",
-    "ogTitle": "Dungeon With Gems",
+    "ogTitle": "Dungeons With Gems",
     "tags": [
       "idle",
       "game",
@@ -29,6 +29,6 @@
       "earn",
       "clicker"
     ],
-    "heroImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/battlegamescreenshot.png"
+    "heroImageUrl": "https://metaverse.dungeonswithgems.quest/assets/gamescreenshot/mainmenuscreenshot.png"
   }
 }

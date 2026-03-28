@@ -470,7 +470,7 @@ export const GameLayout = ({ onLogout }) => {
       </main>
 
       <footer className="w-full py-8 flex flex-col items-center gap-4 relative z-20">
-        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40">METAVERSE.DUNGEONSWITHGEMS.QUEST</p>
+        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40">METAVERSE.DUNGEONSWITHGEMS.QUEST // SYNCED_TO_GRID</p>
         
         <div className="flex flex-wrap justify-center gap-4 md:gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 bg-black/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-xl">
            <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-wider transition-colors">Github</a>

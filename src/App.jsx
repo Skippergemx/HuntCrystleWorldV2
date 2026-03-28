@@ -35,15 +35,23 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
-      // Once auth is checked and loading is false, tell Farcaster we are ready
-      try {
-        sdk.actions.ready();
-      } catch (e) {
-        console.error("SDK ready call failed:", e);
-      }
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      const readyTimer = setTimeout(() => {
+        try {
+          sdk.actions.ready();
+          console.log("Farcaster Frame Signal: READY");
+        } catch (e) {
+          console.error("SDK ready call failed:", e);
+        }
+      }, 500); // Small delay to ensure DOM is settled
+      return () => clearTimeout(readyTimer);
+    }
+  }, [loading]);
 
   const handleGoogleLogin = async () => {
     try {
