@@ -140,8 +140,12 @@ export const AdminPanelView = React.memo(() => {
         batch.update(profileRef, cleanSlate);
       });
 
+      // Clear Marketplace
+      const marketSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      marketSnap.forEach(d => batch.delete(d.ref));
+
       await batch.commit();
-      setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void.` });
+      setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void. Hall of Fame purged and Marketplace cleared.` });
       await fetchStats();
     } catch (e) {
       console.error(e);
@@ -168,6 +172,20 @@ export const AdminPanelView = React.memo(() => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const purgeMarketplace = async () => {
+    if (!window.confirm("RESET MARKETPLACE: This will delete ALL public listings. Continue?")) return;
+    setLoading(true);
+    try {
+      const marketSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      const batch = writeBatch(db);
+      marketSnap.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+      setMessage({ type: 'success', text: `Market Sanitized: ${marketSnap.size} listings purged.` });
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Market purge failed.' });
+    } finally { setLoading(false); }
   };
 
   const syncAllPlayersToLeaderboard = async () => {
@@ -483,7 +501,7 @@ export const AdminPanelView = React.memo(() => {
           </div>
           <div>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Hunters</p>
-            <p className="text-3xl font-black text-white italic">{stats.totalUsers}</p>
+            <p className="text-3xl font-black text-white italic">{players.length}</p>
           </div>
         </div>
         <div className="bg-black border-2 border-cyan-900/50 p-6 flex items-center gap-4 shadow-[4px_4px_0_rgba(6,182,212,0.1)]">
@@ -500,8 +518,8 @@ export const AdminPanelView = React.memo(() => {
             <ShieldAlert className="text-amber-500" />
           </div>
           <div>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Genesis Level</p>
-            <p className="text-3xl font-black text-white italic">LVL 4.0</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Orphan Records</p>
+            <p className="text-3xl font-black text-amber-500 italic">{Math.max(0, stats.leaderboardSize - players.length)}</p>
           </div>
         </div>
       </div>
@@ -586,7 +604,6 @@ export const AdminPanelView = React.memo(() => {
               </h3>
               <p className="text-sm text-slate-400 mb-6 font-medium">
                 This protocol will permanently delete all signals (messages) in the PVP Arena chat database. 
-                Recommended after major updates or every 24 hours to optimize grid performance.
               </p>
               
               <button
@@ -596,6 +613,26 @@ export const AdminPanelView = React.memo(() => {
               >
                 {loading ? <RefreshCw className="animate-spin" /> : <Trash2 />}
                 Purge All Messages
+              </button>
+            </div>
+
+            <div className="p-6 bg-amber-950/20 border-2 border-amber-600/30 rounded-lg">
+              <h3 className="text-lg font-black text-amber-500 uppercase italic flex items-center gap-2 mb-2">
+                <Tag size={20} />
+                Marketplace Sanitization
+              </h3>
+              <p className="text-sm text-slate-400 mb-6 font-medium">
+                This protocol will wipe all public marketplace listings and reset the economy. 
+                Use this to clear stale trade signals or during Genesis Wipes.
+              </p>
+              
+              <button
+                onClick={purgeMarketplace}
+                disabled={loading}
+                className="w-full md:w-auto px-10 py-4 bg-amber-600 text-black font-black uppercase italic rounded shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-amber-500 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+              >
+                {loading ? <RefreshCw className="animate-spin" /> : <Tag />}
+                Purge Marketplace
               </button>
             </div>
           </div>
@@ -660,9 +697,13 @@ export const AdminPanelView = React.memo(() => {
                                 <p className="text-[9px] text-cyan-500 font-bold tracking-wider">
                                    {player.farcasterUsername ? `@${player.farcasterUsername}` : (player.email || 'Anonymous Signal')}
                                 </p>
-                                <p className="text-[7px] text-slate-600 font-bold tracking-tighter uppercase flex items-center gap-1">
-                                   {player.id.startsWith('farcaster_') ? <Globe size={8} className="text-purple-500" /> : <ShieldAlert size={8} className="text-amber-500" />}
-                                   {player.id}
+                                <p className="text-[7px] text-slate-600 font-bold tracking-tighter uppercase flex items-center gap-2">
+                                   <span className="opacity-40">{player.id.substring(0, 15)}...</span>
+                                   {player.farcasterUsername ? (
+                                      <span className="px-1.5 py-0.5 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic">FARCASTER</span>
+                                   ) : (
+                                      <span className="px-1.5 py-0.5 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic">GOOGLE_AUTH</span>
+                                   )}
                                 </p>
                               </div>
                             </div>

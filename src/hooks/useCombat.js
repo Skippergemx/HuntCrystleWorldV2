@@ -75,6 +75,17 @@ export const useCombat = (
     missRef.current = missTimeLeft;
     killsRef.current = killsInFloor;
     processingRef.current = combatState;
+
+    // Heartbeat safety reset for stuck combat state
+    if (combatState !== 'IDLE' && combatState !== 'VICTORY' && combatState !== 'DEFEATED') {
+      const timer = setTimeout(() => {
+        if (processingRef.current === combatState) {
+          console.warn(`Combat Action Stalled in ${combatState}! Emergency Reset.`);
+          setCombatState('IDLE');
+        }
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
   }, [stunTimeLeft, missTimeLeft, killsInFloor, combatState]);
 
   const triggerHitEffects = useCallback((dmg, isCrit, side = 'monster', triggerFlinch, triggerHurt) => {
@@ -169,7 +180,7 @@ export const useCombat = (
         setCombatState('IDLE');
       }, 500);
     }
-  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView]);
+  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
@@ -280,7 +291,7 @@ export const useCombat = (
        setBattleMode('DUNGEON');
        setTimeout(() => setView('syndicate'), 1500);
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode]);
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, updateLeaderboard, playSFX, SOUNDS]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
     const newTotal = (player?.totalBossDamage || 0) + dmg;
@@ -317,7 +328,10 @@ export const useCombat = (
 
   const handleAttack = useCallback((isBoss = false) => {
     if (player?.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE' || (!isBoss && !enemy)) {
-      return;
+       if (combatState !== 'IDLE' && !showDefeatedWindow && !showVictoryWindow) {
+         console.warn("Attack blocked: Combat State is " + combatState);
+       }
+       return;
     }
 
     setCombatState('PLAYER_ATTACKING');
@@ -423,7 +437,7 @@ export const useCombat = (
       setCurrentTaunt("Ha! Too slow!");
       enemyTurn(target, isBoss);
     }
-  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt, battleMode, recordWarResult, gvgContext, setView, setBattleMode]);
+  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt, battleMode, recordWarResult, gvgContext, setView, setBattleMode, stunRef, missRef, showVictoryWindow, TAVERN_MATES, playSFX, SOUNDS]);
 
   const recordGvGResult = useCallback(() => {
     if (battleMode !== 'GVG') return;

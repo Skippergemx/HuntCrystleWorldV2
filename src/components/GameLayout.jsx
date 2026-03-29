@@ -44,7 +44,7 @@ export const GameLayout = ({ onLogout }) => {
   const {
     user, player, syncPlayer, logs, addLog,
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
-    adventure, combat, actions, gameLoop, audio, market, leaderboard,
+    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet,
     db, appId, totalStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
@@ -241,6 +241,12 @@ export const GameLayout = ({ onLogout }) => {
 
             {/* Bottom Shade Info */}
             <div className="absolute inset-x-0 bottom-0 p-1.5 md:p-2.5 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+               {wallet.address && (
+                 <div className="flex items-center gap-1 mb-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
+                    <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
+                    <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
+                 </div>
+               )}
                <div className="bg-cyan-500 text-black text-[6px] md:text-[8px] font-black uppercase py-0.5 px-1.5 rounded-sm border-[1.5px] border-black inline-block shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] mb-0.5 md:mb-1">UNIT {player.level}</div>
                <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
             </div>
@@ -258,6 +264,18 @@ export const GameLayout = ({ onLogout }) => {
                   <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)' }}></div>
                   <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10">{player.name}</h1>
                 </div>
+
+                {wallet.address && (
+                  <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group">
+                    <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
+                    <div className="flex items-center gap-2 relative z-10">
+                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]"></div>
+                       <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
+                         {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                       </span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-row items-center gap-1 bg-slate-900 border-[1.5px] border-black px-1.5 md:px-2.5 py-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1 shrink-0">
                   <div className="flex items-center gap-1">

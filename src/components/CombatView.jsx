@@ -25,16 +25,26 @@ export const CombatView = React.memo(() => {
     return selectedMap?.lootTable ? selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
   }, [selectedMap, LOOTS]);
 
-  const currentPotionCount = useMemo(() => {
+  const potionCountData = useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
     const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
-    return sel === 'hp_potion' ? invCount + (player.potions || 0) : invCount;
+    const baseCount = player.potions || 0;
+    return {
+      selected: sel,
+      count: sel === 'hp_potion' ? (invCount + baseCount) : invCount,
+      hasSelected: (sel === 'hp_potion' ? (invCount + baseCount) : invCount) > 0
+    };
   }, [player.selectedPotionId, player.inventory, player.potions]);
 
-  const currentScrollCount = useMemo(() => {
+  const scrollCountData = useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
     const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
-    return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
+    const baseCount = player.autoScrolls || 0;
+    return {
+      selected: sel,
+      count: sel === 'auto_scroll' ? (invCount + baseCount) : invCount,
+      hasSelected: (sel === 'auto_scroll' ? (invCount + baseCount) : invCount) > 0
+    };
   }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
 
   const hasAnyPotions = useMemo(() => (player.potions > 0) || (player.inventory || []).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
@@ -131,14 +141,14 @@ export const CombatView = React.memo(() => {
           <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
             <div className="flex gap-2 md:gap-4">
               <div className="flex flex-col gap-1 items-end">
-                <button onClick={handleHeal} disabled={currentPotionCount <= 0} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
+                <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
                   <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
                   <span className="text-sm md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
                   <div className="flex flex-col items-start bg-transparent leading-none relative z-10">
                     <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic">
-                      {player.selectedPotionId === 'hp_potion' ? 'SMALL' : player.selectedPotionId?.replace('_hp_potion', '').toUpperCase() || 'HEAL'}
+                      {potionCountData.selected === 'hp_potion' ? 'SMALL' : potionCountData.selected?.replace('mega_hp_potion', 'MEGA').replace('ultra_hp_potion', 'ULTRA') || 'HEAL'}
                     </span>
-                    <span className="text-xs md:text-lg font-black text-white italic">{currentPotionCount}</span>
+                    <span className="text-xs md:text-lg font-black text-white italic">{potionCountData.count}</span>
                   </div>
                 </button>
                 <button onClick={cyclePotion} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">
@@ -168,14 +178,11 @@ export const CombatView = React.memo(() => {
                       <div className="flex flex-col items-start bg-transparent leading-none">
                         <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic">
                           {
-                            player.selectedScrollId === 'auto_scroll' ? '1M AUTO' :
-                            player.selectedScrollId === 'auto_scroll_3m' ? '3M AUTO' :
-                            player.selectedScrollId === 'auto_scroll_6m' ? '6M AUTO' :
-                            player.selectedScrollId === 'auto_scroll_9m' ? '9M AUTO' :
-                            player.selectedScrollId === 'auto_scroll_12m' ? '12M AUTO' : 'LINK'
+                            scrollCountData.selected === 'auto_scroll' ? '1M AUTO' :
+                            scrollCountData.selected.split('_').pop().toUpperCase() + ' AUTO'
                           }
                         </span>
-                        <span className="text-[10px] md:text-lg font-black text-black italic">{currentScrollCount}</span>
+                        <span className="text-[10px] md:text-lg font-black text-black italic">{scrollCountData.count}</span>
                       </div>
                     </button>
                     <button onClick={cycleScroll} className="px-2 py-0.5 bg-black/60 border border-white/20 rounded text-[7px] font-black text-white/50 hover:text-cyan-400 hover:border-cyan-400/50 uppercase italic flex items-center gap-1 transition-all">

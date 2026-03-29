@@ -71,6 +71,7 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
         if (mate.type === 'STR') stats.str *= mult;
         if (mate.type === 'AGI') stats.agi *= mult;
         if (mate.type === 'DEX') stats.dex *= mult;
+        if (mate.hpBonus) stats.maxHp += mate.hpBonus;
       }
     }
   }

@@ -7,6 +7,7 @@ import { GameProvider } from './contexts/GameContext';
 import { GameLayout } from './components/GameLayout';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
+import UnifiedAuthBanner from './components/UnifiedAuthBanner';
 import { sdk } from "@farcaster/frame-sdk";
 
 const App = () => {
@@ -82,22 +83,26 @@ const App = () => {
     }
   };
 
-  if (loading) return <LoadingScreen />;
-
-  if (!user) {
-    return (
-      <LoginView 
-        handleGoogleLogin={handleGoogleLogin} 
-        handleFarcasterLogin={handleFarcasterLogin}
-        farcasterContext={context}
-      />
-    );
-  }
-
   return (
-    <GameProvider user={user} farcasterContext={context}>
-      <GameLayout onLogout={handleLogout} />
-    </GameProvider>
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      <UnifiedAuthBanner />
+      
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingScreen />
+        </div>
+      ) : !user ? (
+        <LoginView 
+          handleGoogleLogin={handleGoogleLogin} 
+          handleFarcasterLogin={handleFarcasterLogin}
+          farcasterContext={context}
+        />
+      ) : (
+        <GameProvider user={user} farcasterContext={context}>
+          <GameLayout onLogout={handleLogout} />
+        </GameProvider>
+      )}
+    </div>
   );
 };
 

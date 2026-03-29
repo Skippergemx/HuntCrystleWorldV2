@@ -1,4 +1,13 @@
 [
+  { "id": "hp_potion", "name": "Small Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 10% Max HP." },
+  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
+  { "id": "mega_hp_potion", "name": "Mega Potion", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
+  { "id": "ultra_hp_potion", "name": "Ultra Potion", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
+  { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
+  { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
+  { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },
+  { "id": "auto_scroll_12m", "name": "Auto-Hunt (12m)", "sellValue": 1400, "type": "Consumable", "category": "Consumable", "duration": 720000, "description": "12 minutes of autonomous hunting." },
+
   { "id": "steel_edge", "name": "Steel Edge", "cost": 100, "sellValue": 40, "reqLvl": 2, "icon": "🗡️", "stats": { "str": 10, "dex": 5, "agi": 0 }, "type": "Weapon", "category": "Equipment", "description": "A sharp blade for aspiring hunters." },
   { "id": "breaker_hammer", "name": "Breaker Hammer", "cost": 400, "sellValue": 160, "reqLvl": 8, "icon": "🔨", "stats": { "str": 25, "dex": -5, "agi": 0 }, "type": "Weapon", "category": "Equipment", "description": "Heavy trauma in every strike." },
   { "id": "scout_vest", "name": "Scout Vest", "cost": 150, "sellValue": 60, "reqLvl": 3, "icon": "🦺", "stats": { "str": 2, "dex": 2, "agi": 12 }, "type": "Armor", "category": "Equipment", "description": "Lightweight protection for high mobility." },
@@ -53,7 +62,7 @@
   { "id": "sand_glass", "name": "Sand Glass", "rarity": "Common", "icon": "⏳", "description": "Heat-treated canyon sand.", "type": "Material", "category": "Loot", "sellValue": 18 },
   { "id": "engine_bolt", "name": "Engine Bolt", "rarity": "Common", "icon": "🔩", "description": "Common fastener.", "type": "Material", "category": "Loot", "sellValue": 15 },
   { "id": "power_cell", "name": "Power Cell", "rarity": "Uncommon", "icon": "🔋", "description": "Still holds some charge.", "type": "Energy", "category": "Loot", "sellValue": 80 },
-  { "id": "rusty_plate", "name": "Rusty Plate", "rarity": "Uncommon", "icon": "🛡️", "description": "Salvaged armor plating.", "type": "Material", "category": "Loot", "sellValue": 95 },
+  { "id": "vintage_armor", "name": "Vintage Armor", "rarity": "Uncommon", "icon": "🛡️", "description": "Salvaged armor plating.", "type": "Material", "category": "Loot", "sellValue": 95 },
   { "id": "titanium_link", "name": "Titanium Link", "rarity": "Rare", "icon": "🔗", "description": "Strong and lightweight.", "type": "Component", "category": "Loot", "sellValue": 350 },
   { "id": "turbo_charger", "name": "Turbo Charger", "rarity": "Epic", "icon": "🌪️", "description": "Massive air flow capacity.", "type": "Component", "category": "Loot", "sellValue": 1500 },
   { "id": "exhaust_pipe", "name": "Exhaust Pipe", "rarity": "Common", "icon": "🎺", "description": "Smells like gasoline.", "type": "Loot", "category": "Loot", "sellValue": 40 },
@@ -74,7 +83,7 @@
   { "id": "ignition_coil", "name": "Ignition Coil", "rarity": "Rare", "icon": "🌀", "description": "High voltage pulse.", "type": "Component", "category": "Loot", "sellValue": 400 },
   { "id": "void_shard", "name": "Void Shard", "rarity": "Common", "icon": "🌑", "description": "Absorbs surrounding light.", "type": "Material", "category": "Loot", "sellValue": 100 },
   { "id": "dark_matter", "name": "Dark Matter", "rarity": "Common", "icon": "⚫", "description": "Highly unstable substance.", "type": "Material", "category": "Loot", "sellValue": 120 },
-  { "id": "gravity_well", "name": "Gravity Well", "rarity": "Common", "icon": "🕳️", "description": "Small localized singularity.", "type": "Material", "category": "Loot", "sellValue": 150 },
+  { "id": "gravity_well", "name": "Gravity Well", "rarity": "Common", "icon": "🕕", "description": "Small localized singularity.", "type": "Material", "category": "Loot", "sellValue": 150 },
   { "id": "neural_net", "name": "Neural Net", "rarity": "Common", "icon": "🕸️", "description": "Organic-tech hybrid mesh.", "type": "Material", "category": "Loot", "sellValue": 110 },
   { "id": "plasma_core", "name": "Plasma Core", "rarity": "Uncommon", "icon": "☄️", "description": "Intense heat generator.", "type": "Energy", "category": "Loot", "sellValue": 450 },
   { "id": "void_crystal", "name": "Void Crystal", "rarity": "Rare", "icon": "💎", "description": "Refined energy that spikes critical hit damage (3.0x DMG).", "type": "Relic", "category": "Loot", "stats": { "str": 0, "dex": 2, "agi": 15 }, "effect": { "type": "CritSpike", "mult": 3.0 }, "sellValue": 800 },
@@ -122,17 +131,6 @@
   { "id": "plasma_lemon", "name": "Plasma Lemon", "icon": "🍋", "rarity": "Rare", "description": "Sour enough to jumpstart a dragon's metabolism.", "type": "Fruit", "category": "Fruit", "sellValue": 500, "exp": 5 },
   { "id": "neon_orange", "name": "Neon Orange", "icon": "🍊", "rarity": "Epic", "description": "Glowing citrus that enhances a dragon's natural abilities.", "type": "Fruit", "category": "Fruit", "sellValue": 1200, "exp": 10 },
   { "id": "crystle_pear", "name": "Crystle Pear", "icon": "🍏", "rarity": "Legendary", "description": "The ultimate fruit found only in the deepest parts of the Dragon Ground.", "type": "Fruit", "category": "Fruit", "sellValue": 5000, "exp": 25 },
-
-  { "id": "hp_potion", "name": "Small Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 10% Max HP." },
-  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
-  
-  { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
-  { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
-  { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },
-  { "id": "auto_scroll_12m", "name": "Auto-Hunt (12m)", "sellValue": 1400, "type": "Consumable", "category": "Consumable", "duration": 720000, "description": "12 minutes of autonomous hunting." },
-  
-  { "id": "mega_hp_potion", "name": "Mega Potion", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
-  { "id": "ultra_hp_potion", "name": "Ultra Potion", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
 
   { "id": "schema_neon_plate", "name": "Schematic: Neon Chestplate", "rarity": "Uncommon", "icon": "📜", "sellValue": 500, "type": "Schematic", "category": "Loot", "recipeId": "neon_plate", "description": "Detailed blueprints for an advanced neon-infused chestplate." },
   { "id": "schema_tech_visor", "name": "Schematic: Tech Visor", "rarity": "Common", "icon": "📜", "sellValue": 300, "type": "Schematic", "category": "Loot", "recipeId": "tech_visor", "description": "Optical engineering data for a high-tech visor." },

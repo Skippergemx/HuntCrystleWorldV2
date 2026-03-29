@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Wallet, Link, Unlink } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
@@ -16,7 +16,21 @@ export const IdentityView = React.memo(() => {
         <div className="w-40 h-56 mb-4 rounded-2xl border-[3px] border-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.4)] overflow-hidden relative group">
           <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 to-transparent z-10 pointer-events-none"></div>
           {player.avatar ? <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover relative z-0" /> : <div className="w-full h-full bg-slate-800 flex items-center justify-center"><User size={48} className="text-slate-500" /></div>}
-          <p className="absolute bottom-3 inset-x-0 text-center text-[10px] font-black tracking-[0.4em] uppercase text-cyan-400 z-20 drop-shadow-md">Active</p>
+          
+          {/* Airdrop Ready Status */}
+          {wallet.address ? (
+            <div className="absolute top-2 left-2 z-30 flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/40 backdrop-blur-md rounded shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+               <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
+               <span className="text-[7px] font-black text-emerald-400 uppercase tracking-widest italic">UPLINK_SYNCED</span>
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 z-30 flex items-center gap-1.5 px-2 py-0.5 bg-red-500/20 border border-red-500/40 backdrop-blur-md rounded shadow-[0_0_10px_rgba(239,68,68,0.3)]">
+               <div className="w-1 h-1 bg-red-500 rounded-full opacity-50"></div>
+               <span className="text-[7px] font-black text-red-400 uppercase tracking-widest italic">UPLINK_OFFLINE</span>
+            </div>
+          )}
+          
+          <p className="absolute bottom-3 inset-x-0 text-center text-[10px] font-black tracking-[0.4em] uppercase text-cyan-400 z-20 drop-shadow-md">Active_Hunter</p>
         </div>
 
         <div className="grid grid-cols-1 gap-3 w-full mb-8">
@@ -48,23 +62,32 @@ export const IdentityView = React.memo(() => {
         </div>
 
         {/* WEB3 UPLINK */}
-        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl">
-           <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2"><Wallet size={14} /> Web3 Uplink (Base Chain)</h3>
+        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden">
+           <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none rotate-12"><Wallet size={80} /></div>
+           <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2 relative z-10">
+             <div className="w-4 h-4 bg-cyan-500/10 rounded flex items-center justify-center border border-cyan-500/20">
+               <Wallet size={10} className="text-cyan-400" />
+             </div>
+             Web3 Uplink System _ [BASE_CHAIN]
+           </h3>
            
            {!wallet.address ? (
-             <div className="flex flex-col gap-3">
+             <div className="flex flex-col gap-3 relative z-10">
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic leading-tight">Identity not currently linked to reward protocol. Establish uplink to enable global reward synchronization.</p>
                 {/* Native Warpcast Link */}
                 {wallet.hasNativeProvider && (
                   <button 
                     onClick={() => wallet.connectWallet('NATIVE')}
                     disabled={wallet.loading}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 border-b-4 border-indigo-900 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
+                    className="w-full bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 border-b-4 border-indigo-950 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group shadow-[0_4px_15px_rgba(0,0,0,0.3)] active:translate-y-1"
                   >
                     <div className="flex items-center gap-3">
-                       <Globe size={18} className="text-white group-hover:rotate-12 transition-transform" />
+                       <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md group-hover:rotate-12 transition-transform border border-white/10">
+                          <Globe size={18} className="text-white" />
+                       </div>
                        <div className="flex flex-col text-left">
-                          <span className="font-black text-white uppercase italic text-sm">Warpcast Wallet</span>
-                          <span className="text-[7px] text-indigo-200 font-bold uppercase">Native Frame Uplink</span>
+                          <span className="font-black text-white uppercase italic text-sm tracking-tighter">Sync Warpcast Wallet</span>
+                          <span className="text-[7px] text-indigo-200 font-bold uppercase tracking-widest">Protocol: Native Frame_V2</span>
                        </div>
                     </div>
                     {wallet.loading && <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>}
@@ -76,13 +99,15 @@ export const IdentityView = React.memo(() => {
                    <button 
                       onClick={() => wallet.connectWallet('EXTERNAL')}
                       disabled={wallet.loading}
-                      className="w-full bg-cyan-600 hover:bg-cyan-500 border-b-4 border-cyan-800 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group scale-100 hover:scale-[1.02] active:scale-95"
+                      className="w-full bg-white hover:bg-cyan-500 border-b-4 border-slate-800 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group active:translate-y-1 group"
                    >
                       <div className="flex items-center gap-3">
-                         <Link size={18} className="text-black group-hover:rotate-45 transition-transform" />
+                         <div className="bg-black/5 p-2 rounded-lg group-hover:rotate-45 transition-transform border border-black/5">
+                            <Link size={18} className="text-black" />
+                         </div>
                          <div className="flex flex-col text-left">
-                            <span className="font-black text-black uppercase italic text-sm">External Wallet</span>
-                            <span className="text-[7px] text-cyan-900 font-bold uppercase">MetaMask / Browser</span>
+                            <span className="font-black text-black uppercase italic text-sm tracking-tighter group-hover:text-black">Establish External Link</span>
+                            <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Protocol: Browser_EIP1193</span>
                          </div>
                       </div>
                       {wallet.loading && <div className="w-2 h-2 rounded-full bg-black animate-ping"></div>}
@@ -90,20 +115,27 @@ export const IdentityView = React.memo(() => {
                 )}
              </div>
            ) : (
-             <div className="space-y-4">
-                <div className="bg-black/60 border border-cyan-500/20 p-3 rounded-lg flex items-center justify-between">
-                   <div className="flex flex-col">
-                      <span className="text-[8px] text-white/40 uppercase font-black font-center">Identity Hash</span>
-                      <span className="text-xs font-mono font-black text-cyan-400 text-center">{wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}</span>
+             <div className="space-y-4 relative z-10">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl flex items-center justify-between shadow-inner">
+                   <div className="flex flex-col items-start">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
+                        <span className="text-[8px] text-emerald-400/70 uppercase font-black tracking-[0.2em] italic">Network_Identity_Active</span>
+                      </div>
+                      <span className="text-xs font-mono font-black text-white/90 bg-emerald-950/20 px-2 py-1 rounded border border-emerald-500/10 shadow-lg">
+                        {wallet.address.slice(0, 10)}...{wallet.address.slice(-8)}
+                      </span>
                    </div>
-                   <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]"></div>
+                   <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400">
+                      <ShieldCheck size={20} className="animate-pulse" />
+                   </div>
                 </div>
                 <button 
                   onClick={wallet.disconnectWallet}
-                  className="w-full bg-slate-800 hover:bg-red-950 border-b-4 border-black p-3 rounded-lg flex items-center justify-center gap-2 transition-all group"
+                  className="w-full bg-slate-800/20 hover:bg-red-950/40 text-slate-500 hover:text-red-500 border-2 border-slate-800 hover:border-red-900 p-3 rounded-xl flex items-center justify-center gap-2 transition-all group font-black uppercase text-[9px] italic tracking-widest"
                 >
-                   <Unlink size={14} className="text-white/40 group-hover:text-red-500 transition-colors" />
-                   <span className="text-[10px] font-black text-white/40 uppercase italic group-hover:text-red-500 transition-colors">Terminate Uplink</span>
+                   <Unlink size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                   Terminate Dynamic Uplink
                 </button>
              </div>
            )}

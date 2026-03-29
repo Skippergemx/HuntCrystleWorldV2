@@ -58,6 +58,11 @@ Dungeons With Gems is ready to be launched as a **Farcaster Mini-App** (Warpcast
 3. **Manifest**: 
    Ensure `public/.well-known/farcaster.json` is accessible.
 
+### Unified Authentication Flow
+The system now utilizes `useUnifiedAuth` to handle hybrid player environments:
+- **Farcaster**: Zero-friction login via FID and automatic sync of preferred wallets.
+- **Web**: Google OAuth + EIP-1193 (MetaMask) wallet mapping.
+
 ### Warpcast Ready
 The included `index.html` contains the required `fc:frame` meta tags. When shared in a cast, it will display a "Play Idle" launch button.
 
