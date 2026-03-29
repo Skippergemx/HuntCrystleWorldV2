@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import sdk from "@farcaster/frame-sdk";
 import { ethers } from "ethers";
-import { db, auth } from "../firebase"; // Replace with your actual firebase init path
+import { db, auth } from "../firebase";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInAnonymously } from "firebase/auth";
 
 /**
  * useUnifiedAuth
@@ -16,6 +16,7 @@ export const useUnifiedAuth = () => {
     const [address, setAddress] = useState(null);
     const [isFarcaster, setIsFarcaster] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [farcasterContext, setFarcasterContext] = useState(null);
 
     // Helper to sync player data to Firestore
     const syncPlayerToFirestore = useCallback(async (id, walletAddress, metadata = {}) => {
@@ -27,86 +28,77 @@ export const useUnifiedAuth = () => {
                 updatedAt: new Date(),
                 ...metadata
             }, { merge: true });
-            console.log(`[Auth] Player ${id} synced with wallet: ${walletAddress}`);
         } catch (error) {
             console.error("[Auth] Firestore sync error:", error);
         }
     }, []);
 
-    // 1. Farcaster Flow: Initialize SDK and fetch preferred wallet
+    // 1. Unified Initialization
     useEffect(() => {
-        const initFarcaster = async () => {
-            const context = await sdk.context;
+        let isMounted = true;
 
-            if (context?.user) {
-                setIsFarcaster(true);
-                setUser({
-                    fid: context.user.fid,
-                    username: context.user.username,
-                    pfp: context.user.pfpUrl
-                });
+        const initAuth = async () => {
+            try {
+                const context = await sdk.context;
+                if (context?.user && isMounted) {
+                    setIsFarcaster(true);
+                    setFarcasterContext(context);
+                    setUser({
+                        fid: context.user.fid,
+                        username: context.user.username,
+                        pfp: context.user.pfpUrl
+                    });
 
-                try {
-                    // Request account via Farcaster's native bridge
+                    // Silent check for Farcaster wallet
                     const provider = new ethers.BrowserProvider(sdk.wallet.ethProvider);
                     const accounts = await provider.send("eth_accounts", []);
-
                     if (accounts.length > 0) {
-                        const preferredAddress = accounts[0];
-                        setAddress(preferredAddress);
-
-                        // Sync to Firestore using FID as the immutable ID
-                        await syncPlayerToFirestore(`fid_${context.user.fid}`, preferredAddress, {
-                            platform: "farcaster",
-                            username: context.user.username
-                        });
+                        setAddress(accounts[0]);
                     }
-                } catch (err) {
-                    console.warn("[Auth] Farcaster wallet retrieval failed:", err);
-                }
 
-                // Signal to the Farcaster client that the frame is ready
-                sdk.actions.ready();
+                    // Auto-login Farcaster users anonymously to Firebase for data syncing
+                    if (!auth.currentUser) await signInAnonymously(auth);
+
+                    sdk.actions.ready();
+                }
+            } catch (e) {
+                console.log("[Auth] SDK not found, proceeding with Web flow.");
+            } finally {
+                if (isMounted) setLoading(false);
             }
-            setLoading(false);
         };
 
-        initFarcaster();
-    }, [syncPlayerToFirestore]);
+        initAuth();
 
-    // 2. Web Flow: Standard Firebase Auth + Wallet detection
-    useEffect(() => {
-        if (isFarcaster) return; // Skip if in Farcaster environment
+        const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+            if (!fbUser || isFarcaster) return;
 
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                setUser({
-                    uid: firebaseUser.uid,
-                    username: firebaseUser.displayName,
-                    pfp: firebaseUser.photoURL
-                });
+            setUser({
+                uid: fbUser.uid,
+                username: fbUser.displayName || "Operator",
+                pfp: fbUser.photoURL
+            });
 
-                // Try to retrieve previously saved address
-                const docSnap = await getDoc(doc(db, "players", `uid_${firebaseUser.uid}`));
-                if (docSnap.exists()) {
-                    setAddress(docSnap.data().walletAddress);
-                }
-            } else {
-                setUser(null);
-                setAddress(null);
-            }
-            setLoading(false);
+            const docSnap = await getDoc(doc(db, "players", `uid_${fbUser.uid}`));
+            if (docSnap.exists()) setAddress(docSnap.data().walletAddress);
         });
 
-        return () => unsubscribe();
-    }, [isFarcaster]);
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
+    }, [isFarcaster, syncPlayerToFirestore]);
 
     // Action: Connect/Sync Wallet manually
     const connectWallet = async () => {
         try {
-            const provider = isFarcaster
-                ? new ethers.BrowserProvider(sdk.wallet.ethProvider)
-                : new ethers.BrowserProvider(window.ethereum);
+            let provider;
+            if (isFarcaster) {
+                provider = new ethers.BrowserProvider(sdk.wallet.ethProvider);
+            } else {
+                if (!window.ethereum) throw new Error("No provider found");
+                provider = new ethers.BrowserProvider(window.ethereum);
+            }
 
             const accounts = await provider.send("eth_requestAccounts", []);
             const connectedAddress = accounts[0];
@@ -122,6 +114,7 @@ export const useUnifiedAuth = () => {
     };
 
     const loginWithGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
+    const logout = () => signOut(auth);
 
-    return { user, address, isFarcaster, loading, loginWithGoogle, connectWallet };
+    return { user, address, isFarcaster, loading, farcasterContext, loginWithGoogle, logout, connectWallet };
 };
