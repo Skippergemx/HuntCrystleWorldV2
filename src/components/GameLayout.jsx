@@ -7,7 +7,7 @@ import {
   PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
   Book, Globe, Database, HardHat, Footprints,
   Volume2, VolumeX, Music, Music2, SkipForward,
-  Calendar
+  Calendar, Wallet
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -265,7 +265,7 @@ export const GameLayout = ({ onLogout }) => {
                   <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10">{player.name}</h1>
                 </div>
 
-                {wallet.address && (
+                {wallet.address ? (
                   <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group">
                     <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
                     <div className="flex items-center gap-2 relative z-10">
@@ -275,6 +275,16 @@ export const GameLayout = ({ onLogout }) => {
                        </span>
                     </div>
                   </div>
+                ) : (
+                  !wallet.isFarcaster && (
+                    <button 
+                      onClick={wallet.connectWallet}
+                      className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+                    >
+                       <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
+                       <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
+                    </button>
+                  )
                 )}
 
                 <div className="flex flex-row items-center gap-1 bg-slate-900 border-[1.5px] border-black px-1.5 md:px-2.5 py-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1 shrink-0">

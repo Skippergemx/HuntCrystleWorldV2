@@ -40,6 +40,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                 if (data.guildId === undefined) data.guildId = null;
                 if (data.guildRole === undefined) data.guildRole = null;
                 if (data.farcasterFID === undefined) data.farcasterFID = farcasterContext?.user?.fid || null;
+                if (data.walletAddress === undefined) data.walletAddress = farcasterContext?.user?.address || null;
                 
                 setPlayer(data);
             } else {
@@ -76,7 +77,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     guildRole: null,
                     avatar: 1,
                     farcasterFID: farcasterContext?.user?.fid || null,
-                    farcasterPfp: farcasterContext?.user?.pfpUrl || null
+                    farcasterPfp: farcasterContext?.user?.pfpUrl || null,
+                    walletAddress: farcasterContext?.user?.address || null
                 };
                 setPlayer(newPlayer);
                 // Prompt initial sync for first-time profile creation
@@ -127,7 +129,17 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
       return next;
     });
-  }, [user, db, appId]);
+  }, [user, db, appId, farcasterContext]);
+
+  // --- Silent Sync: Automatic Farcaster Wallet Mapping ---
+  useEffect(() => {
+    if (player && farcasterContext?.user?.address) {
+       if (!player.walletAddress || player.walletAddress !== farcasterContext.user.address) {
+          console.log("System: Farcaster Primary Wallet detected. Initiating Silent Sync...");
+          syncPlayer({ walletAddress: farcasterContext.user.address });
+       }
+    }
+  }, [player, farcasterContext, syncPlayer]);
 
   return { player, setPlayer, syncPlayer, loadingPlayer };
 };

@@ -61,60 +61,17 @@ export const IdentityView = React.memo(() => {
           </div>
         </div>
 
-        {/* WEB3 UPLINK */}
-        <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden">
-           <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none rotate-12"><Wallet size={80} /></div>
-           <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2 relative z-10">
-             <div className="w-4 h-4 bg-cyan-500/10 rounded flex items-center justify-center border border-cyan-500/20">
-               <Wallet size={10} className="text-cyan-400" />
-             </div>
-             Web3 Uplink System _ [BASE_CHAIN]
-           </h3>
-           
-           {!wallet.address ? (
-             <div className="flex flex-col gap-3 relative z-10">
-                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic leading-tight">Identity not currently linked to reward protocol. Establish uplink to enable global reward synchronization.</p>
-                {/* Native Warpcast Link */}
-                {wallet.hasNativeProvider && (
-                  <button 
-                    onClick={() => wallet.connectWallet('NATIVE')}
-                    disabled={wallet.loading}
-                    className="w-full bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 border-b-4 border-indigo-950 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group shadow-[0_4px_15px_rgba(0,0,0,0.3)] active:translate-y-1"
-                  >
-                    <div className="flex items-center gap-3">
-                       <div className="bg-white/10 p-2 rounded-lg backdrop-blur-md group-hover:rotate-12 transition-transform border border-white/10">
-                          <Globe size={18} className="text-white" />
-                       </div>
-                       <div className="flex flex-col text-left">
-                          <span className="font-black text-white uppercase italic text-sm tracking-tighter">Sync Warpcast Wallet</span>
-                          <span className="text-[7px] text-indigo-200 font-bold uppercase tracking-widest">Protocol: Native Frame_V2</span>
-                       </div>
-                    </div>
-                    {wallet.loading && <div className="w-2 h-2 rounded-full bg-white animate-ping"></div>}
-                  </button>
-                )}
-
-                {/* External Browser Link */}
-                {wallet.hasExternalProvider && (
-                   <button 
-                      onClick={() => wallet.connectWallet('EXTERNAL')}
-                      disabled={wallet.loading}
-                      className="w-full bg-white hover:bg-cyan-500 border-b-4 border-slate-800 p-4 rounded-xl flex items-center justify-between gap-3 transition-all group active:translate-y-1 group"
-                   >
-                      <div className="flex items-center gap-3">
-                         <div className="bg-black/5 p-2 rounded-lg group-hover:rotate-45 transition-transform border border-black/5">
-                            <Link size={18} className="text-black" />
-                         </div>
-                         <div className="flex flex-col text-left">
-                            <span className="font-black text-black uppercase italic text-sm tracking-tighter group-hover:text-black">Establish External Link</span>
-                            <span className="text-[7px] text-slate-500 font-bold uppercase tracking-widest">Protocol: Browser_EIP1193</span>
-                         </div>
-                      </div>
-                      {wallet.loading && <div className="w-2 h-2 rounded-full bg-black animate-ping"></div>}
-                   </button>
-                )}
-             </div>
-           ) : (
+        {/* WEB3 UPLINK STATUS */}
+        {wallet.address && (
+          <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none rotate-12"><Wallet size={80} /></div>
+             <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2 relative z-10">
+               <div className="w-4 h-4 bg-cyan-500/10 rounded flex items-center justify-center border border-cyan-500/20">
+                 <Wallet size={10} className="text-cyan-400" />
+               </div>
+               Active Web3 Uplink _ [BASE_CHAIN]
+             </h3>
+             
              <div className="space-y-4 relative z-10">
                 <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl flex items-center justify-between shadow-inner">
                    <div className="flex flex-col items-start">
@@ -138,8 +95,8 @@ export const IdentityView = React.memo(() => {
                    Terminate Dynamic Uplink
                 </button>
              </div>
-           )}
-        </div>
+          </div>
+        )}
 
         {/* FARCASTER LINK */}
         {farcasterContext?.user && (

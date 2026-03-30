@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText } from 'lucide-react';
+import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag } from 'lucide-react';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 

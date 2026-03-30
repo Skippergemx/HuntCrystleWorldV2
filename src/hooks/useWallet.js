@@ -12,6 +12,7 @@ export const useWallet = (addLog) => {
   const [isGenesisHolder, setIsGenesisHolder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeProviderType, setActiveProviderType] = useState(null); // 'NATIVE' (FC), 'EXTERNAL' (Window)
+  const [manualDisconnect, setManualDisconnect] = useState(false);
 
   const getProvider = useCallback((type) => {
     const forcedType = type || activeProviderType;
@@ -44,6 +45,7 @@ export const useWallet = (addLog) => {
       return addLog(msg);
     }
     
+    setManualDisconnect(false); // Reset opt-out if manual action taken
     setLoading(true);
     try {
       if (ethProvider === window.ethereum) {
@@ -81,12 +83,15 @@ export const useWallet = (addLog) => {
 
   const disconnectWallet = () => {
     setAddress(null);
+    setManualDisconnect(true);
     setIsGenesisHolder(false);
     setActiveProviderType(null);
     addLog("⛓️ WEB3 DISCONNECTED: Wallet downlink terminated.");
   };
 
   useEffect(() => {
+    if (manualDisconnect) return; // Respect explicit opt-out
+    
     const initAutoConnect = async () => {
        const ethProvider = getProvider();
        if (!ethProvider) return;
