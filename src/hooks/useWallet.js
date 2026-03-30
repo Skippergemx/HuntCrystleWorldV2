@@ -18,17 +18,21 @@ export const useWallet = (addLog) => {
   const [activeProviderType, setActiveProviderType] = useState(null); // 'NATIVE' | 'EXTERNAL'
   const [manualDisconnect, setManualDisconnect] = useState(false);
 
+  const [inFrameStatus, setInFrameStatus] = useState(false);
+
   // 1. Provider Resolution Loop
   const getProvider = useCallback((type) => {
     const forcedType = type || activeProviderType;
-    // Farcaster V2 uses sdk.wallet.provider as the EIP-1193 interface
-    if (forcedType === 'NATIVE') return sdk?.wallet?.provider;
+    // Strict Platform Enforcements
+    if (forcedType === 'NATIVE') return sdk?.wallet?.ethProvider;
     if (forcedType === 'EXTERNAL') return window.ethereum;
     
-    // Auto-Discovery: Farcaster takes priority if in-frame
-    if (sdk?.wallet?.provider) return sdk.wallet.provider;
+    // Auto-Discovery: Only assume Farcaster provider if explicitly confirmed by context
+    if (inFrameStatus && sdk?.wallet?.ethProvider) return sdk.wallet.ethProvider;
+    
+    // Default to strict Web Browser extension for all other environments
     return window.ethereum;
-  }, [activeProviderType]);
+  }, [activeProviderType, inFrameStatus]);
 
   // 2. Asset Verification Protocols
   const checkGenesisNFT = useCallback(async (userAddress, provider) => {
@@ -44,7 +48,7 @@ export const useWallet = (addLog) => {
   // 3. Handshake Execution
   const connectWallet = async (type = 'AUTO') => {
     let ethProvider;
-    if (type === 'NATIVE') ethProvider = sdk?.wallet?.provider;
+    if (type === 'NATIVE') ethProvider = sdk?.wallet?.ethProvider;
     else if (type === 'EXTERNAL') ethProvider = window.ethereum;
     else ethProvider = getProvider();
 
@@ -76,14 +80,17 @@ export const useWallet = (addLog) => {
         }
       }
 
-      const provider = new BrowserProvider(ethProvider);
-      const accounts = await provider.send("eth_requestAccounts", []);
+      // 1. Native Handshake Bypass: Use raw EIP-1193 provider to prevent ethers.js from crashing on malformed Farcaster errors
+      const rawAccounts = await ethProvider.request({ method: 'eth_requestAccounts' });
       
-      if (accounts[0]) {
-        setAddress(accounts[0]);
-        setActiveProviderType(ethProvider === sdk?.wallet?.provider ? 'NATIVE' : 'EXTERNAL');
-        await checkGenesisNFT(accounts[0], ethProvider);
-        addLog?.(`⛓️ UPLINK SUCCESSful: Sector ${accounts[0].slice(0, 6)} active via ${ethProvider === window.ethereum ? 'EXTERNAL WALLET' : 'WARPCAST NATIVE'}.`);
+      if (rawAccounts && rawAccounts[0]) {
+        setAddress(rawAccounts[0]);
+        setActiveProviderType(ethProvider === sdk?.wallet?.ethProvider ? 'NATIVE' : 'EXTERNAL');
+        
+        // 2. Wrap in Ethers ONLY after a successful EIP-1193 connection is established for contract reading
+        const provider = new BrowserProvider(ethProvider);
+        await checkGenesisNFT(rawAccounts[0], ethProvider);
+        addLog?.(`⛓️ UPLINK SUCCESSful: Sector ${rawAccounts[0].slice(0, 6)} active via ${ethProvider === window.ethereum ? 'EXTERNAL WALLET' : 'WARPCAST NATIVE'}.`);
       }
     } catch (e) {
       console.error(e);
@@ -109,11 +116,13 @@ export const useWallet = (addLog) => {
       // Step A: Passive Context Scan (Farcaster Discovery)
       try {
         const ctx = await sdk.context;
-        // Check for custodyAddress or verifiedAddress (if available in future SDK versions)
-        const passiveAddress = ctx?.user?.custodyAddress || ctx?.user?.address;
-        if (passiveAddress) {
-          setAddress(passiveAddress);
-          setActiveProviderType('NATIVE');
+        if (ctx) {
+           setInFrameStatus(true); // Lock environment out of browser heuristics
+           // Check for custodyAddress or verifiedAddress (if available in future SDK versions)
+           const passiveAddress = ctx?.user?.custodyAddress || ctx?.user?.address;
+           if (passiveAddress) {
+             // Future use
+           }
         }
       } catch (e) {}
 
@@ -122,25 +131,33 @@ export const useWallet = (addLog) => {
       if (!ethProvider) return;
 
       try {
-        const provider = new BrowserProvider(ethProvider);
-        const accounts = await provider.listAccounts();
-        if (accounts && accounts[0]) {
-          const accAddr = accounts[0].address;
+        // Prevent ethers from throwing network errors on dormant Farcaster providers
+        // by checking for authorized accounts manually via direct JSON-RPC first.
+        let authorizedAccounts = [];
+        try {
+          authorizedAccounts = await ethProvider.request({ method: 'eth_accounts' });
+        } catch (e) {
+          // Silent fallback if method is unsupported or frame isn't ready
+        }
+
+        if (authorizedAccounts && authorizedAccounts.length > 0) {
+          const provider = new BrowserProvider(ethProvider);
+          const accAddr = authorizedAccounts[0];
           setAddress(accAddr);
-          setActiveProviderType(ethProvider === sdk?.wallet?.provider ? 'NATIVE' : 'EXTERNAL');
+          setActiveProviderType(ethProvider === sdk?.wallet?.ethProvider ? 'NATIVE' : 'EXTERNAL');
           checkGenesisNFT(accAddr, ethProvider);
         }
 
-        // Listeners
+        // Listeners for accounts changes only apply if the provider supports 'on'
         if (ethProvider.on) {
           const handleAccs = (accs) => {
-            if (accs[0]) {
+            if (accs && accs[0]) {
               setAddress(accs[0]);
               checkGenesisNFT(accs[0], ethProvider);
             } else { setAddress(null); }
           };
           ethProvider.on('accountsChanged', handleAccs);
-          cleanup = () => ethProvider.removeListener('accountsChanged', handleAccs);
+          cleanup = () => ethProvider.removeListener?.('accountsChanged', handleAccs);
         }
       } catch (e) {}
     };
@@ -154,7 +171,7 @@ export const useWallet = (addLog) => {
     activeProviderType,
     connectWallet, 
     disconnectWallet,
-    hasNativeProvider: !!sdk?.wallet?.provider,
+    hasNativeProvider: !!sdk?.wallet?.ethProvider,
     hasExternalProvider: !!window.ethereum
   };
 };
