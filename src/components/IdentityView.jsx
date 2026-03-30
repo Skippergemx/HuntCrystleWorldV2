@@ -62,7 +62,7 @@ export const IdentityView = React.memo(() => {
         </div>
 
         {/* WEB3 UPLINK STATUS */}
-        {wallet.address && (
+        {wallet.address ? (
           <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden">
              <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none rotate-12"><Wallet size={80} /></div>
              <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2 relative z-10">
@@ -95,6 +95,23 @@ export const IdentityView = React.memo(() => {
                    Terminate Dynamic Uplink
                 </button>
              </div>
+          </div>
+        ) : (
+          <div className="w-full bg-slate-900 border-2 border-dashed border-slate-800 rounded-2xl p-6 mb-4 flex flex-col items-center gap-4 group hover:border-cyan-500/50 transition-all">
+             <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-500 group-hover:text-cyan-400 group-hover:scale-110 transition-all">
+                <Link size={24} />
+             </div>
+             <div className="text-center">
+                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-1">Uplink Offline</h3>
+                <p className="text-[8px] text-slate-500 font-bold uppercase italic">Link your wallet to track progress onchain</p>
+             </div>
+             <button 
+               onClick={() => wallet.connectWallet('EXTERNAL')}
+               disabled={wallet.loading}
+               className="w-full bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-[0_4px_20px_rgba(6,182,212,0.3)] hover:shadow-[0_4px_25px_rgba(6,182,212,0.5)] active:scale-95 transition-all disabled:opacity-50"
+             >
+               {wallet.loading ? 'INITIATING...' : 'ESTABLISH WALLET UPLINK'}
+             </button>
           </div>
         )}
 

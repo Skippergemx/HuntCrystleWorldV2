@@ -150,6 +150,8 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     farcasterContext,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
+    updateBoardTab: leaderboardObj.setActiveBoard,
+    activeBoardTab: leaderboardObj.activeBoard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES,

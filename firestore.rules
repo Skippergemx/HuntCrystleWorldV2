@@ -2,95 +2,93 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Genesis Admin Check
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'skippergemx@gmail.com';
+    // V2 Helper: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // V2 Helper: Check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // ULTIMATE ADMIN OVERRIDE
-    // Grants absolute read/write access to the entire database for maintenance
+    // V2 Helper: Genesis Admin Check
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == 'skippergemx@gmail.com';
+    }
+    
+    // --- ULTIMATE PROTOCOL: Admin Override ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // STANDARD PROTOCOLS: User-level access rules
-    
-    // Personal Profile Security
-    match /artifacts/crystle-hunter-world-v1/users/{userId}/profile/data {
-      // Allow read/write if the email in the token matches the userId identifier
-      // OR if the user is an anonymous Farcaster user
-      allow read: if request.auth != null && (
-        request.auth.token.email == userId || 
-        userId.matches('^farcaster_.*') ||
-        userId == request.auth.uid ||
-        resource == null
-      );
-      allow write: if request.auth != null && (
-        request.auth.token.email == userId || 
-        userId.matches('^farcaster_.*') ||
-        userId == request.auth.uid ||
-        (resource != null && resource.data.uid == request.auth.uid) ||
-        (request.resource != null && request.resource.data.uid == request.auth.uid)
-      );
-    }
-    
-    // Leaderboard Security
-    match /artifacts/crystle-hunter-world-v1/public/data/leaderboard/{userId} {
-      allow read: if true; 
-      allow write: if request.auth != null && (
-        request.auth.token.email == userId ||
-        userId.matches('^farcaster_.*') ||
-        userId == request.auth.uid
-      );
+    // --- V2 UNIFIED CORE COLLECTIONS ---
+
+    // 1. Players Collection (Root)
+    match /players/{userId} {
+      // Anyone authenticated can read player profile for Leaderboards/Guilds
+      allow read: if isAuthenticated();
+      // Only the owner or Admin can modify their own player data
+      allow write: if isOwner(userId);
     }
 
-    // PVP Room Security
-    match /artifacts/crystle-hunter-world-v1/public/data/pvp_room/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
+    // 2. Guilds Collection (Root)
+    match /guilds/{guildId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Update logic handled by app (joining/leaving), but rules allow auth users
+      allow update: if isAuthenticated();
+      // Only the leader can delete a guild
+      allow delete: if isAuthenticated() && (request.auth.uid == resource.data.leaderId);
 
-    // PVP Chat Security
-    match /artifacts/crystle-hunter-world-v1/public/data/pvp_chat/{messageId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // Marketplace Security
-    match /artifacts/crystle-hunter-world-v1/public/data/marketplace/{listingId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
-    }
-
-    // Marketplace Payouts (seller receives GX from buyers)
-    // Any authenticated user can create a payout; recipients can delete theirs.
-    match /artifacts/crystle-hunter-world-v1/public/data/payouts/{payoutId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow delete: if request.auth != null &&
-        request.auth.token.email == resource.data.recipientEmail;
-    }
-
-    // Syndicate (Guild) Security
-    match /artifacts/crystle-hunter-world-v1/guilds/{guildId} {
-      allow read: if true;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null; // Refined: leader/member specific in app logic
-      allow delete: if request.auth != null && 
-        request.auth.token.email == resource.data.leaderId;
-      
-      // Syndicate Messages (Sub-collection)
+      // Guild Comms (Sub-collection)
       match /messages/{messageId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow delete: if isAdmin();
+        allow read, create: if isAuthenticated();
       }
     }
 
-    // Syndicate War Security
-    match /artifacts/crystle-hunter-world-v1/guild_wars/{warId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // 3. Guild Wars (Root)
+    match /guild_wars/{warId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    // 4. PVP Arena Presence (Root)
+    match /pvp_room/{userId} {
+      allow read: if isAuthenticated();
+      // Users can only write their own combat signal
+      allow write: if isOwner(userId);
+      // Others can update (attack) specific fields like HP/lastHitBy
+      allow update: if isAuthenticated();
+    }
+
+    // 5. Global Chat (Root)
+    match /global_chat/{messageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+
+    // 6. Marketplace (Root)
+    match /marketplace/{listingId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // Only seller can delete or update their listing
+      allow update, delete: if isAuthenticated() && (request.auth.uid == resource.data.sellerUid);
+    }
+
+    // 7. Payouts (Root)
+    match /payouts/{payoutId} {
+      allow create: if isAuthenticated();
+      // Only the recipient can see and claim (delete) their payout
+      allow read, delete: if isAuthenticated() && (request.auth.uid == resource.data.recipientUid);
+    }
+
+    // --- LEGACY FALLBACKS (For Nuclear Wipe access) ---
+    match /artifacts/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+    match /users/{allPaths=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

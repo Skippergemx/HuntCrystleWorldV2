@@ -1,9 +1,11 @@
 import React from 'react';
 import { useUnifiedAuth } from '../hooks/useUnifiedAuth';
+import { useWallet } from '../hooks/useWallet';
 import { Wallet, LogIn, CheckCircle, ShieldCheck, Loader2 } from 'lucide-react';
 
 const UnifiedAuthBanner = () => {
-  const { user, address, isFarcaster, loading, loginWithGoogle, connectWallet } = useUnifiedAuth();
+  const { user, isFarcaster, loading, loginWithGoogle } = useUnifiedAuth();
+  const { address, connectWallet } = useWallet(() => {}); // Pass empty logger since we just want state
 
   if (loading) {
     return (

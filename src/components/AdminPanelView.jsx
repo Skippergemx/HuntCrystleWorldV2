@@ -155,20 +155,47 @@ export const AdminPanelView = React.memo(() => {
     }
   };
 
-  const clearChatMessages = async () => {
-    if (!window.confirm("CRITICAL: Purge all Arena Comms? This will permanently delete the global chat history.")) return;
-    
+  const nuclearWipe = async () => {
+    if (!window.confirm("CRITICAL WARNING: This will PERMANENTLY ERASE ALL PLAYER DATA, ARTIFACTS, AND SYSTEM RECORDS. This is the 'Nuclear Reset' requested for V2. Are you absolutely certain?")) return;
+    if (!window.confirm("FINAL WARNING: All progress, tokens, and items for EVERY hunter will be lost forever. Proceed?")) return;
+
     setLoading(true);
     setMessage(null);
     try {
-      const chatSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'pvp_chat'));
       const batch = writeBatch(db);
-      chatSnap.forEach((d) => { batch.delete(d.ref); });
+      
+      // 1. Wipe root 'players' collection
+      const playersSnap = await getDocs(collection(db, 'players'));
+      playersSnap.forEach(d => batch.delete(d.ref));
+      console.log(`System V2: Purged ${playersSnap.size} root player profiles.`);
+
+      // 2. Wipe root 'users' collection (Legacy)
+      const usersSnap = await getDocs(collection(db, 'users'));
+      usersSnap.forEach(d => batch.delete(d.ref));
+      console.log(`System V2: Purged ${usersSnap.size} root legacy user documents.`);
+
+      // 3. Wipe 'artifacts' tree (Recursive cleanup for current and legacy app IDs)
+      const possibleAppIds = [appId, 'crystle-hunter-world-v1', 'crystle-hunter-world-v2'];
+      for (const id of possibleAppIds) {
+        // Artifact Leaderboard
+        const lbSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'leaderboard'));
+        lbSnap.forEach(d => batch.delete(d.ref));
+        
+        // Artifact Marketplace
+        const mktSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'marketplace'));
+        mktSnap.forEach(d => batch.delete(d.ref));
+
+        // Artifact Chat
+        const chatSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'pvp_chat'));
+        chatSnap.forEach(d => batch.delete(d.ref));
+      }
+
       await batch.commit();
-      setMessage({ type: 'success', text: `Comms Purge Complete: ${chatSnap.size} signals neutralized.` });
+      setMessage({ type: 'success', text: "DATABASE PURGE COMPLETE: The sectors are clean. Re-initializing Genesis Protocol v2.0." });
+      await fetchStats();
     } catch (e) {
       console.error(e);
-      setMessage({ type: 'error', text: 'Purge failed: ' + e.message });
+      setMessage({ type: 'error', text: 'Nuclear reset failed: ' + e.message });
     } finally {
       setLoading(false);
     }
@@ -597,22 +624,23 @@ export const AdminPanelView = React.memo(() => {
               </button>
             </div>
 
-            <div className="p-6 bg-slate-900/40 border-2 border-slate-700/50 rounded-lg">
-              <h3 className="text-lg font-black text-cyan-500 uppercase italic flex items-center gap-2 mb-2">
+            <div className="p-6 bg-red-950/40 border-2 border-red-600 rounded-lg shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+              <h3 className="text-lg font-black text-red-500 uppercase italic flex items-center gap-2 mb-2">
                 <Trash2 size={20} />
-                Arena Comms Purge
+                NUCLEAR WIPE [GENESIS V2]
               </h3>
               <p className="text-sm text-slate-400 mb-6 font-medium">
-                This protocol will permanently delete all signals (messages) in the PVP Arena chat database. 
+                THE FINAL PURGE: This will permanently delete ALL player data, artifacts, Marketplace listings, and system logs across ALL historical sectors. 
+                Use this exclusively for the Database V2 Hard Reset.
               </p>
               
               <button
-                onClick={clearChatMessages}
+                onClick={nuclearWipe}
                 disabled={loading}
-                className="w-full md:w-auto px-10 py-4 bg-slate-800 text-cyan-400 font-black uppercase italic rounded border-2 border-cyan-900/50 shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-cyan-600 hover:text-white active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                className="w-full md:w-auto px-10 py-4 bg-red-600 text-white font-black uppercase italic rounded shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-red-500 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3 animate-pulse hover:animate-none"
               >
-                {loading ? <RefreshCw className="animate-spin" /> : <Trash2 />}
-                Purge All Messages
+                {loading ? <RefreshCw className="animate-spin" /> : <ShieldAlert />}
+                Commence Nuclear Reset
               </button>
             </div>
 

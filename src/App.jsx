@@ -7,7 +7,7 @@ import UnifiedAuthBanner from './components/UnifiedAuthBanner';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 
 const App = () => {
-  const { user, loading, isFarcaster, farcasterContext, loginWithGoogle, logout } = useUnifiedAuth();
+  const { user, loading, isFarcaster, farcasterContext, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
@@ -20,6 +20,7 @@ const App = () => {
       ) : !user ? (
         <LoginView
           handleGoogleLogin={loginWithGoogle}
+          handleFarcasterLogin={loginAnonymously}
           farcasterContext={farcasterContext}
         />
       ) : (

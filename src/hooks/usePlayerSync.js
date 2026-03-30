@@ -1,53 +1,85 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
+/**
+ * usePlayerSync V2: The Primary Data Hub
+ * Responsible for ALL database interactions for player profiles.
+ * Stripped of all legacy artifact-based fallbacks for the Ultimate Reset.
+ */
 export const usePlayerSync = (user, db, appId, farcasterContext) => {
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   
-  // Sync timeout ref
+  // Sync timeout ref for batching/throttling Firestore writes
   const syncTimeoutRef = useRef(null);
   const pendingUpdatesRef = useRef({});
 
-  // --- Initial Load ---
+  // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
     if (!user) {
         setLoadingPlayer(false);
+        setPlayer(null);
         return;
     }
 
-    const loadData = async () => {
+    const loadUnifiedProfile = async () => {
         try {
             setLoadingPlayer(true);
-            const isFarcasterUser = user.isAnonymous && farcasterContext?.user?.fid;
-            const identifier = isFarcasterUser ? `farcaster_${farcasterContext.user.fid}` : (user.email || user.uid);
-            const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
+            
+            // UNIFIED PATH: All identities now located under the primary 'players' collection
+            const docRef = doc(db, 'players', user.uid);
             const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // Migration: Ensure new fields exist
-                if (!data.gemx) data.gemx = { level: 1, crystalsFed: 0 };
-                if (!data.dragon) data.dragon = { level: 1, fruitsFed: 0 };
-                if (!data.gemxAvatar) data.gemxAvatar = 'Cosmic gemx (1).gif';
-                if (!data.avatar) data.avatar = 1;
-                if (data.dragonAnimationEnabled === undefined) data.dragonAnimationEnabled = true;
-                if (data.performanceMode === undefined) data.performanceMode = false;
-                if (data.maxDepth === undefined) data.maxDepth = 1;
-                if (!data.recipes || data.recipes.length === 0) data.recipes = ['crystle_blade'];
-                if (!data.selectedPotionId) data.selectedPotionId = 'hp_potion';
-                if (!data.selectedScrollId) data.selectedScrollId = 'auto_scroll';
-                if (data.guildId === undefined) data.guildId = null;
-                if (data.guildRole === undefined) data.guildRole = null;
-                if (data.farcasterFID === undefined) data.farcasterFID = farcasterContext?.user?.fid || null;
-                if (data.walletAddress === undefined) data.walletAddress = farcasterContext?.user?.address || null;
-                
-                setPlayer(data);
-            } else {
-                const newPlayer = {
+                console.log(`System V2: Unified Profile Loaded for ${user.username || user.uid}.`);
+
+                // ENFORCED GLOBAL SCHEMA: Sanitize data to prevent NaN issues in the UI
+                const sanitized = {
+                    ...data,
+                    // Identity Meta-Data Sync
                     uid: user.uid,
-                    email: user.email || '',
-                    name: farcasterContext?.user?.username || farcasterContext?.user?.displayName || user.displayName || `Hunter_${user.uid.slice(0, 4)}`,
+                    email: user.email || data.email || null,
+                    farcasterFID: user.farcasterFID || data.farcasterFID || null,
+                    name: user.username || data.name || `Hunter_${user.uid.slice(0, 4)}`,
+                    pfp: user.pfp || data.pfp || null,
+                    
+                    // Essential Game Metrics Fallbacks
+                    level: data.level || 1,
+                    xp: data.xp || 0,
+                    tokens: data.tokens || 100,
+                    hp: data.hp ?? 150,
+                    maxHp: data.maxHp ?? 150,
+                    baseStats: data.baseStats || { str: 10, agi: 10, dex: 10 },
+                    
+                    // Complex Object Fallbacks
+                    gemx: data.gemx || { level: 1, crystalsFed: 0 },
+                    dragon: data.dragon || { level: 1, fruitsFed: 0 },
+                    gemxAvatar: data.gemxAvatar || 'Cosmic gemx (1).gif',
+                    recipes: data.recipes || ['crystle_blade'],
+                    inventory: data.inventory || [],
+                    equipped: data.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
+                    
+                    // System Flags
+                    maxDepth: data.maxDepth || 1,
+                    performanceMode: data.performanceMode ?? false,
+                    selectedPotionId: data.selectedPotionId || 'hp_potion',
+                    selectedScrollId: data.selectedScrollId || 'auto_scroll',
+                    avatar: data.avatar || 1
+                };
+
+                setPlayer(sanitized);
+            } else {
+                console.log("System V2: Initializing Genesis Profile for a new Hunter...");
+                
+                // GENESIS PROFILE: Baseline configuration for a fresh start
+                const genesisProfile = {
+                    uid: user.uid,
+                    email: user.email || null,
+                    farcasterFID: user.farcasterFID || null,
+                    name: user.username || `Hunter_${user.uid.slice(0, 4)}`,
+                    pfp: user.pfp || null,
+                    
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
                     baseStats: { str: 10, agi: 10, dex: 10 },
@@ -57,9 +89,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     autoUntil: 0,
                     hiredMate: null,
                     buffUntil: 0,
-                    equipped: {
-                        Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null
-                    },
+                    equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                     recipes: ['crystle_blade'],
                     inventory: [],
                     totalBossDamage: 0,
@@ -76,29 +106,29 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     guildId: null,
                     guildRole: null,
                     avatar: 1,
-                    farcasterFID: farcasterContext?.user?.fid || null,
-                    farcasterPfp: farcasterContext?.user?.pfpUrl || null,
-                    walletAddress: farcasterContext?.user?.address || null
+                    farcasterPfp: user.pfp || null,
+                    walletAddress: null,
+                    createdAt: serverTimestamp()
                 };
-                setPlayer(newPlayer);
-                // Prompt initial sync for first-time profile creation
-                await setDoc(docRef, newPlayer);
+                
+                setPlayer(genesisProfile);
+                await setDoc(docRef, genesisProfile);
             }
         } catch (e) {
-            console.error("Player Load Error:", e);
+            console.error("Player Hydration Error:", e);
         } finally {
             setLoadingPlayer(false);
         }
     };
 
-    loadData();
+    loadUnifiedProfile();
   }, [user, db, appId, farcasterContext]);
 
-  // Throttled sync mechanism
+  // 2. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
     if (!user) return;
 
-    // Sterilize updates: Round combat-critical numbers to prevent float jitter
+    // Sterilize numbers: Prevent float jitter for combat-critical metrics
     const sterilized = { ...updates };
     ['hp', 'maxHp', 'xp', 'tokens'].forEach(key => {
         if (sterilized[key] !== undefined && typeof sterilized[key] === 'number') {
@@ -106,40 +136,29 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         }
     });
 
-    // Immediate local update for UI responsiveness
+    // Local update for instant UI feedback
     setPlayer(prev => {
-      const next = { ...prev, ...sterilized };
+      const next = { ...prev, ...sterilized, updatedAt: new Date() }; // Visual indicator of freshness
 
-      // Batch updates for remote sync
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized };
+      // Queue these changes for the prochain Firestore sync
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
       syncTimeoutRef.current = setTimeout(async () => {
         try {
-          const isFarcasterUser = user.isAnonymous && farcasterContext?.user?.fid;
-          const identifier = isFarcasterUser ? `farcaster_${farcasterContext.user.fid}` : (user.email || user.uid);
-          const docRef = doc(db, 'artifacts', appId, 'users', identifier, 'profile', 'data');
+          const docRef = doc(db, 'players', user.uid);
           await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
           pendingUpdatesRef.current = {};
+          console.log("System V2: Remote Sector Synchronized.");
         } catch (e) {
-          console.error("Sync error:", e);
+          console.error("Sync Error:", e);
         }
       }, 2000); // 2s throttle
 
       return next;
     });
-  }, [user, db, appId, farcasterContext]);
-
-  // --- Silent Sync: Automatic Farcaster Wallet Mapping ---
-  useEffect(() => {
-    if (player && farcasterContext?.user?.address) {
-       if (!player.walletAddress || player.walletAddress !== farcasterContext.user.address) {
-          console.log("System: Farcaster Primary Wallet detected. Initiating Silent Sync...");
-          syncPlayer({ walletAddress: farcasterContext.user.address });
-       }
-    }
-  }, [player, farcasterContext, syncPlayer]);
+  }, [user, db, appId]);
 
   return { player, setPlayer, syncPlayer, loadingPlayer };
 };

@@ -1,67 +1,70 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 
-export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS, db, appId) => {
+/**
+ * useMarketplace V2: Global P2P Exchange
+ * Migrated to root 'marketplace' and 'payouts' collections.
+ * Enforced UID-primary identity for secure transaction routing.
+ */
+export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS, db) => {
   const [marketplace, setMarketplace] = useState([]);
 
+  // 1. Marketplace Listener (V2: Root Path)
   useEffect(() => {
-    if (!user) return;
+    if (!db) return;
     try {
-      const q = collection(db, 'artifacts', appId, 'public', 'data', 'marketplace');
+      const q = collection(db, 'marketplace');
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setMarketplace(data);
       });
       return () => unsubscribe();
-    } catch (e) {
-      console.error(e);
-    }
-  }, [user, db, appId]);
+    } catch (e) { console.error("Market listener error:", e); }
+  }, [db]);
 
-  // Auto-claim pending GX payouts from marketplace sales
+  // 2. Automated Payout Protocol (V2: Root Path & UID Key)
   useEffect(() => {
-    if (!user || !player) return;
-    const identifier = user.email || user.uid;
+    if (!user?.uid || !player) return;
+    
     const claimPayouts = async () => {
       try {
-        const { getDocs, query: fsQuery, where } = await import('firebase/firestore');
-        const q = collection(db, 'artifacts', appId, 'public', 'data', 'payouts');
-        const snapshot = await getDocs(fsQuery(q, where('recipientEmail', '==', identifier)));
+        const q = query(collection(db, 'payouts'), where('recipientUid', '==', user.uid));
+        const snapshot = await getDocs(q);
         if (snapshot.empty) return;
+
         let totalPayout = 0;
-        const deletePromises = [];
-        snapshot.forEach(d => {
-          totalPayout += d.data().amount || 0;
-          deletePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'payouts', d.id)));
-        });
-        await Promise.all(deletePromises);
+        const batchDeletes = snapshot.docs.map(d => deleteDoc(doc(db, 'payouts', d.id)));
+        
+        snapshot.forEach(d => { totalPayout += d.data().amount || 0; });
+        await Promise.all(batchDeletes);
+
         if (totalPayout > 0) {
           await syncPlayer({ tokens: (player.tokens || 0) + totalPayout });
-          addLog(`💸 Marketplace: +${totalPayout} GX from your sales!`);
+          addLog(`💸 MARKET UPLINK: +${totalPayout.toLocaleString()} GX secured from your sales!`);
+          playSFX(SOUNDS.obtainLoot);
         }
-      } catch (e) {
-        console.error('Payout claim error:', e);
-      }
+      } catch (e) { console.error('Payout claim error:', e); }
     };
+    
     claimPayouts();
-  }, [user?.uid, player?.level, db, appId, addLog, syncPlayer, player?.tokens]); 
+  }, [user?.uid, player?.level, db, addLog, syncPlayer, player?.tokens, playSFX, SOUNDS]); 
 
+  // 3. Purchase Logic (V2: Atomic Cleanup)
   const purchaseMarketItem = useCallback(async (listing, requestedQty = 1) => {
+    if (!player || !user?.uid) return;
     const qty = Math.min(requestedQty, listing.quantity || 1);
     const totalCost = listing.price * qty;
 
-    if (!player || player.tokens < totalCost) return addLog("Out of GX!");
+    if (player.tokens < totalCost) return addLog("🚨 INSUFFICIENT GX: Transaction aborted.");
 
     try {
       const remainingQty = (listing.quantity || 1) - qty;
-      
+      const marketDocRef = doc(db, 'marketplace', listing.id);
+
       if (remainingQty <= 0) {
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id));
+        await deleteDoc(marketDocRef);
       } else {
-        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listing.id), {
-          ...listing,
-          quantity: remainingQty
-        });
+        await setDoc(marketDocRef, { ...listing, quantity: remainingQty });
       }
 
       const returnedItems = [];
@@ -73,79 +76,79 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         });
       }
 
-      const newInventory = [...(player.inventory || []), ...returnedItems];
       await syncPlayer({
         tokens: player.tokens - totalCost,
-        inventory: newInventory
+        inventory: [...(player.inventory || []), ...returnedItems]
       });
 
+      // 5% Hub Tax / 95% Seller Payout
       const payout = Math.floor(totalCost * 0.95);
-      const payoutRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'payouts'));
+      const payoutRef = doc(collection(db, 'payouts'));
       await setDoc(payoutRef, {
-        recipientEmail: listing.sellerEmail,
+        recipientUid: listing.sellerUid,
         amount: payout,
         itemName: `${qty}x ${listing.item.name}`,
         buyerName: player.name,
         createdAt: Date.now()
       });
 
-      addLog(`🤝 Market Deal: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);
+      addLog(`🤝 DEAL SECURED: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
-      addLog("Transaction failed: listing may have been acquired.");
+      addLog("🚨 TRANSACTION FAILED: Signal lost.");
     }
-  }, [player, syncPlayer, addLog, db, appId, playSFX, SOUNDS]);
+  }, [player, user?.uid, syncPlayer, addLog, db, playSFX, SOUNDS]);
 
+  // 4. Listing Logic (V2: UID Anchor)
   const listMarketItem = useCallback(async (item, totalPrice, quantity = 1) => {
-    if (!user || !player) return;
+    if (!user?.uid || !player) return;
 
     try {
       const baseId = item.id?.replace(/(_\d+)+$/, '');
-      
-      // Select the exact amount of items to remove
       const itemsToConsume = [];
       let found = 0;
+      
       const remainingInventory = (player.inventory || []).filter(invItem => {
          if (invItem.id?.replace(/(_\d+)+$/, '') === baseId && found < quantity) {
             itemsToConsume.push(invItem);
             found++;
-            return false; // Exclude this item from remainingInventory
-         } else {
-            return true; // Include this item in remainingInventory
+            return false;
          }
+         return true;
       });
 
-      if (found < quantity) return addLog("Insufficient quantity!");
+      if (found < quantity) return addLog("🚨 ERROR: Insufficient storage units.");
 
       await syncPlayer({ inventory: remainingInventory });
 
       const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
-      const listRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      const listRef = doc(collection(db, 'marketplace'));
       await setDoc(listRef, {
         sellerUid: user.uid,
-        sellerEmail: user.email || user.uid,
         sellerName: player.name,
         item: itemsToConsume[0], 
         quantity: quantity,
-        price: pricePerUnit, // Price per unit
+        price: pricePerUnit,
         createdAt: Date.now()
       });
 
-      addLog(`📡 Broadcast: ${quantity}x ${itemsToConsume[0].name} listed for ${totalPrice} GX.`);
+      addLog(`📡 BROADCAST: ${quantity}x ${itemsToConsume[0].name} listed for ${totalPrice} GX.`);
+      playSFX(SOUNDS.useHeal);
     } catch (e) {
       console.error(e);
-      addLog("Broadcasting failed.");
+      addLog("🚨 UPLINK FAILED: Could not broadcast listing.");
     }
-  }, [user, player, syncPlayer, addLog, db, appId]);
+  }, [user, player, syncPlayer, addLog, db, playSFX, SOUNDS]);
 
+  // 5. Cancellation Logic
   const cancelMarketListing = useCallback(async (listingId) => {
-    if (!player) return;
+    if (!player || !db) return;
     try {
       const listing = marketplace.find(l => l.id === listingId);
       if (!listing) return;
 
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'marketplace', listingId));
+      await deleteDoc(doc(db, 'marketplace', listingId));
 
       const returnedItems = [];
       const qty = listing.quantity || 1;
@@ -158,11 +161,9 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       }
 
       await syncPlayer({ inventory: [...(player.inventory || []), ...returnedItems] });
-      addLog(`🚫 Signal Terminated: ${returnedItems.length}x ${listing.item.name} returned to storage.`);
-    } catch (e) {
-      console.error(e);
-    }
-  }, [player, marketplace, syncPlayer, addLog, db, appId]);
+      addLog(`🚫 SIGNAL ABORTED: ${returnedItems.length}x ${listing.item.name} recovered.`);
+    } catch (e) { console.error("Market cancel error:", e); }
+  }, [player, marketplace, syncPlayer, addLog, db]);
 
   return {
     marketplace,
