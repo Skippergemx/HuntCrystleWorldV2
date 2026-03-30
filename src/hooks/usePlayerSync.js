@@ -41,6 +41,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     uid: user.uid,
                     email: user.email || data.email || null,
                     farcasterFID: user.farcasterFID || data.farcasterFID || null,
+                    farcasterUsername: user.farcasterUsername || data.farcasterUsername || null,
                     name: user.username || data.name || `Hunter_${user.uid.slice(0, 4)}`,
                     pfp: user.pfp || data.pfp || null,
                     
@@ -77,6 +78,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     uid: user.uid,
                     email: user.email || null,
                     farcasterFID: user.farcasterFID || null,
+                    farcasterUsername: user.farcasterUsername || null,
                     name: user.username || `Hunter_${user.uid.slice(0, 4)}`,
                     pfp: user.pfp || null,
                     

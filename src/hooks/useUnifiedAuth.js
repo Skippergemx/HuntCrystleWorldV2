@@ -50,6 +50,7 @@ export const useUnifiedAuth = () => {
           uid: u.uid,
           email: u.email || null,
           farcasterFID: farcasterContext?.user?.fid || null,
+          farcasterUsername: farcasterContext?.user?.username || null,
           username: isFarcaster ? farcasterContext?.user?.username || u.displayName : u.displayName || u.email?.split('@')[0],
           pfp: isFarcaster ? farcasterContext?.user?.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}` : u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
           platform: isFarcaster ? 'farcaster' : 'browser'
