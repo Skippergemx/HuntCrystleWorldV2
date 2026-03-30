@@ -32,67 +32,25 @@ export const AdminPanelView = React.memo(() => {
       setLoading(true);
       setMessage(null);
       
-      console.log("Terminal: Initiating Deep-Scan for Hunter signals...");
-      const foundIds = new Set();
-      const possibleAppIds = [appId, 'crystle-hunter-world-v1', 'crystle-hunter-world-v2'];
+      console.log("Terminal V2: Initiating Direct Scan for Hunter signals...");
       
-      // Phase 1: Self-Discovery (Targeted probe for the admin's own record)
-      if (userEmail) {
-        foundIds.add(userEmail); 
-        console.log(`Phase 1: Admin signal locked (${userEmail})`);
-      }
-
-      // Phase 2: Leaderboard Discovery
-      for (const id of possibleAppIds) {
-        try {
-          const lbSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'leaderboard'));
-          lbSnap.forEach(d => foundIds.add(d.id));
-        } catch (e) { console.warn("Leaderboard check skipped:", e.message); }
-      }
-
-      // Phase 3: Collection Group Pulse (Finding virtual docs by their children)
-      try {
-        console.log("Phase 3: Pulsing Registry for hidden profiles...");
-        const profilesSnap = await getDocs(query(collectionGroup(db, 'profile')));
-        profilesSnap.forEach(d => {
-          if (d.id === 'data' && d.ref.parent.parent) {
-            foundIds.add(d.ref.parent.parent.id);
-          }
-        });
-      } catch (e) {
-        console.warn("Collection Group pulse restricted:", e.message);
-      }
-
-      // Phase 4: Hydration (Reconstructing Profile Data)
+      const playersSnap = await getDocs(collection(db, 'players'));
       const profiles = [];
-      const idArray = Array.from(foundIds);
-      
-      for (const uid of idArray) {
-        let foundProfile = false;
-        for (const id of possibleAppIds) {
-          if (foundProfile) break;
-          try {
-            const profileRef = doc(db, 'artifacts', id, 'users', uid, 'profile', 'data');
-            const snap = await getDoc(profileRef);
-            if (snap.exists()) {
-              profiles.push({ id: uid, ...snap.data(), sourceAppId: id });
-              foundProfile = true;
-            }
-          } catch (e) {}
-        }
-      }
+      playersSnap.forEach(d => {
+        profiles.push({ id: d.id, ...d.data() });
+      });
 
       setStats({
         totalUsers: profiles.length,
-        leaderboardSize: foundIds.size 
+        leaderboardSize: profiles.length 
       });
 
       setPlayers(profiles);
       
-      if (foundIds.size === 0) {
-        setMessage({ type: 'warning', text: 'Sector Silence: No Hunter signals discovered. Try completing a dungeon or fighting the boss to register your signal.' });
+      if (profiles.length === 0) {
+        setMessage({ type: 'warning', text: 'Sector Silence: No Hunter signals discovered in the V2 Core database.' });
       } else {
-        console.log(`Deep-Scan Complete: ${profiles.length} profiles hydrated.`);
+        console.log(`Deep-Scan Complete: ${profiles.length} profiles hydrated directly from root 'players' collection.`);
       }
     } catch (e) {
       console.error("Critical Terminal Error:", e);
@@ -103,20 +61,16 @@ export const AdminPanelView = React.memo(() => {
   };
 
   const resetLeaderboard = async () => {
-    if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL hydrated players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
+    if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL V2 players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
     
     setLoading(true);
     setMessage(null);
     try {
       const batch = writeBatch(db);
       
-      // Clear Leaderboard
-      const lbSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'));
-      lbSnap.forEach((d) => { batch.delete(d.ref); });
-
-      // Reset All Profiles
+      // Reset All V2 Profiles in 'players' collection
       players.forEach(p => {
-        const profileRef = doc(db, 'artifacts', p.sourceAppId || appId, 'users', p.id, 'profile', 'data');
+        const profileRef = doc(db, 'players', p.id);
         const cleanSlate = {
           level: 1, xp: 0, tokens: 100,
           hp: 150, maxHp: 150,
@@ -140,12 +94,12 @@ export const AdminPanelView = React.memo(() => {
         batch.update(profileRef, cleanSlate);
       });
 
-      // Clear Marketplace
-      const marketSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      // Clear V2 Marketplace
+      const marketSnap = await getDocs(collection(db, 'marketplace'));
       marketSnap.forEach(d => batch.delete(d.ref));
 
       await batch.commit();
-      setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void. Hall of Fame purged and Marketplace cleared.` });
+      setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void. Ranks and Marketplace cleared.` });
       await fetchStats();
     } catch (e) {
       console.error(e);
@@ -202,59 +156,22 @@ export const AdminPanelView = React.memo(() => {
   };
 
   const purgeMarketplace = async () => {
-    if (!window.confirm("RESET MARKETPLACE: This will delete ALL public listings. Continue?")) return;
+    if (!window.confirm("RESET MARKETPLACE: This will delete ALL public listings in V2 Core. Continue?")) return;
     setLoading(true);
     try {
-      const marketSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'marketplace'));
+      const marketSnap = await getDocs(collection(db, 'marketplace'));
       const batch = writeBatch(db);
       marketSnap.forEach(d => batch.delete(d.ref));
       await batch.commit();
-      setMessage({ type: 'success', text: `Market Sanitized: ${marketSnap.size} listings purged.` });
+      setMessage({ type: 'success', text: `Market Sanitized: ${marketSnap.size} V2 listings purged.` });
     } catch (e) {
       setMessage({ type: 'error', text: 'Market purge failed.' });
     } finally { setLoading(false); }
   };
 
   const syncAllPlayersToLeaderboard = async () => {
-    if (!window.confirm("COMMENCE GLOBAL SYNC: This will scan all user profiles and update the Hall of Fame with their latest stats. Proceed?")) return;
-    
-    setLoading(true);
-    setMessage(null);
-    try {
-      const profilesSnap = await getDocs(query(collectionGroup(db, 'profile')));
-      const batch = writeBatch(db);
-      let count = 0;
-      
-      profilesSnap.forEach(d => {
-        if (d.id === 'data' && d.ref.parent.parent) {
-          const userId = d.ref.parent.parent.id;
-          const data = d.data();
-          const lbRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', userId);
-          batch.set(lbRef, {
-            uid: userId,
-            name: data.name || 'Anonymous Hunter',
-            email: data.email || '',
-            level: data.level || 1,
-            score: data.totalBossDamage || 0,
-            maxDepth: data.maxDepth || 1,
-            heroAvatar: data.avatar || 1
-          }, { merge: true });
-          count++;
-        }
-      });
-
-      if (count > 0) {
-        await batch.commit();
-        setMessage({ type: 'success', text: `Sync Complete: ${count} Hunter signals broadcast to Hall of Fame.` });
-      } else {
-        setMessage({ type: 'warning', text: 'Sync Idle: No profile data found in the grid.' });
-      }
-    } catch (e) {
-      console.error(e);
-      setMessage({ type: 'error', text: 'Synchronization failed: ' + e.message });
-    } finally {
-      setLoading(false);
-    }
+    // V2 architecture queries Leaderboard directly from 'players'. This button is redundant but can be repurposed to force-heal stats.
+    setMessage({ type: 'warning', text: 'Sync Idle: In V2 Architecture, the Leaderboard reads directly from the players collection in real-time. No sync required.' });
   };
 
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -266,8 +183,8 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const { id, sourceAppId, name, level, tokens, totalBossDamage, maxDepth, walletAddress } = editingPlayer;
-      const profileRef = doc(db, 'artifacts', sourceAppId || appId, 'users', id, 'profile', 'data');
+      const { id, name, level, tokens, totalBossDamage, maxDepth, walletAddress } = editingPlayer;
+      const profileRef = doc(db, 'players', id);
       
       const updateData = {
         name,
@@ -279,19 +196,8 @@ export const AdminPanelView = React.memo(() => {
       };
 
       await updateDoc(profileRef, updateData);
-      
-      const lbRef = doc(db, 'artifacts', sourceAppId || appId, 'public', 'data', 'leaderboard', id);
-      const lbSnap = await getDoc(lbRef);
-      if (lbSnap.exists()) {
-        await updateDoc(lbRef, {
-          name,
-          level: Number(level),
-          score: Number(totalBossDamage),
-          maxDepth: Number(maxDepth)
-        });
-      }
 
-      setMessage({ type: 'success', text: `Unit ${id} re-calibrated successfully.` });
+      setMessage({ type: 'success', text: `Unit ${name || id} re-calibrated successfully.` });
       setEditingPlayer(null);
       await fetchStats();
     } catch (e) {
@@ -309,12 +215,14 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const { id, sourceAppId } = editingPlayer;
-      const profileRef = doc(db, 'artifacts', sourceAppId || appId, 'users', id, 'profile', 'data');
+      const { id } = editingPlayer;
+      const profileRef = doc(db, 'players', id);
       
       const resetData = {
           uid: id,
-          email: editingPlayer.email || '',
+          email: editingPlayer.email || null,
+          farcasterFID: editingPlayer.farcasterFID || null,
+          farcasterUsername: editingPlayer.farcasterUsername || null,
           name: editingPlayer.name || `Hunter_${id.slice(0, 4)}`,
           level: 1, xp: 0, tokens: 100,
           hp: 150, maxHp: 150,
@@ -337,14 +245,8 @@ export const AdminPanelView = React.memo(() => {
       };
 
       await updateDoc(profileRef, resetData);
-      
-      const lbRef = doc(db, 'artifacts', sourceAppId || appId, 'public', 'data', 'leaderboard', id);
-      const lbSnap = await getDoc(lbRef);
-      if (lbSnap.exists()) {
-        await deleteDoc(lbRef);
-      }
 
-      setMessage({ type: 'success', text: `Master Reset complete for ${id}.` });
+      setMessage({ type: 'success', text: `Master Reset complete for ${id}. They have been returned to V2 Genesis.` });
       setEditingPlayer(null);
       await fetchStats();
     } catch (e) {
