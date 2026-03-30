@@ -8,11 +8,8 @@ import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 
 const App = () => {
   const { user, loading, isFarcaster, farcasterContext, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {isFarcaster && <UnifiedAuthBanner />}
-
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
           <LoadingScreen />

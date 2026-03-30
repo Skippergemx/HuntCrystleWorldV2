@@ -212,6 +212,9 @@ export const GameLayout = ({ onLogout }) => {
         </div>
       )}
 
+      {/* Identity & Wallet Header */}
+      <UnifiedAuthBanner />
+
       <nav className="bg-slate-950 border-b-[4px] border-black sticky top-0 z-50 p-2 md:p-3 shadow-2xl relative overflow-hidden">
         {/* Halftone Overlay HUD */}
 

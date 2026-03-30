@@ -1,23 +1,37 @@
 import React from 'react';
 import { useUnifiedAuth } from '../hooks/useUnifiedAuth';
-import { useWallet } from '../hooks/useWallet';
-import { Wallet, LogIn, CheckCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import { useGame } from '../contexts/GameContext';
+import { Wallet, LogIn, CheckCircle, ShieldCheck, Loader2, Info } from 'lucide-react';
 
 const UnifiedAuthBanner = () => {
-  const { user, isFarcaster, loading, loginWithGoogle } = useUnifiedAuth();
-  const { address, connectWallet } = useWallet(() => {}); // Pass empty logger since we just want state
+  const { isFarcaster } = useUnifiedAuth();
+  const game = useGame(); 
 
-  if (loading) {
-    return (
-      <div className="w-full p-3 bg-purple-950/20 border-b border-purple-500/10 backdrop-blur-md flex justify-center items-center gap-2">
-        <Loader2 className="w-4 h-4 text-purple-400 animate-spin" />
-        <span className="text-[9px] font-black text-purple-400/50 uppercase tracking-[0.4em] animate-pulse">Syncing Grid Identity...</span>
-      </div>
-    );
-  }
+  // Safely extract from game context (since this is now rendered inside the Game provider)
+  const { user, player, wallet } = game || {};
+  
+  if (!user || (!isFarcaster && !user)) return null;
+
+  // STRICT FARCASTER WALLET PAIRING POLICY
+  // The system prioritizes the canonical wallet saved in the player's database profile.
+  // This bypasses Farcaster Web's fake ethProviders which prompt MetaMask on Desktop.
+  const activeAddress = player?.walletAddress || wallet?.address;
+
+  const handleMobileOnlyConnect = () => {
+    // Determine if user is attempting to connect from a non-mobile browser
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isFarcaster && !isMobile) {
+      alert("🚨 SECURITY PROTOCOL: To guarantee the true ownership of your NFTs and items, your Farcaster account must be permanently paired with a wallet.\n\nPlease open this game on the Warpcast Mobile App to securely link your native wallet. Once paired, your items will automatically be readable right here on the web browser!");
+      return;
+    }
+    
+    // Otherwise, allow native uplink
+    wallet?.connectWallet();
+  };
 
   return (
-    <div className="w-full sticky top-0 z-[100] flex items-center justify-between px-3 md:px-6 py-2 bg-purple-950/40 border-b border-purple-500/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+    <div className="w-full relative z-[100] flex items-center justify-between px-3 md:px-6 py-2 bg-purple-950/40 border-b border-purple-500/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
       {/* Identity Core */}
       <div className="flex items-center gap-3">
         {user ? (
@@ -32,22 +46,15 @@ const UnifiedAuthBanner = () => {
             </div>
             <div className="flex flex-col">
                <span className="text-[10px] font-black text-purple-100 uppercase tracking-tighter italic leading-none">{user.username}</span>
-               <span className="text-[7px] font-bold text-purple-400/70 uppercase tracking-widest leading-none mt-0.5">{isFarcaster ? 'Farcaster Unit' : 'Web_Operator'}</span>
+               <span className="text-[7px] font-bold text-purple-400/70 uppercase tracking-widest leading-none mt-0.5">{isFarcaster ? 'Farcaster Unit' : 'Web Operator'}</span>
             </div>
           </div>
-        ) : (
-          <button 
-            onClick={loginWithGoogle} 
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-[9px] font-black rounded border border-white/10 transition-all hover:border-white/30 uppercase italic"
-          >
-            <LogIn className="w-3 h-3 text-cyan-400" /> Google_Link
-          </button>
-        )}
+        ) : null}
       </div>
 
       {/* Uplink System */}
       <div className="flex items-center gap-2">
-        {address ? (
+        {activeAddress ? (
           <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.1)]">
             <CheckCircle className="w-3 h-3 text-emerald-400" />
             <div className="flex items-center gap-1.5">
@@ -55,18 +62,18 @@ const UnifiedAuthBanner = () => {
                  {isFarcaster ? "Farcaster Uplink Active" : "Web3 Link Established"}
                </span>
                <span className="text-[9px] font-mono text-emerald-300/80 bg-emerald-500/5 px-1.5 rounded">
-                 {address.slice(0, 6)}...{address.slice(-4)}
+                 {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
                </span>
             </div>
           </div>
         ) : (
           user && (
             <button 
-              onClick={connectWallet}
-              className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 text-white text-[9px] font-black rounded-full shadow-[0_0_15px_rgba(192,38,211,0.3)] hover:shadow-[0_0_20px_rgba(192,38,211,0.5)] transition-all active:scale-95 uppercase tracking-widest italic"
+              onClick={handleMobileOnlyConnect}
+              className={`flex items-center gap-2 px-4 py-1.5 ${isFarcaster ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.3)]'} hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] text-white text-[9px] font-black rounded-full transition-all active:scale-95 uppercase tracking-widest italic`}
             >
               <Wallet className="w-3 h-3" />
-              {isFarcaster ? "Manual Sync Unavailable" : "Establish Link"}
+              {isFarcaster ? "Sync Mobile Wallet" : "Establish Link"}
             </button>
           )
         )}
