@@ -43,14 +43,7 @@ const UnifiedAuthBanner = () => {
         {isFarcaster && !isMobile ? (
           // Farcaster Desktop: Read Only
           <div className="flex flex-col items-end gap-1">
-            {activeAddress ? (
-              <div className="flex items-center gap-2 px-2 py-1 bg-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                <CheckCircle className="w-3 h-3 text-emerald-400" />
-                <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/5 px-1.5 rounded">
-                  {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
-                </span>
-              </div>
-            ) : (
+            {!activeAddress && (
               <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/40 rounded-md">
                 <AlertTriangle className="w-3 h-3 text-amber-400" />
                 <span className="text-[7px] md:text-[8px] font-black text-amber-300 uppercase italic tracking-widest max-w-[140px] md:max-w-xs text-right leading-tight">
