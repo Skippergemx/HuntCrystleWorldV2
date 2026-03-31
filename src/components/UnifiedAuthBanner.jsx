@@ -1,7 +1,7 @@
 import React from 'react';
 import { useUnifiedAuth } from '../hooks/useUnifiedAuth';
 import { useGame } from '../contexts/GameContext';
-import { Wallet, LogIn, CheckCircle, ShieldCheck, Loader2, Info } from 'lucide-react';
+import { Wallet, CheckCircle, ShieldCheck, Info, AlertTriangle } from 'lucide-react';
 
 const UnifiedAuthBanner = () => {
   const { isFarcaster } = useUnifiedAuth();
@@ -13,22 +13,8 @@ const UnifiedAuthBanner = () => {
   if (!user || (!isFarcaster && !user)) return null;
 
   // STRICT FARCASTER WALLET PAIRING POLICY
-  // The system prioritizes the canonical wallet saved in the player's database profile.
-  // This bypasses Farcaster Web's fake ethProviders which prompt MetaMask on Desktop.
   const activeAddress = player?.walletAddress || wallet?.address;
-
-  const handleMobileOnlyConnect = () => {
-    // Determine if user is attempting to connect from a non-mobile browser
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    if (isFarcaster && !isMobile) {
-      alert("🚨 SECURITY PROTOCOL: To guarantee the true ownership of your NFTs and items, your Farcaster account must be permanently paired with a wallet.\n\nPlease open this game on the Warpcast Mobile App to securely link your native wallet. Once paired, your items will automatically be readable right here on the web browser!");
-      return;
-    }
-    
-    // Otherwise, allow native uplink
-    wallet?.connectWallet();
-  };
+  const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
 
   return (
     <div className="w-full relative z-[100] flex items-center justify-between px-3 md:px-6 py-2 bg-purple-950/40 border-b border-purple-500/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
@@ -54,28 +40,65 @@ const UnifiedAuthBanner = () => {
 
       {/* Uplink System */}
       <div className="flex items-center gap-2">
-        {activeAddress ? (
-          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-            <CheckCircle className="w-3 h-3 text-emerald-400" />
-            <div className="flex items-center gap-1.5">
-               <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic hidden sm:inline">
-                 {isFarcaster ? "Farcaster Uplink Active" : "Web3 Link Established"}
-               </span>
-               <span className="text-[9px] font-mono text-emerald-300/80 bg-emerald-500/5 px-1.5 rounded">
-                 {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
+        {isFarcaster && !isMobile ? (
+          // Farcaster Desktop: Read Only
+          <div className="flex flex-col items-end gap-1">
+            {activeAddress ? (
+              <div className="flex items-center gap-2 px-2 py-1 bg-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                <CheckCircle className="w-3 h-3 text-emerald-400" />
+                <span className="text-[9px] font-mono text-emerald-300 bg-emerald-500/5 px-1.5 rounded">
+                  {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-amber-500/10 border border-amber-500/40 rounded-md">
+                <AlertTriangle className="w-3 h-3 text-amber-400" />
+                <span className="text-[7px] md:text-[8px] font-black text-amber-300 uppercase italic tracking-widest max-w-[140px] md:max-w-xs text-right leading-tight">
+                  No linked wallet. Use Mobile App to link for Airdrops & Rewards!
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1 bg-red-900/30 px-1.5 py-0.5 rounded border border-red-500/30">
+               <Info className="w-3 h-3 text-red-400" />
+               <span className="text-[6px] md:text-[7px] font-bold text-red-400 uppercase tracking-widest leading-none">
+                 Desktop Read-Only: Use Mobile to Transact
                </span>
             </div>
           </div>
         ) : (
-          user && (
-            <button 
-              onClick={handleMobileOnlyConnect}
-              className={`flex items-center gap-2 px-4 py-1.5 ${isFarcaster ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.3)]'} hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] text-white text-[9px] font-black rounded-full transition-all active:scale-95 uppercase tracking-widest italic`}
-            >
-              <Wallet className="w-3 h-3" />
-              {isFarcaster ? "Sync Mobile Wallet" : "Establish Link"}
-            </button>
-          )
+          // Normal Farcaster Mobile / Standard Web
+          <div className="flex flex-col items-end gap-1">
+             {activeAddress ? (
+               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/40 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                 <CheckCircle className="w-3 h-3 text-emerald-400" />
+                 <div className="flex items-center gap-1.5">
+                    <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest italic hidden sm:inline">
+                      {isFarcaster ? "Farcaster Uplink Active" : "Web3 Link Established"}
+                    </span>
+                    <span className="text-[9px] font-mono text-emerald-300/80 bg-emerald-500/5 px-1.5 rounded">
+                      {activeAddress.slice(0, 6)}...{activeAddress.slice(-4)}
+                    </span>
+                 </div>
+               </div>
+             ) : (
+               user && (
+                 <>
+                   <button 
+                     onClick={() => wallet?.connectWallet()}
+                     className={`flex items-center gap-2 px-4 py-1.5 ${isFarcaster ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.3)]' : 'bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-[0_0_15px_rgba(192,38,211,0.3)]'} hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] text-white text-[9px] font-black rounded-full transition-all active:scale-95 uppercase tracking-widest italic`}
+                   >
+                     <Wallet className="w-3 h-3" />
+                     {isFarcaster ? "Sync Mobile Wallet" : "Establish Link"}
+                   </button>
+                   {isFarcaster && (
+                     <span className="text-[6px] md:text-[7px] font-bold text-amber-300 uppercase tracking-widest leading-none pr-1 mt-0.5">
+                       Link wallet to qualify for future airdrops!
+                     </span>
+                   )}
+                 </>
+               )
+             )}
+          </div>
         )}
       </div>
     </div>

@@ -23,12 +23,19 @@ export const useWallet = (addLog) => {
   // 1. Provider Resolution Loop
   const getProvider = useCallback((type) => {
     const forcedType = type || activeProviderType;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
     // Strict Platform Enforcements
-    if (forcedType === 'NATIVE') return sdk?.wallet?.ethProvider;
+    if (forcedType === 'NATIVE') {
+      // Warpcast Web uses a faulty Privy version that crashes on ethProvider invocation.
+      return isMobile ? sdk?.wallet?.ethProvider : null;
+    }
     if (forcedType === 'EXTERNAL') return window.ethereum;
     
     // Auto-Discovery: Only assume Farcaster provider if explicitly confirmed by context
-    if (inFrameStatus && sdk?.wallet?.ethProvider) return sdk.wallet.ethProvider;
+    if (inFrameStatus && sdk?.wallet?.ethProvider) {
+      return isMobile ? sdk.wallet.ethProvider : null;
+    }
     
     // Default to strict Web Browser extension for all other environments
     return window.ethereum;
@@ -48,12 +55,14 @@ export const useWallet = (addLog) => {
   // 3. Handshake Execution
   const connectWallet = async (type = 'AUTO') => {
     let ethProvider;
-    if (type === 'NATIVE') ethProvider = sdk?.wallet?.ethProvider;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (type === 'NATIVE') ethProvider = isMobile ? sdk?.wallet?.ethProvider : null;
     else if (type === 'EXTERNAL') ethProvider = window.ethereum;
     else ethProvider = getProvider();
 
     if (!ethProvider) {
-      const msg = type === 'NATIVE' ? "🚨 FRAME ERROR: Farcaster wallet provider not found." : "🚨 WEB3 ERROR: No crypto wallet extension detected.";
+      const msg = type === 'NATIVE' ? "🚨 FRAME ERROR: Farcaster native wallet is only available on Mobile." : "🚨 WEB3 ERROR: No crypto wallet extension detected.";
       addLog?.(msg);
       return;
     }
@@ -135,7 +144,14 @@ export const useWallet = (addLog) => {
         // by checking for authorized accounts manually via direct JSON-RPC first.
         let authorizedAccounts = [];
         try {
-          authorizedAccounts = await ethProvider.request({ method: 'eth_accounts' });
+          const isFarcasterNative = ethProvider === sdk?.wallet?.ethProvider;
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          
+          if (isFarcasterNative && !isMobile) {
+             console.log("System V2: Farcaster Web client detected. Bypassing automatic eth_accounts to prevent Warpcast CSP failure.");
+          } else {
+             authorizedAccounts = await ethProvider.request({ method: 'eth_accounts' });
+          }
         } catch (e) {
           // Silent fallback if method is unsupported or frame isn't ready
         }
@@ -171,7 +187,7 @@ export const useWallet = (addLog) => {
     activeProviderType,
     connectWallet, 
     disconnectWallet,
-    hasNativeProvider: !!sdk?.wallet?.ethProvider,
+    hasNativeProvider: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? !!sdk?.wallet?.ethProvider : false,
     hasExternalProvider: !!window.ethereum
   };
 };
