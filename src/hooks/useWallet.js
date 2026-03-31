@@ -123,8 +123,20 @@ export const useWallet = (addLog, farcasterContext) => {
 
     let cleanup;
     const initWallet = async () => {
+      // Step A: Passive Context Scan (Farcaster Discovery)
+      // We must check this asynchronously before attempting provider resolution
+      // so that React state propagation delays don't cause us to fallback to Metamask
+      let isFrame = false;
+      try {
+        const ctx = await sdk.context;
+        if (ctx) isFrame = true;
+      } catch (e) {}
+
       // Step B: Active Provider Scan
-      const ethProvider = getProvider();
+      // We pass the local isFrame directly so we don't rely on React's farcasterContext yet
+      const forcedProvider = isFrame && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? sdk?.wallet?.ethProvider : null;
+      const ethProvider = forcedProvider || getProvider();
+      
       if (!ethProvider) return;
 
       try {

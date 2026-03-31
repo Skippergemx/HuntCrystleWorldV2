@@ -16,9 +16,12 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
-    if (!user) {
-        setLoadingPlayer(false);
-        setPlayer(null);
+    // We only load if we have the user object.
+    // If we're on Farcaster but the identity sync (user.farcasterFID) hasn't finished attaching,
+    // wait for it so we don't accidentally split the profile!
+    if (!user || (farcasterContext && !user.farcasterFID)) {
+        setLoadingPlayer(!user ? false : true);
+        if (!user) setPlayer(null);
         return;
     }
 
@@ -26,8 +29,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         try {
             setLoadingPlayer(true);
             
-            // UNIFIED PATH: All identities now located under the primary 'players' collection
-            const docRef = doc(db, 'players', user.uid);
+            // UNIFIED PATH: All identities now located under the primary 'players' collection.
+            // FIXED: If user is Farcaster, use FC_FID as primary database key! 
+            // This natively syncs Mobile and Desktop sessions to the exact same database document,
+            // destroying the "two instances of the same player" bug.
+            const primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+            const docRef = doc(db, 'players', primaryAuthId);
+            
             const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
@@ -38,7 +46,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                 const sanitized = {
                     ...data,
                     // Identity Meta-Data Sync
-                    uid: user.uid,
+                    uid: user.uid, // Store the raw anonymous UID for fallback reference only
                     email: user.email || data.email || null,
                     farcasterFID: user.farcasterFID || data.farcasterFID || null,
                     farcasterUsername: user.farcasterUsername || data.farcasterUsername || null,
@@ -128,7 +136,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
   // 2. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
-    if (!user) return;
+    // If the database doc identifier isn't ready, halt the queue
+    if (!user || (farcasterContext && !user.farcasterFID)) return;
 
     // Sterilize numbers: Prevent float jitter for combat-critical metrics
     const sterilized = { ...updates };
@@ -149,10 +158,11 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
       syncTimeoutRef.current = setTimeout(async () => {
         try {
-          const docRef = doc(db, 'players', user.uid);
+          const primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+          const docRef = doc(db, 'players', primaryAuthId);
           await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
           pendingUpdatesRef.current = {};
-          console.log("System V2: Remote Sector Synchronized.");
+          console.log("System V2: Remote Sector Synchronized.", primaryAuthId);
         } catch (e) {
           console.error("Sync Error:", e);
         }
@@ -160,7 +170,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
       return next;
     });
-  }, [user, db, appId]);
+  }, [user, db, appId, farcasterContext]);
 
   return { player, setPlayer, syncPlayer, loadingPlayer };
 };
