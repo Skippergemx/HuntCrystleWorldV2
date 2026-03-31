@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useUnifiedAuth } from '../hooks/useUnifiedAuth';
 import { useGame } from '../contexts/GameContext';
-import { Wallet, CheckCircle, ShieldCheck, Info, AlertTriangle, Smartphone } from 'lucide-react';
+import { CheckCircle, ShieldCheck, Info, AlertTriangle, Smartphone } from 'lucide-react';
+import { sdk } from '@farcaster/frame-sdk';
 
 const UnifiedAuthBanner = () => {
   const { isFarcaster } = useUnifiedAuth();
@@ -9,9 +10,13 @@ const UnifiedAuthBanner = () => {
 
   const { user, player, wallet, farcasterContext } = game || {};
 
-  const isMobile = typeof navigator !== 'undefined'
+  // Multi-signal mobile detection — userAgent alone is unreliable in Warpcast WebView.
+  // sdk.wallet.ethProvider is ONLY injected by the Warpcast MOBILE app, never on Desktop Web.
+  const hasMobileProvider = !!(sdk?.wallet?.ethProvider);
+  const isMobileByAgent = typeof navigator !== 'undefined'
     ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : false;
+  const isMobile = hasMobileProvider || isMobileByAgent;
 
   // The active display address: prioritize Firestore-saved mobile wallet over any live hook address
   const activeAddress = player?.walletAddress || wallet?.address;
@@ -20,7 +25,7 @@ const UnifiedAuthBanner = () => {
   // MUST be before early returns to comply with React Rules of Hooks.
   useEffect(() => {
     if (isFarcaster && isMobile && !activeAddress && wallet?.connectWallet) {
-      console.log('System V2: Farcaster Mobile detected — auto-triggering wallet sync...');
+      console.log('System V3: Farcaster Mobile detected — auto-triggering wallet sync...');
       wallet.connectWallet('NATIVE');
     }
   }, [isFarcaster, isMobile, activeAddress, wallet]);
