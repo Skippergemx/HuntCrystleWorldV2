@@ -139,71 +139,68 @@ export const useWallet = (addLog, farcasterContext) => {
 
     let cleanup;
     const initWallet = async () => {
-      // Step 1: Determine if we are inside a Farcaster Frame
+      // Step 1: Check if we're inside a Farcaster frame
       let ctx = null;
       try {
         ctx = await sdk.context;
-        console.log('System V3 [initWallet]: SDK context resolved.', {
-          hasFid: !!ctx?.user?.fid,
-          custodyAddress: ctx?.user?.custodyAddress,
-          verifiedAddresses: ctx?.user?.verifiedAddresses,
-          userAgent: navigator.userAgent.slice(0, 80)
-        });
-      } catch (e) {
-        console.log('System V3 [initWallet]: Not in a Farcaster frame.');
-      }
+      } catch (e) {}
 
-      const isFrame = !!ctx?.user;
+      const isFrame = !!ctx?.user?.fid;
 
-      // Step 2: If inside a Farcaster frame, try to get the wallet address
       if (isFrame) {
-        // 2a. Try SDK context addresses first (no prompt needed, fastest path)
+        // Step 2a: Try SDK context addresses directly (fastest, no prompt)
         const verifiedAddr = ctx.user.verifiedAddresses?.ethAddresses?.[0];
         const custodyAddr = ctx.user.custodyAddress;
         const contextAddr = verifiedAddr || custodyAddr;
 
         if (contextAddr) {
-          console.log(`System V3 [initWallet]: Wallet resolved from SDK context: ${contextAddr}`);
+          console.log(`System V3: Wallet from SDK context: ${contextAddr}`);
           setAddress(contextAddr);
           setActiveProviderType('CONTEXT');
           return;
         }
 
-        console.log('System V3 [initWallet]: No address in SDK context. Trying ethProvider...');
-
-        // 2b. Try ethProvider — but ONLY on mobile (userAgent guard prevents Desktop CSP crash)
-        if (isMobile && sdk?.wallet?.ethProvider) {
+        // Step 2b: Try eth_accounts via ethProvider.
+        // eth_accounts is READ-ONLY — it does NOT trigger WalletConnect initialization.
+        // Safe to call on ALL Farcaster environments (mobile + desktop) without CSP risk.
+        if (sdk?.wallet?.ethProvider) {
           try {
-            console.log('System V3 [initWallet]: Calling eth_accounts on mobile ethProvider...');
             const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
-            console.log('System V3 [initWallet]: eth_accounts result:', accounts);
             if (accounts?.[0]) {
+              console.log(`System V3: Wallet from ethProvider eth_accounts: ${accounts[0]}`);
               setAddress(accounts[0]);
               setActiveProviderType('NATIVE');
               return;
             }
-
-            // eth_accounts returned empty — try eth_requestAccounts (prompts user if needed)
-            console.log('System V3 [initWallet]: eth_accounts empty, trying eth_requestAccounts...');
-            const requested = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' });
-            console.log('System V3 [initWallet]: eth_requestAccounts result:', requested);
-            if (requested?.[0]) {
-              setAddress(requested[0]);
-              setActiveProviderType('NATIVE');
-              return;
-            }
           } catch (e) {
-            console.error('System V3 [initWallet]: ethProvider failed:', e);
+            console.log('System V3: eth_accounts failed (expected on Desktop):', e?.message);
           }
-        } else if (!isMobile) {
-          console.log('System V3 [initWallet]: Farcaster Desktop — skipping ethProvider to prevent CSP violation.');
+
+          // Step 2c: eth_accounts returned empty — escalate to eth_requestAccounts.
+          // eth_requestAccounts CAN trigger WalletConnect on Desktop → guard behind mobile only.
+          if (isMobile) {
+            try {
+              console.log('System V3: Requesting accounts via eth_requestAccounts (mobile only)...');
+              const requested = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' });
+              if (requested?.[0]) {
+                console.log(`System V3: Wallet from eth_requestAccounts: ${requested[0]}`);
+                setAddress(requested[0]);
+                setActiveProviderType('NATIVE');
+                return;
+              }
+            } catch (e) {
+              console.error('System V3: eth_requestAccounts failed:', e);
+            }
+          } else {
+            console.log('System V3: Desktop Farcaster — skipping eth_requestAccounts to prevent CSP.');
+          }
         }
 
-        // Stop here — don't fall through to MetaMask for Farcaster users
+        // Stop here — never fall through to MetaMask for Farcaster users
         return;
       }
 
-      // Step 3: Not in a Farcaster frame — scan for external browser wallet (MetaMask etc.)
+      // Step 3: Not a Farcaster frame — scan external browser wallet (MetaMask etc.)
       const ethProvider = window.ethereum;
       if (!ethProvider) return;
 
@@ -228,7 +225,7 @@ export const useWallet = (addLog, farcasterContext) => {
           cleanup = () => ethProvider.removeListener?.('accountsChanged', handleAccs);
         }
       } catch (e) {
-        console.error('System V3 [initWallet]: External wallet scan failed:', e);
+        console.error('System V3: External wallet scan failed:', e);
       }
     };
 
