@@ -45,7 +45,7 @@ export const GameLayout = ({ onLogout }) => {
   const {
     user, player, syncPlayer, logs, addLog,
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
-    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet,
+    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext,
     db, appId, totalStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
