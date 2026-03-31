@@ -12,9 +12,12 @@ const UnifiedAuthBanner = () => {
 
   // Use ONLY navigator.userAgent for mobile detection.
   // sdk.wallet.ethProvider exists on BOTH Warpcast Mobile AND Desktop, so it cannot be used as a signal.
-  const isMobile = typeof navigator !== 'undefined'
+  // ADDITIONAL signal: if wallet resolved as CONTEXT or NATIVE, we know mobile ethProvider worked → we ARE on mobile.
+  const isMobileByAgent = typeof navigator !== 'undefined'
     ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : false;
+  const isMobileByWallet = wallet?.activeProviderType === 'CONTEXT' || wallet?.activeProviderType === 'NATIVE';
+  const isMobile = isMobileByAgent || isMobileByWallet;
 
   // The active display address: prioritize Firestore-saved mobile wallet over any live hook address
   const activeAddress = player?.walletAddress || wallet?.address;
