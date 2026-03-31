@@ -134,49 +134,76 @@ export const useWallet = (addLog, farcasterContext) => {
   };
 
   // 3. Background Auto-Detection on Mount
-  // Priority: Farcaster SDK context → ethProvider (mobile only) → window.ethereum
   useEffect(() => {
     if (manualDisconnect) return;
 
     let cleanup;
     const initWallet = async () => {
-      // ── Path A: Farcaster SDK Context (preferred — silent, no user prompt) ──
+      // Step 1: Determine if we are inside a Farcaster Frame
+      let ctx = null;
       try {
-        const ctx = await sdk.context;
-        if (ctx?.user) {
-          const verifiedAddr = ctx.user.verifiedAddresses?.ethAddresses?.[0];
-          const custodyAddr = ctx.user.custodyAddress;
-          const resolvedAddr = verifiedAddr || custodyAddr;
-
-          if (resolvedAddr) {
-            console.log(`System V3: Farcaster wallet resolved from SDK context: ${resolvedAddr}`);
-            setAddress(resolvedAddr);
-            setActiveProviderType('CONTEXT');
-            return; // Done — no need to scan further
-          }
-
-          // In a Farcaster frame but no address yet — try ethProvider on mobile only
-          if (isMobile && sdk?.wallet?.ethProvider) {
-            try {
-              const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
-              if (accounts?.[0]) {
-                setAddress(accounts[0]);
-                setActiveProviderType('NATIVE');
-                console.log(`System V3: Farcaster wallet from ethProvider: ${accounts[0]}`);
-                return;
-              }
-            } catch (e) { /* silent */ }
-          }
-
-          // Farcaster Desktop or unlinked — stop, don't fall through to MetaMask
-          console.log("System V3: Farcaster context found but no wallet address resolved. Desktop or unlinked.");
-          return;
-        }
+        ctx = await sdk.context;
+        console.log('System V3 [initWallet]: SDK context resolved.', {
+          hasFid: !!ctx?.user?.fid,
+          custodyAddress: ctx?.user?.custodyAddress,
+          verifiedAddresses: ctx?.user?.verifiedAddresses,
+          userAgent: navigator.userAgent.slice(0, 80)
+        });
       } catch (e) {
-        // Not in a Farcaster frame — continue to external wallet scan
+        console.log('System V3 [initWallet]: Not in a Farcaster frame.');
       }
 
-      // ── Path B: External Browser Wallet (MetaMask etc.) ──
+      const isFrame = !!ctx?.user;
+
+      // Step 2: If inside a Farcaster frame, try to get the wallet address
+      if (isFrame) {
+        // 2a. Try SDK context addresses first (no prompt needed, fastest path)
+        const verifiedAddr = ctx.user.verifiedAddresses?.ethAddresses?.[0];
+        const custodyAddr = ctx.user.custodyAddress;
+        const contextAddr = verifiedAddr || custodyAddr;
+
+        if (contextAddr) {
+          console.log(`System V3 [initWallet]: Wallet resolved from SDK context: ${contextAddr}`);
+          setAddress(contextAddr);
+          setActiveProviderType('CONTEXT');
+          return;
+        }
+
+        console.log('System V3 [initWallet]: No address in SDK context. Trying ethProvider...');
+
+        // 2b. Try ethProvider — but ONLY on mobile (userAgent guard prevents Desktop CSP crash)
+        if (isMobile && sdk?.wallet?.ethProvider) {
+          try {
+            console.log('System V3 [initWallet]: Calling eth_accounts on mobile ethProvider...');
+            const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' });
+            console.log('System V3 [initWallet]: eth_accounts result:', accounts);
+            if (accounts?.[0]) {
+              setAddress(accounts[0]);
+              setActiveProviderType('NATIVE');
+              return;
+            }
+
+            // eth_accounts returned empty — try eth_requestAccounts (prompts user if needed)
+            console.log('System V3 [initWallet]: eth_accounts empty, trying eth_requestAccounts...');
+            const requested = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' });
+            console.log('System V3 [initWallet]: eth_requestAccounts result:', requested);
+            if (requested?.[0]) {
+              setAddress(requested[0]);
+              setActiveProviderType('NATIVE');
+              return;
+            }
+          } catch (e) {
+            console.error('System V3 [initWallet]: ethProvider failed:', e);
+          }
+        } else if (!isMobile) {
+          console.log('System V3 [initWallet]: Farcaster Desktop — skipping ethProvider to prevent CSP violation.');
+        }
+
+        // Stop here — don't fall through to MetaMask for Farcaster users
+        return;
+      }
+
+      // Step 3: Not in a Farcaster frame — scan for external browser wallet (MetaMask etc.)
       const ethProvider = window.ethereum;
       if (!ethProvider) return;
 
@@ -200,7 +227,9 @@ export const useWallet = (addLog, farcasterContext) => {
           ethProvider.on('accountsChanged', handleAccs);
           cleanup = () => ethProvider.removeListener?.('accountsChanged', handleAccs);
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error('System V3 [initWallet]: External wallet scan failed:', e);
+      }
     };
 
     initWallet();

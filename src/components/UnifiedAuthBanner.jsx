@@ -10,13 +10,11 @@ const UnifiedAuthBanner = () => {
 
   const { user, player, wallet, farcasterContext } = game || {};
 
-  // Multi-signal mobile detection — userAgent alone is unreliable in Warpcast WebView.
-  // sdk.wallet.ethProvider is ONLY injected by the Warpcast MOBILE app, never on Desktop Web.
-  const hasMobileProvider = !!(sdk?.wallet?.ethProvider);
-  const isMobileByAgent = typeof navigator !== 'undefined'
+  // Use ONLY navigator.userAgent for mobile detection.
+  // sdk.wallet.ethProvider exists on BOTH Warpcast Mobile AND Desktop, so it cannot be used as a signal.
+  const isMobile = typeof navigator !== 'undefined'
     ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : false;
-  const isMobile = hasMobileProvider || isMobileByAgent;
 
   // The active display address: prioritize Firestore-saved mobile wallet over any live hook address
   const activeAddress = player?.walletAddress || wallet?.address;
