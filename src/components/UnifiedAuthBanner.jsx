@@ -8,11 +8,7 @@ const UnifiedAuthBanner = () => {
   const game = useGame(); 
 
   const { user, player, wallet, farcasterContext } = game || {};
-  
-  if (!user || !isFarcaster) return null;
 
-  // Use the farcasterContext from the game engine (already resolved async) for reliable detection
-  // The userAgent check is a secondary fallback
   const isMobile = typeof navigator !== 'undefined'
     ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
     : false;
@@ -20,14 +16,18 @@ const UnifiedAuthBanner = () => {
   // The active display address: prioritize Firestore-saved mobile wallet over any live hook address
   const activeAddress = player?.walletAddress || wallet?.address;
 
-  // Auto-trigger wallet connect on Farcaster Mobile if no wallet is yet linked
-  // This is safe because useWallet already guards against Desktop CSP crashes
+  // Auto-trigger wallet connect on Farcaster Mobile if no wallet is yet linked.
+  // MUST be before early returns to comply with React Rules of Hooks.
   useEffect(() => {
     if (isFarcaster && isMobile && !activeAddress && wallet?.connectWallet) {
       console.log('System V2: Farcaster Mobile detected — auto-triggering wallet sync...');
       wallet.connectWallet('NATIVE');
     }
   }, [isFarcaster, isMobile, activeAddress, wallet]);
+
+  // Early return AFTER all hooks
+  if (!user || !isFarcaster) return null;
+
 
   return (
     <div className="w-full relative z-[100] flex items-center justify-between px-3 md:px-6 py-2 bg-purple-950/40 border-b border-purple-500/30 backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
