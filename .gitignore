@@ -28,3 +28,6 @@ dist-ssr
 # Markdown Documentation
 *.md
 *.MD
+
+# Firebase
+firestore.rules
