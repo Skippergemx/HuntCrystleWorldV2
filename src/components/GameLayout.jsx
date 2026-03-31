@@ -245,7 +245,7 @@ export const GameLayout = ({ onLogout }) => {
 
             {/* Bottom Shade Info */}
             <div className="absolute inset-x-0 bottom-0 p-1.5 md:p-2.5 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
-               {wallet.address && (
+               {(player.walletAddress || wallet.address) && (
                  <div className="flex items-center gap-1 mb-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
                     <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
                     <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
@@ -269,27 +269,46 @@ export const GameLayout = ({ onLogout }) => {
                   <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10">{player.name}</h1>
                 </div>
 
-                {wallet.address ? (
-                  <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group">
-                    <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
-                    <div className="flex items-center gap-2 relative z-10">
-                       <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]"></div>
-                       <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
-                         {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                       </span>
-                    </div>
-                  </div>
-                ) : (
-                  !wallet.isFarcaster && (
-                    <button 
-                      onClick={wallet.connectWallet}
-                      className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
-                    >
-                       <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
-                       <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
-                    </button>
-                  )
-                )}
+                {(() => {
+                  const displayAddress = player.walletAddress || wallet.address;
+                  const isFarcaster = !!farcasterContext;
+                  const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
+
+                  if (displayAddress) {
+                    return (
+                      <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group">
+                        <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
+                        <div className="flex flex-col relative z-10 items-center justify-center">
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]"></div>
+                            <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
+                              {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
+                            </span>
+                          </div>
+                          {isFarcaster && !isMobile && (
+                            <span className="text-[5px] md:text-[6.5px] font-black text-slate-500 uppercase tracking-widest mt-0.5 text-center w-full leading-none">
+                              Linked Mobile Wallet
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  if (!isFarcaster) {
+                    return (
+                      <button 
+                        onClick={wallet.connectWallet}
+                        className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+                      >
+                         <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
+                         <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
+                      </button>
+                    );
+                  }
+
+                  return null;
+                })()}
 
                 <div className="flex flex-row items-center gap-1 bg-slate-900 border-[1.5px] border-black px-1.5 md:px-2.5 py-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1 shrink-0">
                   <div className="flex items-center gap-1">

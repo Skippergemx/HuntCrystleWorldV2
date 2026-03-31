@@ -82,7 +82,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   );
 
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
-  const wallet = useWallet(addLog);
+  const wallet = useWallet(addLog, farcasterContext);
 
   const combat = useCombat(
     user, player, syncPlayer, 

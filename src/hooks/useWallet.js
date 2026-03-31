@@ -11,14 +11,12 @@ const BASE_CHAIN_ID = '0x2105'; // 8453
 const GENESIS_NFT_ADDRESS = '0x0000000000000000000000000000000000000000'; // PLACEHOLDER
 const MINIMAL_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 
-export const useWallet = (addLog) => {
+export const useWallet = (addLog, farcasterContext) => {
   const [address, setAddress] = useState(null);
   const [isGenesisHolder, setIsGenesisHolder] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeProviderType, setActiveProviderType] = useState(null); // 'NATIVE' | 'EXTERNAL'
   const [manualDisconnect, setManualDisconnect] = useState(false);
-
-  const [inFrameStatus, setInFrameStatus] = useState(false);
 
   // 1. Provider Resolution Loop
   const getProvider = useCallback((type) => {
@@ -33,13 +31,16 @@ export const useWallet = (addLog) => {
     if (forcedType === 'EXTERNAL') return window.ethereum;
     
     // Auto-Discovery: Only assume Farcaster provider if explicitly confirmed by context
-    if (inFrameStatus && sdk?.wallet?.ethProvider) {
+    if (farcasterContext && sdk?.wallet?.ethProvider) {
       return isMobile ? sdk.wallet.ethProvider : null;
     }
     
+    // Prevent Web Browser extensions from overriding Farcaster desktop sessions
+    if (farcasterContext) return null;
+    
     // Default to strict Web Browser extension for all other environments
     return window.ethereum;
-  }, [activeProviderType, inFrameStatus]);
+  }, [activeProviderType, farcasterContext]);
 
   // 2. Asset Verification Protocols
   const checkGenesisNFT = useCallback(async (userAddress, provider) => {
@@ -122,19 +123,6 @@ export const useWallet = (addLog) => {
 
     let cleanup;
     const initWallet = async () => {
-      // Step A: Passive Context Scan (Farcaster Discovery)
-      try {
-        const ctx = await sdk.context;
-        if (ctx) {
-           setInFrameStatus(true); // Lock environment out of browser heuristics
-           // Check for custodyAddress or verifiedAddress (if available in future SDK versions)
-           const passiveAddress = ctx?.user?.custodyAddress || ctx?.user?.address;
-           if (passiveAddress) {
-             // Future use
-           }
-        }
-      } catch (e) {}
-
       // Step B: Active Provider Scan
       const ethProvider = getProvider();
       if (!ethProvider) return;
