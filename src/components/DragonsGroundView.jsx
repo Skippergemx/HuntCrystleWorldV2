@@ -324,27 +324,14 @@ export const DragonsGroundView = React.memo(() => {
         <div className="flex-[8] relative border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-x-hidden overflow-y-auto custom-scrollbar bg-emerald-950 flex flex-col items-center">
           <div className="relative w-full max-w-[540px] aspect-[9/16] flex-shrink-0 overflow-hidden shadow-2xl border-x-4 border-black bg-emerald-900 mx-auto">
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-              {player.avatarAnimated !== false ? (
-                <video 
-                  autoPlay 
-                  loop 
-                  muted 
-                  playsInline 
-                  className="w-full h-full object-cover"
-                  poster="/assets/dragonsground/ground/DragonField (1).jpg"
-                >
-                  <source src="/assets/dragonsground/ground/DragonField (1) video.mp4" type="video/mp4" />
-                </video>
-              ) : (
-                <div 
-                  className="w-full h-full"
-                  style={{ 
-                    backgroundImage: "url('/assets/dragonsground/ground/DragonField (1).jpg')",
-                    backgroundSize: '100% 100%',
-                    backgroundRepeat: 'no-repeat'
-                  }}
-                ></div>
-              )}
+              <div 
+                className="w-full h-full"
+                style={{ 
+                  backgroundImage: "url('/assets/dragonsground/ground/DragonField (1).jpg')",
+                  backgroundSize: '100% 100%',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              ></div>
             </div>
 
             <div className="absolute top-4 left-6 z-10 bg-black/60 px-4 py-2 rounded-lg border border-emerald-500/30 backdrop-blur-sm shadow-md">

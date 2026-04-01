@@ -4,6 +4,7 @@ import { GameLayout } from './components/GameLayout';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
 import UnifiedAuthBanner from './components/UnifiedAuthBanner';
+import { NetworkAlert } from './components/NetworkAlert';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 
 const App = () => {
@@ -22,6 +23,7 @@ const App = () => {
         />
       ) : (
         <GameProvider user={user} farcasterContext={farcasterContext}>
+          <NetworkAlert />
           <GameLayout onLogout={logout} />
         </GameProvider>
       )}

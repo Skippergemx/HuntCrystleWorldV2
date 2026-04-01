@@ -251,7 +251,7 @@ export const GameLayout = ({ onLogout }) => {
                     <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
                  </div>
                )}
-               <div className="bg-cyan-500 text-black text-[6px] md:text-[8px] font-black uppercase py-0.5 px-1.5 rounded-sm border-[1.5px] border-black inline-block shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] mb-0.5 md:mb-1">UNIT {player.level}</div>
+               <div className="bg-cyan-400 text-black text-[7px] md:text-[11px] font-[1000] uppercase py-1 px-2 rounded-sm border-[2px] border-black inline-block shadow-[3px_3px_0_rgba(0,0,0,1)] mb-1 md:mb-1.5 animate-in slide-in-from-left-4 duration-500">UNIT {player.level}</div>
                <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
             </div>
           </div>
@@ -266,7 +266,10 @@ export const GameLayout = ({ onLogout }) => {
               <div className="flex flex-row items-center gap-1.5 md:gap-3 shrink-0">
                 <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1 relative overflow-hidden min-w-0">
                   <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)' }}></div>
-                  <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10">{player.name}</h1>
+                  <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10 flex items-center">
+                    <span className="text-[8px] md:text-sm font-black text-cyan-400 mr-2 md:mr-3 border-[2px] border-cyan-500/30 px-1 md:px-2 py-0.5 rounded-sm bg-black/60 shadow-[2px_2px_0_rgba(6,182,212,0.2)]">LVL {player.level}</span>
+                    {player.name}
+                  </h1>
                 </div>
 
                 {(() => {

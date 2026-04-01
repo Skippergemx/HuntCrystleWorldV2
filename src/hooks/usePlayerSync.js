@@ -160,8 +160,11 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         try {
           const primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
           const docRef = doc(db, 'players', primaryAuthId);
-          await setDoc(docRef, pendingUpdatesRef.current, { merge: true });
+          
+          const payload = { ...pendingUpdatesRef.current };
           pendingUpdatesRef.current = {};
+          
+          await setDoc(docRef, payload, { merge: true });
           console.log("System V2: Remote Sector Synchronized.", primaryAuthId);
         } catch (e) {
           console.error("Sync Error:", e);

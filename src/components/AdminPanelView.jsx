@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag } from 'lucide-react';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
@@ -18,6 +18,20 @@ export const AdminPanelView = React.memo(() => {
   const itemsPerPage = 10;
 
   const isAdmin = userEmail === 'skippergemx@gmail.com';
+
+  const filteredPlayers = useMemo(() => {
+    const search = searchQuery.toLowerCase();
+    return players.filter(p => {
+      if (!search) return true;
+      return (p.name?.toLowerCase().includes(search)) ||
+             (p.id?.toLowerCase().includes(search)) ||
+             (p.email?.toLowerCase().includes(search)) ||
+             (p.walletAddress?.toLowerCase().includes(search));
+    });
+  }, [players, searchQuery]);
+
+  const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
+  const paginatedPlayers = filteredPlayers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   useEffect(() => {
     if (isAdmin) {
@@ -598,20 +612,9 @@ export const AdminPanelView = React.memo(() => {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {(() => {
-                  const filtered = (players || []).filter(p => {
-                    const search = searchQuery.toLowerCase();
-                    const nameMatch = p.name ? p.name.toLowerCase().includes(search) : false;
-                    const idMatch = p.id ? p.id.toLowerCase().includes(search) : false;
-                    const emailMatch = p.email ? p.email.toLowerCase().includes(search) : false;
-                    return !searchQuery || nameMatch || idMatch || emailMatch;
-                  });
-                  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-                  const start = (currentPage - 1) * itemsPerPage;
-                  const paginated = filtered.slice(start, start + itemsPerPage);
-
                   return (
                     <>
-                      {paginated.map((player) => (
+                      {paginatedPlayers.map((player) => (
                         <tr key={player.id} className="hover:bg-slate-900/30 transition-colors group">
                           <td className="py-4 px-4 text-left">
                             <div className="flex items-center gap-3">
@@ -663,7 +666,7 @@ export const AdminPanelView = React.memo(() => {
                           </td>
                         </tr>
                       ))}
-                      {paginated.length === 0 && (
+                      {paginatedPlayers.length === 0 && (
                         <tr>
                           <td colSpan="7" className="py-12 text-center text-slate-600 font-black uppercase italic tracking-widest">Sector Empty: No Hunters Detected</td>
                         </tr>
@@ -677,20 +680,12 @@ export const AdminPanelView = React.memo(() => {
 
           {/* Pagination Controls */}
           {(() => {
-            const filtered = (players || []).filter(p => {
-              const search = searchQuery.toLowerCase();
-              const nameMatch = p.name ? p.name.toLowerCase().includes(search) : false;
-              const idMatch = p.id ? p.id.toLowerCase().includes(search) : false;
-              const emailMatch = p.email ? p.email.toLowerCase().includes(search) : false;
-              return !searchQuery || nameMatch || idMatch || emailMatch;
-            });
-            const totalPages = Math.ceil(filtered.length / itemsPerPage);
             if (totalPages <= 1) return null;
 
             return (
               <div className="flex items-center justify-between border-t border-slate-800 pt-6">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  Showing {Math.min(filtered.length, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(filtered.length, currentPage * itemsPerPage)} of {filtered.length} units
+                  Showing {Math.min(filteredPlayers.length, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(filteredPlayers.length, currentPage * itemsPerPage)} of {filteredPlayers.length} units
                 </p>
                 <div className="flex gap-2">
                   <button 
@@ -768,20 +763,9 @@ export const AdminPanelView = React.memo(() => {
               </thead>
               <tbody className="space-y-4">
                 {(() => {
-                  const filtered = (players || []).filter(p => {
-                    const search = searchQuery.toLowerCase();
-                    return !searchQuery || 
-                           (p.name?.toLowerCase().includes(search)) || 
-                           (p.id?.toLowerCase().includes(search)) || 
-                           (p.walletAddress?.toLowerCase().includes(search));
-                  });
-                  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-                  const start = (currentPage - 1) * itemsPerPage;
-                  const paginated = filtered.slice(start, start + itemsPerPage);
-
                   return (
                     <>
-                      {paginated.map((player) => (
+                      {paginatedPlayers.map((player) => (
                         <tr key={player.id} className="bg-slate-900/40 border-2 border-slate-800 hover:border-amber-500/50 transition-all group">
                           <td className="py-4 px-4 text-left rounded-l-xl">
                             <div className="flex items-center gap-3">

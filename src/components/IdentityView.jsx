@@ -61,59 +61,6 @@ export const IdentityView = React.memo(() => {
           </div>
         </div>
 
-        {/* WEB3 UPLINK STATUS */}
-        {wallet.address ? (
-          <div className="w-full bg-slate-900/80 border-2 border-slate-800 rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-3 opacity-10 pointer-events-none rotate-12"><Wallet size={80} /></div>
-             <h3 className="text-[10px] font-black text-cyan-400 uppercase italic mb-4 flex items-center gap-2 relative z-10">
-               <div className="w-4 h-4 bg-cyan-500/10 rounded flex items-center justify-center border border-cyan-500/20">
-                 <Wallet size={10} className="text-cyan-400" />
-               </div>
-               Active Web3 Uplink _ [BASE_CHAIN]
-             </h3>
-             
-             <div className="space-y-4 relative z-10">
-                <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl flex items-center justify-between shadow-inner">
-                   <div className="flex flex-col items-start">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
-                        <span className="text-[8px] text-emerald-400/70 uppercase font-black tracking-[0.2em] italic">Network_Identity_Active</span>
-                      </div>
-                      <span className="text-xs font-mono font-black text-white/90 bg-emerald-950/20 px-2 py-1 rounded border border-emerald-500/10 shadow-lg">
-                        {wallet.address.slice(0, 10)}...{wallet.address.slice(-8)}
-                      </span>
-                   </div>
-                   <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-center text-emerald-400">
-                      <ShieldCheck size={20} className="animate-pulse" />
-                   </div>
-                </div>
-                <button 
-                  onClick={wallet.disconnectWallet}
-                  className="w-full bg-slate-800/20 hover:bg-red-950/40 text-slate-500 hover:text-red-500 border-2 border-slate-800 hover:border-red-900 p-3 rounded-xl flex items-center justify-center gap-2 transition-all group font-black uppercase text-[9px] italic tracking-widest"
-                >
-                   <Unlink size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                   Terminate Dynamic Uplink
-                </button>
-             </div>
-          </div>
-        ) : (
-          <div className="w-full bg-slate-900 border-2 border-dashed border-slate-800 rounded-2xl p-6 mb-4 flex flex-col items-center gap-4 group hover:border-cyan-500/50 transition-all">
-             <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-500 group-hover:text-cyan-400 group-hover:scale-110 transition-all">
-                <Link size={24} />
-             </div>
-             <div className="text-center">
-                <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-1">Uplink Offline</h3>
-                <p className="text-[8px] text-slate-500 font-bold uppercase italic">Link your wallet to track progress onchain</p>
-             </div>
-             <button 
-               onClick={() => wallet.connectWallet('EXTERNAL')}
-               disabled={wallet.loading}
-               className="w-full bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] shadow-[0_4px_20px_rgba(6,182,212,0.3)] hover:shadow-[0_4px_25px_rgba(6,182,212,0.5)] active:scale-95 transition-all disabled:opacity-50"
-             >
-               {wallet.loading ? 'INITIATING...' : 'ESTABLISH WALLET UPLINK'}
-             </button>
-          </div>
-        )}
 
         {/* FARCASTER LINK */}
         {farcasterContext?.user && (
