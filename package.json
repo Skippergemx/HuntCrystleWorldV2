@@ -13,6 +13,7 @@
     "@farcaster/frame-sdk": "^0.0.64",
     "@farcaster/frame-wagmi-connector": "^0.0.53",
     "@lucide/lab": "^0.1.2",
+    "@rainbow-me/rainbowkit": "^2.2.10",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@reown/appkit": "^1.8.19",

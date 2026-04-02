@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
 import { sdk } from "@farcaster/frame-sdk";
-import { useAppKitAccount, useDisconnect } from '@reown/appkit/react';
+import { useAccount, useDisconnect } from 'wagmi';
 
 /**
  * useUnifiedAuth V2: The Core Identity Hub
@@ -14,7 +14,7 @@ export const useUnifiedAuth = () => {
   const [farcasterContext, setFarcasterContext] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 
   // WAGMI Wallet Connect Auto-Auth Trigger

@@ -5,24 +5,15 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
 import UnifiedAuthBanner from './components/UnifiedAuthBanner';
 import { NetworkAlert } from './components/NetworkAlert';
-import { useAppKit, useAppKitAccount, useDisconnect } from '@reown/appkit/react';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
+import { useAccount } from 'wagmi';
 
 const App = () => {
-  const { user, loading, farcasterContext, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
-  const { address, isConnected } = useAppKitAccount();
-  const { disconnect } = useDisconnect();
+  const { user, loading, isFarcaster, farcasterContext, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
+  const { address, isConnected } = useAccount();
 
   // Unified login gate: user session OR connected wallet address
-  const isAuthenticated = !!user || (isConnected && address);
-
-  const handleLogout = async () => {
-    if (isConnected) {
-      await disconnect();
-    }
-    await logout();
-  };
-
+  const isAuthenticated = !!user || (isConnected && !!address);
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {loading ? (
@@ -38,7 +29,7 @@ const App = () => {
       ) : (
         <GameProvider user={user} farcasterContext={farcasterContext}>
           <NetworkAlert />
-          <GameLayout onLogout={handleLogout} />
+          <GameLayout onLogout={logout} />
         </GameProvider>
       )}
     </div>

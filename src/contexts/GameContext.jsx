@@ -128,12 +128,12 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     setShowGuide(true);
   };
 
-  const handleLogout = async (onLogout) => {
+  const handleLogout = async (signOutFn) => {
      try {
        if (player.autoUntil > 0 || player.buffUntil > 0) {
          await syncPlayer({ autoUntil: 0, buffUntil: 0 });
        }
-       await onLogout();
+       await signOutFn();
        adventure.setView('menu');
      } catch (e) {
        console.error("Logout error:", e);
