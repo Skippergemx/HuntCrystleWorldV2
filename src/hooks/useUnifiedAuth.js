@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
 import { sdk } from "@farcaster/frame-sdk";
+import { useAppKitAccount, useDisconnect } from '@reown/appkit/react';
 
 /**
  * useUnifiedAuth V2: The Core Identity Hub
@@ -12,6 +13,17 @@ export const useUnifiedAuth = () => {
   const [isFarcaster, setIsFarcaster] = useState(false);
   const [farcasterContext, setFarcasterContext] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const { address, isConnected } = useAppKitAccount();
+  const { disconnect } = useDisconnect();
+
+  // WAGMI Wallet Connect Auto-Auth Trigger
+  useEffect(() => {
+    if (isConnected && address && !auth.currentUser) {
+      console.log("System V2: Web3 Wallet Linked. Initiating Silent Auth...");
+      signInAnonymously(auth).catch(e => console.error("WAGMI Silent Auth Error:", e));
+    }
+  }, [isConnected, address]);
 
   // 1. Platform Detection & Farcaster Handshake
   useEffect(() => {
@@ -53,7 +65,8 @@ export const useUnifiedAuth = () => {
           farcasterUsername: farcasterContext?.user?.username || null,
           username: isFarcaster ? farcasterContext?.user?.username || u.displayName : u.displayName || u.email?.split('@')[0],
           pfp: isFarcaster ? farcasterContext?.user?.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}` : u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
-          platform: isFarcaster ? 'farcaster' : 'browser'
+          platform: isFarcaster ? 'farcaster' : 'browser',
+          walletAddress: address ? address.toLowerCase() : null
         };
         
         setUser(unifiedUser);
@@ -64,7 +77,7 @@ export const useUnifiedAuth = () => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [isFarcaster, farcasterContext]);
+  }, [isFarcaster, farcasterContext, address]);
 
   const loginWithGoogle = async () => {
     try {
@@ -89,6 +102,7 @@ export const useUnifiedAuth = () => {
 
   const logout = async () => {
     try {
+      if (isConnected) disconnect();
       await signOut(auth);
     } catch (e) { console.error("Logout Error:", e); }
   };

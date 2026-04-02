@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 
 /**
  * usePlayerSync V2: The Primary Data Hub
@@ -9,6 +9,7 @@ import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 export const usePlayerSync = (user, db, appId, farcasterContext) => {
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
+  const [activeDocId, setActiveDocId] = useState(null);
   
   // Sync timeout ref for batching/throttling Firestore writes
   const syncTimeoutRef = useRef(null);
@@ -29,47 +30,62 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         try {
             setLoadingPlayer(true);
             
-            // UNIFIED PATH: All identities now located under the primary 'players' collection.
-            // FIXED: If user is Farcaster, use FC_FID as primary database key! 
-            // This natively syncs Mobile and Desktop sessions to the exact same database document,
-            // destroying the "two instances of the same player" bug.
-            const primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+            // --- UNIFIED RESOLVER: IDENTITY HIERARCHY ---
+            let primaryAuthId = null;
+            let existingWalletDoc = null;
+
+            // TRACK 1: WALLET POINTER (Absolute Priority)
+            if (user.walletAddress) {
+                const normalizedWallet = user.walletAddress.toLowerCase();
+                console.log(`System V2: Scanning Sector for Wallet Address (Normalized): ${normalizedWallet}`);
+                const q = query(collection(db, 'players'), where('walletAddress', 'in', [user.walletAddress, normalizedWallet]));
+                const querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                    existingWalletDoc = querySnapshot.docs[0];
+                    primaryAuthId = existingWalletDoc.id;
+                    console.log(`System V2: Identity Resolved via Global Wallet Match: ${primaryAuthId}`);
+                }
+            }
+
+            // TRACK 2: PLATFORM IDENTITY (Fallback)
+            if (!primaryAuthId) {
+                primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+                console.log(`System V2: Identity Resolved via Platform ID: ${primaryAuthId}`);
+            }
+
+            setActiveDocId(primaryAuthId);
             const docRef = doc(db, 'players', primaryAuthId);
-            
-            const docSnap = await getDoc(docRef);
+            const docSnap = existingWalletDoc || await getDoc(docRef);
             
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log(`System V2: Unified Profile Loaded for ${user.username || user.uid}.`);
+                console.log(`System V2: Hydrating Linked Archive: ${primaryAuthId}`);
 
-                // ENFORCED GLOBAL SCHEMA: Sanitize data to prevent NaN issues in the UI
+                // ENFORCED GLOBAL SCHEMA
                 const sanitized = {
                     ...data,
-                    // Identity Meta-Data Sync
-                    uid: user.uid, // Store the raw anonymous UID for fallback reference only
+                    // Dynamic Metadata Sync (keep linked profile fresh)
+                    uid: user.uid,
                     email: user.email || data.email || null,
                     farcasterFID: user.farcasterFID || data.farcasterFID || null,
                     farcasterUsername: user.farcasterUsername || data.farcasterUsername || null,
-                    name: user.username || data.name || `Hunter_${user.uid.slice(0, 4)}`,
-                    pfp: user.pfp || data.pfp || null,
+                    name: data.name || user.username || `Hunter_${user.uid.slice(0, 4)}`,
+                    pfp: data.pfp || user.pfp || null,
+                    walletAddress: user.walletAddress ? user.walletAddress.toLowerCase() : data.walletAddress || null,
                     
-                    // Essential Game Metrics Fallbacks
                     level: data.level || 1,
                     xp: data.xp || 0,
                     tokens: data.tokens || 100,
                     hp: data.hp ?? 150,
                     maxHp: data.maxHp ?? 150,
                     baseStats: data.baseStats || { str: 10, agi: 10, dex: 10 },
-                    
-                    // Complex Object Fallbacks
                     gemx: data.gemx || { level: 1, crystalsFed: 0 },
                     dragon: data.dragon || { level: 1, fruitsFed: 0 },
                     gemxAvatar: data.gemxAvatar || 'Cosmic gemx (1).gif',
                     recipes: data.recipes || ['crystle_blade'],
                     inventory: data.inventory || [],
                     equipped: data.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
-                    
-                    // System Flags
                     maxDepth: data.maxDepth || 1,
                     performanceMode: data.performanceMode ?? false,
                     selectedPotionId: data.selectedPotionId || 'hp_potion',
@@ -79,9 +95,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
                 setPlayer(sanitized);
             } else {
-                console.log("System V2: Initializing Genesis Profile for a new Hunter...");
+                console.log(`System V2: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
-                // GENESIS PROFILE: Baseline configuration for a fresh start
                 const genesisProfile = {
                     uid: user.uid,
                     email: user.email || null,
@@ -89,23 +104,17 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     farcasterUsername: user.farcasterUsername || null,
                     name: user.username || `Hunter_${user.uid.slice(0, 4)}`,
                     pfp: user.pfp || null,
-                    
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
                     baseStats: { str: 10, agi: 10, dex: 10 },
-                    abilityPoints: 5,
-                    potions: 5,
-                    autoScrolls: 0,
-                    autoUntil: 0,
-                    hiredMate: null,
-                    buffUntil: 0,
+                    abilityPoints: 5, potions: 5,
+                    autoScrolls: 0, autoUntil: 0,
+                    hiredMate: null, buffUntil: 0,
                     equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                     recipes: ['crystle_blade'],
                     inventory: [],
-                    totalBossDamage: 0,
-                    maxDepth: 1,
-                    penaltyUntil: 0,
-                    autoMode: null,
+                    totalBossDamage: 0, maxDepth: 1,
+                    penaltyUntil: 0, autoMode: null,
                     gemx: { level: 1, crystalsFed: 0 },
                     dragon: { level: 1, fruitsFed: 0 },
                     gemxAvatar: 'Cosmic gemx (1).gif',
@@ -113,11 +122,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     performanceMode: false,
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
-                    guildId: null,
-                    guildRole: null,
                     avatar: 1,
-                    farcasterPfp: user.pfp || null,
-                    walletAddress: null,
+                    walletAddress: user.walletAddress || null,
                     createdAt: serverTimestamp()
                 };
                 
@@ -125,7 +131,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                 await setDoc(docRef, genesisProfile);
             }
         } catch (e) {
-            console.error("Player Hydration Error:", e);
+            console.error("Critical Resolution Failure:", e);
         } finally {
             setLoadingPlayer(false);
         }
@@ -138,6 +144,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
   const syncPlayer = useCallback(async (updates) => {
     // If the database doc identifier isn't ready, halt the queue
     if (!user || (farcasterContext && !user.farcasterFID)) return;
+    if (!activeDocId) return;
 
     // Sterilize numbers: Prevent float jitter for combat-critical metrics
     const sterilized = { ...updates };
@@ -158,14 +165,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
       syncTimeoutRef.current = setTimeout(async () => {
         try {
-          const primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
-          const docRef = doc(db, 'players', primaryAuthId);
+          const docRef = doc(db, 'players', activeDocId);
           
           const payload = { ...pendingUpdatesRef.current };
           pendingUpdatesRef.current = {};
           
           await setDoc(docRef, payload, { merge: true });
-          console.log("System V2: Remote Sector Synchronized.", primaryAuthId);
+          console.log("System V2: Remote Sector Synchronized.", activeDocId);
         } catch (e) {
           console.error("Sync Error:", e);
         }
@@ -173,7 +179,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
       return next;
     });
-  }, [user, db, appId, farcasterContext]);
+  }, [user, db, appId, farcasterContext, activeDocId]);
 
   return { player, setPlayer, syncPlayer, loadingPlayer };
 };

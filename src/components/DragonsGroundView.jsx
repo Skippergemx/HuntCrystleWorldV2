@@ -26,7 +26,7 @@ export const DragonsGroundView = React.memo(() => {
     { name: 'Sky Razer', icon: 'Sky Razer' }
   ];
 
-  const crystalsInInventory = player.inventory?.filter(i => i.id === 'crystle_shard').length || 0;
+  const crystalsInInventory = player.inventory?.filter(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
   const fruitsInInventory = player.inventory?.filter(i => i.type === 'Fruit').length || 0;
 
   const gemxNextLevelRequirement = gemx.level * 10;
@@ -55,7 +55,7 @@ export const DragonsGroundView = React.memo(() => {
     }
 
     const newInventory = [...(player.inventory || [])];
-    const index = newInventory.findIndex(i => i.id === 'crystle_shard');
+    const index = newInventory.findIndex(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard');
     if (index !== -1) {
       newInventory.splice(index, 1);
 
@@ -71,7 +71,10 @@ export const DragonsGroundView = React.memo(() => {
         setMessage({ type: 'info', text: 'GEMX absorbed the crystal energy.' });
       }
 
-      syncPlayer({ inventory: newInventory, gemx: { level: newLevel, crystalsFed: newCrystalsFed } });
+      syncPlayer({ 
+        inventory: newInventory, 
+        gemx: { ...gemx, level: newLevel, crystalsFed: newCrystalsFed } 
+      });
     }
   };
 

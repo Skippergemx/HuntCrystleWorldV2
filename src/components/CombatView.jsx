@@ -105,15 +105,15 @@ export const CombatView = React.memo(() => {
 
       {/* --- HUD TOP --- */}
       <div className="w-full flex justify-between items-start z-30 px-2 md:px-6 pt-2 md:pt-4">
-        <div className="flex flex-col gap-1.5 md:gap-3">
-          <div className="flex items-center gap-1.5 md:gap-3">
-            <div className={`flex items-center gap-1.5 md:gap-3 px-2 md:px-5 py-1.5 md:py-3 bg-black border-[3px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${arenaTheme.text} transform -rotate-1`}>
-              <TrendingUp size={12} className="md:w-5 md:h-5 animate-pulse" />
+        <div className="flex flex-col gap-1 md:gap-3">
+          <div className="flex items-center gap-1 md:gap-3">
+            <div className={`flex items-center gap-1 md:gap-3 px-2 md:px-5 py-1 md:py-3 bg-black border-[3px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${arenaTheme.text} transform -rotate-1`}>
+              <TrendingUp size={10} className="md:w-5 md:h-5 animate-pulse" />
               <div className="flex flex-col leading-none">
-                <span className="text-[6px] md:text-[10px] font-black uppercase opacity-70">
+                <span className="text-[5px] md:text-[10px] font-black uppercase opacity-70">
                   {combat.battleMode === 'GVG' ? `TARGET: [${enemy.syndicateTag || '???'}] ${enemy.syndicateName || 'SYN'}` : 'Sector Alpha'}
                 </span>
-                <span className="text-[10px] md:text-lg font-black tracking-widest italic uppercase">
+                <span className="text-[9px] md:text-lg font-black tracking-widest italic uppercase">
                   {combat.battleMode === 'GVG' ? 'SYNDICATE RAID' : `Floor ${depth}`}
                 </span>
               </div>
@@ -123,19 +123,19 @@ export const CombatView = React.memo(() => {
               className={`p-1.5 md:p-3 ${arenaTheme.banner} border-[3px] md:border-[4px] border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:brightness-110 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform rotate-3`}
               title="Tactical Guide"
             >
-              <HelpCircle size={14} className="md:w-5 md:h-5" strokeWidth={4} />
+              <HelpCircle size={12} className="md:w-5 md:h-5" strokeWidth={4} />
             </button>
           </div>
 
           {combat.battleMode !== 'GVG' && (
-            <div className="flex flex-col gap-1 p-1.5 bg-black/40 border border-white/5 rounded backdrop-blur-sm max-w-[120px] md:max-w-none">
+            <div className="flex flex-col gap-1 p-1 bg-black/40 border border-white/5 rounded backdrop-blur-sm max-w-[100px] md:max-w-none">
               <div className="flex justify-between items-center px-1">
-                <span className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase italic">Progress</span>
-                <span className="text-[7px] md:text-[8px] font-black text-cyan-400">{combat.killsInFloor}/10</span>
+                <span className="text-[5px] md:text-[8px] font-black text-slate-400 uppercase italic">Progress</span>
+                <span className="text-[6px] md:text-[8px] font-black text-cyan-400">{combat.killsInFloor}/10</span>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-0.5 md:gap-1">
                 {[...Array(10)].map((_, i) => (
-                  <div key={i} className={`flex-1 h-1 md:h-2.5 border border-black transition-all duration-300 ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[0_0_8px_#06b6d4]' : 'bg-slate-800'}`} />
+                  <div key={i} className={`flex-1 h-1 md:h-2.5 border border-black/50 transition-all duration-300 ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[0_0_5px_#06b6d4]' : 'bg-slate-800'}`} />
                 ))}
               </div>
             </div>
@@ -144,18 +144,18 @@ export const CombatView = React.memo(() => {
 
         <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
           <div className="flex gap-2 md:gap-4">
-            <div className="flex items-center gap-1.5 md:gap-2">
-              <button onClick={cyclePotion} className="p-1.5 md:p-3 bg-slate-800 border-[3px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] group" title="Swap Potion">
-                <RefreshCw size={14} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
+            <div className="flex items-center gap-1 md:gap-2">
+              <button onClick={cyclePotion} className="p-1 md:p-3 bg-slate-800 border-[2px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] group" title="Swap Potion">
+                <RefreshCw size={12} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
               </button>
-              <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1.5 md:gap-3 bg-red-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden">
+              <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-[2px] md:border-[4px] border-black px-1 md:px-5 py-1 md:py-3 rounded hover:bg-red-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden w-20 md:w-28">
                 <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-                <span className="text-sm md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
-                <div className="flex flex-col items-start bg-transparent leading-none relative z-10 w-16 md:w-20">
-                  <span className="text-[6px] md:text-[9px] font-black uppercase text-white/70 italic whitespace-nowrap overflow-hidden text-ellipsis w-full text-left">
+                <span className="text-[10px] md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
+                <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0">
+                  <span className="text-[5px] md:text-[9px] font-black uppercase text-white/70 italic whitespace-nowrap overflow-hidden text-ellipsis w-full text-left">
                     {potionCountData.selected === 'hp_potion' ? 'SMALL' : potionCountData.selected?.replace('mega_hp_potion', 'MEGA').replace('ultra_hp_potion', 'ULTRA') || 'HEAL'}
                   </span>
-                  <span className="text-xs md:text-lg font-black text-white italic">{potionCountData.count}</span>
+                  <span className="text-[10px] md:text-lg font-black text-white italic">{potionCountData.count}</span>
                 </div>
               </button>
             </div>
@@ -165,34 +165,34 @@ export const CombatView = React.memo(() => {
             {combat.battleMode !== 'GVG' && (
               <div className="flex flex-col gap-1.5 items-end">
                 {isAutoActive ? (
-                  <div className="flex items-center gap-1.5 md:gap-3 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden transition-all animate-pulse transform rotate-1">
+                  <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[2px] md:border-[4px] border-black px-1.5 md:px-5 py-1 md:py-3 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden transition-all animate-pulse transform rotate-1 w-20 md:w-32">
                     <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
                     <div className="relative z-10 shrink-0 transform -rotate-1 animate-spin-slow text-black">
-                      <WandSparkles size={20} />
+                      <WandSparkles size={12} md:size={20} />
                     </div>
-                    <div className="flex flex-col items-start bg-transparent leading-none relative z-10 w-16 md:w-20">
-                      <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic transform -rotate-1 whitespace-nowrap">
-                        {combat.battleMode === 'GVG' ? 'SYNC' : 'AUTO'} ACTIVE
+                    <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0">
+                      <span className="text-[4px] md:text-[9px] font-black uppercase text-black/70 italic transform -rotate-1 whitespace-nowrap">
+                        ACTIVE
                       </span>
-                      <span className="text-xs md:text-lg font-black text-black italic transform -rotate-1">{autoTimeLeft}s</span>
+                      <span className="text-[10px] md:text-lg font-black text-black italic transform -rotate-1">{autoTimeLeft}s</span>
                     </div>
                   </div>
                 ) : (
                   hasAnyScrolls && (
-                    <div className="flex items-center gap-1.5 md:gap-2">
-                      <button onClick={cycleScroll} className="p-1.5 md:p-3 bg-slate-800 border-[3px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] group" title="Swap Scroll">
-                        <RefreshCw size={14} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
+                    <div className="flex items-center gap-1 md:gap-2">
+                      <button onClick={cycleScroll} className="p-1 md:p-3 bg-slate-800 border-[2px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] group" title="Swap Scroll">
+                        <RefreshCw size={12} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
                       </button>
-                      <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1.5 md:gap-3 bg-cyan-600 border-[3px] md:border-[4px] border-black px-2 md:px-5 py-1.5 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden w-28 md:w-36">
+                      <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-[2px] md:border-[4px] border-black px-1 md:px-5 py-1 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden w-20 md:w-36">
                         <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
                         <div className="relative z-10 shrink-0 group-hover:scale-110 transition-transform text-black">
-                          <WandSparkles size={18} md:size={22} />
+                          <WandSparkles size={12} md:size={22} />
                         </div>
-                        <div className="flex flex-col items-start bg-transparent leading-none relative z-10 w-full overflow-hidden">
-                          <span className="text-[6px] md:text-[9px] font-black uppercase text-black/70 italic truncate w-full text-left">
-                            {scrollCountData.selected === 'auto_scroll' ? '1M AUTO' : scrollCountData.selected.split('_').pop().toUpperCase() + ' AUTO'}
+                        <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0 overflow-hidden">
+                          <span className="text-[5px] md:text-[9px] font-black uppercase text-black/70 italic truncate w-full text-left">
+                            {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected.split('_').pop().toUpperCase()}
                           </span>
-                          <span className="text-xs md:text-lg font-black text-black italic">{scrollCountData.count}</span>
+                          <span className="text-[10px] md:text-lg font-black text-black italic">{scrollCountData.count}</span>
                         </div>
                       </button>
                     </div>
@@ -227,7 +227,7 @@ export const CombatView = React.memo(() => {
               </div>
             )}
 
-            <div className={`group w-36 h-36 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : 'animate-float'}`}>
+            <div className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : 'animate-float'}`}>
               <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
               <div className="absolute inset-0 opacity-20 comic-halftone text-red-500 z-0"></div>
               {combat.battleMode === 'GVG' ? (
@@ -344,7 +344,7 @@ export const CombatView = React.memo(() => {
             )}
 
             <div className="flex items-center gap-3 md:gap-8">
-              <div className={`w-36 h-36 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
+              <div className={`w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
                 <div className="absolute inset-0 bg-gradient-to-tl from-black/80 via-transparent to-transparent z-10"></div>
                 <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-0"></div>
                 {player.avatar && (
@@ -451,7 +451,7 @@ export const CombatView = React.memo(() => {
 
           <button
             onClick={combat.handleRetreat}
-            className={`px-6 md:px-14 py-3 md:py-6 rounded font-black uppercase text-xs md:text-lg tracking-widest border-[4px] md:border-[5px] border-black transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white flex items-center justify-center hover:shadow-[10px_10px_0_rgba(0,0,0,1)]`}
+            className={`flex-1 py-3 md:py-6 rounded font-black uppercase text-[10px] md:text-lg tracking-widest border-[4px] md:border-[5px] border-black transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white flex items-center justify-center hover:shadow-[10px_10px_0_rgba(0,0,0,1)]`}
           >
             RETREAT
           </button>

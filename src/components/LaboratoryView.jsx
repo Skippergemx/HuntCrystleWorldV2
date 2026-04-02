@@ -171,7 +171,7 @@ export const LaboratoryView = React.memo(() => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
            <div className={`max-w-xs w-full p-8 border-[6px] border-black shadow-[12px_12px_0_rgba(0,0,0,1)] relative animate-in zoom-in-95 duration-300 transform rotate-1 bg-emerald-500`}>
               <div className="absolute -top-6 -left-6 bg-white border-4 border-black px-4 py-1 transform -rotate-12 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                <span className="text-xl font-black italic uppercase italic tracking-tighter">SCIENCE!</span>
+                <span className="text-xl font-black italic uppercase text-black tracking-tighter">SCIENCE!</span>
               </div>
 
               <div className="text-center space-y-4">
