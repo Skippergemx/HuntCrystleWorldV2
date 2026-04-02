@@ -25,7 +25,7 @@ createAppKit({
   metadata: {
     name: 'Dungeons With Gems',
     description: 'Strategic Dungeon Crawler on Base',
-    url: typeof window !== 'undefined' ? window.location.origin : 'https://dungeonswithgems.com',
+    url: 'https://metaverse.dungeonswithgems.quest',
     icons: ['https://avatars.githubusercontent.com/u/37784886']
   },
   features: {
