@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { sdk } from "@farcaster/frame-sdk";
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 
 export const useWallet = (addLog, farcasterContext) => {
   const { address, isConnected, isConnecting } = useAccount();
   const { disconnect } = useDisconnect();
+  const { openConnectModal } = useConnectModal();
   const [isGenesisHolder, setIsGenesisHolder] = useState(false);
 
   // WAGMI Integration replaces all legacy listeners
@@ -21,8 +23,11 @@ export const useWallet = (addLog, farcasterContext) => {
     loading: isConnecting,
     activeProviderType: isConnected ? 'EXTERNAL' : null,
     connectWallet: () => {
-       // Handled by RainbowKit's modal now, this is a placeholder
-       console.log("System V3: Use RainbowKit modal for connection.");
+       if (openConnectModal) {
+         openConnectModal();
+       } else {
+         console.warn("System V3: RainbowKit Modal not available.");
+       }
     },
     disconnectWallet: disconnect,
     hasNativeProvider: !!sdk?.wallet?.ethProvider,

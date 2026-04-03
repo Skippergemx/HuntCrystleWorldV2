@@ -17,13 +17,9 @@ export const useUnifiedAuth = () => {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 
-  // WAGMI Wallet Connect Auto-Auth Trigger
-  useEffect(() => {
-    if (isConnected && address && !auth.currentUser) {
-      console.log("System V2: Web3 Wallet Linked. Initiating Silent Auth...");
-      signInAnonymously(auth).catch(e => console.error("WAGMI Silent Auth Error:", e));
-    }
-  }, [isConnected, address]);
+  // WAGMI Wallet Connect Auto-Auth Trigger (REMOVED)
+  // We no longer trigger silent auth for standard browser wallets. 
+  // Identity must be established via Google or Farcaster specifically.
 
   // 1. Platform Detection & Farcaster Handshake
   useEffect(() => {

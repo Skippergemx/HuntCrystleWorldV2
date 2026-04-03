@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
 
 /**
  * usePlayerSync V2: The Primary Data Hub
@@ -10,6 +10,52 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   const [activeDocId, setActiveDocId] = useState(null);
+  
+  /**
+   * IDENTITY SENTRY V3: The High-Security Identity Gateway
+   * Performs multi-layered scans to prevent wallet theft and identity splits.
+   */
+  const identitySentry = useCallback(async (addressToScan) => {
+    if (!addressToScan) return { success: true, collision: null };
+    
+    const normalized = addressToScan.toLowerCase().trim();
+    const raw = addressToScan.trim();
+
+    try {
+      // 1. Optimized Dual-Query (Indexed)
+      const qLower = query(collection(db, 'players'), where('walletAddress', '==', normalized));
+      const qRaw = query(collection(db, 'players'), where('walletAddress', '==', raw));
+      const [snapLower, snapRaw] = await Promise.all([getDocs(qLower), getDocs(qRaw)]);
+      
+      let collisionDoc = !snapLower.empty ? snapLower.docs[0] : (!snapRaw.empty ? snapRaw.docs[0] : null);
+
+      // 2. Deep-Scan Failsafe (Non-Indexed Sweep)
+      if (!collisionDoc) {
+        const broadSweep = await getDocs(query(collection(db, 'players'), limit(50)));
+        collisionDoc = broadSweep.docs.find(d => {
+          const docWallet = d.data()?.walletAddress?.toString().toLowerCase().trim();
+          return docWallet === normalized;
+        });
+      }
+
+      const collisionId = collisionDoc?.id;
+      if (collisionId && collisionId !== activeDocId) {
+        return { 
+          success: false, 
+          collision: {
+            id: collisionId,
+            platform: collisionId.startsWith('FC_') ? 'FARCASTER' : 'GOOGLE',
+            address: normalized
+          }
+        };
+      }
+
+      return { success: true, collision: null };
+    } catch (e) {
+      console.error("Identity Sentry Failure:", e);
+      return { success: false, error: e.message };
+    }
+  }, [db, activeDocId]);
   
   // Sync timeout ref for batching/throttling Firestore writes
   const syncTimeoutRef = useRef(null);
@@ -30,50 +76,71 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         try {
             setLoadingPlayer(true);
             
-            // --- UNIFIED RESOLVER: IDENTITY HIERARCHY ---
-            let primaryAuthId = null;
-            let existingWalletDoc = null;
-
-            // TRACK 1: WALLET POINTER (Absolute Priority)
-            if (user.walletAddress) {
-                const normalizedWallet = user.walletAddress.toLowerCase();
-                console.log(`System V2: Scanning Sector for Wallet Address (Normalized): ${normalizedWallet}`);
-                const q = query(collection(db, 'players'), where('walletAddress', 'in', [user.walletAddress, normalizedWallet]));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    existingWalletDoc = querySnapshot.docs[0];
-                    primaryAuthId = existingWalletDoc.id;
-                    console.log(`System V2: Identity Resolved via Global Wallet Match: ${primaryAuthId}`);
-                }
-            }
-
-            // TRACK 2: PLATFORM IDENTITY (Fallback)
-            if (!primaryAuthId) {
-                primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
-                console.log(`System V2: Identity Resolved via Platform ID: ${primaryAuthId}`);
-            }
-
+            // --- UNIFIED RESOLVER V3: UID-FIRST (Single Pipeline) ---
+            // Standard Web Users (Google Auth) always use their UID as the primary document key.
+            // Farcaster users use a specific 'FC_' prefix to maintain separate identity silos.
+            let primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+            
+            console.log(`System V3: Resolving Identity for Core Node: ${primaryAuthId}`);
+            
             setActiveDocId(primaryAuthId);
             const docRef = doc(db, 'players', primaryAuthId);
-            const docSnap = existingWalletDoc || await getDoc(docRef);
+            const docSnap = await getDoc(docRef);
             
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                console.log(`System V2: Hydrating Linked Archive: ${primaryAuthId}`);
+                console.log(`System V3: Hydrating Linked Archive: ${primaryAuthId}`);
 
-                // ENFORCED GLOBAL SCHEMA
+                // --- GLOBAL CONFLICT CHECK: PASSIVE VS ACTIVE ---
+                let walletConflict = null;
+                let activeWalletSync = data.walletAddress || null;
+
+                // 1. FARCASTER MODE: Mandatory Active Sync
+                if (farcasterContext && user.walletAddress) {
+                    const scan = await identitySentry(user.walletAddress);
+                    
+                    if (!scan.success && scan.collision.id !== primaryAuthId) {
+                        walletConflict = {
+                          ownerId: scan.collision.id,
+                          isFarcaster: scan.collision.platform === 'FARCASTER',
+                          message: "This wallet is bound to another Hero profile!"
+                        };
+                    } else {
+                        activeWalletSync = user.walletAddress.toLowerCase().trim();
+                    }
+                }
+                
+                // 2. GOOGLE MODE: Retroactive Security Scrub
+                else if (data.walletAddress || user.walletAddress) {
+                    const addr = (data.walletAddress || user.walletAddress);
+                    const scan = await identitySentry(addr);
+                    
+                    if (!scan.success && scan.collision.id !== primaryAuthId) {
+                         console.warn(`System V3: Blockade Alert! Scrubbing unauthorized link to ${scan.collision.id}`);
+                         walletConflict = {
+                            ownerId: scan.collision.id,
+                            message: "This wallet belongs to another Hero node!",
+                            isFarcaster: scan.collision.platform === 'FARCASTER'
+                         };
+                         activeWalletSync = null; 
+                    } else {
+                        activeWalletSync = addr.toLowerCase().trim();
+                    }
+                }
+
+                // ENFORCED GLOBAL SCHEMA (UID-First)
                 const sanitized = {
                     ...data,
-                    // Dynamic Metadata Sync (keep linked profile fresh)
                     uid: user.uid,
                     email: user.email || data.email || null,
                     farcasterFID: user.farcasterFID || data.farcasterFID || null,
                     farcasterUsername: user.farcasterUsername || data.farcasterUsername || null,
                     name: data.name || user.username || `Hunter_${user.uid.slice(0, 4)}`,
                     pfp: data.pfp || user.pfp || null,
-                    walletAddress: user.walletAddress ? user.walletAddress.toLowerCase() : data.walletAddress || null,
                     
+                    walletAddress: activeWalletSync,
+                    walletConflict: walletConflict || null,
+
                     level: data.level || 1,
                     xp: data.xp || 0,
                     tokens: data.tokens || 100,
@@ -95,7 +162,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
                 setPlayer(sanitized);
             } else {
-                console.log(`System V2: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
+                console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
                 const genesisProfile = {
                     uid: user.uid,
@@ -123,7 +190,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     avatar: 1,
-                    walletAddress: user.walletAddress || null,
+                    // Standard Google users start with NO wallet link even if one is in browser
+                    walletAddress: farcasterContext ? user.walletAddress?.toLowerCase() || null : null,
                     createdAt: serverTimestamp()
                 };
                 
@@ -139,6 +207,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
     loadUnifiedProfile();
   }, [user, db, appId, farcasterContext]);
+
 
   // 2. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
@@ -156,7 +225,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
 
     // Local update for instant UI feedback
     setPlayer(prev => {
-      const next = { ...prev, ...sterilized, updatedAt: new Date() }; // Visual indicator of freshness
+      const next = { ...prev, ...sterilized, updatedAt: new Date() }; 
 
       // Queue these changes for the prochain Firestore sync
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
@@ -171,15 +240,32 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
           pendingUpdatesRef.current = {};
           
           await setDoc(docRef, payload, { merge: true });
-          console.log("System V2: Remote Sector Synchronized.", activeDocId);
+          console.log("System V3: Remote Sector Synchronized.", activeDocId);
         } catch (e) {
           console.error("Sync Error:", e);
         }
-      }, 2000); // 2s throttle
+      }, 2000); 
 
       return next;
     });
   }, [user, db, appId, farcasterContext, activeDocId]);
 
-  return { player, setPlayer, syncPlayer, loadingPlayer };
+  // 3. EXPLICIT WALLET LINKING (Enforced through Sentry)
+  const linkWallet = useCallback(async (newAddress) => {
+    if (!activeDocId || !newAddress) return { success: false, error: "System offline." };
+
+    const scan = await identitySentry(newAddress);
+    if (!scan.success) {
+      return { 
+        success: false, 
+        error: scan.collision?.platform === 'FARCASTER' ? "WALLET_BOUND_TO_FARCASTER" : "WALLET_BOUND_TO_OTHER_ACCOUNT"
+      };
+    }
+
+    await syncPlayer({ walletAddress: newAddress.toLowerCase().trim(), walletConflict: null });
+    return { success: true };
+  }, [activeDocId, identitySentry, syncPlayer]);
+
+  return { player, setPlayer, syncPlayer, linkWallet, identitySentry, loadingPlayer };
 };
+

@@ -7,7 +7,7 @@ import {
   PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
   Book, Globe, Database, HardHat, Footprints,
   Volume2, VolumeX, Music, Music2, SkipForward,
-  Calendar, Wallet
+  Calendar, Wallet, ShieldAlert
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -45,7 +45,8 @@ export const GameLayout = ({ onLogout }) => {
   const {
     user, player, syncPlayer, logs, addLog,
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
-    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext,
+    showBlockadeModal, setShowBlockadeModal, blockadeError,
+    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet,
     db, appId, totalStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
@@ -273,9 +274,22 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
 
                 {(() => {
-                  const displayAddress = player.walletAddress || wallet.address;
+                  const displayAddress = player.walletAddress || (!player.walletConflict ? wallet.address : null);
+                  const isConflict = !!player.walletConflict;
                   const isFarcaster = !!farcasterContext;
                   const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
+
+                  if (isConflict) {
+                    return (
+                      <button 
+                        onClick={() => setView('avatars')}
+                        className="bg-red-600 text-white px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 animate-pulse flex items-center gap-2"
+                      >
+                         <AlertCircle size={10} md:size={14} />
+                         <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Uplink Blockade</span>
+                      </button>
+                    );
+                  }
 
                   if (displayAddress) {
                     return (
@@ -288,6 +302,7 @@ export const GameLayout = ({ onLogout }) => {
                               {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
                             </span>
                           </div>
+                      ...
                           {isFarcaster && !isMobile && (
                             <span className="text-[5px] md:text-[6.5px] font-black text-slate-500 uppercase tracking-widest mt-0.5 text-center w-full leading-none">
                               Linked Mobile Wallet
@@ -564,6 +579,51 @@ export const GameLayout = ({ onLogout }) => {
         title={`${guideType.replace('_', ' ')} manual`} 
         content={GUIDE_CONTENT[guideType] || []} 
       />
+
+      {showBlockadeModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-sm"></div>
+          <div className="bg-slate-900 border-4 border-red-600 p-6 md:p-8 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] max-w-md w-full relative z-10 transform -rotate-1">
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-full border-4 border-black text-xs font-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)]">
+               Security Lockdown
+            </div>
+
+            <div className="flex flex-col items-center text-center space-y-4 pt-4">
+               <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center border-4 border-red-600 animate-pulse">
+                  <ShieldAlert size={40} className="text-red-500" />
+               </div>
+
+               <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">
+                  Identity Collision Detect
+               </h2>
+
+               <p className="text-slate-400 text-[10px] leading-relaxed font-medium">
+                  This wallet belongs to <span className="text-red-500 font-extrabold italic uppercase underline">another Hero profile</span>. 
+                  Uplink has been <span className="text-red-600 font-extrabold uppercase italic">forcefully ejected</span> to prevent profile contamination.
+               </p>
+
+               <div className="bg-black/60 border-2 border-red-900/50 rounded-2xl p-4 w-full">
+                  <span className="text-[10px] font-mono text-red-500/80 break-all leading-tight italic">
+                     Blockade Ref: {blockadeError || "IDENTITY_CONFLICT_SEC_31"}
+                  </span>
+               </div>
+
+               <div className="text-[9px] text-slate-500 italic space-y-1.5 pt-1 text-left w-full border-t border-slate-800/50 mt-2">
+                  <p>• Unauthorized node has been ejected.</p>
+                  <p>• To establish a new Uplink, please connect a brand-new, unclaimed wallet.</p>
+                  <p>• For account-specific questions, please join our discord community.</p>
+               </div>
+
+               <button 
+                onClick={() => setShowBlockadeModal(false)}
+                className="w-full py-4 bg-red-600 text-white font-black uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 overflow-hidden"
+               >
+                  Dismiss Security Alert
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

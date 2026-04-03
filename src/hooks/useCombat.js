@@ -55,6 +55,7 @@ export const useCombat = (
   const missRef = useRef(0);
   const killsRef = useRef(0);
   const processingRef = useRef('IDLE');
+  const combatBusRef = useRef(false); // SYNCHRONOUS MUTEX: THE MASTER GATEKEEPER
 
   useEffect(() => {
     if (currentTaunt) {
@@ -82,8 +83,9 @@ export const useCombat = (
         if (processingRef.current === combatState) {
           console.warn(`Combat Action Stalled in ${combatState}! Emergency Reset.`);
           setCombatState('IDLE');
+          combatBusRef.current = false; // RELEASE LOCK ON STALL
         }
-      }, 4000);
+      }, 3500); 
       return () => clearTimeout(timer);
     }
   }, [stunTimeLeft, missTimeLeft, killsInFloor, combatState]);
@@ -108,26 +110,44 @@ export const useCombat = (
     }
   }, []);
 
+  const resetCombatEngine = useCallback(() => {
+    setCombatState('IDLE');
+    processingRef.current = 'IDLE'; // Synchronous mirror reset
+    setStunTimeLeft(0);
+    setMissTimeLeft(0);
+    if (stunRef) stunRef.current = 0;
+    if (missRef) missRef.current = 0;
+    setStrikingSide(null);
+    setCritAlert(false);
+    setShowVictoryWindow(false);
+    setShowDefeatedWindow(false);
+    combatBusRef.current = false; // NUCLEAR RELEASE
+  }, []);
+
   const enemyTurn = useCallback((target, isBoss = false) => {
     if (showDefeatedWindow) {
+      processingRef.current = 'IDLE';
       setCombatState('IDLE');
+      combatBusRef.current = false;
       return;
     }
     if (!target || !player?.hp || player?.hp <= 0) {
+      processingRef.current = 'IDLE';
       setCombatState('IDLE');
+      combatBusRef.current = false;
       return;
     }
+
     setCombatState('ENEMY_TURN');
     const stats = { ...totalStats };
 
     setTimeout(() => {
       setStrikingSide('monster');
-      playSFX(SOUNDS.monsterAttack);
       setTimeout(() => setStrikingSide(null), 300);
     }, 400);
 
     let hitChance = getHitChance(target.dex, stats.agi);
-    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); // 85% Floor for GvG DECISIVE ACTION
+    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); 
     
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < (isBoss ? BOSS.critChance : target.critChance);
@@ -143,6 +163,7 @@ export const useCombat = (
       }
 
       addLog(`⚠️ ${target.name} hit you for ${dmg} DMG!`);
+      playSFX(SOUNDS.monsterAttack); // PLAY IMPACT SOUND ON HIT
       const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
       setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
@@ -163,13 +184,15 @@ export const useCombat = (
           setCombatState('DEFEATED');
           syncPlayer({ hp: player?.maxHp || 1000, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
           setTimeout(() => { 
-            setShowDefeatedWindow(false); 
+            resetCombatEngine(); // RESET ALL LOCKS AND STATES
             setDepth(1); 
             setView('menu'); 
           }, DEFEAT_WINDOW_DURATION);
         } else {
           syncPlayer({ hp: newHp });
+          processingRef.current = 'IDLE';
           setCombatState('IDLE');
+          combatBusRef.current = false; // RELEASE LOCK AFTER ENEMY TURN
         }
       }, 500);
     } else {
@@ -177,7 +200,9 @@ export const useCombat = (
       setTimeout(() => {
         setCurrentTaunt("Drat! Slipped!");
         setPlayerTaunt("Nice try!");
+        processingRef.current = 'IDLE';
         setCombatState('IDLE');
+        combatBusRef.current = false; // RELEASE LOCK AFTER ENEMY MISS
       }, 500);
     }
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext]);
@@ -211,8 +236,7 @@ export const useCombat = (
     if (selectedMap && selectedMap.lootTable) {
       const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));
       if (Math.random() < dropChance) {
-        // Find possible loots from standard table PLUS a small chance for schematics
-        const standardLoots = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
+        const pool = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
           if (!l) return false;
           if (l.rarity === 'Legendary' && depth < 20) return false;
           if (l.rarity === 'Epic' && depth < 10) return false;
@@ -220,23 +244,28 @@ export const useCombat = (
           return true;
         });
 
-        const pool = [...standardLoots];
-        
-        // Rare chance for a schematic to appear in the pool if in deep floors
+        // Add small chance for schematics in deep floors
         if (depth >= 5 && Math.random() < 0.05) {
            const schematics = LOOTS.filter(l => l.type === 'Schematic');
-           if (schematics.length > 0) pool.push(...schematics);
+           if (schematics.length > 0) pool.push(schematics[Math.floor(Math.random() * schematics.length)]);
         }
 
         if (pool.length > 0) {
-          const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
-          const finalPool = [];
-          pool.forEach(l => {
-            const weight = rarityWeights[l.rarity] || 10;
-            for (let i = 0; i < weight; i++) finalPool.push(l);
-          });
+          // WEIGHT-SUM ALGORITHM: Zero memory overhead
+          const weights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
+          const totalWeight = pool.reduce((sum, item) => sum + (weights[item.rarity] || 10), 0);
+          let random = Math.random() * totalWeight;
+          
+          let lootItem = null;
+          for (const item of pool) {
+            const weight = weights[item.rarity] || 10;
+            if (random < weight) {
+              lootItem = item;
+              break;
+            }
+            random -= weight;
+          }
 
-          const lootItem = finalPool[Math.floor(Math.random() * finalPool.length)];
           if (lootItem) {
             const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
             updates.inventory = [...(player?.inventory || []), itemWithId];
@@ -262,9 +291,7 @@ export const useCombat = (
     setCombatState('VICTORY');
 
     setTimeout(() => {
-      setShowVictoryWindow(false);
-      setCombatState('IDLE');
-      
+      resetCombatEngine(); // RESET ALL LOCKS AND STATES
       const newKills = killsRef.current + 1;
       if (newKills >= 10) {
         setKillsInFloor(0);
@@ -310,7 +337,6 @@ export const useCombat = (
       }
     }
 
-    // High chance for schematics on boss damage milestones (Phase 2)
     if (Math.random() < 0.3) {
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
@@ -327,20 +353,26 @@ export const useCombat = (
   }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard]);
 
   const handleAttack = useCallback((isBoss = false) => {
-    if (player?.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE' || (!isBoss && !enemy)) {
-       if (combatState !== 'IDLE' && !showDefeatedWindow && !showVictoryWindow) {
-         console.warn("Attack blocked: Combat State is " + combatState);
-       }
+    // --- SYNCHRONOUS MUTEX GATE ---
+    if (combatBusRef.current) return; // Discard parallel commands instantly
+    
+    // Use processingRef for synchronous state check — no closure/render lag
+    const isBusy = player?.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || processingRef.current !== 'IDLE' || (!isBoss && !enemy);
+    
+    if (isBusy) {
        return;
     }
 
+    // LOCK ENGAGED
+    combatBusRef.current = true;
+    processingRef.current = 'PLAYER_ATTACKING'; // Synchronous mirror
     setCombatState('PLAYER_ATTACKING');
 
     let stats = { ...totalStats };
     // Mate Proc Logic
     if (player?.hiredMate && player?.buffUntil <= 0) {
       const mate = TAVERN_MATES.find(m => m.id === player?.hiredMate);
-      if (mate && mate.procChance < 1.0) { // Only proc-based mates can trigger the timer
+      if (mate && mate.procChance < 1.0) { 
         if (Math.random() < mate.procChance) {
           syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
           addLog(`✨ ${mate.name} activated their power!`);
@@ -360,60 +392,50 @@ export const useCombat = (
             setPlayerTaunt("My attacks are doing nothing!");
             setMissTimeLeft(1.2);
             enemyTurn(target, isBoss);
-            setCombatState('IDLE');
+            // Lock stays true until enemyTurn resolves it (via miss setTimeouts)
             return;
         }
     }
 
     setStrikingSide('player');
-    playSFX(SOUNDS.playerAttack);
     setTimeout(() => setStrikingSide(null), 300);
 
     let hitChance = getHitChance(stats.dex, target.agi);
-    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); // 85% Floor for GvG DECISIVE ACTION
+    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); 
 
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < 0.15;
       let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit));
 
-      // --- PHASE 4: Equipment Special Effects ---
       const effects = Object.values(player?.equipped || {}).filter(i => i?.effect).map(i => i.effect);
-      
-      // 1. Crit Spike (Passive)
       const critSpike = effects.find(e => e.type === 'CritSpike');
       if (isCrit && critSpike) {
           dmg = Math.floor(dmg * (critSpike.mult / 2.5));
           addLog(`✨ CRIT SPIKE!`);
       }
-
-      // 2. Double Strike (Proc)
       const doubleStrike = effects.find(e => e.type === 'DoubleStrike');
       if (doubleStrike && Math.random() < doubleStrike.chance) {
           dmg *= 2;
           addLog(`⚔️ DOUBLE STRIKE!`);
       }
-
-      // 3. Life Steal (Proc)
       const lifesteal = effects.find(e => e.type === 'LifeSteal');
       if (lifesteal && Math.random() < lifesteal.chance) {
           const heal = Math.floor(dmg * lifesteal.amount);
           syncPlayer({ hp: Math.min(player?.maxHp || 1000, (player?.hp || 0) + heal) });
           addLog(`🩸 LIFESTEAL: +${heal} HP`);
       }
-
-      // 4. All-In-One (Legendary Proc)
       const allInOne = effects.find(e => e.type === 'AllInOne');
       if (allInOne && Math.random() < allInOne.chance) {
           dmg *= 4;
           addLog(`🧿 OMEGA OVERLOAD: 4x DMG!`);
       }
-      // ------------------------------------------
 
       triggerHitEffects(dmg, isCrit, 'monster', triggerFlinch, triggerHurt);
 
       const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
       setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
       addLog(`Struck ${target.name} for ${dmg} DMG.`);
+      playSFX(SOUNDS.playerAttack); // PLAY IMPACT SOUND ON HIT
 
       setTimeout(() => {
         if (isBoss) {
@@ -423,10 +445,11 @@ export const useCombat = (
           if (newHp <= 0) {
             setEnemy({ ...target, hp: 0 });
             processKill();
-            setCombatState('IDLE');
+            // processKill will handle the lock release
           } else {
             setEnemy({ ...target, hp: newHp });
             enemyTurn({ ...target, hp: newHp }, isBoss);
+            // enemyTurn will handle the lock release
           }
         }
       }, 500);
@@ -436,6 +459,7 @@ export const useCombat = (
       setPlayerTaunt("Darn, missed!");
       setCurrentTaunt("Ha! Too slow!");
       enemyTurn(target, isBoss);
+      // enemyTurn will handle the lock release
     }
   }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt, battleMode, recordWarResult, gvgContext, setView, setBattleMode, stunRef, missRef, showVictoryWindow, TAVERN_MATES, playSFX, SOUNDS]);
 
@@ -451,11 +475,29 @@ export const useCombat = (
     if (battleMode === 'GVG') {
       recordGvGResult();
     } else {
+      // WIPE SESSION REWARDS FOR NEXT RUN
+      setSessionRewards({ tokens: 0, xp: 0, loots: [] });
+      setKillsInFloor(0);
+      resetCombatEngine(); // NUCLEAR RESET ON RETREAT
       setView('menu');
       setDepth(1);
       if (player?.autoUntil > 0) syncPlayer({ autoUntil: 0 });
     }
-  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer]);
+  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer, resetCombatEngine]);
+
+  // SAFETY HEARTBEAT - Force release bus if stalled
+  useEffect(() => {
+    let safetyTimer;
+    if (combatBusRef.current) {
+      safetyTimer = setTimeout(() => {
+        if (combatBusRef.current) {
+          console.warn("🛡️ SAFETY ALERT: Combat strike stalling detected. Forcing auto-recovery.");
+          resetCombatEngine(); // NUCLEAR RELEASE
+        }
+      }, 4000);
+    }
+    return () => clearTimeout(safetyTimer);
+  }, [combatBusRef.current, resetCombatEngine]);
 
   return {
     critAlert,
@@ -484,10 +526,10 @@ export const useCombat = (
     processBossHit,
     triggerHitEffects,
     setSessionRewards,
-    enemyRef,
+    combatBusRef,
     stunRef,
     missRef,
-    processingRef,
+    enemyRef,
     battleMode,
     setBattleMode,
     handleRetreat

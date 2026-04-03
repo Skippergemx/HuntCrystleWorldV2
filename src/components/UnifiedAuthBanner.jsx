@@ -20,7 +20,8 @@ const UnifiedAuthBanner = () => {
   const isMobile = isMobileByAgent || isMobileByWallet;
 
   // The active display address: prioritize Firestore-saved mobile wallet over any live hook address
-  const activeAddress = player?.walletAddress || wallet?.address;
+  // UNIFIED BLOCKADE: If a wallet conflict is active, we treat the address as null/unlinked
+  const activeAddress = player?.walletConflict ? null : (player?.walletAddress || wallet?.address);
 
   // Auto-trigger wallet connect on Farcaster Mobile if no wallet is yet linked.
   // MUST be before early returns to comply with React Rules of Hooks.

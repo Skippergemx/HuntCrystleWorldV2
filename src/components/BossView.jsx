@@ -293,15 +293,15 @@ export const BossView = () => {
 
           <button 
             onClick={() => combat.handleAttack(true)} 
-            disabled={isStunned || isMissed} 
-            className={`flex-1 py-3 md:py-4 rounded-xl font-black text-lg md:text-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] border-[3px] md:border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} relative overflow-hidden group`}
+            disabled={isStunned || isMissed || combat.combatBusRef.current} 
+            className={`flex-1 py-3 md:py-4 rounded-xl font-black text-lg md:text-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] border-[3px] md:border-[4px] border-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed || combat.combatBusRef.current) ? 'opacity-30 grayscale' : 'bg-red-600 text-white'} relative overflow-hidden group`}
           >
             <span className="relative z-10 text-base md:text-xl">OVERLOAD</span>
             <span className="text-[6px] md:text-[8px] opacity-70 tracking-[0.2em] uppercase relative z-10 font-black">Core Strike Phase</span>
           </button>
           
           <button 
-            onClick={() => { setView('menu'); if (player.autoUntil > 0) syncPlayer({ autoUntil: 0 }); }} 
+            onClick={() => combat.handleRetreat()} 
             className={`px-4 md:px-8 py-3 md:py-4 rounded-xl font-black uppercase text-xs md:text-lg tracking-widest border-[3px] md:border-[4px] border-black transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
           >
             RETREAT

@@ -147,7 +147,7 @@ export const PvpRoomView = React.memo(() => {
   const handleDefeatState = async () => {
     if (!user?.uid) return;
     const targetRef = doc(db, 'pvp_room', user.uid);
-    await updateDoc(targetRef, { isDefeated: true });
+    await updateDoc(targetRef, { isDefeated: true, hp: 0 });
     
     const until = Date.now() + 30000;
     await syncPlayer({ [pvpPenaltyKey]: until });
@@ -169,7 +169,7 @@ export const PvpRoomView = React.memo(() => {
   };
 
   const attackPlayer = async (target) => {
-    if (!user?.uid || target.uid === user.uid || target.isDefeated) return;
+    if (!user?.uid || target.uid === user.uid || target.isDefeated || target.hp <= 0) return;
 
     const hitChance = Math.min(98, (totalStats.dex / (totalStats.dex + target.stats.agi * 0.4)) * 100);
     const isHit = Math.random() * 100 < hitChance;
@@ -228,7 +228,7 @@ export const PvpRoomView = React.memo(() => {
                 const hpPercent = Math.max(0, (p.hp / p.maxHp) * 100);
                 const isTarget = combatAnim?.targetId === p.uid;
                 return (
-                  <div key={p.uid} onClick={() => !isSelf && attackPlayer(p)} className={`relative group cursor-pointer transition-all duration-300 ${p.isDefeated ? 'opacity-30' : ''} ${isTarget ? 'scale-110' : ''}`}>
+                  <div key={p.uid} onClick={() => !isSelf && attackPlayer(p)} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-110' : ''}`}>
                     <div className={`absolute inset-0 border-4 border-black transition-colors ${isTarget ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
                     <div className="absolute inset-0 border-r-8 border-b-8 border-black/20 pointer-events-none"></div>
                     <div className="relative p-3 flex flex-col items-center">
@@ -236,18 +236,18 @@ export const PvpRoomView = React.memo(() => {
                        {isSelf && <span className="absolute top-2 right-2 bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">MASTER</span>}
                        
                        <div className="w-24 h-28 border-4 border-black overflow-hidden bg-slate-900 relative mt-4">
-                          <AvatarMedia num={p.avatar} animated={!p.isDefeated} className="w-full h-full object-cover" />
-                          {p.isDefeated && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={40} className="text-white animate-pulse" /></div>}
+                          <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover" />
+                          {(p.isDefeated || p.hp <= 0) && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={40} className="text-white animate-pulse" /></div>}
                           {isTarget && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={48} className="text-white drop-shadow-[0_0_15px_red]" /></div>}
                        </div>
                        
                        <h3 className="text-[11px] font-black text-white uppercase italic tracking-tighter mt-3 mb-2">{p.name}</h3>
                        
-                       {/* HP Bar */}
-                       <div className="w-full bg-black/80 border-2 border-black h-4 rounded-full overflow-hidden relative shadow-inner">
-                          <div className={`h-full transition-all duration-500 ${hpPercent < 40 ? 'bg-red-600' : 'bg-cyan-500'}`} style={{ width: `${hpPercent}%` }}></div>
-                          <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white uppercase italic drop-shadow-md">{Math.ceil(p.hp)} HP</span>
-                       </div>
+                        {/* HP Bar */}
+                        <div className="w-full bg-black/80 border-2 border-black h-4 rounded-full overflow-hidden relative shadow-inner">
+                           <div className={`h-full transition-all duration-500 ${hpPercent < 40 ? 'bg-red-600' : 'bg-cyan-500'}`} style={{ width: `${hpPercent}%` }}></div>
+                           <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white uppercase italic drop-shadow-md">{Math.max(0, Math.ceil(p.hp))} HP</span>
+                        </div>
                     </div>
                   </div>
                 )

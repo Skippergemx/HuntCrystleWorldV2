@@ -49,6 +49,8 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const [showBossVideo, setShowBossVideo] = useState(false);
   const [showSuccessWindow, setShowSuccessWindow] = useState(false);
   const [forgeResult, setForgeResult] = useState(null); // { success: boolean, item: object }
+  const [showBlockadeModal, setShowBlockadeModal] = useState(false);
+  const [blockadeError, setBlockadeError] = useState(null);
 
   // Sync Timer for UI Clock
   useEffect(() => {
@@ -59,7 +61,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer } = usePlayerSync(user, db, appId, farcasterContext);
+  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet } = usePlayerSync(user, db, appId, farcasterContext);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -114,14 +116,30 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     combat.setPenaltyRemaining(gameLoop.penaltyRemaining);
   }, [gameLoop.penaltyRemaining]);
 
-  // Sync wallet address to profile for airdrop tracking
+  // --- GLOBAL SECURITY SENTRY ---
+  // Watches for any wallet connection and triggers a blockade scan
   useEffect(() => {
-    if (player && wallet.address && player.walletAddress !== wallet.address) {
-       syncPlayer({ walletAddress: wallet.address });
-    }
-  }, [wallet.address, player, syncPlayer]);
+    const triggerGlobalUplink = async () => {
+      if (wallet.address && player && !player.walletAddress && !farcasterContext) {
+        console.log("System V3: Global Security Sentry Detected Unlinked Node. Initiating Sweep...");
+        const result = await linkWallet(wallet.address);
+        if (!result.success) {
+           console.warn(`SECURITY ALERT: Ejecting unauthorized node connection. Reason: ${result.error}`);
+           setBlockadeError(result.error);
+           setShowBlockadeModal(true);
+           wallet.disconnectWallet(); // AUTO-EJECT ON BLOCKADE
+           addLog(`Security Alert: ${result.error}. Node Ejected.`);
+        } else {
+           addLog("Uplink Established.");
+        }
+      }
+    };
+    triggerGlobalUplink();
+  }, [wallet.address, player?.walletAddress, farcasterContext]);
 
-  if (loadingPlayer || !player) return <LoadingScreen />;
+  // --- UPLINK SECURITY PROTOCOL ---
+  // We no longer auto-sync browser wallets. 
+  // All link attempts must pass through the linkWallet() blockade scanner in usePlayerSync.
 
   const openGuide = (type) => {
     setGuideType(type || adventure.view);
@@ -145,8 +163,11 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     showGuide, setShowGuide, guideType, setGuideType,
     bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showSuccessWindow, setShowSuccessWindow,
+    showBlockadeModal, setShowBlockadeModal,
+    blockadeError, setBlockadeError,
     forgeResult, setForgeResult,
     adventure, combat, actions, gameLoop, market, audio, wallet, 
+    linkWallet,
     farcasterContext,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
@@ -160,7 +181,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
   return (
     <GameContext.Provider value={engine}>
-      {children}
+      {(loadingPlayer || !player) ? <LoadingScreen /> : children}
     </GameContext.Provider>
   );
 };

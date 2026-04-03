@@ -58,14 +58,15 @@ export const useGameLoop = ({
       if (newPenaltyTime !== penaltyRemaining) setPenaltyRemaining(newPenaltyTime);
       if (newDragonTime !== dragonTimeLeft) setDragonTimeLeft(newDragonTime);
 
-      // 3. Combat Heartbeat / Safety Reset
-      const { combatState, setCombatState } = combatRef.current;
-      if (combatState !== 'IDLE' && combatState !== 'DEFEATED') {
+      // 3. COMBAT HEARTBEAT / SAFETY RESET (Bulletproof V3)
+      if (c && c.combatState !== 'IDLE' && c.combatState !== 'DEFEATED' && c.combatState !== 'VICTORY') {
         if (!combatTimerRef.current) combatTimerRef.current = now;
         if (now - combatTimerRef.current > 4000) {
-          setCombatState('IDLE');
+          c.setCombatState('IDLE');
+          if (c.combatBusRef) c.combatBusRef.current = false; // RELEASE MASTER GATE ON RESET
           combatTimerRef.current = null;
-          console.log("Combat Engine: Safety reset triggered for stuck action lock.");
+          console.warn(`System V3: Combat Stuck in ${c.combatState}. Triggering Emergency Gate Clearance.`);
+          if (addLog) addLog("🛡️ System: Combat Logic Restabilized.");
         }
       } else {
         combatTimerRef.current = null;
@@ -76,36 +77,38 @@ export const useGameLoop = ({
     return () => clearInterval(interval);
   }, [view, autoTimeLeft, buffTimeLeft, penaltyRemaining, dragonTimeLeft]);
 
-  // --- Combat Auto-Loop ---
+  // --- Auto-Pilot Loop ---
   const isCombatActive = autoTimeLeft > 0 || combat.battleMode === 'GVG';
   useEffect(() => {
-    let autoLoop;
-    if ((view === 'dungeon' || view === 'boss') && isCombatActive && !showDefeatedWindow) {
-      autoLoop = setInterval(() => {
-        const p = playerRef.current;
-        if (!p) return;
-        
-        // GvG mode ignores the p.autoMode restricted view check
-        if (combat.battleMode !== 'GVG' && p.autoMode !== view) return;
-        
-        const isBossView = view === 'boss';
-        const c = combatRef.current;
-        const a = actionsRef.current;
-        
-        // Critical Sync: Ensure we have an enemy and aren't stunned/busy
-        if ((isBossView || c.enemyRef.current) && c.stunRef.current <= 0 && c.missRef.current <= 0 && c.processingRef.current === 'IDLE') {
-          if (p.hp < (p.maxHp * 0.4) && (p.potions || 0) > 0) {
-            a.handleHeal();
-          } else {
-            c.handleAttack(isBossView);
-          }
+    if (!isCombatActive || showDefeatedWindow) return;
+    if (view !== 'dungeon' && view !== 'boss') return;
+
+    const loop = setInterval(() => {
+      const isBossView = view === 'boss';
+      const c = combatRef.current;
+      const a = actionsRef.current;
+      const p = playerRef.current;
+      if (!p || !c) return;
+
+      // All three gates must be open
+      const busOpen   = c.combatBusRef?.current === false;
+      const notStunned = (c.stunRef?.current || 0) <= 0;
+      const notMissed  = (c.missRef?.current || 0) <= 0;
+
+      if (busOpen && notStunned && notMissed) {
+        // Priority 1: Heal when low HP
+        if (p.hp < p.maxHp * 0.4 && (p.potions || 0) > 0) {
+          a.handleHeal();
         }
-      }, 1100);
-    }
-    return () => clearInterval(autoLoop);
+        // Priority 2: Synchronous enemy check via ref (no closure lag)
+        else if (isBossView || (c.enemyRef?.current && c.enemyRef.current.hp > 0)) {
+          c.handleAttack(isBossView);
+        }
+      }
+    }, 800); // Comfortable cadence — mutex keeps it from queuing
+
+    return () => clearInterval(loop);
   }, [view, isCombatActive, showDefeatedWindow]);
-
-
 
   return {
     autoTimeLeft,

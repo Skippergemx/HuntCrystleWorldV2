@@ -429,8 +429,8 @@ export const CombatView = React.memo(() => {
 
             <button
               onClick={() => combat.handleAttack()}
-              disabled={isStunned || isMissed || combat.showDefeatedWindow || combat.showVictoryWindow}
-              className={`flex-1 py-3 md:py-6 rounded border-[4px] md:border-[5px] border-black font-black text-xl md:text-4xl shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed) ? 'opacity-0' : 'bg-red-600 text-white'} ${isAutoActive ? 'animate-pulse' : ''} group overflow-hidden relative`}
+              disabled={isStunned || isMissed || combat.showDefeatedWindow || combat.showVictoryWindow || combat.combatBusRef.current}
+              className={`flex-1 py-3 md:py-6 rounded border-[4px] md:border-[5px] border-black font-black text-xl md:text-4xl shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed || combat.combatBusRef.current) ? 'opacity-30 grayscale' : 'bg-red-600 text-white'} ${isAutoActive ? 'animate-pulse' : ''} group overflow-hidden relative`}
             >
               <div className="absolute inset-0 comic-halftone opacity-30 text-black pointer-events-none group-hover:scale-125 transition-transform"></div>
               <span className="relative z-10 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] tracking-tighter">{isAutoActive ? 'LOCK-ON FIRE' : 'STRIKE!'}</span>
