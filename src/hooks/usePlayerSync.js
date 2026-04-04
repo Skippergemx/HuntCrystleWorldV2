@@ -229,13 +229,22 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     avatar: 1,
-                    // Standard Google users start with NO wallet link even if one is in browser
-                    walletAddress: farcasterContext ? user.walletAddress?.toLowerCase() || null : null,
+                    // Guard: farcasterContext requires user to exist; for TMA user may be null
+                    walletAddress: (farcasterContext && user) ? user.walletAddress?.toLowerCase() || null : null,
                     createdAt: serverTimestamp()
                 };
                 
                 setPlayer(genesisProfile);
-                await setDoc(docRef, genesisProfile);
+                try {
+                  await setDoc(docRef, genesisProfile);
+                  console.log(`System V4: Genesis Profile written to Firestore at: ${primaryAuthId}`);
+                } catch (writeErr) {
+                  console.error(`🚨 FIRESTORE WRITE FAILED for ${primaryAuthId}:`, writeErr.code, writeErr.message);
+                  // Firestore security rules are likely rejecting TG_/FC_ doc IDs
+                  // because they don't match request.auth.uid.
+                  // You must update your Firestore rules to allow this pattern.
+                  // See: https://firebase.google.com/docs/firestore/security/rules-conditions
+                }
             }
         } catch (e) {
             console.error("Critical Resolution Failure:", e);
