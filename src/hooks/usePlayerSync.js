@@ -172,10 +172,10 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     farcasterUsername: user?.farcasterUsername || data.farcasterUsername || null,
                     telegramUserId: _tgUser?.id || data.telegramUserId || null,
                     telegramUsername: _tgUser?.username || data.telegramUsername || null,
-                    name: data.name || user?.username || _tgUser?.username || _tgUser?.first_name || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    name: (data.name || user?.username || _tgUser?.username || _tgUser?.first_name || "").trim() || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
                     pfp: data.pfp || user?.pfp || null,
                     
-                    walletAddress: activeWalletSync,
+                    walletAddress: activeWalletSync || (_isRealTMA ? data.tonWalletAddress : null),
                     tonWalletAddress: data.tonWalletAddress || null,
                     walletConflict: walletConflict || null,
 
@@ -231,8 +231,9 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     avatar: 1,
-                    // Guard: farcasterContext requires user to exist; for TMA user may be null
+                    // Mirror TON wallet to primary walletAddress for TMA users if no Base wallet linked
                     walletAddress: (farcasterContext && user) ? user.walletAddress?.toLowerCase() || null : null,
+                    tonWalletAddress: null,
                     createdAt: serverTimestamp()
                 };
                 
@@ -292,9 +293,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           
           const payload = { ...pendingUpdatesRef.current };
           pendingUpdatesRef.current = {};
+
+          // Auto-mirror TON address to primary walletAddress if inside TMA
+          if (_isRealTMA && payload.tonWalletAddress && !payload.walletAddress) {
+              payload.walletAddress = payload.tonWalletAddress;
+          }
           
+          console.log(`System V4: Pushing Batch Update to Firestore [${activeDocId}]:`, Object.keys(payload));
           await setDoc(docRef, payload, { merge: true });
-          console.log("System V3: Remote Sector Synchronized.", activeDocId);
+          console.log("System V4: Remote Sector Synchronized.", activeDocId);
         } catch (e) {
           console.error("Sync Error:", e);
         }
