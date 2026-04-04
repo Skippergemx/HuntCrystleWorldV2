@@ -7,7 +7,19 @@ import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs
  * Stripped of all legacy artifact-based fallbacks for the Ultimate Reset.
  */
 export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) => {
+  // ─── SYNCHRONOUS TMA DETECTION ────────────────────────────────────────────
+  // We read window.Telegram SYNCHRONOUSLY so we always have the correct doc key
+  // from the very first render — no async state required. This prevents the race
+  // condition where Firebase restores a cached anonymous user BEFORE the async
+  // useTelegram hook has set isTelegram=true, causing profiles to be created
+  // under the wrong raw Firebase UID.
+  const _webApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+  const _isRealTMA = !!_webApp && typeof _webApp.initData === 'string' && _webApp.initData.length > 0;
+  const _tgUser = _isRealTMA ? _webApp.initDataUnsafe?.user : null;
+
+  // Async state from parent hooks (still used for UI rendering in the banner etc.)
   const { isTelegram, user: tgUser } = telegram;
+
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   const [activeDocId, setActiveDocId] = useState(null);
@@ -65,7 +77,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
     // GUARD 1: No auth context at all — bail out
-    if (!user && !isTelegram) {
+    // Use synchronous _isRealTMA check, not async state, to prevent race condition.
+    if (!user && !_isRealTMA) {
         setLoadingPlayer(false);
         setPlayer(null);
         return;
@@ -77,10 +90,9 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
         return;
     }
 
-    // GUARD 3: Telegram context detected but user data not yet resolved — wait
-    // This is the key fix: prevents creating a profile under the wrong UID
-    // before the Telegram SDK has finished parsing initDataUnsafe.
-    if (isTelegram && !tgUser?.id) {
+    // GUARD 3: We are in TMA but the Telegram user object is not available yet — wait
+    // Use synchronous _tgUser (from window) rather than async state.
+    if (_isRealTMA && !_tgUser?.id) {
         setLoadingPlayer(true);
         return;
     }
@@ -90,12 +102,11 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
             setLoadingPlayer(true);
             
             // --- UNIFIED RESOLVER V4: TIERED IDENTITY RESOLUTION ---
-            // 1. Farcaster (FC_ prefix)
-            // 2. Telegram (TG_ prefix)
-            // 3. Standard Web (UID)
+            // KEY: Use synchronous _isRealTMA / _tgUser for the primary key decision
+            // so the correct doc is always used from the very first effect run.
             let primaryAuthId = user?.farcasterFID 
               ? `FC_${user.farcasterFID}` 
-              : (isTelegram && tgUser?.id ? `TG_${tgUser.id}` : user?.uid);
+              : (_isRealTMA && _tgUser?.id ? `TG_${_tgUser.id}` : user?.uid);
             
             if (!primaryAuthId) {
                 setLoadingPlayer(false);
@@ -150,15 +161,16 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 }
 
                 // ENFORCED GLOBAL SCHEMA (UID-First)
+                // Use _tgUser (synchronous window read) for TG fields, not async state.
                 const sanitized = {
                     ...data,
-                    uid: user.uid,
-                    email: user.email || data.email || null,
+                    uid: user?.uid || null,
+                    email: user?.email || data.email || null,
                     farcasterFID: user?.farcasterFID || data.farcasterFID || null,
                     farcasterUsername: user?.farcasterUsername || data.farcasterUsername || null,
-                    telegramUserId: tgUser?.id || data.telegramUserId || null,
-                    telegramUsername: tgUser?.username || data.telegramUsername || null,
-                    name: data.name || user?.username || tgUser?.username || tgUser?.first_name || `Hunter_${(user?.uid || tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    telegramUserId: _tgUser?.id || data.telegramUserId || null,
+                    telegramUsername: _tgUser?.username || data.telegramUsername || null,
+                    name: data.name || user?.username || _tgUser?.username || _tgUser?.first_name || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
                     pfp: data.pfp || user?.pfp || null,
                     
                     walletAddress: activeWalletSync,
@@ -188,14 +200,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
             } else {
                 console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
+                // Use _tgUser (synchronous window read) for TG fields, not async state.
                 const genesisProfile = {
                     uid: user?.uid || null,
                     email: user?.email || null,
                     farcasterFID: user?.farcasterFID || null,
                     farcasterUsername: user?.farcasterUsername || null,
-                    telegramUserId: tgUser?.id || null,
-                    telegramUsername: tgUser?.username || null,
-                    name: user?.username || tgUser?.username || tgUser?.first_name || `Hunter_${(user?.uid || tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    telegramUserId: _tgUser?.id || null,
+                    telegramUsername: _tgUser?.username || null,
+                    name: user?.username || _tgUser?.username || _tgUser?.first_name || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
                     pfp: user?.pfp || null,
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
