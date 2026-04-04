@@ -133,7 +133,7 @@ const UnifiedAuthBanner = () => {
 
       {/* Uplink System */}
       <div className="flex items-center gap-2">
-        {isFarcaster && (
+        {isFarcaster && !isTelegram && (
           isMobile ? (
             // ── FARCASTER MOBILE ──
             <div className="flex flex-col items-end gap-1">

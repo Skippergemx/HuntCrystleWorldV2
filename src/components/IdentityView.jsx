@@ -1,12 +1,47 @@
 import React, { useState } from 'react';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Send } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
+
+// Sub-component to safely handle TON linking inside IdentityView
+function TonLinkButton({ syncPlayer, player, addLog, isLinking }) {
+  const [tonConnectUI] = useTonConnectUI();
+  const tonAddress = useTonAddress();
+
+  const handleTonLink = async () => {
+    if (tonAddress) {
+       addLog("TON Uplink already active.");
+       return;
+    }
+    tonConnectUI.openModal();
+  };
+
+  return (
+    <button
+      onClick={handleTonLink}
+      disabled={isLinking}
+      className="w-full group relative overflow-hidden bg-blue-950/40 border-[3px] border-blue-500/50 p-4 rounded-2xl shadow-[6px_6px_0_rgba(59,130,246,0.3)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(59,130,246,0.4)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
+    >
+       <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+       <div className="flex items-center gap-3 relative z-10">
+          <div className="bg-blue-600 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-white">
+             <Send size={20} className="-rotate-12 translate-x-[1px]" />
+          </div>
+          <div className="flex flex-col items-start leading-none">
+             <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize TON Link</span>
+             <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest mt-1">Connect Tonkeeper or TG Wallet</span>
+          </div>
+       </div>
+    </button>
+  );
+}
 
 export const IdentityView = React.memo(() => {
-  const { player, syncPlayer, adventure, addLog, openGuide, wallet, farcasterContext, linkWallet } = useGame();
+  const { player, syncPlayer, adventure, addLog, openGuide, wallet, farcasterContext, linkWallet, telegram } = useGame();
   const { setView } = adventure;
+  const isTelegram = telegram?.isTelegram;
   const [showRedirectHelp, setShowRedirectHelp] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [localError, setLocalError] = useState(null);
@@ -142,23 +177,32 @@ export const IdentityView = React.memo(() => {
           ) : (
             // --- UNIFIED LINKING CTA ---
             <div className="w-full">
-                <button
-                  onClick={() => wallet.connectWallet()}
-                  disabled={isLinking}
-                  className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
-                >
-                   {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
-                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                   <div className="flex items-center gap-3 relative z-10">
-                      <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
-                         <Wallet size={20} />
-                      </div>
-                      <div className="flex flex-col items-start leading-none">
-                         <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
-                         <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
-                      </div>
-                   </div>
-                </button>
+                {isTelegram ? (
+                  <TonLinkButton 
+                    syncPlayer={syncPlayer} 
+                    player={player} 
+                    addLog={addLog} 
+                    isLinking={isLinking}
+                  />
+                ) : (
+                  <button
+                    onClick={() => wallet.connectWallet()}
+                    disabled={isLinking}
+                    className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
+                  >
+                     {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
+                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     <div className="flex items-center gap-3 relative z-10">
+                        <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
+                           <Wallet size={20} />
+                        </div>
+                        <div className="flex flex-col items-start leading-none">
+                           <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
+                           <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
+                        </div>
+                     </div>
+                  </button>
+                )}
             </div>
           )}
         </div>
