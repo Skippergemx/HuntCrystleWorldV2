@@ -8,7 +8,7 @@ import {
 import { sdk } from "@farcaster/frame-sdk";
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterContext }) => {
+export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterContext, isTelegram, telegramUserData }) => {
   const [activeTab, setActiveTab] = useState('mission');
   const [activeMobileShot, setActiveMobileShot] = useState(0);
   const [activeDesktopShot, setActiveDesktopShot] = useState(0);

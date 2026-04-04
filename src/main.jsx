@@ -5,7 +5,10 @@ import './index.css'
 import App from './App.jsx'
 import { Web3Provider } from './contexts/Web3Provider'
 
+window.global = window;
 window.Buffer = Buffer;
+globalThis.Buffer = Buffer;
+globalThis.global = window;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
