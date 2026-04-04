@@ -90,6 +90,10 @@ export const IdentityView = React.memo(() => {
           <p className="absolute bottom-3 inset-x-0 text-center text-[10px] font-black tracking-[0.4em] uppercase text-cyan-400 z-20 drop-shadow-md">Active_Hunter</p>
         </div>
 
+        <h3 className="text-xl font-black text-white uppercase italic tracking-tighter mb-4 text-center">
+            {player.name || 'Anonymous Unit'}
+        </h3>
+
         {/* --- WALLET UPLINK & CONFLICT RESOLUTION --- */}
         <div className="w-full mb-6 relative">
           {(player.walletConflict || localError) ? (
@@ -130,48 +134,55 @@ export const IdentityView = React.memo(() => {
                     </div>
                   )}
 
-                  <button 
-                    onClick={() => {
-                        wallet.disconnectWallet();
-                        setLocalError(null);
-                        addLog("Uplink node ejected. Ready for new connection.");
-                    }}
-                    className="w-full py-2 bg-slate-800 text-white text-[9px] font-black uppercase italic rounded-xl border-2 border-black shadow-[3px_3px_0_rgba(15,23,42,1)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2 hover:bg-slate-700 mt-2"
-                  >
-                     <Wallet size={14} />
-                     Switch to Different Wallet
-                  </button>
+                  {!isTelegram && (
+                    <button 
+                      onClick={() => {
+                          wallet.disconnectWallet();
+                          setLocalError(null);
+                          addLog("Uplink node ejected. Ready for new connection.");
+                      }}
+                      className="w-full py-2 bg-slate-800 text-white text-[9px] font-black uppercase italic rounded-xl border-2 border-black shadow-[3px_3px_0_rgba(15,23,42,1)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2 hover:bg-slate-700 mt-2"
+                    >
+                       <Wallet size={14} />
+                       Switch to Different Wallet
+                    </button>
+                  )}
 
-                  <button 
-                    onClick={() => {
-                        setLocalError(null);
-                        if (player.walletConflict) syncPlayer({ walletConflict: null });
-                    }}
-                    className="mt-3 text-[7px] font-black text-slate-500 uppercase underline hover:text-slate-300 transition-colors"
-                  >
-                    Clear Warning and Stay Unlinked
-                  </button>
+                  {!isTelegram && (
+                    <button 
+                      onClick={() => {
+                          setLocalError(null);
+                          if (player.walletConflict) syncPlayer({ walletConflict: null });
+                      }}
+                      className="mt-3 text-[7px] font-black text-slate-500 uppercase underline hover:text-slate-300 transition-colors"
+                    >
+                      Clear Warning and Stay Unlinked
+                    </button>
+                  )}
                </div>
             </div>
-          ) : player.walletAddress ? (
+          ) : (isTelegram ? player.tonWalletAddress : player.walletAddress) ? (
             // --- ACTIVE UPLINK STATE ---
-            <div className="bg-emerald-950/20 border-2 border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between">
+            <div className={`${isTelegram ? 'bg-blue-950/20 border-blue-500/30' : 'bg-emerald-950/20 border-emerald-500/30'} border-2 rounded-2xl p-4 flex items-center justify-between`}>
                <div className="flex items-center gap-3">
-                  <div className="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/40">
-                     <ShieldCheck size={18} className="text-emerald-400" />
+                  <div className={`${isTelegram ? 'bg-blue-500/20 border-blue-500/40' : 'bg-emerald-500/20 border-emerald-500/40'} p-2 rounded-lg border`}>
+                     <ShieldCheck size={18} className={isTelegram ? 'text-blue-400' : 'text-emerald-400'} />
                   </div>
                   <div className="flex flex-col">
-                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Wallet Linked</span>
+                     <span className={`text-[8px] font-black ${isTelegram ? 'text-blue-500' : 'text-emerald-500'} uppercase tracking-widest`}>{isTelegram ? 'TON Wallet Linked' : 'Wallet Linked'}</span>
                      <span className="text-[10px] font-mono text-white/70">
-                        {player.walletAddress.slice(0,6)}...{player.walletAddress.slice(-4)}
+                        {isTelegram 
+                          ? `${player.tonWalletAddress.slice(0, 6)}...${player.tonWalletAddress.slice(-4)}`
+                          : `${player.walletAddress.slice(0, 6)}...${player.walletAddress.slice(-4)}`
+                        }
                      </span>
                   </div>
                </div>
                <button 
-                 onClick={() => addLog("System V3: Relic capture protocol active.")}
+                 onClick={() => addLog(isTelegram ? "System V4: TON Relic capture protocol active." : "System V3: Relic capture protocol active.")}
                  className="p-2 text-slate-500 hover:text-white"
                >
-                 <Globe size={14} />
+                 {isTelegram ? <Send size={14} /> : <Globe size={14} />}
                </button>
             </div>
           ) : (

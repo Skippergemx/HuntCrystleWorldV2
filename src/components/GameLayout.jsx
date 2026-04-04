@@ -276,9 +276,11 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
 
                 {(() => {
-                  const displayAddress = player.walletAddress || (!player.walletConflict ? wallet.address : null);
                   const isConflict = !!player.walletConflict;
                   const isFarcaster = !!farcasterContext;
+                  const _webApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+                  const isTelegram = !!_webApp && typeof _webApp.initData === 'string' && _webApp.initData.length > 0;
+                  const displayAddress = isTelegram ? player.tonWalletAddress : (player.walletAddress || (!player.walletConflict ? wallet.address : null));
                   const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
 
                   if (isConflict) {
@@ -299,7 +301,7 @@ export const GameLayout = ({ onLogout }) => {
                         <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
                         <div className="flex flex-col relative z-10 items-center justify-center">
                           <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(16,185,129,1)]"></div>
+                            <div className={`w-1.5 h-1.5 ${isTelegram ? 'bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,1)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,1)]'} rounded-full animate-pulse`}></div>
                             <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
                               {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
                             </span>
@@ -315,7 +317,7 @@ export const GameLayout = ({ onLogout }) => {
                     );
                   }
 
-                  if (!isFarcaster) {
+                  if (!isFarcaster && !isTelegram) {
                     return (
                       <button
                         onClick={wallet.connectWallet}

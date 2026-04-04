@@ -108,6 +108,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
               ? `FC_${user.farcasterFID}` 
               : (_isRealTMA && _tgUser?.id ? `TG_${_tgUser.id}` : user?.uid);
             
+            console.log(`🔗 [IDENTITY_RESOLVER] Resolved ID: ${primaryAuthId} | TMA: ${_isRealTMA} | UserID: ${_tgUser?.id}`);
+            
             if (!primaryAuthId) {
                 setLoadingPlayer(false);
                 return;
@@ -208,7 +210,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     farcasterUsername: user?.farcasterUsername || null,
                     telegramUserId: _tgUser?.id || null,
                     telegramUsername: _tgUser?.username || null,
-                    name: user?.username || _tgUser?.username || _tgUser?.first_name || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    name: (user?.username || _tgUser?.username || _tgUser?.first_name || "").trim() || `Hunter_${(user?.uid || _tgUser?.id || '0000').toString().slice(0, 4)}`,
                     pfp: user?.pfp || null,
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
