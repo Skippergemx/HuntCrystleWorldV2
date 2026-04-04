@@ -108,7 +108,30 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Initialize SECURE Login</p>
                </div>
 
-              {farcasterContext ? (
+              {isTelegram ? (
+                <div className="space-y-3 relative z-10">
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl mb-2 text-center">
+                    <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest italic">Telegram Identity Detected</p>
+                  </div>
+                  <button
+                    onClick={handleFarcasterLogin} // Using anonymous login handler for Telegram too
+                    className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl flex items-center justify-between px-5 transition-all transform active:scale-[0.98] border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] group overflow-hidden"
+                  >
+                     <div className="flex items-center gap-3">
+                        <div className="bg-white p-1.5 rounded-lg border-2 border-black">
+                           <Send size={18} className="text-blue-600 -rotate-12 translate-x-[1px]" />
+                        </div>
+                        <div className="flex flex-col items-start leading-none group-hover:translate-x-1 transition-transform">
+                           <span className="text-[10px] font-black uppercase text-blue-200 mb-0.5">Welcome, {telegramUserData?.username || telegramUserData?.first_name}</span>
+                           <span className="text-xs font-black uppercase tracking-tighter italic">Join the Grid</span>
+                        </div>
+                     </div>
+                     <div className="bg-black/20 p-2 rounded-xl group-hover:rotate-12 transition-transform">
+                        <ChevronRight size={18} />
+                     </div>
+                  </button>
+                </div>
+              ) : farcasterContext ? (
                 <div className="space-y-3 relative z-10">
                   <button
                     onClick={handleFarcasterLogin}

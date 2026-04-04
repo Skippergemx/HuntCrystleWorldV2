@@ -9,7 +9,7 @@ import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 import { useAccount } from 'wagmi';
 
 const App = () => {
-  const { user, loading, isFarcaster, farcasterContext, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
+  const { user, loading, isFarcaster, isTelegram, farcasterContext, telegramUserData, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
   const { address, isConnected } = useAccount();
 
   // Unified login gate: user session OR connected wallet address
@@ -25,6 +25,8 @@ const App = () => {
           handleGoogleLogin={loginWithGoogle}
           handleFarcasterLogin={loginAnonymously}
           farcasterContext={farcasterContext}
+          isTelegram={isTelegram}
+          telegramUserData={telegramUserData}
         />
       ) : (
         <GameProvider user={user} farcasterContext={farcasterContext}>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { auth } from '../firebase';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
 import { sdk } from "@farcaster/frame-sdk";
@@ -12,6 +12,8 @@ export const useUnifiedAuth = () => {
   const [user, setUser] = useState(null);
   const [isFarcaster, setIsFarcaster] = useState(false);
   const [farcasterContext, setFarcasterContext] = useState(null);
+  const [isTelegram, setIsTelegram] = useState(false);
+  const [telegramUserData, setTelegramUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const { address, isConnected } = useAccount();
@@ -21,7 +23,7 @@ export const useUnifiedAuth = () => {
   // We no longer trigger silent auth for standard browser wallets. 
   // Identity must be established via Google or Farcaster specifically.
 
-  // 1. Platform Detection & Farcaster Handshake
+  // 1. Platform Detection & Handshakes
   useEffect(() => {
     const initFarcaster = async () => {
       try {
@@ -34,9 +36,10 @@ export const useUnifiedAuth = () => {
           // Auto-pulse Frame ready signal
           setTimeout(() => sdk.actions.ready(), 500);
 
-          // Silent anonymous login for Farcaster users to establish a persistence UID
+          // Silent anonymous login for Farcaster users
           if (!auth.currentUser) {
             console.log("System V2: Initiating Farcaster Silent Auth...");
+            setLoading(true); 
             await signInAnonymously(auth);
           }
         }
@@ -44,7 +47,31 @@ export const useUnifiedAuth = () => {
         console.log("System V2: Browser Node Detected.");
       }
     };
-    initFarcaster();
+
+    // 1b. Telegram Handshake (Silent Detection)
+    const initTelegram = async () => {
+      const webApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
+      const isRealTMA = !!webApp && typeof webApp.initData === 'string' && webApp.initData.length > 0;
+
+      if (isRealTMA) {
+        console.log("System V2: Telegram Node Detected.");
+        setIsTelegram(true);
+        setTelegramUserData(webApp.initDataUnsafe?.user);
+        
+        // Silent anonymous login for Telegram users
+        if (!auth.currentUser) {
+          console.log("System V2: Initiating Telegram Silent Auth...");
+          setLoading(true); 
+          await signInAnonymously(auth);
+        }
+      }
+    };
+
+    const initAll = async () => {
+      await initFarcaster();
+      await initTelegram();
+    };
+    initAll();
   }, []);
 
   // 2. Identity Sync (Firebase <-> Application State)
@@ -54,14 +81,21 @@ export const useUnifiedAuth = () => {
         console.log("System V2: Identity Verified. UID:", u.uid);
         
         // Unify identity based on the best available meta-data
+        // Ladder: Telegram > Farcaster > Standard Web
         const unifiedUser = {
           uid: u.uid,
           email: u.email || null,
           farcasterFID: farcasterContext?.user?.fid || null,
           farcasterUsername: farcasterContext?.user?.username || null,
-          username: isFarcaster ? farcasterContext?.user?.username || u.displayName : u.displayName || u.email?.split('@')[0],
-          pfp: isFarcaster ? farcasterContext?.user?.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}` : u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
-          platform: isFarcaster ? 'farcaster' : 'browser',
+          telegramUserId: telegramUserData?.id || null,
+          telegramUsername: telegramUserData?.username || null,
+          username: isTelegram ? (telegramUserData?.username || telegramUserData?.first_name) : 
+                    isFarcaster ? farcasterContext?.user?.username : 
+                    u.displayName || u.email?.split('@')[0],
+          pfp: isTelegram ? `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${telegramUserData?.id}` :
+               isFarcaster ? farcasterContext?.user?.pfpUrl : 
+               u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
+          platform: isTelegram ? 'telegram' : isFarcaster ? 'farcaster' : 'browser',
           walletAddress: address ? address.toLowerCase() : null
         };
         
@@ -108,6 +142,8 @@ export const useUnifiedAuth = () => {
     loading,
     isFarcaster,
     farcasterContext,
+    isTelegram,
+    telegramUserData,
     loginWithGoogle,
     loginAnonymously,
     logout
