@@ -23,16 +23,33 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.3.0',
+    date: '2026-04-04',
+    title: 'TELEGRAM MINI APP CONVERGENCE',
+    category: 'CORE ARCHITECTURE',
+    type: 'feature',
+    tag: 'TELEGRAM',
+    color: 'cyan',
+    description: 'Full integration of Telegram Mini App (TMA) identity and TON wallet synchronization. The grid is now accessible directly via Telegram.',
+    changes: [
+      'New: Telegram Mini App (TMA) Native Launch',
+      'Uplink: TON Wallet Connect & Address Mirroring',
+      'Identity: Zero-Flicker Synchronous ID Resolution (TG_ Prefix)',
+      'Security: Updated Firestore Rules for TMA Persistence'
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: '1.2.6',
     date: '2026-04-04',
-    title: 'THE TRANSMISSION PROTOCOL',
+    title: 'THE DEVLOG PROTOCOL',
     category: 'SYSTEM UPDATE',
     type: 'feature',
     tag: 'NEW',
     color: 'purple',
-    description: 'Establishment of the Grid-wide Transmission Log. Dev updates are now synced directly to your UI.',
+    description: 'Establishment of the Grid-wide Development Log. Dev updates are now synced directly to your UI.',
     changes: [
-      'New: Internal Devlog ("Transmissions")',
+      'New: Internal Devlog ("DEVLOG")',
       'Uplink: Enhanced Identity Resolution for Farcaster users',
       'UI: Premium CRT aesthetic for system logs',
       'Social: Integrated "Broadcast" system for Warpcast & X'
@@ -98,7 +115,7 @@ export const DevlogView = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
 
   const shareToWarpcast = (entry) => {
-    const text = `🚨 GRID TRANSMISSION: [${entry.id}] ${entry.title}\n\n"${entry.description}"\n\non Base! 🛡️💎 @dungeonswithgems`;
+    const text = `🚨 DEVLOG UPDATE: [${entry.id}] ${entry.title}\n\n"${entry.description}"\n\non Base! 🛡️💎 @dungeonswithgems`;
     const gameUrl = 'https://metaverse.dungeonswithgems.quest';
     
     // Embed only the game link to ensure the Farcaster Frame loads correctly
@@ -107,7 +124,7 @@ export const DevlogView = () => {
   };
 
   const shareToX = (entry) => {
-      const text = `🚨 GRID TRANSMISSION: [${entry.id}] ${entry.title}\n\n"${entry.description}"\n\n📡 Play: https://metaverse.dungeonswithgems.quest\n\n@DungeonsWithGems #Base #Web3Gaming #IdleGame`;
+      const text = `🚨 DEVLOG UPDATE: [${entry.id}] ${entry.title}\n\n"${entry.description}"\n\n📡 Play: https://metaverse.dungeonswithgems.quest\n\n@DungeonsWithGems #Base #Web3Gaming #IdleGame`;
       const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
   };
@@ -127,7 +144,7 @@ export const DevlogView = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
       </div>
 
-      <Header title="TRANSMISSION LOGS" onClose={() => setView('menu')} />
+      <Header title="DEVLOG INTERFACE" onClose={() => setView('menu')} />
 
       {/* Main Terminal Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 relative z-10 pr-2">
@@ -185,7 +202,7 @@ export const DevlogView = () => {
                       <button 
                         onClick={() => shareToWarpcast(entry)}
                         className="p-1.5 md:p-2 bg-purple-600 border border-black hover:bg-purple-400 text-white rounded-md transition-all active:scale-90 flex items-center gap-1.5"
-                        title="Cast Transmission"
+                        title="Cast Update"
                       >
                         <MessageSquare size={12} className="md:w-3.5 md:h-3.5 h-3 w-3" />
                         <span className="text-[7px] md:text-[8px] font-black uppercase">CAST</span>
@@ -193,7 +210,7 @@ export const DevlogView = () => {
                       <button 
                         onClick={() => shareToX(entry)}
                         className="p-1.5 md:p-2 bg-slate-800 border border-black hover:bg-white hover:text-black text-white rounded-md transition-all active:scale-90 flex items-center gap-1.5"
-                        title="Tweet Transmission"
+                        title="Tweet Update"
                       >
                         <Twitter size={12} className="md:w-3.5 md:h-3.5 h-3 w-3" />
                         <span className="text-[7px] md:text-[8px] font-black uppercase">X</span>
@@ -257,9 +274,9 @@ export const DevlogView = () => {
       <div className="mt-2 pt-3 border-t border-white/5 flex justify-between items-center relative z-10 shrink-0">
         <div className="flex items-center gap-2">
            <Zap size={12} className="text-amber-400" />
-           <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.5em] italic">TRANSMISSION_RELAY_CONNECTED</span>
+           <span className="text-[8px] font-black text-slate-500 uppercase tracking-[0.5em] italic">DEVLOG_RELAY_CONNECTED</span>
         </div>
-        <div className="text-[8px] font-black text-cyan-500/50 uppercase italic tracking-widest">GATEWAY v1.2.6</div>
+        <div className="text-[8px] font-black text-cyan-500/50 uppercase italic tracking-widest">GATEWAY v1.3.0</div>
       </div>
     </div>
   );

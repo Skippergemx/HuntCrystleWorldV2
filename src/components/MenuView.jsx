@@ -113,7 +113,7 @@ export const MenuView = React.memo(() => {
       <NavBtn 
         onClick={() => setView('devlog')} 
         icon={<div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>} 
-        title="Transmissions" 
+        title="DEVLOG" 
         sub="Dev Updates" 
         color="bg-purple-900 border-purple-500/50" 
         backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
