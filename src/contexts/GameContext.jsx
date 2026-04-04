@@ -23,6 +23,7 @@ import { useCombat } from '../hooks/useCombat';
 import { usePlayerActions } from '../hooks/usePlayerActions';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useWallet } from '../hooks/useWallet';
+import { useTelegram } from '../hooks/useTelegram';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 export const GameContext = createContext(null);
@@ -52,6 +53,9 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const [showBlockadeModal, setShowBlockadeModal] = useState(false);
   const [blockadeError, setBlockadeError] = useState(null);
 
+  // Telegram SDK
+  const telegram = useTelegram();
+
   // Sync Timer for UI Clock
   useEffect(() => {
     const clockTimer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -61,7 +65,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet } = usePlayerSync(user, db, appId, farcasterContext);
+  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet } = usePlayerSync(user, db, appId, farcasterContext, telegram);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -94,7 +98,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES,
-    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult }
+    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic }
   );
   
   const gameLoop = useGameLoop({
@@ -169,6 +173,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     adventure, combat, actions, gameLoop, market, audio, wallet, 
     linkWallet,
     farcasterContext,
+    telegram,
     leaderboard: leaderboardObj.leaderboard,
     updateLeaderboard: leaderboardObj.updateLeaderboard,
     updateBoardTab: leaderboardObj.setActiveBoard,

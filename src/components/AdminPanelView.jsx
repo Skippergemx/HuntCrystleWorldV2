@@ -26,6 +26,8 @@ export const AdminPanelView = React.memo(() => {
       return (p.name?.toLowerCase().includes(search)) ||
              (p.id?.toLowerCase().includes(search)) ||
              (p.email?.toLowerCase().includes(search)) ||
+             (p.telegramUsername?.toLowerCase().includes(search)) ||
+             (p.tonWalletAddress?.toLowerCase().includes(search)) ||
              (p.walletAddress?.toLowerCase().includes(search));
     });
   }, [players, searchQuery]);
@@ -206,7 +208,8 @@ export const AdminPanelView = React.memo(() => {
         tokens: Number(tokens),
         totalBossDamage: Number(totalBossDamage),
         maxDepth: Number(maxDepth),
-        walletAddress: walletAddress || null
+        walletAddress: walletAddress || null,
+        tonWalletAddress: editingPlayer.tonWalletAddress || null
       };
 
       await updateDoc(profileRef, updateData);
@@ -351,15 +354,27 @@ export const AdminPanelView = React.memo(() => {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-500 uppercase">Wallet Address (Base)</label>
-                <input 
-                  type="text" 
-                  value={editingPlayer.walletAddress || ''}
-                  onChange={e => setEditingPlayer({...editingPlayer, walletAddress: e.target.value})}
-                  placeholder="0x..."
-                  className="w-full bg-black border-2 border-slate-800 p-2 text-amber-500 font-mono text-[10px] focus:border-amber-500 outline-none"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">EVM Wallet (Base)</label>
+                  <input 
+                    type="text" 
+                    value={editingPlayer.walletAddress || ''}
+                    onChange={e => setEditingPlayer({...editingPlayer, walletAddress: e.target.value})}
+                    placeholder="0x..."
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-amber-500 font-mono text-[10px] items-center italic"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase">TON Wallet</label>
+                  <input 
+                    type="text" 
+                    value={editingPlayer.tonWalletAddress || ''}
+                    onChange={e => setEditingPlayer({...editingPlayer, tonWalletAddress: e.target.value})}
+                    placeholder="UQ..."
+                    className="w-full bg-black border-2 border-slate-800 p-2 text-blue-400 font-mono text-[10px] items-center italic"
+                  />
+                </div>
               </div>
 
               <div className="pt-4 flex flex-col gap-3">
@@ -634,7 +649,12 @@ export const AdminPanelView = React.memo(() => {
                                    <span className="opacity-40">{player.id.substring(0, 15)}...</span>
                                    {player.farcasterUsername ? (
                                       <span className="px-1.5 py-0.5 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic">FARCASTER</span>
-                                   ) : (
+                                   ) : player.id.startsWith('TG_') ? (
+                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-950/40 border border-blue-500/30 rounded text-blue-400">
+                                      <Send size={10} className="-rotate-12 translate-x-[1px]" />
+                                      <span className="text-[8px] font-black uppercase">Telegram</span>
+                                   </div>
+                                ) : (
                                       <span className="px-1.5 py-0.5 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic">GOOGLE_AUTH</span>
                                    )}
                                 </p>

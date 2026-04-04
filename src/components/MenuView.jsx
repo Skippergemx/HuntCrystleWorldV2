@@ -19,7 +19,8 @@ import {
   Sparkles,
   BookOpen,
   Shield,
-  ShieldAlert
+  ShieldAlert,
+  Radio
 } from 'lucide-react';
 import { NavBtn } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -108,6 +109,14 @@ export const MenuView = React.memo(() => {
         sub="How to Play" 
         color="bg-cyan-600 border-cyan-400/50" 
         backdrop="/assets/monsters/Void Sector 7/Rift Lurker.jpg"
+      />
+      <NavBtn 
+        onClick={() => setView('devlog')} 
+        icon={<div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>} 
+        title="Transmissions" 
+        sub="Dev Updates" 
+        color="bg-purple-900 border-purple-500/50" 
+        backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
       />
       {isAdmin && (
         <NavBtn 

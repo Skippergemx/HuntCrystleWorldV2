@@ -7,7 +7,8 @@ import {
   PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
   Book, Globe, Database, HardHat, Footprints,
   Volume2, VolumeX, Music, Music2, SkipForward,
-  Calendar, Wallet, ShieldAlert
+  Calendar, Wallet, ShieldAlert,
+  Share2, Twitter, MessageSquare
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -34,6 +35,7 @@ import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
 import { PetsView } from './PetsView';
 import { ManualView } from './ManualView';
+import { DevlogView } from './DevlogView';
 import { AnimatedBackground } from './AnimatedBackground';
 import UnifiedAuthBanner from './UnifiedAuthBanner';
 import { GUIDE_CONTENT } from '../data/guideContent';
@@ -336,20 +338,49 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
-                {player.abilityPoints > 0 && (
-                  <div className="bg-amber-400 text-black px-1.5 py-0.5 border-[1.5px] border-black shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-[9px] uppercase italic animate-pulse flex items-center gap-1">
-                    <Target size={9} /> {player.abilityPoints} PTS
+                <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
+                  {/* HERO SHARE BUTTON */}
+                  <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10 shrink-0">
+                    <button 
+                      onClick={() => {
+                        const gear = `${player.equipped?.Weapon?.name || 'Fists'} | ${player.equipped?.Armor?.name || 'Tunic'}`;
+                        const text = `🚨 HERO STATUS SYNC: ${player.name}\n💎 Level: ${player.level}\n⚔️ Gear: ${gear}\n\nConquering the Grid @dungeonswithgems! 🛡️⚔️\n #Base #Gaming`;
+                        const gameUrl = 'https://metaverse.dungeonswithgems.quest';
+                        window.open(`https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(gameUrl)}`, '_blank');
+                      }}
+                      className="p-1 px-1.5 bg-purple-600 border border-black hover:bg-purple-400 text-white rounded-md transition-all active:scale-90 flex items-center gap-1 group/cast"
+                      title="Cast Hero Progress"
+                    >
+                      <MessageSquare size={10} md:size={12} className="group-hover/cast:rotate-12" />
+                      <span className="text-[7px] md:text-[9px] font-black uppercase">CAST</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const gear = `${player.equipped?.Weapon?.name || 'Fists'} | ${player.equipped?.Armor?.name || 'Tunic'}`;
+                        const text = `🚨 HERO STATUS SYNC: ${player.name}\n💎 Level: ${player.level}\n⚔️ Gear: ${gear}\n\nConquering the Grid @DungeonsWithGems on #Base! 🛡️⚔️\n\n📡 Play: https://metaverse.dungeonswithgems.quest\n #Web3Gaming #BaseNetwork`;
+                        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="p-1 px-1.5 bg-slate-800 border border-black hover:bg-white hover:text-black text-white rounded-md transition-all active:scale-90 flex items-center gap-1 group/x"
+                      title="Tweet Hero Progress"
+                    >
+                      <Twitter size={10} md:size={12} className="group-hover/x:scale-110" />
+                      <span className="text-[7px] md:text-[9px] font-black uppercase">X</span>
+                    </button>
                   </div>
-                )}
-                <button
-                  onClick={onLogoutWrapper}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
-                >
-                  <Lock size={10} md:size={14} className="group-hover:rotate-12" />
-                  <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
-                </button>
-              </div>
+
+                  {player.abilityPoints > 0 && (
+                    <div className="bg-amber-400 text-black px-1.5 py-0.5 border-[1.5px] border-black shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-[9px] uppercase italic animate-pulse flex items-center gap-1">
+                      <Target size={9} /> {player.abilityPoints} PTS
+                    </div>
+                  )}
+                  <button
+                    onClick={onLogoutWrapper}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
+                  >
+                    <Lock size={10} md:size={14} className="group-hover:rotate-12" />
+                    <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
+                  </button>
+                </div>
             </div>
 
             {/* Resources Hub - Compact Row */}
@@ -522,6 +553,10 @@ export const GameLayout = ({ onLogout }) => {
             <ManualView />
           )}
 
+          {view === 'devlog' && (
+            <DevlogView />
+          )}
+
         </div>
 
         <div className="bg-amber-400 border-[4px] border-black rounded-lg p-3 h-28 overflow-y-auto relative shadow-[4px_4px_0_rgba(0,0,0,1)] custom-scrollbar">
@@ -539,11 +574,12 @@ export const GameLayout = ({ onLogout }) => {
       </main>
 
       <footer className="w-full py-8 flex flex-col items-center gap-4 relative z-20">
-        <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40">METAVERSE.DUNGEONSWITHGEMS.QUEST // SYNCED_TO_GRID</p>
+        <a href="https://metaverse.dungeonswithgems.quest" className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40 hover:opacity-100 transition-opacity">METAVERSE.DUNGEONSWITHGEMS.QUEST // SYNCED_TO_GRID</a>
 
         <div className="flex flex-wrap justify-center gap-4 md:gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 bg-black/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-xl">
           <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-wider transition-colors">Github</a>
           <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-cyan-400 uppercase italic tracking-wider transition-colors">Twitter</a>
+          <a href="https://warpcast.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-purple-400 uppercase italic tracking-wider transition-colors">Farcaster</a>
           <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-blue-400 uppercase italic tracking-wider transition-colors">Telegram</a>
           <div className="text-[10px] font-black text-slate-500 uppercase italic tracking-wider cursor-help" title="Discord: skippergemx">Discord: skippergemx</div>
           <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>

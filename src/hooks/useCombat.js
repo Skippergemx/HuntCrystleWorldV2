@@ -34,7 +34,7 @@ export const useCombat = (
   TAVERN_MATES,
   gvgActions = {}
 ) => {
-  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult } = gvgActions;
+  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic } = gvgActions;
   const [critAlert, setCritAlert] = useState(false);
   const [stunTimeLeft, setStunTimeLeft] = useState(0);
   const [missTimeLeft, setMissTimeLeft] = useState(0);
@@ -99,16 +99,18 @@ export const useCombat = (
       setImpactSplash({ text: word, dmg, isCrit, id });
       setTimeout(() => setImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
       triggerFlinch();
+      if (triggerHaptic) triggerHaptic(isCrit ? 'heavy' : 'medium');
       const ouchWords = ["Ouch!", "Gah!", "No!", "Stop!", "Critical Hit!", "Ack!", "My circuits!", "System Failure!"];
       setCurrentTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
     } else {
       setPlayerImpactSplash({ text: word, dmg, isCrit, id });
       setTimeout(() => setPlayerImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
       triggerHurt();
+      if (triggerHaptic) triggerHaptic('rigid');
       const ouchWords = ["Ugh!", "Ack!", "Too strong!", "Healing needed!", "Pain...", "Vision blurring!", "Armor cracked!"];
       setPlayerTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
     }
-  }, []);
+  }, [triggerHaptic]);
 
   const resetCombatEngine = useCallback(() => {
     setCombatState('IDLE');

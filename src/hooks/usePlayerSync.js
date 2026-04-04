@@ -6,7 +6,8 @@ import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs
  * Responsible for ALL database interactions for player profiles.
  * Stripped of all legacy artifact-based fallbacks for the Ultimate Reset.
  */
-export const usePlayerSync = (user, db, appId, farcasterContext) => {
+export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) => {
+  const { isTelegram, user: tgUser } = telegram;
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   const [activeDocId, setActiveDocId] = useState(null);
@@ -66,9 +67,17 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
     // We only load if we have the user object.
     // If we're on Farcaster but the identity sync (user.farcasterFID) hasn't finished attaching,
     // wait for it so we don't accidentally split the profile!
-    if (!user || (farcasterContext && !user.farcasterFID)) {
-        setLoadingPlayer(!user ? false : true);
-        if (!user) setPlayer(null);
+    // If we're on Farcaster but the identity sync (user.farcasterFID) hasn't finished attaching,
+    // wait for it so we don't accidentally split the profile!
+    // For Telegram, we check isTelegram and tgUser.
+    if (!user && !isTelegram) {
+        setLoadingPlayer(false);
+        setPlayer(null);
+        return;
+    }
+
+    if (farcasterContext && !user?.farcasterFID) {
+        setLoadingPlayer(true);
         return;
     }
 
@@ -76,12 +85,20 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
         try {
             setLoadingPlayer(true);
             
-            // --- UNIFIED RESOLVER V3: UID-FIRST (Single Pipeline) ---
-            // Standard Web Users (Google Auth) always use their UID as the primary document key.
-            // Farcaster users use a specific 'FC_' prefix to maintain separate identity silos.
-            let primaryAuthId = user.farcasterFID ? `FC_${user.farcasterFID}` : user.uid;
+            // --- UNIFIED RESOLVER V4: TIERED IDENTITY RESOLUTION ---
+            // 1. Farcaster (FC_ prefix)
+            // 2. Telegram (TG_ prefix)
+            // 3. Standard Web (UID)
+            let primaryAuthId = user?.farcasterFID 
+              ? `FC_${user.farcasterFID}` 
+              : (isTelegram && tgUser?.id ? `TG_${tgUser.id}` : user?.uid);
             
-            console.log(`System V3: Resolving Identity for Core Node: ${primaryAuthId}`);
+            if (!primaryAuthId) {
+                setLoadingPlayer(false);
+                return;
+            }
+
+            console.log(`System V4: Resolving Identity for Core Node: ${primaryAuthId}`);
             
             setActiveDocId(primaryAuthId);
             const docRef = doc(db, 'players', primaryAuthId);
@@ -133,12 +150,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                     ...data,
                     uid: user.uid,
                     email: user.email || data.email || null,
-                    farcasterFID: user.farcasterFID || data.farcasterFID || null,
-                    farcasterUsername: user.farcasterUsername || data.farcasterUsername || null,
-                    name: data.name || user.username || `Hunter_${user.uid.slice(0, 4)}`,
-                    pfp: data.pfp || user.pfp || null,
+                    farcasterFID: user?.farcasterFID || data.farcasterFID || null,
+                    farcasterUsername: user?.farcasterUsername || data.farcasterUsername || null,
+                    telegramUserId: tgUser?.id || data.telegramUserId || null,
+                    telegramUsername: tgUser?.username || data.telegramUsername || null,
+                    name: data.name || user?.username || tgUser?.username || tgUser?.first_name || `Hunter_${(user?.uid || tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    pfp: data.pfp || user?.pfp || null,
                     
                     walletAddress: activeWalletSync,
+                    tonWalletAddress: data.tonWalletAddress || null,
                     walletConflict: walletConflict || null,
 
                     level: data.level || 1,
@@ -165,12 +185,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext) => {
                 console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
                 const genesisProfile = {
-                    uid: user.uid,
-                    email: user.email || null,
-                    farcasterFID: user.farcasterFID || null,
-                    farcasterUsername: user.farcasterUsername || null,
-                    name: user.username || `Hunter_${user.uid.slice(0, 4)}`,
-                    pfp: user.pfp || null,
+                    uid: user?.uid || null,
+                    email: user?.email || null,
+                    farcasterFID: user?.farcasterFID || null,
+                    farcasterUsername: user?.farcasterUsername || null,
+                    telegramUserId: tgUser?.id || null,
+                    telegramUsername: tgUser?.username || null,
+                    name: user?.username || tgUser?.username || tgUser?.first_name || `Hunter_${(user?.uid || tgUser?.id || '0000').toString().slice(0, 4)}`,
+                    pfp: user?.pfp || null,
                     level: 1, xp: 0, tokens: 100,
                     hp: 150, maxHp: 150,
                     baseStats: { str: 10, agi: 10, dex: 10 },
