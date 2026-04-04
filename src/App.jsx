@@ -12,8 +12,11 @@ const App = () => {
   const { user, loading, isFarcaster, isTelegram, farcasterContext, telegramUserData, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
   const { address, isConnected } = useAccount();
 
-  // Unified login gate: user session OR connected wallet address
-  const isAuthenticated = !!user || (isConnected && !!address);
+  // Unified login gate:
+  // - Google/Farcaster: require a user object from Firebase Auth
+  // - Telegram: user starts as null briefly while anonymous auth completes;
+  //   treat TMA as authenticated the moment Telegram SDK confirms context.
+  const isAuthenticated = !!user || isTelegram || (isConnected && !!address);
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {loading ? (

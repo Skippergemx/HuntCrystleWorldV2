@@ -107,7 +107,9 @@ export const useUnifiedAuth = () => {
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [isFarcaster, farcasterContext, address]);
+  // isTelegram and telegramUserData are included so the listener rebuilds the
+  // unifiedUser object once the TMA handshake completes (they start as false/null).
+  }, [isFarcaster, farcasterContext, isTelegram, telegramUserData, address]);
 
   const loginWithGoogle = async () => {
     try {

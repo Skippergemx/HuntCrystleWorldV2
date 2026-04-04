@@ -64,19 +64,23 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
-    // We only load if we have the user object.
-    // If we're on Farcaster but the identity sync (user.farcasterFID) hasn't finished attaching,
-    // wait for it so we don't accidentally split the profile!
-    // If we're on Farcaster but the identity sync (user.farcasterFID) hasn't finished attaching,
-    // wait for it so we don't accidentally split the profile!
-    // For Telegram, we check isTelegram and tgUser.
+    // GUARD 1: No auth context at all — bail out
     if (!user && !isTelegram) {
         setLoadingPlayer(false);
         setPlayer(null);
         return;
     }
 
+    // GUARD 2: Farcaster context present but FID not yet attached — wait
     if (farcasterContext && !user?.farcasterFID) {
+        setLoadingPlayer(true);
+        return;
+    }
+
+    // GUARD 3: Telegram context detected but user data not yet resolved — wait
+    // This is the key fix: prevents creating a profile under the wrong UID
+    // before the Telegram SDK has finished parsing initDataUnsafe.
+    if (isTelegram && !tgUser?.id) {
         setLoadingPlayer(true);
         return;
     }
@@ -228,13 +232,17 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     };
 
     loadUnifiedProfile();
-  }, [user, db, appId, farcasterContext]);
+  // NOTE: isTelegram and tgUser are intentionally included so the effect
+  // re-runs once the Telegram SDK has finished identity resolution.
+  }, [user, db, appId, farcasterContext, isTelegram, tgUser]);
 
 
   // 2. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
-    // If the database doc identifier isn't ready, halt the queue
-    if (!user || (farcasterContext && !user.farcasterFID)) return;
+    // If the database doc identifier isn't ready, halt the queue.
+    // Telegram users use anonymous auth so `user` will exist but may not have farcasterFID.
+    if (!user && !isTelegram) return;
+    if (farcasterContext && !user?.farcasterFID) return;
     if (!activeDocId) return;
 
     // Sterilize numbers: Prevent float jitter for combat-critical metrics
