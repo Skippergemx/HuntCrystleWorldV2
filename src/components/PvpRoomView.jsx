@@ -9,6 +9,34 @@ import React from 'react';
  * PvpRoomView V2: Real-time Combat Arena
  * Unified root-level collections for 'pvp_room' and 'global_chat'.
  */
+const PlayerCard = React.memo(({ p, isSelf, isTarget, onAttack }) => {
+  const hpPercent = Math.max(0, (p.hp / (p.maxHp || 100)) * 100);
+  return (
+    <div onClick={() => !isSelf && onAttack()} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-110' : ''}`}>
+      <div className={`absolute inset-0 border-[3px] md:border-4 border-black transition-colors ${isTarget ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
+      <div className="absolute inset-0 border-r-4 md:border-r-8 border-b-4 md:border-b-8 border-black/20 pointer-events-none"></div>
+      <div className="relative p-2 md:p-3 flex flex-col items-center">
+          <span className="absolute top-1 md:top-2 left-1 md:left-2 bg-black text-white text-[7px] md:text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">LVL {p.level}</span>
+          {isSelf && <span className="absolute top-1 md:top-2 right-1 md:right-2 bg-blue-600 text-white text-[7px] md:text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">YOU</span>}
+          
+          <div className="w-16 h-20 md:w-24 md:h-28 border-2 md:border-4 border-black overflow-hidden bg-slate-900 relative mt-4 md:mt-6">
+              <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover" />
+              {(p.isDefeated || p.hp <= 0) && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={24} className="text-white animate-pulse md:hidden" /><Skull size={40} className="text-white animate-pulse hidden md:block" /></div>}
+              {isTarget && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={24} className="text-white drop-shadow-[0_0_15px_red] md:hidden" /><Sword size={48} className="text-white drop-shadow-[0_0_15px_red] hidden md:block" /></div>}
+          </div>
+          
+          <h3 className="text-[9px] md:text-[11px] font-black text-white uppercase italic tracking-tighter mt-2 md:mt-3 mb-1 md:mb-2 truncate w-full text-center">{p.name}</h3>
+          
+          {/* HP Bar */}
+          <div className="w-full bg-black/80 border md:border-2 border-black h-3 md:h-4 rounded-full overflow-hidden relative shadow-inner">
+              <div className={`h-full transition-all duration-500 ${hpPercent < 40 ? 'bg-red-600' : 'bg-cyan-500'}`} style={{ width: `${hpPercent}%` }}></div>
+              <span className="absolute inset-0 flex items-center justify-center text-[7px] md:text-[8px] font-black text-white uppercase italic drop-shadow-md">{Math.max(0, Math.ceil(p.hp))} HP</span>
+          </div>
+      </div>
+    </div>
+  );
+});
+
 export const PvpRoomView = React.memo(() => {
   const { player, syncPlayer, adventure, gameLoop, TAVERN_MATES, totalStats, db, user, addLog, openGuide } = useGame();
   const { setView } = adventure;
@@ -44,10 +72,9 @@ export const PvpRoomView = React.memo(() => {
 
   const [lastProcessedHitId, setLastProcessedHitId] = useState(null);
 
-  // 2. Room Presence Sync (V2: Root Path)
+  // 2. Room Presence (Join/Leave)
   useEffect(() => {
     if (hasPenalty || !user?.uid) return;
-
     const pvpDocRef = doc(db, 'pvp_room', user.uid);
 
     const joinRoom = async () => {
@@ -77,14 +104,32 @@ export const PvpRoomView = React.memo(() => {
         setView('menu');
       }
     };
-
     joinRoom();
 
     return () => {
       console.log("System V2: Withdrawing Combat Signal...");
       deleteDoc(pvpDocRef).catch(console.error);
     };
-  }, [db, user.uid, player.name, player.level, player.avatar, player.maxHp, totalStats, player.hiredMate, dragonTimeLeft, player.gemx, player.gemxAvatar]);
+  }, [db, user.uid, hasPenalty]); // Minimal dependencies to prevent unmount/remount flicker
+
+  // 2b. Stats sync (No delete logic here)
+  useEffect(() => {
+    if (hasPenalty || !user?.uid || isJoining) return;
+    const pvpDocRef = doc(db, 'pvp_room', user.uid);
+    updateDoc(pvpDocRef, {
+      name: player.name,
+      level: player.level,
+      avatar: player.avatar,
+      hp: player.hp || player.maxHp,
+      maxHp: player.maxHp,
+      stats: totalStats,
+      hiredMate: player.hiredMate,
+      dragonSummoned: dragonTimeLeft > 0,
+      gemx: player.gemx,
+      gemxAvatar: player.gemxAvatar,
+      lastAction: Date.now()
+    }).catch(err => console.warn("PVP Update Sync Lag:", err));
+  }, [player.name, player.level, player.avatar, player.hp, player.maxHp, totalStats, player.hiredMate, dragonTimeLeft, player.gemx, player.gemxAvatar, user?.uid, isJoining, hasPenalty]);
 
   // 3. Room Listener (V2: Root Path)
   useEffect(() => {
@@ -96,11 +141,20 @@ export const PvpRoomView = React.memo(() => {
 
       const self = pList.find(p => p.uid === user.uid);
       if (self) {
+        // [VITAL SYNC] Force local player engine HP to match Room HP
+        // This prevents the "Sudden Death" effect by keeping the main HUD in sync with the Battle Grid
+        if (Math.ceil(self.hp) !== Math.ceil(player.hp)) {
+          syncPlayer({ hp: Math.max(0, self.hp) });
+        }
+
         if (self.hp <= 0 && !self.isDefeated) {
           handleDefeatState();
         } else if (self.lastHitBy && self.lastHitId !== lastProcessedHitId) {
-          setLastProcessedHitId(self.lastHitId);
-          processCounterAttack(self.lastHitBy);
+          const hitId = self.lastHitId;
+          const attackerId = self.lastHitBy;
+          setLastProcessedHitId(hitId);
+          // Pass the fresh pList to ensure we find the attacker with current data
+          processCounterAttack(attackerId, pList);
         }
       }
     });
@@ -159,16 +213,7 @@ export const PvpRoomView = React.memo(() => {
     }, 4000);
   };
 
-  const processCounterAttack = async (attackerId) => {
-    const attacker = (players || []).find(p => p.uid === attackerId);
-    if (!attacker || attacker.isDefeated) return;
-    setTimeout(() => {
-      addLog(`⚡ COUNTER-STRIKE: Target ${attacker.name} acquired.`);
-      attackPlayer(attacker);
-    }, 800);
-  };
-
-  const attackPlayer = async (target) => {
+  const attackPlayer = useCallback(async (target) => {
     if (!user?.uid || target.uid === user.uid || target.isDefeated || target.hp <= 0) return;
 
     const hitChance = Math.min(98, (totalStats.dex / (totalStats.dex + target.stats.agi * 0.4)) * 100);
@@ -190,7 +235,20 @@ export const PvpRoomView = React.memo(() => {
     } else {
       addLog(`🛡️ DEFLECTED: Strike avoided by ${target.name}.`);
     }
-  };
+  }, [user?.uid, db, totalStats, addLog]);
+
+  const processCounterAttack = useCallback(async (attackerId, currentPlayers) => {
+    // Determine the attacker from the current snapshot data
+    const attacker = (currentPlayers || players).find(p => p.uid === attackerId);
+    if (!attacker || attacker.isDefeated || attacker.hp <= 0) return;
+
+    // Slight tactical delay before countering (feels more natural)
+    setTimeout(() => {
+      // Re-verify attacker is still in the room before striking
+      addLog(`⚡ COUNTER-STRIKE: Retaliating against ${attacker.name}...`);
+      attackPlayer(attacker);
+    }, 600 + Math.random() * 400); // Randomized delay between 600-1000ms
+  }, [players, attackPlayer, addLog]);
 
   if (hasPenalty) {
     return (
@@ -205,65 +263,45 @@ export const PvpRoomView = React.memo(() => {
   }
 
   return (
-    <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic">
+    <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic h-full min-h-[500px]">
        <Header title="NEON ARENA: PVP GRID" onClose={() => setView('menu')} onHelp={() => openGuide('pvp')} />
 
        {/* Arena Status Header */}
-       <div className="mx-4 mt-2 p-4 bg-black/40 border-4 border-black rounded-2xl flex justify-between items-center shadow-[6px_6px_0_rgba(0,0,0,0.5)]">
+       <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">
          <div>
-            <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Live Sector Activity</p>
-            <p className="text-2xl font-black text-white uppercase italic tracking-tighter">Active Combatants: {players.length}</p>
+            <p className="text-[8px] md:text-[10px] font-black text-cyan-400 uppercase tracking-widest leading-none">Sector Activity</p>
+            <p className="text-sm md:text-2xl font-black text-white uppercase italic tracking-tighter mt-1">Active: {players.length}</p>
          </div>
-         <div className="flex items-center gap-2 px-4 py-2 bg-black rounded-full border border-green-500/30">
-           <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping"></span>
-           <span className="text-[10px] font-black text-white italic uppercase">Signal Secured</span>
+         <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-black rounded-full border border-green-500/30">
+           <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-green-500 rounded-full animate-ping"></span>
+           <span className="text-[8px] md:text-[10px] font-black text-white italic uppercase">Signal Secured</span>
          </div>
        </div>
 
        {/* Grid Combatants */}
-       <div className="flex-1 overflow-y-auto p-4 flex flex-col">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20">
-             {players.map(p => {
-                const isSelf = p.uid === user.uid;
-                const hpPercent = Math.max(0, (p.hp / p.maxHp) * 100);
-                const isTarget = combatAnim?.targetId === p.uid;
-                return (
-                  <div key={p.uid} onClick={() => !isSelf && attackPlayer(p)} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-110' : ''}`}>
-                    <div className={`absolute inset-0 border-4 border-black transition-colors ${isTarget ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
-                    <div className="absolute inset-0 border-r-8 border-b-8 border-black/20 pointer-events-none"></div>
-                    <div className="relative p-3 flex flex-col items-center">
-                       <span className="absolute top-2 left-2 bg-black text-white text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">LVL {p.level}</span>
-                       {isSelf && <span className="absolute top-2 right-2 bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">MASTER</span>}
-                       
-                       <div className="w-24 h-28 border-4 border-black overflow-hidden bg-slate-900 relative mt-4">
-                          <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover" />
-                          {(p.isDefeated || p.hp <= 0) && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={40} className="text-white animate-pulse" /></div>}
-                          {isTarget && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={48} className="text-white drop-shadow-[0_0_15px_red]" /></div>}
-                       </div>
-                       
-                       <h3 className="text-[11px] font-black text-white uppercase italic tracking-tighter mt-3 mb-2">{p.name}</h3>
-                       
-                        {/* HP Bar */}
-                        <div className="w-full bg-black/80 border-2 border-black h-4 rounded-full overflow-hidden relative shadow-inner">
-                           <div className={`h-full transition-all duration-500 ${hpPercent < 40 ? 'bg-red-600' : 'bg-cyan-500'}`} style={{ width: `${hpPercent}%` }}></div>
-                           <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white uppercase italic drop-shadow-md">{Math.max(0, Math.ceil(p.hp))} HP</span>
-                        </div>
-                    </div>
-                  </div>
-                )
-             })}
+       <div className="flex-1 overflow-y-auto p-2 md:p-4 flex flex-col custom-scrollbar">
+          <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4 ${showChat ? 'pb-72' : 'pb-32'}`}>
+             {players.map(p => (
+               <PlayerCard 
+                 key={p.uid} 
+                 p={p} 
+                 isSelf={p.uid === user.uid} 
+                 isTarget={combatAnim?.targetId === p.uid} 
+                 onAttack={() => attackPlayer(p)} 
+               />
+             ))}
           </div>
        </div>
 
        {/* Chat Terminal */}
        {showChat && (
-         <div className="absolute bottom-4 left-4 right-4 h-52 bg-slate-900/90 border-4 border-black rounded-3xl shadow-[10px_10px_0_rgba(0,0,0,0.5)] flex flex-col overflow-hidden backdrop-blur-xl z-50">
-            <div className="bg-black/60 px-4 py-2 flex justify-between items-center border-b border-white/5">
+         <div className="absolute bottom-2 md:bottom-4 left-2 md:left-4 right-2 md:right-4 h-48 md:h-52 bg-slate-900/95 border-4 border-black rounded-2xl md:rounded-3xl shadow-[6px_6px_0_rgba(0,0,0,0.5)] flex flex-col overflow-hidden backdrop-blur-xl z-50">
+            <div className="bg-black/60 px-3 md:px-4 py-1 md:py-2 flex justify-between items-center border-b border-white/5">
                 <div className="flex items-center gap-2">
-                  <MessageSquare size={14} className="text-cyan-400" />
-                  <span className="text-[10px] font-black text-white/80 uppercase italic tracking-widest">Global Comms Terminal</span>
+                  <MessageSquare size={12} className="text-cyan-400" />
+                  <span className="text-[8px] md:text-[10px] font-black text-white/80 uppercase italic tracking-widest">Global Terminal</span>
                 </div>
-                <button onClick={() => setShowChat(false)} className="text-white/20 hover:text-white"><X size={14} /></button>
+                <button onClick={() => setShowChat(false)} className="text-white/20 hover:text-white p-1"><X size={14} /></button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar flex flex-col">

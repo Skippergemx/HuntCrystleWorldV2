@@ -231,29 +231,29 @@ export const GameLayout = ({ onLogout }) => {
           {/* PROFILE CARD - COMPACT CHARACTER CARD */}
           <div className="w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] border-black rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20">
             <div className="absolute inset-0 z-0">
-               <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
-               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
+              <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
             </div>
 
             {/* Float Edit Button */}
             <button
-               onClick={() => setView('avatars')}
-               className="absolute top-1 right-1 z-20 p-1 md:p-2 bg-black/60 hover:bg-cyan-500 text-white hover:text-black rounded-md border border-black/50 backdrop-blur-md transition-all group/btn"
-               title="Edit Avatar"
+              onClick={() => setView('avatars')}
+              className="absolute top-1 right-1 z-20 p-1 md:p-2 bg-black/60 hover:bg-cyan-500 text-white hover:text-black rounded-md border border-black/50 backdrop-blur-md transition-all group/btn"
+              title="Edit Avatar"
             >
-               <MousePointer size={10} md:size={14} className="group-hover/btn:scale-125 transition-transform" />
+              <MousePointer size={10} md:size={14} className="group-hover/btn:scale-125 transition-transform" />
             </button>
 
             {/* Bottom Shade Info */}
             <div className="absolute inset-x-0 bottom-0 p-1.5 md:p-2.5 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
-               {(player.walletAddress || wallet.address) && (
-                 <div className="flex items-center gap-1 mb-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
-                    <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
-                    <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
-                 </div>
-               )}
-               <div className="bg-cyan-400 text-black text-[7px] md:text-[11px] font-[1000] uppercase py-1 px-2 rounded-sm border-[2px] border-black inline-block shadow-[3px_3px_0_rgba(0,0,0,1)] mb-1 md:mb-1.5 animate-in slide-in-from-left-4 duration-500">UNIT {player.level}</div>
-               <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
+              {(player.walletAddress || wallet.address) && (
+                <div className="flex items-center gap-1 mb-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
+                  <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
+                  <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
+                </div>
+              )}
+              <div className="bg-cyan-400 text-black text-[7px] md:text-[11px] font-[1000] uppercase py-1 px-2 rounded-sm border-[2px] border-black inline-block shadow-[3px_3px_0_rgba(0,0,0,1)] mb-1 md:mb-1.5 animate-in slide-in-from-left-4 duration-500">UNIT {player.level}</div>
+              <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
             </div>
           </div>
 
@@ -281,12 +281,12 @@ export const GameLayout = ({ onLogout }) => {
 
                   if (isConflict) {
                     return (
-                      <button 
+                      <button
                         onClick={() => setView('avatars')}
                         className="bg-red-600 text-white px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 animate-pulse flex items-center gap-2"
                       >
-                         <AlertCircle size={10} md:size={14} />
-                         <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Uplink Blockade</span>
+                        <AlertCircle size={10} md:size={14} />
+                        <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Uplink Blockade</span>
                       </button>
                     );
                   }
@@ -302,7 +302,7 @@ export const GameLayout = ({ onLogout }) => {
                               {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
                             </span>
                           </div>
-                      ...
+
                           {isFarcaster && !isMobile && (
                             <span className="text-[5px] md:text-[6.5px] font-black text-slate-500 uppercase tracking-widest mt-0.5 text-center w-full leading-none">
                               Linked Mobile Wallet
@@ -315,12 +315,12 @@ export const GameLayout = ({ onLogout }) => {
 
                   if (!isFarcaster) {
                     return (
-                      <button 
+                      <button
                         onClick={wallet.connectWallet}
                         className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
                       >
-                         <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
-                         <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
+                        <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
+                        <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
                       </button>
                     );
                   }
@@ -330,82 +330,82 @@ export const GameLayout = ({ onLogout }) => {
 
                 <div className="flex flex-row items-center gap-1 bg-slate-900 border-[1.5px] border-black px-1.5 md:px-2.5 py-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1 shrink-0">
                   <div className="flex items-center gap-1">
-                     <Clock size={8} md:size={13} className="text-cyan-400" />
-                     <span className="text-[8px] md:text-xs font-black text-white italic tracking-widest">{currentTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    <Clock size={8} md:size={13} className="text-cyan-400" />
+                    <span className="text-[8px] md:text-xs font-black text-white italic tracking-widest">{currentTime.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5 ml-auto lg:ml-0">
-                 {player.abilityPoints > 0 && (
-                   <div className="bg-amber-400 text-black px-1.5 py-0.5 border-[1.5px] border-black shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-[9px] uppercase italic animate-pulse flex items-center gap-1">
-                      <Target size={9} /> {player.abilityPoints} PTS
-                   </div>
-                 )}
-                  <button 
-                    onClick={onLogoutWrapper} 
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
-                  >
-                     <Lock size={10} md:size={14} className="group-hover:rotate-12" />
-                     <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
-                  </button>
+                {player.abilityPoints > 0 && (
+                  <div className="bg-amber-400 text-black px-1.5 py-0.5 border-[1.5px] border-black shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] font-black text-[7px] md:text-[9px] uppercase italic animate-pulse flex items-center gap-1">
+                    <Target size={9} /> {player.abilityPoints} PTS
+                  </div>
+                )}
+                <button
+                  onClick={onLogoutWrapper}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
+                >
+                  <Lock size={10} md:size={14} className="group-hover:rotate-12" />
+                  <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
+                </button>
               </div>
             </div>
 
             {/* Resources Hub - Compact Row */}
             <div className="flex items-center gap-1.5 md:gap-3 bg-black/40 border-[1.5px] border-white/10 p-1 md:p-2 rounded-lg mb-1.5 md:mb-2 overflow-x-auto no-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
-               <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-cyan-500/10">
-                  <div className="bg-cyan-400 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-6"><Coins size={10} md:size={14} className="text-black" /></div>
-                  <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{Math.floor(player.tokens).toLocaleString()} <span className="text-[7px] md:text-[9px] text-cyan-400 opacity-60">GX</span></span>
-               </div>
+              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-cyan-500/10">
+                <div className="bg-cyan-400 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-6"><Coins size={10} md:size={14} className="text-black" /></div>
+                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{Math.floor(player.tokens).toLocaleString()} <span className="text-[7px] md:text-[9px] text-cyan-400 opacity-60">GX</span></span>
+              </div>
 
-               <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-red-500/10">
-                  <div className="bg-red-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black -rotate-3"><Coffee size={10} md:size={14} className="text-black" /></div>
-                  <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.potions || 0} <span className="text-[7px] md:text-[9px] text-red-400 opacity-60">POT</span></span>
-               </div>
+              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-red-500/10">
+                <div className="bg-red-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black -rotate-3"><Coffee size={10} md:size={14} className="text-black" /></div>
+                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.potions || 0} <span className="text-[7px] md:text-[9px] text-red-400 opacity-60">POT</span></span>
+              </div>
 
-               <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-blue-500/10">
-                  <div className="bg-blue-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-12"><MousePointer size={10} md:size={14} className="text-black" /></div>
-                  <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.autoScrolls || 0} <span className="text-[7px] md:text-[9px] text-blue-400 opacity-60">AUT</span></span>
-               </div>
+              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-blue-500/10">
+                <div className="bg-blue-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-12"><MousePointer size={10} md:size={14} className="text-black" /></div>
+                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.autoScrolls || 0} <span className="text-[7px] md:text-[9px] text-blue-400 opacity-60">AUT</span></span>
+              </div>
 
-               <div className="ml-auto flex items-center gap-1 shrink-0 bg-black/60 p-0.5 md:p-1 rounded-md border border-white/5">
-                  <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1 md:p-1.5 rounded transition-all ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
-                    {isMusicOn ? <Music size={12} md:size={14} /> : <Music2 size={12} md:size={14} />}
-                  </button>
-                  <button onClick={skipTrack} className="p-1 md:p-1.5 rounded text-slate-400 hover:text-cyan-400 transition-all" title="Next Track">
-                    <SkipForward size={12} md:size={14} />
-                  </button>
-                  <button onClick={() => setIsSfxOn(!isSfxOn)} className={`p-1 md:p-1.5 rounded transition-all ${isSfxOn ? 'text-amber-400' : 'text-slate-600'}`}>
-                    {isSfxOn ? <Volume2 size={12} md:size={14} /> : <VolumeX size={12} md:size={14} />}
-                  </button>
-               </div>
+              <div className="ml-auto flex items-center gap-1 shrink-0 bg-black/60 p-0.5 md:p-1 rounded-md border border-white/5">
+                <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1 md:p-1.5 rounded transition-all ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
+                  {isMusicOn ? <Music size={12} md:size={14} /> : <Music2 size={12} md:size={14} />}
+                </button>
+                <button onClick={skipTrack} className="p-1 md:p-1.5 rounded text-slate-400 hover:text-cyan-400 transition-all" title="Next Track">
+                  <SkipForward size={12} md:size={14} />
+                </button>
+                <button onClick={() => setIsSfxOn(!isSfxOn)} className={`p-1 md:p-1.5 rounded transition-all ${isSfxOn ? 'text-amber-400' : 'text-slate-600'}`}>
+                  {isSfxOn ? <Volume2 size={12} md:size={14} /> : <VolumeX size={12} md:size={14} />}
+                </button>
+              </div>
             </div>
 
             {/* Vitals Progress */}
             <div className="space-y-1 md:space-y-1.5 mb-1.5 md:mb-2">
-               <div className="flex items-center gap-2 md:gap-3">
-                  <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
-                     <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)} / {totalStats.maxHp}</span>
-                  </div>
-                  <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                     <div className={`h-full transition-all duration-300 ${player.hp / totalStats.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / totalStats.maxHp) * 100}%` }} />
-                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
-                  </div>
-               </div>
-               <div className="flex items-center gap-2 md:gap-3">
-                  <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[120px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
-                     <Star size={10} md:size={14} className="text-cyan-400" fill="currentColor" />
-                     <span className="text-[9px] md:text-sm font-black italic text-white leading-none">
-                        {Math.floor(player.xp)} / {getXpRequired(player.level)}
-                     </span>
-                  </div>
-                  <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                     <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
-                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
-                  </div>
-               </div>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
+                  <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
+                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)} / {totalStats.maxHp}</span>
+                </div>
+                <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
+                  <div className={`h-full transition-all duration-300 ${player.hp / totalStats.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / totalStats.maxHp) * 100}%` }} />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[120px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
+                  <Star size={10} md:size={14} className="text-cyan-400" fill="currentColor" />
+                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none">
+                    {Math.floor(player.xp)} / {getXpRequired(player.level)}
+                  </span>
+                </div>
+                <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
+                  <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                </div>
+              </div>
             </div>
 
             {/* Gear Row */}
@@ -540,13 +540,13 @@ export const GameLayout = ({ onLogout }) => {
 
       <footer className="w-full py-8 flex flex-col items-center gap-4 relative z-20">
         <p className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40">METAVERSE.DUNGEONSWITHGEMS.QUEST // SYNCED_TO_GRID</p>
-        
+
         <div className="flex flex-wrap justify-center gap-4 md:gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500 bg-black/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5 shadow-xl">
-           <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-wider transition-colors">Github</a>
-           <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-cyan-400 uppercase italic tracking-wider transition-colors">Twitter</a>
-           <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-blue-400 uppercase italic tracking-wider transition-colors">Telegram</a>
-           <div className="text-[10px] font-black text-slate-500 uppercase italic tracking-wider cursor-help" title="Discord: skippergemx">Discord: skippergemx</div>
-           <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>
+          <a href="https://github.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-white uppercase italic tracking-wider transition-colors">Github</a>
+          <a href="https://x.com/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-cyan-400 uppercase italic tracking-wider transition-colors">Twitter</a>
+          <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-blue-400 uppercase italic tracking-wider transition-colors">Telegram</a>
+          <div className="text-[10px] font-black text-slate-500 uppercase italic tracking-wider cursor-help" title="Discord: skippergemx">Discord: skippergemx</div>
+          <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>
         </div>
       </footer>
 
@@ -573,11 +573,11 @@ export const GameLayout = ({ onLogout }) => {
         .animate-flinch { animation: flinch 0.15s ease-out; }
         .animate-impact { animation: impact-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
       `}</style>
-      <GuideModal 
-        isOpen={showGuide} 
-        onClose={() => setShowGuide(false)} 
-        title={`${guideType.replace('_', ' ')} manual`} 
-        content={GUIDE_CONTENT[guideType] || []} 
+      <GuideModal
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
+        title={`${guideType.replace('_', ' ')} manual`}
+        content={GUIDE_CONTENT[guideType] || []}
       />
 
       {showBlockadeModal && (
@@ -585,41 +585,41 @@ export const GameLayout = ({ onLogout }) => {
           <div className="absolute inset-0 bg-black/95 backdrop-blur-sm"></div>
           <div className="bg-slate-900 border-4 border-red-600 p-6 md:p-8 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] max-w-md w-full relative z-10 transform -rotate-1">
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-2 rounded-full border-4 border-black text-xs font-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)]">
-               Security Lockdown
+              Security Lockdown
             </div>
 
             <div className="flex flex-col items-center text-center space-y-4 pt-4">
-               <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center border-4 border-red-600 animate-pulse">
-                  <ShieldAlert size={40} className="text-red-500" />
-               </div>
+              <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center border-4 border-red-600 animate-pulse">
+                <ShieldAlert size={40} className="text-red-500" />
+              </div>
 
-               <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">
-                  Identity Collision Detect
-               </h2>
+              <h2 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">
+                Identity Collision Detect
+              </h2>
 
-               <p className="text-slate-400 text-[10px] leading-relaxed font-medium">
-                  This wallet belongs to <span className="text-red-500 font-extrabold italic uppercase underline">another Hero profile</span>. 
-                  Uplink has been <span className="text-red-600 font-extrabold uppercase italic">forcefully ejected</span> to prevent profile contamination.
-               </p>
+              <p className="text-slate-400 text-[10px] leading-relaxed font-medium">
+                This wallet belongs to <span className="text-red-500 font-extrabold italic uppercase underline">another Hero profile</span>.
+                Uplink has been <span className="text-red-600 font-extrabold uppercase italic">forcefully ejected</span> to prevent profile contamination.
+              </p>
 
-               <div className="bg-black/60 border-2 border-red-900/50 rounded-2xl p-4 w-full">
-                  <span className="text-[10px] font-mono text-red-500/80 break-all leading-tight italic">
-                     Blockade Ref: {blockadeError || "IDENTITY_CONFLICT_SEC_31"}
-                  </span>
-               </div>
+              <div className="bg-black/60 border-2 border-red-900/50 rounded-2xl p-4 w-full">
+                <span className="text-[10px] font-mono text-red-500/80 break-all leading-tight italic">
+                  Blockade Ref: {blockadeError || "IDENTITY_CONFLICT_SEC_31"}
+                </span>
+              </div>
 
-               <div className="text-[9px] text-slate-500 italic space-y-1.5 pt-1 text-left w-full border-t border-slate-800/50 mt-2">
-                  <p>• Unauthorized node has been ejected.</p>
-                  <p>• To establish a new Uplink, please connect a brand-new, unclaimed wallet.</p>
-                  <p>• For account-specific questions, please join our discord community.</p>
-               </div>
+              <div className="text-[9px] text-slate-500 italic space-y-1.5 pt-1 text-left w-full border-t border-slate-800/50 mt-2">
+                <p>• Unauthorized node has been ejected.</p>
+                <p>• To establish a new Uplink, please connect a brand-new, unclaimed wallet.</p>
+                <p>• For account-specific questions, please join our discord community.</p>
+              </div>
 
-               <button 
+              <button
                 onClick={() => setShowBlockadeModal(false)}
                 className="w-full py-4 bg-red-600 text-white font-black uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 overflow-hidden"
-               >
-                  Dismiss Security Alert
-               </button>
+              >
+                Dismiss Security Alert
+              </button>
             </div>
           </div>
         </div>
