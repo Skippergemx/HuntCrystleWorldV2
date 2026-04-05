@@ -17,7 +17,7 @@ export const useLeaderboard = (user, player, db) => {
     const fieldMap = {
       'boss': 'totalBossDamage',
       'level': 'level',
-      'depth': 'maxDepth',
+      'depth': 'maxDepthScore',
       'gx': 'tokens'
     };
 

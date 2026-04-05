@@ -11,7 +11,7 @@ export const TavernView = () => {
   return (
     <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-      <Header title="Hero for Hire: Tavern" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} />
+      <Header title="Hero for Hire: Tavern" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
       
       {player.hiredMate && (
         <div className="bg-purple-950 border-2 border-purple-500 p-2 mb-2 flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">

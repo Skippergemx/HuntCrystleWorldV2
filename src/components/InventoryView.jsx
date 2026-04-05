@@ -46,7 +46,7 @@ export const InventoryView = React.memo(() => {
   };
 
   const processedInventory = useMemo(() => {
-     const inv = (player.inventory || []).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: false }));
+     const inv = Object.values(player.inventory || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: false }));
      const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: true }));
      
      let fullList = [...inv, ...equipped];
@@ -72,7 +72,7 @@ export const InventoryView = React.memo(() => {
     <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden">
        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
        
-       <Header title="STORAGE CORE: ASSET BAG" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} icon={<Package className="text-emerald-400" />} />
+       <Header title="STORAGE CORE: ASSET BAG" onClose={adventure.goBack} onHelp={() => openGuide('menu')} icon={<Package className="text-emerald-400" />} />
 
        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 relative z-10">
           {stats.map(s => (

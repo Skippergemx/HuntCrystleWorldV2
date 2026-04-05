@@ -27,6 +27,8 @@ export const AdminPanelView = React.memo(() => {
              (p.id?.toLowerCase().includes(search)) ||
              (p.email?.toLowerCase().includes(search)) ||
              (p.telegramUsername?.toLowerCase().includes(search)) ||
+             (p.farcasterUsername?.toLowerCase().includes(search)) ||
+             (p.farcasterFID?.toString().includes(search)) ||
              (p.tonWalletAddress?.toLowerCase().includes(search)) ||
              (p.walletAddress?.toLowerCase().includes(search));
     });
@@ -99,9 +101,11 @@ export const AdminPanelView = React.memo(() => {
           buffUntil: 0,
           equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
           recipes: ['crystle_blade'],
-          inventory: [],
+          inventory: {},
           totalBossDamage: 0,
-          maxDepth: 1,
+          maxDepthFloor: 1,
+          maxDepthScore: 0,
+          maxDepthMapName: 'Echo Forest',
           penaltyUntil: 0,
           autoMode: null,
           gemx: { level: 1, crystalsFed: 0 },
@@ -185,9 +189,39 @@ export const AdminPanelView = React.memo(() => {
     } finally { setLoading(false); }
   };
 
+
+
   const syncAllPlayersToLeaderboard = async () => {
-    // V2 architecture queries Leaderboard directly from 'players'. This button is redundant but can be repurposed to force-heal stats.
-    setMessage({ type: 'warning', text: 'Sync Idle: In V2 Architecture, the Leaderboard reads directly from the players collection in real-time. No sync required.' });
+    if (!window.confirm("RANKING HEAL PROTOCOL: This will migrate legacy 'maxDepth' data to the new 'maxDepthFloor' and 'maxDepthScore' format for all players. Continue?")) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      const batch = writeBatch(db);
+      let migrationCount = 0;
+      players.forEach(p => {
+        if (!p.maxDepthFloor || !p.maxDepthScore) {
+          const profileRef = doc(db, 'players', p.id);
+          const depthLvl = p.maxDepth || 1;
+          batch.update(profileRef, {
+            maxDepthFloor: depthLvl,
+            maxDepthScore: depthLvl * 10000
+          });
+          migrationCount++;
+        }
+      });
+      if (migrationCount > 0) {
+        await batch.commit();
+        setMessage({ type: 'success', text: `Ranking Schema Healed: Migrated ${migrationCount} players to the V3 Depth Score format.` });
+        await fetchStats();
+      } else {
+        setMessage({ type: 'warning', text: 'Sync Complete: All players already compliant with V3 Depth Score format.' });
+      }
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Healing failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -199,7 +233,7 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const { id, name, level, tokens, totalBossDamage, maxDepth, walletAddress } = editingPlayer;
+      const { id, name, level, tokens, totalBossDamage, maxDepthFloor, maxDepthMapName, walletAddress } = editingPlayer;
       const profileRef = doc(db, 'players', id);
       
       const updateData = {
@@ -207,7 +241,8 @@ export const AdminPanelView = React.memo(() => {
         level: Number(level),
         tokens: Number(tokens),
         totalBossDamage: Number(totalBossDamage),
-        maxDepth: Number(maxDepth),
+        maxDepthFloor: Number(maxDepthFloor || editingPlayer.maxDepth || 1),
+        maxDepthMapName: maxDepthMapName || null,
         walletAddress: walletAddress || null,
         tonWalletAddress: editingPlayer.tonWalletAddress || null
       };
@@ -252,9 +287,11 @@ export const AdminPanelView = React.memo(() => {
           buffUntil: 0,
           equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
           recipes: [],
-          inventory: [],
+          inventory: {},
           totalBossDamage: 0,
-          maxDepth: 1,
+          maxDepthFloor: 1,
+          maxDepthScore: 0,
+          maxDepthMapName: 'Echo Forest',
           penaltyUntil: 0,
           autoMode: null,
           gemx: { level: 1, crystalsFed: 0 },
@@ -344,11 +381,11 @@ export const AdminPanelView = React.memo(() => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-500 uppercase">Peak Depth</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase">Peak Floor</label>
                   <input 
                     type="number" 
-                    value={editingPlayer.maxDepth}
-                    onChange={e => setEditingPlayer({...editingPlayer, maxDepth: e.target.value})}
+                    value={editingPlayer.maxDepthFloor || editingPlayer.maxDepth || 1}
+                    onChange={e => setEditingPlayer({...editingPlayer, maxDepthFloor: e.target.value})}
                     className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
                   />
                 </div>
@@ -429,7 +466,7 @@ export const AdminPanelView = React.memo(() => {
             <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => setView('menu')}
+            onClick={() => adventure.goBack()}
             className="px-6 py-2 bg-slate-800 text-white font-black uppercase italic border-2 border-white/20 hover:bg-white hover:text-black transition-all"
           >
             Exit Terminal
@@ -600,15 +637,17 @@ export const AdminPanelView = React.memo(() => {
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-cyan-600 pl-4">
             <h2 className="text-xl font-black text-white uppercase italic">Player Registry</h2>
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Search Name, ID, or @Handle..." 
-                  className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-cyan-500 outline-none font-black italic"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                />
+            <div className="flex gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                  <input 
+                    type="text" 
+                    placeholder="Search Name, ID, or @Handle..." 
+                    className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-cyan-500 outline-none font-black italic"
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  />
+              </div>
             </div>
           </div>
 
@@ -616,12 +655,11 @@ export const AdminPanelView = React.memo(() => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b-2 border-slate-800">
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Hunter</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Level</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GX Coins</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Boss Damage</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Floor</th>
-                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Inventory</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Hunter Identity</th>
+                  <th className="py-2 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Level / XP</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GX Balance</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Boss DMG</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Depth</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Actions</th>
                 </tr>
               </thead>
@@ -633,36 +671,63 @@ export const AdminPanelView = React.memo(() => {
                         <tr key={player.id} className="hover:bg-slate-900/30 transition-colors group">
                           <td className="py-4 px-4 text-left">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl grayscale group-hover:grayscale-0 transition-all shadow-[2px_2px_0_rgba(0,0,0,0.5)] overflow-hidden">
+                              <div className="w-12 h-12 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl grayscale group-hover:grayscale-0 transition-all shadow-[4px_4px_0_rgba(0,0,0,0.5)] overflow-hidden shrink-0">
                                 <img 
-                                  src={player.farcasterPfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  src={player.farcasterPfp || player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
                                   className="w-full h-full object-cover" 
                                   alt="" 
                                 />
                               </div>
-                              <div className="flex flex-col gap-0.5 text-left">
-                                <p className="text-sm font-black text-white italic leading-none">{player.name || 'Anonymous Hunter'}</p>
-                                <p className="text-[9px] text-cyan-500 font-bold tracking-wider">
-                                   {player.farcasterUsername ? `@${player.farcasterUsername}` : (player.email || 'Anonymous Signal')}
-                                </p>
-                                <p className="text-[7px] text-slate-600 font-bold tracking-tighter uppercase flex items-center gap-2">
-                                   <span className="opacity-40">{player.id.substring(0, 15)}...</span>
+                              <div className="flex flex-col gap-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-black text-white italic leading-none truncate max-w-[150px]">{player.name || 'Anonymous Hunter'}</p>
+                                  {player.farcasterUsername && (
+                                    <span className="text-[10px] text-purple-400 font-bold tracking-wider">@{player.farcasterUsername}</span>
+                                  )}
+                                  {player.farcasterFID && (
+                                    <span className="text-[8px] text-slate-500 font-black">FID: {player.farcasterFID}</span>
+                                  )}
+                                </div>
+
+                                <div className="flex flex-col gap-0.5">
+                                  {player.walletAddress && (
+                                    <div className="flex items-center gap-1.5 group/wallet cursor-pointer" onClick={() => { navigator.clipboard.writeText(player.walletAddress); setMessage({type:'success', text:`EVM Node Pinned: ${player.walletAddress.slice(0,6)}`}); }}>
+                                      <Wallet size={10} className="text-amber-500/60" />
+                                      <span className="text-[9px] text-amber-500/80 font-mono tracking-tighter truncate max-w-[120px]">{player.walletAddress}</span>
+                                    </div>
+                                  )}
+                                  {player.tonWalletAddress && (
+                                    <div className="flex items-center gap-1.5 group/ton cursor-pointer" onClick={() => { navigator.clipboard.writeText(player.tonWalletAddress); setMessage({type:'success', text:`TON Node Pinned: ${player.tonWalletAddress.slice(0,6)}`}); }}>
+                                      <Send size={10} className="text-blue-400/50 -rotate-12" />
+                                      <span className="text-[9px] text-blue-400/80 font-mono tracking-tighter truncate max-w-[120px]">{player.tonWalletAddress}</span>
+                                    </div>
+                                  )}
+                                  {player.email && !player.farcasterUsername && (
+                                    <span className="text-[9px] text-cyan-500/80 font-bold tracking-wider truncate">{player.email}</span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-2 mt-0.5">
+                                   <span className="text-[7px] text-slate-600 font-bold uppercase tracking-tighter">ID: {player.id.substring(0, 10)}...</span>
                                    {player.farcasterUsername ? (
-                                      <span className="px-1.5 py-0.5 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic">FARCASTER</span>
+                                      <span className="px-1.5 py-0 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Farcaster</span>
                                    ) : player.id.startsWith('TG_') ? (
-                                   <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-950/40 border border-blue-500/30 rounded text-blue-400">
-                                      <Send size={10} className="-rotate-12 translate-x-[1px]" />
-                                      <span className="text-[8px] font-black uppercase">Telegram</span>
-                                   </div>
-                                ) : (
-                                      <span className="px-1.5 py-0.5 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic">GOOGLE_AUTH</span>
+                                      <span className="px-1.5 py-0 bg-blue-900/20 text-blue-400 border border-blue-500/30 rounded-[2px] text-[6px] font-black italic uppercase">Telegram</span>
+                                   ) : (
+                                      <span className="px-1.5 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Google</span>
                                    )}
-                                </p>
+                                </div>
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-4">
-                            <span className="px-2 py-1 bg-cyan-950 text-cyan-400 text-[10px] font-black rounded border border-cyan-900">LVL {player.level || 1}</span>
+                            <div className="flex flex-col gap-1">
+                               <span className="text-xs font-black text-cyan-400 italic">LVL {player.level || 1}</span>
+                               <div className="w-16 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                  <div className="h-full bg-cyan-600" style={{ width: `${Math.min(100, ((player.xp || 0) % 1000) / 10)}%` }}></div>
+                               </div>
+                               <span className="text-[7px] text-slate-500 font-bold uppercase">{player.xp?.toLocaleString() || 0} XP</span>
+                            </div>
                           </td>
                           <td className="py-4 px-4">
                             <span className="text-sm font-black text-amber-500 italic">{(player.tokens || 0).toLocaleString()} GX</span>
@@ -671,17 +736,17 @@ export const AdminPanelView = React.memo(() => {
                             <span className="text-sm font-black text-red-500 italic">{(player.totalBossDamage || 0).toLocaleString()}</span>
                           </td>
                           <td className="py-4 px-4">
-                            <span className="text-sm font-black text-blue-400 italic">FLR {player.maxDepth || 1}</span>
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="text-[10px] font-black text-slate-400">{(player.inventory || []).length} Items</span>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-black text-blue-400 italic">FLR {player.maxDepthFloor || player.maxDepth || 1}</span>
+                              {player.maxDepthMapName && <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mt-0.5">{player.maxDepthMapName}</span>}
+                            </div>
                           </td>
                           <td className="py-4 px-4 text-center">
                             <button 
                               onClick={() => setEditingPlayer(player)}
-                              className="p-2 bg-slate-800 text-cyan-400 border border-slate-700 hover:bg-cyan-600 hover:text-white transition-all shadow-md group/edit"
+                              className="px-4 py-2 bg-slate-800 text-cyan-400 border border-slate-700 hover:bg-cyan-600 hover:text-white transition-all shadow-md font-black uppercase italic text-[10px]"
                             >
-                               <RefreshCw size={14} className="group-hover/edit:rotate-180 transition-transform duration-500" />
+                               Edit Unit
                             </button>
                           </td>
                         </tr>

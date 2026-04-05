@@ -12,7 +12,7 @@ export const ShopView = React.memo(() => {
     <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[500px] relative">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
       
-      <Header title="GX Exchange: Shop" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} />
+      <Header title="GX Exchange: Shop" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
       
       <div className="grid gap-6 relative z-10">
         {SHOP_ITEMS.map((item, index) => {

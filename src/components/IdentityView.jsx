@@ -66,7 +66,7 @@ export const IdentityView = React.memo(() => {
   return (
     <div className="flex-1 p-6 space-y-6 flex flex-col items-center justify-start overflow-y-auto max-h-[600px] relative no-scrollbar">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-      <Header title="Identity Core" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} />
+      <Header title="Identity Core" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
       
       <div className="w-full max-w-sm flex flex-col items-center">
         {/* --- HERO AVATAR SECTION --- */}

@@ -270,7 +270,7 @@ export const useCombat = (
 
           if (lootItem) {
             const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
-            updates.inventory = [...(player?.inventory || []), itemWithId];
+            updates[`inventory.${itemWithId.id}`] = itemWithId;
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
             setLastLoot(itemWithId);
@@ -282,7 +282,7 @@ export const useCombat = (
 
     syncPlayer(updates);
 
-    const droppedItem = updates.inventory ? updates.inventory[updates.inventory.length - 1] : null;
+    const droppedItem = updates[`inventory.${Object.keys(updates).find(k => k.startsWith('inventory.'))?.split('.')[1]}`] || null;
     setSessionRewards(prev => ({
       tokens: prev.tokens + e.loot,
       xp: prev.xp + earnedXp,
@@ -300,7 +300,30 @@ export const useCombat = (
         const nextDepth = depth + 1;
         setDepth(nextDepth);
         addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
-        if (nextDepth > (player?.maxDepth || 1)) updates.maxDepth = nextDepth;
+        
+        // --- STRATEGIC DEPTH SCORING V4 ---
+        // Logic: Rank first by Map Difficulty (minLevel), then by Floor.
+        // Formula: (minLevel * 100000) + floor
+        const currentMapFactor = (selectedMap?.minLevel || 1) * 100000;
+        const currentDepthScore = currentMapFactor + nextDepth;
+        const previousMaxScore = player?.maxDepthScore || 0;
+
+        if (currentDepthScore > previousMaxScore) {
+            const depthUpdates = {
+                maxDepthScore: currentDepthScore,
+                maxDepthMapName: selectedMap?.name || 'Neon Slums',
+                maxDepthMapMinLevel: selectedMap?.minLevel || 1,
+                maxDepthFloor: nextDepth,
+                maxDepth: nextDepth // Backwards compatibility
+            };
+            syncPlayer(depthUpdates);
+            updateLeaderboard({
+                level: nextLvl,
+                maxDepthScore: currentDepthScore,
+                maxDepthFloor: nextDepth
+            });
+        }
+        
         spawnNewEnemy(nextDepth);
       } else {
         setKillsInFloor(newKills);
@@ -308,10 +331,9 @@ export const useCombat = (
       }
     }, 1500);
 
-    if (didLevelUp || updates.maxDepth) {
+    if (didLevelUp) {
       updateLeaderboard({
-        level: nextLvl,
-        maxDepth: updates.maxDepth || player?.maxDepth || 1
+        level: nextLvl
       });
     }
 
@@ -333,7 +355,8 @@ export const useCombat = (
       const relics = EQUIPMENT.filter(e => e.type === 'Relic');
       if (relics.length > 0) {
         const drop = relics[Math.floor(Math.random() * relics.length)];
-        updates.inventory = [...(player?.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        const dropId = `${drop.id}_${Date.now()}`;
+        updates[`inventory.${dropId}`] = { ...drop, id: dropId };
         addLog(`💎 BOSS RELIC DROP: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
@@ -343,7 +366,8 @@ export const useCombat = (
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
         const drop = schematics[Math.floor(Math.random() * schematics.length)];
-        updates.inventory = [...(updates.inventory || player?.inventory || []), { ...drop, id: `${drop.id}_${Date.now()}` }];
+        const dropId = `${drop.id}_${Date.now()}`;
+        updates[`inventory.${dropId}`] = { ...drop, id: dropId };
         addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }

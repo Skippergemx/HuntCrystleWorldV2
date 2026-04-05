@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight, RefreshCw, FlaskConical, WandSparkles } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
-import { AvatarMedia, SquadHUD } from './GameUI';
+import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const CombatView = React.memo(() => {
@@ -21,6 +21,7 @@ export const CombatView = React.memo(() => {
 
   const [isLootModalOpen, setIsLootModalOpen] = useState(false);
   const [isPossibleDropsModalOpen, setIsPossibleDropsModalOpen] = useState(false);
+  const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
 
   const possibleDrops = useMemo(() => {
     return selectedMap?.lootTable ? selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
@@ -124,6 +125,13 @@ export const CombatView = React.memo(() => {
               title="Tactical Guide"
             >
               <HelpCircle size={12} className="md:w-5 md:h-5" strokeWidth={4} />
+            </button>
+            <button
+              onClick={() => adventure.goBack()}
+              className="p-1.5 md:p-3 bg-red-600 border-[3px] md:border-[4px] border-black text-white shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-2"
+              title="Quick Exit"
+            >
+              <X size={12} className="md:w-5 md:h-5" strokeWidth={4} />
             </button>
           </div>
 
@@ -450,7 +458,7 @@ export const CombatView = React.memo(() => {
           </div>
 
           <button
-            onClick={combat.handleRetreat}
+            onClick={() => setShowRetreatConfirm(true)}
             className={`flex-1 py-3 md:py-6 rounded font-black uppercase text-[10px] md:text-lg tracking-widest border-[4px] md:border-[5px] border-black transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white flex items-center justify-center hover:shadow-[10px_10px_0_rgba(0,0,0,1)]`}
           >
             RETREAT
@@ -645,6 +653,16 @@ export const CombatView = React.memo(() => {
             </div>
           </div>
         )}
+        {/* Confirmation Modal */}
+        <ConfirmationModal 
+          isOpen={showRetreatConfirm}
+          onClose={() => setShowRetreatConfirm(false)}
+          onConfirm={combat.handleRetreat}
+          title="ABANDON INCURSION?"
+          message="Retreating will end your current floor progress and drop any active session multipliers. Do you accept the strategic withdrawal?"
+          confirmText="YES, RETREAT"
+          cancelText="NO, CONTINUE"
+        />
       </div>
 
     </div>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
-import { AvatarMedia, SquadHUD } from './GameUI';
+import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
+import { X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 
 const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => {
@@ -32,6 +33,7 @@ export const BossView = () => {
   const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
   const { autoTimeLeft, dragonTimeLeft } = gameLoop;
+  const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
 
   const isAutoActive = autoTimeLeft > 0;
   const isStunned = stunTimeLeft > 0;
@@ -83,6 +85,13 @@ export const BossView = () => {
                   title="Tactical Intel"
                 >
                   <HelpCircle size={14} className="md:w-[18px] md:h-[18px]" strokeWidth={4} />
+                </button>
+                <button 
+                  onClick={() => adventure.goBack()} 
+                  className="p-1.5 md:p-2.5 bg-black border-[2px] md:border-[3px] border-black text-white shadow-[3px_3px_0_rgba(0,0,0,1)] hover:text-red-500 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-1"
+                  title="Quick Exit"
+                >
+                  <X size={14} className="md:w-[18px] md:h-[18px]" strokeWidth={4} />
                 </button>
             </div>
         </div>
@@ -301,12 +310,22 @@ export const BossView = () => {
           </button>
           
           <button 
-            onClick={() => combat.handleRetreat()} 
+            onClick={() => setShowRetreatConfirm(true)} 
             className={`px-4 md:px-8 py-3 md:py-4 rounded-xl font-black uppercase text-xs md:text-lg tracking-widest border-[3px] md:border-[4px] border-black transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white`}
           >
             RETREAT
           </button>
         </div>
+        {/* Confirmation Modal */}
+        <ConfirmationModal 
+          isOpen={showRetreatConfirm}
+          onClose={() => setShowRetreatConfirm(false)}
+          onConfirm={combat.handleRetreat}
+          title="ABANDON BOSS RAID?"
+          message="Retreating from the Abyssal Breach will reset your current session stats. Are you sure you want to withdraw your signal?"
+          confirmText="YES, RETREAT"
+          cancelText="NO, CONTINUE"
+        />
       </div>
     </div>
   );

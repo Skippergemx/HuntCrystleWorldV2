@@ -52,6 +52,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const [forgeResult, setForgeResult] = useState(null); // { success: boolean, item: object }
   const [showBlockadeModal, setShowBlockadeModal] = useState(false);
   const [blockadeError, setBlockadeError] = useState(null);
+  const [collisionProfile, setCollisionProfile] = useState(null);
 
   // Telegram SDK
   const telegram = useTelegram();
@@ -65,7 +66,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet } = usePlayerSync(user, db, appId, farcasterContext, telegram);
+  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict } = usePlayerSync(user, db, appId, farcasterContext, telegram);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -130,6 +131,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
         if (!result.success) {
            console.warn(`SECURITY ALERT: Ejecting unauthorized node connection. Reason: ${result.error}`);
            setBlockadeError(result.error);
+           setCollisionProfile(result.collision || null);
            setShowBlockadeModal(true);
            wallet.disconnectWallet(); // AUTO-EJECT ON BLOCKADE
            addLog(`Security Alert: ${result.error}. Node Ejected.`);
@@ -169,9 +171,11 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     showSuccessWindow, setShowSuccessWindow,
     showBlockadeModal, setShowBlockadeModal,
     blockadeError, setBlockadeError,
+    collisionProfile, setCollisionProfile,
+    sessionConflict,
     forgeResult, setForgeResult,
     adventure, combat, actions, gameLoop, market, audio, wallet, 
-    linkWallet,
+    linkWallet, migrateProfile,
     farcasterContext,
     telegram,
     leaderboard: leaderboardObj.leaderboard,

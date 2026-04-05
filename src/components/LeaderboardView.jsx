@@ -37,7 +37,7 @@ export const LeaderboardView = React.memo(() => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
 
-      <Header title="ELITE HALL OF FAME" onClose={() => setView('menu')} onHelp={() => openGuide('leaderboard')} icon={<Trophy className="text-amber-400" />} />
+      <Header title="ELITE HALL OF FAME" onClose={adventure.goBack} onHelp={() => openGuide('leaderboard')} icon={<Trophy className="text-amber-400" />} />
 
       {/* Your Rank Pin (V2 Design) */}
       {selfRank && (
@@ -109,7 +109,7 @@ export const LeaderboardView = React.memo(() => {
                 <div className="flex items-center gap-3 mt-1.5 opacity-60">
                   <span className="text-[10px] font-black text-white uppercase italic tracking-widest leading-none">LVL {entry.level} Hunter</span>
                   <div className="w-1.5 h-1.5 bg-white/10 rounded-full"></div>
-                  <span className="text-[10px] font-black text-white uppercase italic tracking-widest leading-none">SECTOR: FLOOR {entry.maxDepth || 1}</span>
+                  <span className="text-[10px] font-black text-white uppercase italic tracking-widest leading-none">SECTOR: {entry.maxDepthMapName || 'NEON SLUMS'} (LVL {entry.maxDepthMapMinLevel || 1}+) {entry.maxDepthFloor ? `[FL ${entry.maxDepthFloor}]` : (entry.maxDepth ? `[FL ${entry.maxDepth}]` : '')}</span>
                 </div>
               </div>
 
@@ -118,7 +118,7 @@ export const LeaderboardView = React.memo(() => {
                   {activeTab === 'boss' ? (entry.totalBossDamage || 0).toLocaleString() : 
                    activeTab === 'gx' ? (entry.tokens || 0).toLocaleString() :
                    activeTab === 'level' ? entry.level :
-                   (entry.maxDepth || 1)}
+                   (entry.maxDepthFloor || entry.maxDepth || 1)}
                 </p>
                 <p className="text-[8px] font-black text-white/30 uppercase italic tracking-widest">
                   {activeTab === 'boss' ? 'CRITICAL DMG' : activeTab === 'gx' ? 'LIQUID GX' : activeTab === 'level' ? 'EXPERIENCE' : 'EXPEDITION DEPTH'}

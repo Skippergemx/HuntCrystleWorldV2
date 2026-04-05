@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Sparkles, PlusCircle, HelpCircle } from 'lucide-react';
+import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp }) => (
   <div className="flex justify-between items-center mb-4 md:mb-6 w-full relative z-20">
@@ -233,3 +233,40 @@ export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, 
   );
 });
 
+
+export const ConfirmationModal = React.memo(({ isOpen, onClose, onConfirm, title, message, confirmText = "CONFIRM", cancelText = "CANCEL" }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
+      <div className="relative max-w-sm w-full">
+        <div className="absolute inset-0 bg-red-800 rounded-3xl transform translate-x-3 translate-y-3"></div>
+        <div className="relative bg-white border-[4px] border-black rounded-3xl overflow-hidden shadow-2xl p-6 md:p-8 space-y-6 flex flex-col items-center text-center">
+          <div className="bg-red-600 p-4 rounded-full border-4 border-black animate-bounce">
+            <ShieldAlert size={40} className="text-white" />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl md:text-3xl font-black text-black uppercase italic tracking-tighter leading-none">{title}</h2>
+            <p className="text-xs md:text-sm font-bold text-slate-600 uppercase italic tracking-tight">{message}</p>
+          </div>
+
+          <div className="flex flex-col gap-3 w-full">
+            <button 
+              onClick={() => { onConfirm(); onClose(); }}
+              className="w-full bg-red-600 text-white py-4 rounded-xl font-black uppercase tracking-widest hover:bg-red-500 transition-all border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-base"
+            >
+              {confirmText}
+            </button>
+            <button 
+              onClick={onClose}
+              className="w-full bg-slate-200 text-black py-3 rounded-xl font-black uppercase tracking-widest hover:bg-white transition-all border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-sm"
+            >
+              {cancelText}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});

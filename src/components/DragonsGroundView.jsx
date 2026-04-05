@@ -212,7 +212,7 @@ export const DragonsGroundView = React.memo(() => {
       <div className="p-4 z-30">
         <Header 
           title="Dragons Ground" 
-          onClose={() => setView('menu')} 
+          onClose={adventure.goBack} 
           onHelp={() => openGuide('menu')}
         />
         <div className="flex items-center gap-2 mt-2">

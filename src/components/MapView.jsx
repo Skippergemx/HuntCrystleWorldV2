@@ -4,7 +4,7 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const MapView = () => {
-  const { player, adventure, gameLoop, openGuide, MAPS, LOOTS } = useGame();
+  const { player, adventure, gameLoop, openGuide, MAPS, LOOTS, syncPlayer, updateLeaderboard } = useGame();
   const { setView, setDepth, spawnNewEnemy, setSelectedMap } = adventure;
   const { penaltyRemaining } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
@@ -12,6 +12,26 @@ export const MapView = () => {
   const handleMapSelect = (map) => {
     if (player.level < map.minLevel) return;
     if (isPenalized) return;
+    
+    // --- STRATEGIC DEPTH SCORING V4 ---
+    // Update ranking immediately upon entry to Floor 1 if it's the hardest map reached
+    const entryScore = (map.minLevel * 100000) + 1;
+    if (entryScore > (player.maxDepthScore || 0)) {
+        const entryUpdates = {
+            maxDepthScore: entryScore,
+            maxDepthMapName: map.name,
+            maxDepthMapMinLevel: map.minLevel || 1,
+            maxDepthFloor: 1,
+            maxDepth: 1
+        };
+        syncPlayer(entryUpdates);
+        updateLeaderboard({
+            level: player.level,
+            maxDepthScore: entryScore,
+            maxDepthFloor: 1
+        });
+    }
+
     setSelectedMap(map);
     setDepth(1);
     spawnNewEnemy(1);
@@ -24,7 +44,7 @@ export const MapView = () => {
       
       <Header 
         title="World Sectors" 
-        onClose={() => setView('menu')} 
+        onClose={adventure.goBack} 
         onHelp={() => openGuide('menu')}
       />
 

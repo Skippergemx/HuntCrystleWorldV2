@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc, deleteField } from 'firebase/firestore';
 
 /**
  * usePlayerActions V2: Unified Action Engine
@@ -40,9 +40,9 @@ export const usePlayerActions = (
     addLog(`🚩 BREACHING DEFENSES: Combat contact with ${defenderData.name}!`);
   }, [setBattleMode, setGvgContext, setEnemy, setView, addLog]);
 
-  const handleHeal = useCallback(() => {
+  const handleHeal = useCallback(async () => {
     if (player.hp >= player.maxHp) return;
-    const inventory = player.inventory || [];
+    const inventory = Object.values(player.inventory || {});
     const selection = player.selectedPotionId || 'hp_potion';
     
     const potionSpecs = {
@@ -52,14 +52,14 @@ export const usePlayerActions = (
     };
 
     const spec = potionSpecs[selection] || potionSpecs['hp_potion'];
-    const idx = inventory.findIndex(i => i && i.id?.startsWith(selection));
+    const targetItem = inventory.find(i => i && i.id?.startsWith(selection));
     const hasCounter = (player.potions || 0) > 0;
 
     let useCounter = false;
-    let usedIdx = -1;
+    let usedItemId = null;
 
-    if (idx !== -1) {
-      usedIdx = idx;
+    if (targetItem) {
+      usedItemId = targetItem.id;
     } else if (selection === 'hp_potion' && hasCounter) {
       useCounter = true;
     } else {
@@ -71,11 +71,10 @@ export const usePlayerActions = (
     
     const updates = { hp: Math.min(player.maxHp, player.hp + healAmt) };
     if (useCounter) {
-      updates.potions = player.potions - 1;
+      updates.potions = (player.potions || 0) - 1;
     } else {
-      const newInv = [...inventory];
-      newInv.splice(usedIdx, 1);
-      updates.inventory = newInv;
+      // Correct Dot-Notation Deletion for Keyed Maps
+      updates[`inventory.${usedItemId}`] = deleteField();
     }
 
     syncPlayer(updates);
@@ -130,68 +129,63 @@ export const usePlayerActions = (
     playSFX(SOUNDS.obtainLoot);
   };
 
-  const sellItem = useCallback((itemId, amount = 1) => {
-    setPlayer(prev => {
-      if (!prev) return prev;
-      const newInventory = [...(prev.inventory || [])];
-      
-      const itemsToSell = [];
-      const remainingItems = [];
-      let foundCount = 0;
-      let itemName = "";
-      let totalGained = 0;
+  const sellItem = useCallback(async (itemId) => {
+    if (!player.inventory || !player.inventory[itemId]) return;
+    const item = player.inventory[itemId];
+    const itemBaseId = item.id?.replace(/(_\d+)+$/, '');
+    const master = ITEMS.find(i => i.id === itemBaseId) || item;
+    
+    let value = 0;
+    if (master.cost) {
+      value = Math.floor(master.cost * 0.4);
+    } else {
+      value = master.sellValue || item.sellValue || 0;
+    }
 
-      newInventory.forEach(item => {
-        const itemBaseId = item.id?.replace(/(_\d+)+$/, '');
-        const targetBaseId = itemId?.replace(/(_\d+)+$/, '');
-
-        if (itemBaseId === targetBaseId && foundCount < amount) {
-          const master = ITEMS.find(i => i.id === itemBaseId) || item;
-          let value = 0;
-          if (master.cost) {
-            value = Math.floor(master.cost * 0.4);
-          } else {
-            value = master.sellValue || item.sellValue || 0;
-          }
-          totalGained += value;
-          foundCount++;
-          itemName = master.name || item.name;
-        } else {
-          remainingItems.push(item);
-        }
-      });
-
-      if (foundCount > 0) {
-        syncPlayer({ tokens: prev.tokens + totalGained, inventory: remainingItems });
-        addLog(`💰 Sold ${foundCount}x ${itemName} for ${totalGained} GX`);
-        playSFX(SOUNDS.obtainLoot);
-      }
-      return { ...prev, tokens: prev.tokens + totalGained, inventory: remainingItems };
+    playSFX(SOUNDS.sellItem);
+    addLog(`💰 Sold ${master.name || item.name} for ${value} GX`);
+    
+    syncPlayer({ 
+      tokens: (player.tokens || 0) + value,
+      [`inventory.${itemId}`]: deleteField()
     });
-  }, [syncPlayer, addLog, playSFX, SOUNDS, ITEMS]);
+  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS]);
 
-  const equipItem = (item) => {
-    const oldItem = player.equipped?.[item.type];
-    let newInventory = player.inventory.filter((_, i) => i !== player.inventory.findIndex(inv => inv.id === item.id));
-    if (oldItem) newInventory.push(oldItem);
+  const equipItem = useCallback(async (itemId) => {
+    if (!player.inventory || !player.inventory[itemId]) return;
+    const item = player.inventory[itemId];
+    const slot = item.type;
+    
+    if (!['Headgear', 'Weapon', 'Armor', 'Footwear', 'Relic'].includes(slot)) {
+        return addLog("This item cannot be equipped.");
+    }
 
-    syncPlayer({
-      equipped: { ...player.equipped, [item.type]: item },
-      inventory: newInventory
-    });
+    const updates = {};
+    if (player.equipped?.[slot]) {
+        const oldItem = player.equipped[slot];
+        updates[`inventory.${oldItem.id || `OLD_${slot}`}`] = oldItem;
+    }
+
+    updates.equipped = { ...player.equipped, [slot]: item };
+    updates[`inventory.${itemId}`] = deleteField();
+
+    syncPlayer(updates);
+    playSFX(SOUNDS.equipItem);
     addLog(`Installed Tech: ${item.name}`);
-  };
+  }, [player, syncPlayer, playSFX, SOUNDS]);
 
-  const unequipItem = (slot) => {
-    const item = player.equipped?.[slot];
-    if (!item) return;
-
+  const unequipItem = useCallback(async (slot) => {
+    if (!player.equipped?.[slot]) return;
+    const item = player.equipped[slot];
+    
     syncPlayer({
-      equipped: { ...player.equipped, [slot]: null },
-      inventory: [...(player.inventory || []), item]
+        [`inventory.${item.id || `RET_${slot}`}`]: item,
+        equipped: { ...player.equipped, [slot]: null }
     });
+    
+    playSFX(SOUNDS.unequipItem);
     addLog(`Uninstalled Tech: ${item.name}`);
-  };
+  }, [player, syncPlayer, playSFX, SOUNDS]);
 
   const allocateStat = (statName) => {
     if ((player.abilityPoints || 0) <= 0) return;

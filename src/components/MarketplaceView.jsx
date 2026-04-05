@@ -110,7 +110,7 @@ export const MarketplaceView = React.memo(() => {
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <Header title="OPEN GRID: MARKET" onClose={() => setView('menu')} onHelp={() => openGuide('menu')} icon={<ArrowRightLeft className="text-amber-500" />} />
+      <Header title="OPEN GRID: MARKET" onClose={adventure.goBack} onHelp={() => openGuide('menu')} icon={<ArrowRightLeft className="text-amber-500" />} />
 
       {/* ACTION TABS */}
       <div className="flex gap-2 mb-4 relative z-10 overflow-x-auto pb-1 no-scrollbar shrink-0">

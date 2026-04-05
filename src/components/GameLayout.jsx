@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sword, Shield, Coins, Star, Trophy, ShoppingBag,
   Map as MapIcon, ChevronRight, Heart, Zap, Target,
@@ -44,14 +44,17 @@ import { useGame } from '../contexts/GameContext';
 
 export const GameLayout = ({ onLogout }) => {
   const engine = useGame();
-  const {
-    user, player, syncPlayer, logs, addLog,
+  const { 
+    user, player, setPlayer, syncPlayer, logs, addLog,
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
-    showBlockadeModal, setShowBlockadeModal, blockadeError,
-    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet,
+    showBlockadeModal, setShowBlockadeModal, blockadeError, collisionProfile,
+    sessionConflict,
+    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
     db, appId, totalStats, handleLogout, openGuide,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
+
+  const [isMigrating, setIsMigrating] = useState(false);
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, handleAttack } = combat;
@@ -67,6 +70,22 @@ export const GameLayout = ({ onLogout }) => {
   const currentMate = player ? TAVERN_MATES.find(m => m.id === player.hiredMate) : null;
 
   const onLogoutWrapper = () => handleLogout(onLogout);
+
+  const handleMigrate = async () => {
+    if (!collisionProfile?.id) return;
+    if (!window.confirm(`⚠️ FINAL WARNING: This will IMPORT all progress from ${collisionProfile.name} (LVL ${collisionProfile.level}) and OVERWRITE your current temporary profile. Continue?`)) return;
+    
+    setIsMigrating(true);
+    const result = await migrateProfile(collisionProfile.id);
+    setIsMigrating(false);
+    
+    if (result.success) {
+      setShowBlockadeModal(false);
+      window.location.reload();
+    } else {
+      alert(`Migration Failed: ${result.error}`);
+    }
+  };
 
   if (!player) return <LoadingScreen />;
 
@@ -640,25 +659,73 @@ export const GameLayout = ({ onLogout }) => {
                 Uplink has been <span className="text-red-600 font-extrabold uppercase italic">forcefully ejected</span> to prevent profile contamination.
               </p>
 
-              <div className="bg-black/60 border-2 border-red-900/50 rounded-2xl p-4 w-full">
-                <span className="text-[10px] font-mono text-red-500/80 break-all leading-tight italic">
-                  Blockade Ref: {blockadeError || "IDENTITY_CONFLICT_SEC_31"}
-                </span>
-              </div>
+              {collisionProfile && (
+                <div className="bg-red-600/10 border-2 border-red-600/40 p-4 rounded-2xl w-full text-left space-y-2">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-red-400 font-bold uppercase tracking-widest">Legacy Hero Identified</span>
+                      <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded font-black italic">{collisionProfile.platform}</span>
+                   </div>
+                   <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-black border-2 border-red-600 flex items-center justify-center font-black italic text-red-500 shadow-lg">#{collisionProfile.level}</div>
+                      <div>
+                        <p className="text-sm font-black text-white uppercase italic">{collisionProfile.name}</p>
+                        <p className="text-[8px] text-slate-500 uppercase tracking-tighter tracking-widest">OWNED VIA {collisionProfile.platform}</p>
+                      </div>
+                   </div>
+                </div>
+              )}
 
-              <div className="text-[9px] text-slate-500 italic space-y-1.5 pt-1 text-left w-full border-t border-slate-800/50 mt-2">
-                <p>• Unauthorized node has been ejected.</p>
-                <p>• To establish a new Uplink, please connect a brand-new, unclaimed wallet.</p>
-                <p>• For account-specific questions, please join our discord community.</p>
-              </div>
+              <div className="grid grid-cols-1 gap-4 w-full pt-4">
+                <button
+                  onClick={handleMigrate}
+                  disabled={isMigrating}
+                  className="group relative py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 overflow-hidden disabled:opacity-50 disabled:grayscale"
+                >
+                  {isMigrating ? "Syncing Grid..." : "CLAIM & MIGRATE PROGRESS"}
+                  {!isMigrating && <Sparkles size={16} className="text-white group-hover:rotate-12 transition-transform" />}
+                </button>
 
-              <button
-                onClick={() => setShowBlockadeModal(false)}
-                className="w-full py-4 bg-red-600 text-white font-black uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3 overflow-hidden"
-              >
-                Dismiss Security Alert
-              </button>
+                <button
+                  onClick={() => setShowBlockadeModal(false)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[9px] font-black uppercase italic rounded-xl border-2 border-black/40 transition-all"
+                >
+                  Dismiss Security Alert
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {sessionConflict && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/98 backdrop-blur-md"></div>
+          <div className="bg-slate-900 border-4 border-yellow-600 p-8 rounded-3xl shadow-[0_0_60px_rgba(202,138,4,0.3)] max-w-md w-full relative z-10 text-center space-y-6">
+            <div className="w-20 h-20 bg-yellow-600/20 rounded-full flex items-center justify-center border-4 border-yellow-600 mx-auto animate-pulse">
+              <RefreshCw size={48} className="text-yellow-500" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black text-white italic uppercase tracking-tighter">System Overlap Detect</h2>
+              <p className="text-slate-400 text-xs leading-relaxed">
+                Logon detected from <span className="text-yellow-500 font-bold underline">another mobile or desktop node</span>. 
+                Uplink on this device has been <span className="text-yellow-600 font-bold italic">suspended</span> to protect Hero integrity.
+              </p>
+            </div>
+
+            <div className="bg-black/60 border-2 border-yellow-900/40 p-4 rounded-2xl">
+               <p className="text-[10px] text-yellow-500/80 italic">"Multi-Dimensional sessions are prohibited by the Registry."</p>
+            </div>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full py-4 bg-yellow-600 hover:bg-yellow-500 text-black font-extrabold uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3"
+            >
+              Recover Uplink
+              <img src="/assets/icons/arrow_right.png" className="w-4 h-4" alt=""/>
+            </button>
+            
+            <p className="text-[8px] text-slate-600 uppercase tracking-widest font-black">Session Overwrite Ref: AUTO_KICK_PROT_99</p>
           </div>
         </div>
       )}

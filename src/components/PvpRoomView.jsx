@@ -101,7 +101,7 @@ export const PvpRoomView = React.memo(() => {
       } catch (err) {
         console.error("PVP Join Error:", err);
         addLog("🚨 ERROR: Failed to synchronize with Battle Grid.");
-        setView('menu');
+      adventure.goBack();
       }
     };
     joinRoom();
@@ -209,7 +209,7 @@ export const PvpRoomView = React.memo(() => {
     addLog("💀 DISCONNECTED: You have been neutralized in the Grid.");
     setTimeout(() => {
       deleteDoc(targetRef).catch(() => {});
-      setView('menu');
+      adventure.goBack();
     }, 4000);
   };
 
@@ -257,14 +257,14 @@ export const PvpRoomView = React.memo(() => {
         <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter mb-2">ACCESS SUSPENDED</h2>
         <p className="text-slate-400 text-[10px] font-black uppercase mb-8 tracking-[0.2em]">Penalty Core Recharging...</p>
         <div className="text-6xl font-black text-red-600 italic tracking-tighter animate-pulse">{penaltyTime}s</div>
-        <button onClick={() => setView('menu')} className="mt-12 bg-slate-800 text-white border-2 border-white/20 px-10 py-3 font-black uppercase italic tracking-widest shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">Return to Hub</button>
+        <button onClick={adventure.goBack} className="mt-12 bg-slate-800 text-white border-2 border-white/20 px-10 py-3 font-black uppercase italic tracking-widest shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none">Return to Hub</button>
       </div>
     );
   }
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic h-full min-h-[500px]">
-       <Header title="NEON ARENA: PVP GRID" onClose={() => setView('menu')} onHelp={() => openGuide('pvp')} />
+       <Header title="NEON ARENA: PVP GRID" onClose={adventure.goBack} onHelp={() => openGuide('pvp')} />
 
        {/* Arena Status Header */}
        <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">

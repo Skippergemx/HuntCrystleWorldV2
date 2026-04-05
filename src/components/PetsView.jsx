@@ -23,7 +23,7 @@ export const PetsView = () => {
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-8 animate-in fade-in duration-500 overflow-hidden relative">
-      <Header title="Genesis Pets" onClose={() => setView('menu')} />
+      <Header title="Genesis Pets" onClose={adventure.goBack} />
       
       {!wallet.address ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-900/50 border-[4px] border-black rounded-3xl text-center shadow-[10px_10px_0_rgba(0,0,0,1)] relative overflow-hidden group">

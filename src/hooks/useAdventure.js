@@ -51,9 +51,24 @@ export const useAdventure = () => {
     }
   };
 
+  const getParentView = (currentView) => {
+    switch (currentView) {
+      case 'dungeon': return 'map';
+      case 'map': return 'menu';
+      case 'boss': return 'menu';
+      case 'pvp': return 'menu';
+      default: return 'menu';
+    }
+  };
+
+  const goBack = () => {
+    setView(getParentView(view));
+  };
+
   return {
     view,
     setView,
+    goBack,
     depth,
     setDepth,
     enemy,

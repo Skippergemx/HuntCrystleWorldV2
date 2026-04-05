@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, onSnapshot, updateDoc } from 'firebase/firestore';
 
 /**
  * usePlayerSync V2: The Primary Data Hub
@@ -23,6 +23,11 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   const [player, setPlayer] = useState(null);
   const [loadingPlayer, setLoadingPlayer] = useState(true);
   const [activeDocId, setActiveDocId] = useState(null);
+  const [sessionConflict, setSessionConflict] = useState(false);
+  const [hasHydratedSession, setHasHydratedSession] = useState(false);
+  
+  // UNIQUE LOCAL SESSION IDENTIFIER
+  const localSessionId = useRef(`SESS_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`).current;
   
   /**
    * IDENTITY SENTRY V3: The High-Security Identity Gateway
@@ -53,11 +58,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
       const collisionId = collisionDoc?.id;
       if (collisionId && collisionId !== activeDocId) {
+        const cData = collisionDoc.data();
         return { 
           success: false, 
           collision: {
             id: collisionId,
-            platform: collisionId.startsWith('FC_') ? 'FARCASTER' : 'GOOGLE',
+            name: cData.name || 'ANON_UNIT',
+            platform: collisionId.startsWith('FC_') ? 'FARCASTER' : (collisionId.startsWith('TG_') ? 'TELEGRAM' : 'GOOGLE'),
+            level: cData.level || 1,
             address: normalized
           }
         };
@@ -189,9 +197,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     dragon: data.dragon || { level: 1, fruitsFed: 0 },
                     gemxAvatar: data.gemxAvatar || 'Cosmic gemx (1).gif',
                     recipes: data.recipes || ['crystle_blade'],
-                    inventory: data.inventory || [],
+                    inventory: Array.isArray(data.inventory) ? Object.fromEntries(data.inventory.map(i => [i.id || `ITEM_${Date.now()}_${Math.random()}`, i])) : (data.inventory || {}),
                     equipped: data.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                     maxDepth: data.maxDepth || 1,
+                    maxDepthScore: data.maxDepthScore || (100000 + (data.maxDepth || 1)),
+                    maxDepthFloor: data.maxDepthFloor || data.maxDepth || 1,
+                    maxDepthMapName: data.maxDepthMapName || 'Neon Slums',
+                    maxDepthMapMinLevel: data.maxDepthMapMinLevel || 1,
                     performanceMode: data.performanceMode ?? false,
                     selectedPotionId: data.selectedPotionId || 'hp_potion',
                     selectedScrollId: data.selectedScrollId || 'auto_scroll',
@@ -199,6 +211,9 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 };
 
                 setPlayer(sanitized);
+                // Step 4: Register Local Session
+                await setDoc(docRef, { sessionId: localSessionId }, { merge: true });
+                setHasHydratedSession(true);
             } else {
                 console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
@@ -220,8 +235,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     hiredMate: null, buffUntil: 0,
                     equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                     recipes: ['crystle_blade'],
-                    inventory: [],
-                    totalBossDamage: 0, maxDepth: 1,
+                    inventory: {},
+                    totalBossDamage: 0, 
+                    maxDepth: 1,
+                    maxDepthScore: 100001,
+                    maxDepthFloor: 1,
+                    maxDepthMapName: 'Neon Slums',
+                    maxDepthMapMinLevel: 1,
                     penaltyUntil: 0, autoMode: null,
                     gemx: { level: 1, crystalsFed: 0 },
                     dragon: { level: 1, fruitsFed: 0 },
@@ -234,12 +254,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     // Mirror TON wallet to primary walletAddress for TMA users if no Base wallet linked
                     walletAddress: (farcasterContext && user) ? user.walletAddress?.toLowerCase() || null : null,
                     tonWalletAddress: null,
+                    sessionId: localSessionId,
                     createdAt: serverTimestamp()
                 };
                 
                 setPlayer(genesisProfile);
                 try {
                   await setDoc(docRef, genesisProfile);
+                  setHasHydratedSession(true);
                   console.log(`System V4: Genesis Profile written to Firestore at: ${primaryAuthId}`);
                 } catch (writeErr) {
                   console.error(`🚨 FIRESTORE WRITE FAILED for ${primaryAuthId}:`, writeErr.code, writeErr.message);
@@ -261,8 +283,27 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   // re-runs once the Telegram SDK has finished identity resolution.
   }, [user, db, appId, farcasterContext, isTelegram, tgUser]);
 
+  // 2. LIVE SESSION MONITORING (Multi-Device Kick)
+  useEffect(() => {
+    if (!activeDocId || sessionConflict) return;
 
-  // 2. Throttled Sync Mechanism (Batch Writing to Firestore)
+    const docRef = doc(db, 'players', activeDocId);
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const data = snapshot.data();
+            // If the remote sessionId exists and doesn't match ours — someone else logged in.
+            // ONLY check after we've confirmed our own session is registered to prevent stales.
+            if (hasHydratedSession && data.sessionId && data.sessionId !== localSessionId) {
+                console.warn(`🚨 SECURITY_ALERT: Remote Session Takeover Detected! [L:${localSessionId}] vs [R:${data.sessionId}]`);
+                setSessionConflict(true);
+            }
+        }
+    });
+
+    return () => unsubscribe();
+  }, [activeDocId, db, localSessionId, sessionConflict]);
+
+  // 3. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
     // If the database doc identifier isn't ready, halt the queue.
     // Telegram users use anonymous auth so `user` will exist but may not have farcasterFID.
@@ -280,7 +321,21 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
     // Local update for instant UI feedback
     setPlayer(prev => {
-      const next = { ...prev, ...sterilized, updatedAt: new Date() }; 
+      const next = { ...prev };
+      Object.entries(sterilized).forEach(([key, value]) => {
+          if (key.includes('.')) {
+              const [parent, child] = key.split('.');
+              if (next[parent] && typeof next[parent] === 'object') {
+                  const updatedParent = { ...next[parent] };
+                  if (value === null) delete updatedParent[child];
+                  else updatedParent[child] = value;
+                  next[parent] = updatedParent;
+              }
+          } else {
+              next[key] = value;
+          }
+      });
+      next.updatedAt = new Date();
 
       // Queue these changes for the prochain Firestore sync
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
@@ -300,7 +355,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           }
           
           console.log(`System V4: Pushing Batch Update to Firestore [${activeDocId}]:`, Object.keys(payload));
-          await setDoc(docRef, payload, { merge: true });
+          await updateDoc(docRef, payload);
           console.log("System V4: Remote Sector Synchronized.", activeDocId);
         } catch (e) {
           console.error("Sync Error:", e);
@@ -319,7 +374,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     if (!scan.success) {
       return { 
         success: false, 
-        error: scan.collision?.platform === 'FARCASTER' ? "WALLET_BOUND_TO_FARCASTER" : "WALLET_BOUND_TO_OTHER_ACCOUNT"
+        collision: scan.collision,
+        error: "WALLET_BOUND_TO_ANOTHER"
       };
     }
 
@@ -327,6 +383,79 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     return { success: true };
   }, [activeDocId, identitySentry, syncPlayer]);
 
-  return { player, setPlayer, syncPlayer, linkWallet, identitySentry, loadingPlayer };
+  // 4. THE MIGRATION BRIDGE (Auth-to-Wallet Takeover)
+  const migrateProfile = useCallback(async (sourceId) => {
+      const { runTransaction } = await import('firebase/firestore');
+      if (!activeDocId || !sourceId || activeDocId === sourceId) return { success: false, error: "Invalid target." };
+      
+      try {
+          setLoadingPlayer(true);
+          console.log(`🚀 System V4 [TRANSACTION_MODE]: Initiating Migration [${sourceId}] -> [${activeDocId}]`);
+          
+          await runTransaction(db, async (transaction) => {
+              const sourceRef = doc(db, 'players', sourceId);
+              const targetRef = doc(db, 'players', activeDocId);
+              
+              const sourceSnap = await transaction.get(sourceRef);
+              if (!sourceSnap.exists()) throw new Error("Source profile missing from core grid.");
+              
+              const sourceData = sourceSnap.data();
+
+              // CLONE DATA (excluding identifier fields)
+              const dataToMove = {
+                  level: sourceData.level || 1,
+                  xp: sourceData.xp || 0,
+                  tokens: sourceData.tokens || 100,
+                  hp: sourceData.hp ?? 150,
+                  maxHp: sourceData.maxHp ?? 150,
+                  baseStats: sourceData.baseStats || { str: 10, agi: 10, dex: 10 },
+                  abilityPoints: sourceData.abilityPoints || 0,
+                  potions: sourceData.potions || 5,
+                  recipes: sourceData.recipes || ['crystle_blade'],
+                  inventory: sourceData.inventory || [],
+                  equipped: sourceData.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
+                  maxDepth: sourceData.maxDepth || 1,
+                  maxDepthScore: sourceData.maxDepthScore || 0,
+                  maxDepthFloor: sourceData.maxDepthFloor || 1,
+                  maxDepthMapName: sourceData.maxDepthMapName || 'Neon Slums',
+                  maxDepthMapMinLevel: sourceData.maxDepthMapMinLevel || 1,
+                  gemx: sourceData.gemx || { level: 1, crystalsFed: 0 },
+                  dragon: sourceData.dragon || { level: 1, fruitsFed: 0 },
+                  walletAddress: sourceData.walletAddress?.toLowerCase() || null,
+                  migratedFrom: sourceId,
+                  migratedAt: serverTimestamp()
+              };
+
+              // Step 1: Claim new profile (Atomic Update)
+              transaction.set(targetRef, dataToMove, { merge: true });
+
+              // Step 2: Ghost old profile (Atomic Update)
+              transaction.update(sourceRef, {
+                  migratedTo: activeDocId,
+                  migratedAt: serverTimestamp(),
+                  level: 1, tokens: 0, inventory: [], // Wipe data to prevent duping
+                  walletAddress: null // Release wallet ownership
+              });
+          });
+
+          console.log(`✅ System V4: Atomic Migration Protocol Successful.`);
+          
+          // Re-hydration from New Master
+          const targetRef = doc(db, 'players', activeDocId);
+          const updatedSnap = await getDoc(targetRef);
+          if (updatedSnap.exists()) {
+             setPlayer(updatedSnap.data());
+          }
+
+          return { success: true };
+      } catch (e) {
+          console.error("Migration Transaction Failure:", e);
+          return { success: false, error: e.message === 'PERMISSION_DENIED' ? "SECURITY_LOCKDOWN: Registry write unauthorized." : e.message };
+      } finally {
+          setLoadingPlayer(false);
+      }
+  }, [activeDocId, db]);
+
+  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict };
 };
 

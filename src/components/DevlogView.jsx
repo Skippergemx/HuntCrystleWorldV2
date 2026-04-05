@@ -23,6 +23,23 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.3.1',
+    date: '2026-04-05',
+    title: 'ADMIN REGISTRY HARDENING',
+    category: 'ADMIN TOOLS',
+    type: 'feature',
+    tag: 'REGISTRY',
+    color: 'amber',
+    description: 'Deep-probe stabilization of the Player Registry. Enhanced identity visibility and search accuracy for cross-platform hunters.',
+    changes: [
+      'Registry: Added EVM & TON Wallet Address visibility',
+      'Search: Integrated Farcaster FID & Username scanning',
+      'UI: New Level/XP Progress Bar in registry view',
+      'Polish: Improved Identity Cell with platform-specific labels'
+    ],
+    media: '/assets/monsters/Void Sector 7/Null Stalker.jpg'
+  },
+  {
     id: '1.3.0',
     date: '2026-04-04',
     title: 'TELEGRAM MINI APP CONVERGENCE',
@@ -130,11 +147,11 @@ export const DevlogView = () => {
   };
 
   const colors = {
-    emerald: 'text-emerald-400 border-emerald-500 bg-emerald-500/10',
-    cyan: 'text-cyan-400 border-cyan-500 bg-cyan-500/10',
-    amber: 'text-amber-400 border-amber-500 bg-amber-500/10',
-    red: 'text-red-400 border-red-500 bg-red-500/10',
-    purple: 'text-purple-400 border-purple-500 bg-purple-500/10',
+    emerald: 'text-emerald-700 border-emerald-600 bg-emerald-50',
+    cyan: 'text-cyan-700 border-cyan-600 bg-cyan-50',
+    amber: 'text-amber-700 border-amber-600 bg-amber-50',
+    red: 'text-red-700 border-red-600 bg-red-50',
+    purple: 'text-purple-700 border-purple-600 bg-purple-50',
   };
 
   return (
@@ -144,7 +161,7 @@ export const DevlogView = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
       </div>
 
-      <Header title="DEVLOG INTERFACE" onClose={() => setView('menu')} />
+      <Header title="DEVLOG INTERFACE" onClose={adventure.goBack} />
 
       {/* Main Terminal Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 relative z-10 pr-2">
@@ -173,20 +190,20 @@ export const DevlogView = () => {
           {DEVLOG_ENTRIES.map((entry, idx) => (
             <div 
               key={entry.id} 
-              className="bg-slate-910 border-[3px] border-black rounded-2xl overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 transition-all group relative bg-slate-900"
+              className="bg-white border-[3px] border-black rounded-2xl overflow-hidden shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 transition-all group relative"
             >
               {/* Entry Header */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-black/40 border-b-2 border-white/5 gap-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-slate-50 border-b-2 border-black/5 gap-3">
                 <div className="flex items-center gap-3">
                   <div className={`p-2 rounded-lg border-2 ${colors[entry.color]} shadow-lg`}>
                     {entry.type === 'content' ? <Cpu size={18} /> : entry.type === 'technical' ? <Terminal size={18} /> : <Shield size={18} />}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">{entry.id}</span>
-                      <span className="text-[6px] text-slate-500 font-black uppercase tracking-[0.2em]">{entry.date}</span>
+                      <span className="text-[8px] font-black text-cyan-600 uppercase tracking-widest">{entry.id}</span>
+                      <span className="text-[6px] text-slate-600 font-black uppercase tracking-[0.2em]">{entry.date}</span>
                     </div>
-                    <h3 className="text-base font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors">
+                    <h3 className="text-base font-black text-black italic uppercase tracking-tighter leading-none group-hover:text-cyan-600 transition-colors">
                       {entry.title}
                     </h3>
                   </div>
@@ -198,7 +215,7 @@ export const DevlogView = () => {
                   </div>
                   
                   {/* Broadcast Group */}
-                  <div className="flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-white/10 ml-2">
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-black/10 ml-2">
                       <button 
                         onClick={() => shareToWarpcast(entry)}
                         className="p-1.5 md:p-2 bg-purple-600 border border-black hover:bg-purple-400 text-white rounded-md transition-all active:scale-90 flex items-center gap-1.5"
@@ -222,20 +239,20 @@ export const DevlogView = () => {
               {/* Entry Content */}
               <div className="p-4 grid grid-cols-1 md:grid-cols-12 gap-4">
                 <div className="md:col-span-8 space-y-4">
-                  <p className="text-xs font-bold text-slate-300 leading-relaxed uppercase tracking-tight italic">
+                  <p className="text-xs font-bold text-slate-800 leading-relaxed uppercase tracking-tight italic">
                     "{entry.description}"
                   </p>
                   
                   <div className="space-y-2">
-                     <div className="flex items-center gap-2 pb-1 border-b border-white/5 w-fit">
-                        <History size={10} className="text-cyan-400" />
-                        <span className="text-[9px] font-black text-white uppercase italic tracking-widest">Protocol Delta</span>
+                     <div className="flex items-center gap-2 pb-1 border-b border-black/5 w-fit">
+                        <History size={10} className="text-cyan-600" />
+                        <span className="text-[9px] font-black text-black uppercase italic tracking-widest">Protocol Delta</span>
                      </div>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {entry.changes.map((change, i) => (
-                           <div key={i} className="flex items-start gap-2 bg-black/30 border border-white/5 p-2 rounded-lg group-hover:border-cyan-500/30 transition-all">
-                              <CheckCircle2 size={10} className="text-cyan-500 mt-0.5 shrink-0" />
-                              <span className="text-[9px] font-bold text-slate-400 uppercase leading-none tracking-tighter italic">{change}</span>
+                           <div key={i} className="flex items-start gap-2 bg-slate-50 border border-black/5 p-2 rounded-lg group-hover:border-cyan-500/30 transition-all">
+                              <CheckCircle2 size={10} className="text-cyan-600 mt-0.5 shrink-0" />
+                              <span className="text-[9px] font-bold text-slate-700 uppercase leading-none tracking-tighter italic">{change}</span>
                            </div>
                         ))}
                      </div>
@@ -263,12 +280,6 @@ export const DevlogView = () => {
         </div>
       </div>
 
-      {/* Decorative Scanlines (Aesthetic) */}
-      <div className="absolute inset-0 pointer-events-none z-50 opacity-[0.03] overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <div key={i} className="h-1 bg-white mb-8" />
-        ))}
-      </div>
       
       {/* Footer System Info */}
       <div className="mt-2 pt-3 border-t border-white/5 flex justify-between items-center relative z-10 shrink-0">

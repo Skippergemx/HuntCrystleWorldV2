@@ -40,7 +40,7 @@ export const LaboratoryView = React.memo(() => {
       <div className="p-4 z-10">
         <Header 
           title="Xenon Laboratory" 
-          onClose={() => setView('menu')} 
+          onClose={adventure.goBack} 
           onHelp={() => openGuide('laboratory')} 
         />
       </div>
