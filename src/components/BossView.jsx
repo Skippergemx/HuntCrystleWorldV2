@@ -41,18 +41,18 @@ export const BossView = () => {
 
   const currentPotionCount = React.useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
-    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
     return sel === 'hp_potion' ? invCount + (player.potions || 0) : invCount;
   }, [player.selectedPotionId, player.inventory, player.potions]);
 
   const currentScrollCount = React.useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
-    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
     return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
   }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
 
-  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || (player.inventory || []).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || (player.inventory || []).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}>

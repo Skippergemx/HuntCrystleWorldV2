@@ -29,7 +29,7 @@ export const CombatView = React.memo(() => {
 
   const potionCountData = useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
-    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
     const baseCount = player.potions || 0;
     return {
       selected: sel,
@@ -40,7 +40,7 @@ export const CombatView = React.memo(() => {
 
   const scrollCountData = useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
-    const invCount = (player.inventory || []).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
     const baseCount = player.autoScrolls || 0;
     return {
       selected: sel,
@@ -49,8 +49,8 @@ export const CombatView = React.memo(() => {
     };
   }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
 
-  const hasAnyPotions = useMemo(() => (player.potions > 0) || (player.inventory || []).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || (player.inventory || []).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
   const categorizedLoot = useMemo(() => {
     const categories = {};

@@ -62,7 +62,7 @@ export const MarketplaceView = React.memo(() => {
 
   const inventoryForSale = useMemo(() => {
     // 1. Filter raw inventory
-    const raw = (player.inventory || []).filter(item => {
+    const raw = Object.values(player.inventory || {}).filter(item => {
       if (!item || typeof item !== 'object') return false;
       const master = getMasterData(item);
       const matchesType = filterType === 'all' || master?.category === filterType || master?.type === filterType;

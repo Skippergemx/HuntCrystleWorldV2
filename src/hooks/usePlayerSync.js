@@ -412,7 +412,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                   abilityPoints: sourceData.abilityPoints || 0,
                   potions: sourceData.potions || 5,
                   recipes: sourceData.recipes || ['crystle_blade'],
-                  inventory: sourceData.inventory || [],
+                  inventory: sourceData.inventory || {},
                   equipped: sourceData.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                   maxDepth: sourceData.maxDepth || 1,
                   maxDepthScore: sourceData.maxDepthScore || 0,
@@ -433,7 +433,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
               transaction.update(sourceRef, {
                   migratedTo: activeDocId,
                   migratedAt: serverTimestamp(),
-                  level: 1, tokens: 0, inventory: [], // Wipe data to prevent duping
+                  level: 1, tokens: 0, inventory: {}, // Wipe data to prevent duping
                   walletAddress: null // Release wallet ownership
               });
           });

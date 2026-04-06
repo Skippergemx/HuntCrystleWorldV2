@@ -26,8 +26,8 @@ export const DragonsGroundView = React.memo(() => {
     { name: 'Sky Razer', icon: 'Sky Razer' }
   ];
 
-  const crystalsInInventory = player.inventory?.filter(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
-  const fruitsInInventory = player.inventory?.filter(i => i.type === 'Fruit').length || 0;
+  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
+  const fruitsInInventory = Object.values(player.inventory || {}).filter(i => i.type === 'Fruit').length || 0;
 
   const gemxNextLevelRequirement = gemx.level * 10;
   const dragonNextLevelRequirement = dragonStats.level * 5;
@@ -54,7 +54,7 @@ export const DragonsGroundView = React.memo(() => {
       return;
     }
 
-    const newInventory = [...(player.inventory || [])];
+    const newInventory = [...Object.values(player.inventory || {})];
     const index = newInventory.findIndex(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard');
     if (index !== -1) {
       newInventory.splice(index, 1);
@@ -79,13 +79,13 @@ export const DragonsGroundView = React.memo(() => {
   };
 
   const feedDragon = () => {
-    const dragonFruit = player.inventory?.find(i => i.type === 'Fruit');
+    const dragonFruit = Object.values(player.inventory || {}).find(i => i.type === 'Fruit');
     if (!dragonFruit) {
       setMessage({ type: 'error', text: 'You need Dragon Fruits to feed the Dragon!' });
       return;
     }
 
-    const newInventory = [...(player.inventory || [])];
+    const newInventory = [...Object.values(player.inventory || {})];
     const index = newInventory.findIndex(i => i === dragonFruit);
     if (index !== -1) {
       newInventory.splice(index, 1);
@@ -183,7 +183,7 @@ export const DragonsGroundView = React.memo(() => {
 
   const collectFruit = (fruit) => {
     setFruits(prev => prev.filter(f => f.id !== fruit.id));
-    syncPlayer({ inventory: [...(player.inventory || []), fruit.data] });
+    syncPlayer({ inventory: [...Object.values(player.inventory || {}), fruit.data] });
     setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
   };
 

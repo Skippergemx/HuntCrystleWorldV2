@@ -204,16 +204,15 @@ export const usePlayerActions = (
       syncPlayer({ tokens: player.tokens - item.cost, autoScrolls: (player.autoScrolls || 0) + 1 });
     } else {
       const purchaseItem = { ...item, id: `${item.id}_${Date.now()}` };
-      syncPlayer({
-        tokens: player.tokens - item.cost,
-        inventory: [...(player.inventory || []), purchaseItem]
-      });
+      const updates = { tokens: player.tokens - item.cost };
+      updates[`inventory.${purchaseItem.id}`] = purchaseItem;
+      syncPlayer(updates);
       addLog(`Acquired ${item.name}! Check your Storage Bag.`);
     }
   };
 
   const activateAutoScroll = (view) => {
-    const inventory = player.inventory || [];
+    const inventory = Object.values(player.inventory || {});
     const selection = player.selectedScrollId || 'auto_scroll';
 
     const scrollSpecs = {
@@ -225,14 +224,14 @@ export const usePlayerActions = (
     };
 
     const spec = scrollSpecs[selection] || scrollSpecs['auto_scroll'];
-    const idx = inventory.findIndex(i => i && i.id?.startsWith(selection));
+    const targetItem = inventory.find(i => i && i.id?.startsWith(selection));
     const hasCounter = (player.autoScrolls || 0) > 0;
 
-    let usedIdx = -1;
+    let usedItemId = null;
     let useCounter = false;
 
-    if (idx !== -1) {
-      usedIdx = idx;
+    if (targetItem) {
+      usedItemId = targetItem.id;
     } else if (selection === 'auto_scroll' && hasCounter) {
       useCounter = true;
     } else {
@@ -248,9 +247,7 @@ export const usePlayerActions = (
     if (useCounter) {
       updates.autoScrolls = player.autoScrolls - 1;
     } else {
-      const newInv = [...inventory];
-      newInv.splice(usedIdx, 1);
-      updates.inventory = newInv;
+      updates[`inventory.${usedItemId}`] = deleteField();
     }
 
     syncPlayer(updates);
@@ -276,12 +273,15 @@ export const usePlayerActions = (
 
     recipe.materials.forEach(mat => {
       for (let i = 0; i < mat.count; i++) {
-        const idx = inventory.findIndex(i => {
-           const cleanId = i.id?.replace(/(_\d+)+$/, '');
-           const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
+        const targetItem = inventory.find(item => {
+           const cleanId = item.id?.replace(/(_\d+)+$/, '');
+           const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
            return (cleanId === mat.id) || (master?.id === mat.id);
         });
-        if (idx !== -1) inventory.splice(idx, 1);
+        if (targetItem) {
+          const idx = inventory.findIndex(i => i.id === targetItem.id);
+          if (idx !== -1) inventory.splice(idx, 1);
+        }
       }
     });
 
@@ -299,8 +299,7 @@ export const usePlayerActions = (
     const itemName = masterData?.name || recipe.name || "Unknown Tech";
     if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
 
-    const currentInventory = Array.isArray(player.inventory) ? player.inventory : [];
-    let inventory = [...currentInventory];
+    const inventory = Object.values(player.inventory || {});
     
     const hasMaterials = recipe.materials.every(mat => {
       const count = inventory.filter(i => {
@@ -320,12 +319,15 @@ export const usePlayerActions = (
 
     recipe.materials.forEach(mat => {
       for (let i = 0; i < mat.count; i++) {
-        const idx = inventory.findIndex(item => {
+        const targetItem = inventory.find(item => {
            const cleanId = item.id?.replace(/(_\d+)+$/, '');
            const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
            return (cleanId === mat.id) || (master?.id === mat.id);
         });
-        if (idx !== -1) inventory.splice(idx, 1);
+        if (targetItem) {
+          const idx = inventory.findIndex(i => i.id === targetItem.id);
+          if (idx !== -1) inventory.splice(idx, 1);
+        }
       }
     });
 
@@ -350,7 +352,7 @@ export const usePlayerActions = (
     
     const currentRecipes = Array.isArray(player.recipes) ? [...player.recipes] : [];
     const alreadyKnown = currentRecipes.includes(master.recipeId);
-    const currentInventory = [...(player.inventory || [])];
+    const currentInventory = Object.values(player.inventory || {});
     const targetIdx = currentInventory.findIndex(i => i.id === item.id);
     
     if (targetIdx === -1) return addLog("❌ ERROR: Schematic no longer in bag.");

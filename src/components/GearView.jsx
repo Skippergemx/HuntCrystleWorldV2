@@ -49,7 +49,7 @@ export const GearView = React.memo(() => {
   const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
 
   const equipment = useMemo(() => {
-    const raw = player.inventory?.filter(i => 
+    const raw = Object.values(player.inventory || {}).filter(i => 
       i && (i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic')
     ) || [];
     
