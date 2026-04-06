@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs, doc, setDoc } from 'firebase/firestore';
 
 /**
  * useLeaderboard V2: Real-time Global Rankings
@@ -10,46 +10,54 @@ export const useLeaderboard = (user, player, db) => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [activeBoard, setActiveBoard] = useState('level'); // Default sort
 
-  useEffect(() => {
+  const fetchLeaderboard = useCallback(async (sortField) => {
     if (!db) return;
+    try {
+      console.log(`System V2: Static Fetch Hall of Fame [Sort: ${sortField}]`);
+      const q = query(collection(db, 'leaderboard'), orderBy(sortField, 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(d => ({
+        uid: d.id,
+        ...d.data(),
+        score: d.data().totalBossDamage || 0,
+        gx: d.data().tokens || 0
+      }));
+      setLeaderboard(data);
+    } catch (err) {
+      console.error("Leaderboard Query Error:", err);
+    }
+  }, [db]);
 
-    // Mapping of Tab IDs to Document Fields
+  useEffect(() => {
     const fieldMap = {
       'boss': 'totalBossDamage',
       'level': 'level',
       'depth': 'maxDepthScore',
       'gx': 'tokens'
     };
-
     const sortField = fieldMap[activeBoard] || 'level';
-    console.log(`System V2: Querying Hall of Fame [Sort: ${sortField}]`);
+    fetchLeaderboard(sortField);
+  }, [activeBoard, fetchLeaderboard]);
 
-    const q = query(
-      collection(db, 'players'),
-      orderBy(sortField, 'desc'),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(d => ({
-        uid: d.id,
-        ...d.data(),
-        // Normalized fields for the View
-        score: d.data().totalBossDamage || 0,
-        gx: d.data().tokens || 0
-      }));
-      setLeaderboard(data);
-    }, (err) => {
-      console.error("Leaderboard Query Error:", err);
-    });
-
-    return () => unsubscribe();
-  }, [db, activeBoard]);
-
-  // V2: updateLeaderboard is now a no-op because 'players' IS the leaderboard
-  const updateLeaderboard = useCallback(async () => {
-    // Data is already synced via usePlayerSync to the 'players' collection
-  }, []);
+  // V2.1: Echo public stats to the isolated 'leaderboard' collection to secure the root 'players' collection
+  const updateLeaderboard = useCallback(async (updates = {}) => {
+    if (!db || !user?.uid || !player) return;
+    try {
+       const publicData = {
+          name: player.name || "Unknown",
+          avatar: player.avatar || 1,
+          platform: player.platform || 'web',
+          level: updates.level || player.level || 1,
+          totalBossDamage: updates.score !== undefined ? updates.score : (updates.totalBossDamage || player.totalBossDamage || 0),
+          maxDepthScore: updates.maxDepthScore !== undefined ? updates.maxDepthScore : (player.maxDepthScore || 0),
+          tokens: updates.tokens !== undefined ? updates.tokens : (player.tokens || 0),
+          updatedAt: Date.now()
+       };
+       setDoc(doc(db, 'leaderboard', user.uid), publicData, { merge: true }).catch(() => {});
+    } catch (e) {
+       console.error("Failed to push public leaderboard footprint:", e);
+    }
+  }, [db, user?.uid, player]);
 
   return {
     leaderboard,

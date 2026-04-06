@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs, limit, runTransaction } from 'firebase/firestore';
 
 /**
  * useMarketplace V2: Global P2P Exchange
@@ -13,7 +13,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
   useEffect(() => {
     if (!db) return;
     try {
-      const q = collection(db, 'marketplace');
+      const q = query(collection(db, 'marketplace'), limit(50));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         setMarketplace(data);
@@ -58,14 +58,35 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     if (player.tokens < totalCost) return addLog("🚨 INSUFFICIENT GX: Transaction aborted.");
 
     try {
-      const remainingQty = (listing.quantity || 1) - qty;
       const marketDocRef = doc(db, 'marketplace', listing.id);
 
-      if (remainingQty <= 0) {
-        await deleteDoc(marketDocRef);
-      } else {
-        await setDoc(marketDocRef, { ...listing, quantity: remainingQty });
-      }
+      await runTransaction(db, async (transaction) => {
+        const marketSnap = await transaction.get(marketDocRef);
+        if (!marketSnap.exists()) throw new Error("ITEM_SOLD");
+
+        const currentData = marketSnap.data();
+        const availableQty = currentData.quantity || 1;
+        if (availableQty < qty) throw new Error("INSUFFICIENT_QTY");
+
+        const remainingQty = availableQty - qty;
+
+        if (remainingQty <= 0) {
+          transaction.delete(marketDocRef);
+        } else {
+          transaction.update(marketDocRef, { quantity: remainingQty });
+        }
+
+        // 5% Hub Tax / 95% Seller Payout (Atomic inside transaction)
+        const payout = Math.floor(totalCost * 0.95);
+        const payoutRef = doc(collection(db, 'payouts'));
+        transaction.set(payoutRef, {
+          recipientUid: listing.sellerUid,
+          amount: payout,
+          itemName: `${qty}x ${listing.item.name}`,
+          buyerName: player.name,
+          createdAt: Date.now()
+        });
+      });
 
       const returnedItems = [];
       const timestamp = Date.now();
@@ -76,27 +97,21 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         });
       }
 
-      await syncPlayer({
-        tokens: player.tokens - totalCost,
-        inventory: [...(player.inventory || []), ...returnedItems]
-      });
-
-      // 5% Hub Tax / 95% Seller Payout
-      const payout = Math.floor(totalCost * 0.95);
-      const payoutRef = doc(collection(db, 'payouts'));
-      await setDoc(payoutRef, {
-        recipientUid: listing.sellerUid,
-        amount: payout,
-        itemName: `${qty}x ${listing.item.name}`,
-        buyerName: player.name,
-        createdAt: Date.now()
-      });
+      const updates = { tokens: player.tokens - totalCost };
+      returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
+      await syncPlayer(updates);
 
       addLog(`🤝 DEAL SECURED: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
-      addLog("🚨 TRANSACTION FAILED: Signal lost.");
+      if (e.message === "ITEM_SOLD") {
+         addLog("🚨 TOO LATE: Item was snatched by another hunter!");
+      } else if (e.message === "INSUFFICIENT_QTY") {
+         addLog("🚨 ERROR: Not enough quantity left.");
+      } else {
+         addLog("🚨 TRANSACTION FAILED: Signal lost.");
+      }
     }
   }, [player, user?.uid, syncPlayer, addLog, db, playSFX, SOUNDS]);
 
@@ -106,21 +121,23 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
     try {
       const baseId = item.id?.replace(/(_\d+)+$/, '');
+      const inventory = Object.values(player.inventory || {});
       const itemsToConsume = [];
       let found = 0;
       
-      const remainingInventory = (player.inventory || []).filter(invItem => {
+      const updates = {};
+      inventory.forEach(invItem => {
          if (invItem.id?.replace(/(_\d+)+$/, '') === baseId && found < quantity) {
             itemsToConsume.push(invItem);
             found++;
-            return false;
+            // Delete field using dot notation logic handled in usePlayerSync updates
+            updates[`inventory.${invItem.id}`] = null; // Sync engine will delete keys set to null
          }
-         return true;
       });
 
       if (found < quantity) return addLog("🚨 ERROR: Insufficient storage units.");
 
-      await syncPlayer({ inventory: remainingInventory });
+      await syncPlayer(updates);
 
       const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
       const listRef = doc(collection(db, 'marketplace'));
@@ -160,7 +177,9 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         });
       }
 
-      await syncPlayer({ inventory: [...(player.inventory || []), ...returnedItems] });
+      const updates = {};
+      returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
+      await syncPlayer(updates);
       addLog(`🚫 SIGNAL ABORTED: ${returnedItems.length}x ${listing.item.name} recovered.`);
     } catch (e) { console.error("Market cancel error:", e); }
   }, [player, marketplace, syncPlayer, addLog, db]);

@@ -16,6 +16,7 @@ import { Header, NavBtn, StatTile, AttributeRow, AvatarMedia, SquadHUD, GuideMod
 import { ImpactSplash, BossImpactSplash } from './CombatEffects';
 import { MenuView } from './MenuView';
 import { CombatView } from './CombatView';
+import { NagaCombatView } from './NagaCombatView';
 import { BossView } from './BossView';
 import { TavernView } from './TavernView';
 import { AttributesView } from './AttributesView';
@@ -498,6 +499,10 @@ export const GameLayout = ({ onLogout }) => {
             <CombatView />
           )}
 
+          {view === 'naga_combat' && (
+            <NagaCombatView />
+          )}
+
           {view === 'tavern' && (
             <TavernView />
           )}
@@ -722,7 +727,6 @@ export const GameLayout = ({ onLogout }) => {
               className="w-full py-4 bg-yellow-600 hover:bg-yellow-500 text-black font-extrabold uppercase italic rounded-2xl border-4 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3"
             >
               Recover Uplink
-              <img src="/assets/icons/arrow_right.png" className="w-4 h-4" alt=""/>
             </button>
             
             <p className="text-[8px] text-slate-600 uppercase tracking-widest font-black">Session Overwrite Ref: AUTO_KICK_PROT_99</p>

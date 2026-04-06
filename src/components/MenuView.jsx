@@ -80,10 +80,9 @@ export const MenuView = React.memo(() => {
       <NavBtn 
         onClick={() => setView('syndicate')} 
         icon={<Shield />} 
-        title="Syndicate" 
-        sub="Maintenance" 
+        title="Guild Vs Guild" 
+        sub="Naga War" 
         color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" 
-        disabled={true}
         backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
       />
       <NavBtn 

@@ -9,11 +9,12 @@ import React from 'react';
  * PvpRoomView V2: Real-time Combat Arena
  * Unified root-level collections for 'pvp_room' and 'global_chat'.
  */
-const PlayerCard = React.memo(({ p, isSelf, isTarget, onAttack }) => {
+const PlayerCard = React.memo(({ p, isSelf, combatAnim, onAttack }) => {
   const hpPercent = Math.max(0, (p.hp / (p.maxHp || 100)) * 100);
+  const isTarget = !!combatAnim;
   return (
-    <div onClick={() => !isSelf && onAttack()} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-110' : ''}`}>
-      <div className={`absolute inset-0 border-[3px] md:border-4 border-black transition-colors ${isTarget ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
+    <div onClick={() => !isSelf && onAttack()} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-105' : ''}`}>
+      <div className={`absolute inset-0 border-[3px] md:border-4 border-black transition-colors ${isTarget && combatAnim.type === 'hit' ? 'bg-red-500/20' : 'bg-slate-800'}`}></div>
       <div className="absolute inset-0 border-r-4 md:border-r-8 border-b-4 md:border-b-8 border-black/20 pointer-events-none"></div>
       <div className="relative p-2 md:p-3 flex flex-col items-center">
           <span className="absolute top-1 md:top-2 left-1 md:left-2 bg-black text-white text-[7px] md:text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">LVL {p.level}</span>
@@ -22,7 +23,7 @@ const PlayerCard = React.memo(({ p, isSelf, isTarget, onAttack }) => {
           <div className="w-16 h-20 md:w-24 md:h-28 border-2 md:border-4 border-black overflow-hidden bg-slate-900 relative mt-4 md:mt-6">
               <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover" />
               {(p.isDefeated || p.hp <= 0) && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={24} className="text-white animate-pulse md:hidden" /><Skull size={40} className="text-white animate-pulse hidden md:block" /></div>}
-              {isTarget && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={24} className="text-white drop-shadow-[0_0_15px_red] md:hidden" /><Sword size={48} className="text-white drop-shadow-[0_0_15px_red] hidden md:block" /></div>}
+              {isTarget && combatAnim.type === 'hit' && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={24} className="text-white drop-shadow-[0_0_15px_red] md:hidden" /><Sword size={48} className="text-white drop-shadow-[0_0_15px_red] hidden md:block" /></div>}
           </div>
           
           <h3 className="text-[9px] md:text-[11px] font-black text-white uppercase italic tracking-tighter mt-2 md:mt-3 mb-1 md:mb-2 truncate w-full text-center">{p.name}</h3>
@@ -32,6 +33,19 @@ const PlayerCard = React.memo(({ p, isSelf, isTarget, onAttack }) => {
               <div className={`h-full transition-all duration-500 ${hpPercent < 40 ? 'bg-red-600' : 'bg-cyan-500'}`} style={{ width: `${hpPercent}%` }}></div>
               <span className="absolute inset-0 flex items-center justify-center text-[7px] md:text-[8px] font-black text-white uppercase italic drop-shadow-md">{Math.max(0, Math.ceil(p.hp))} HP</span>
           </div>
+
+          {/* Visual Feedback Text (Comic) */}
+          {combatAnim && (
+            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all ${
+              combatAnim.type === 'hit' ? 'animate-bounce' : 'animate-pulse'
+            }`}>
+              <div className={`text-2xl md:text-3xl font-black italic uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center gap-1 ${
+                combatAnim.type === 'hit' ? 'text-yellow-400 scale-125 rotate-[-15deg]' : 'text-slate-300 scale-90 rotate-[10deg]'
+              }`} style={{ WebkitTextStroke: '1px black' }}>
+                {combatAnim.text}
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );
@@ -44,8 +58,13 @@ export const PvpRoomView = React.memo(() => {
 
   const [players, setPlayers] = useState([]);
   const [penaltyTime, setPenaltyTime] = useState(0);
+  const attackCooldownRef = useRef(false);
   const [combatAnim, setCombatAnim] = useState(null); 
   const [isJoining, setIsJoining] = useState(true);
+
+  // Sharding: Randomly assign user to a distinct Grid to limit Firestore read burst.
+  const GRIDS = ['Alpha', 'Beta', 'Omega', 'Sigma'];
+  const gridId = useMemo(() => GRIDS[Math.floor(Math.random() * GRIDS.length)], []);
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [showChat, setShowChat] = useState(true);
@@ -95,7 +114,8 @@ export const PvpRoomView = React.memo(() => {
           lastAction: Date.now(),
           lastHitBy: null,
           lastHitId: null,
-          isDefeated: false
+          isDefeated: false,
+          gridId: gridId
         });
         setIsJoining(false);
       } catch (err) {
@@ -110,7 +130,7 @@ export const PvpRoomView = React.memo(() => {
       console.log("System V2: Withdrawing Combat Signal...");
       deleteDoc(pvpDocRef).catch(console.error);
     };
-  }, [db, user.uid, hasPenalty]); // Minimal dependencies to prevent unmount/remount flicker
+  }, [db, user.uid, hasPenalty, gridId]); // Minimal dependencies to prevent unmount/remount flicker
 
   // 2b. Stats sync (No delete logic here)
   useEffect(() => {
@@ -131,12 +151,27 @@ export const PvpRoomView = React.memo(() => {
     }).catch(err => console.warn("PVP Update Sync Lag:", err));
   }, [player.name, player.level, player.avatar, player.hp, player.maxHp, totalStats, player.hiredMate, dragonTimeLeft, player.gemx, player.gemxAvatar, user?.uid, isJoining, hasPenalty]);
 
-  // 3. Room Listener (V2: Root Path)
+  // 2c. Heartbeat Mechanism (Ghost Fix)
+  useEffect(() => {
+    if (hasPenalty || !user?.uid || isJoining) return;
+    const pvpDocRef = doc(db, 'pvp_room', user.uid);
+    const interval = setInterval(() => {
+      updateDoc(pvpDocRef, { lastAction: Date.now() }).catch(() => {});
+    }, 10000); // 10s heartbeat
+    return () => clearInterval(interval);
+  }, [db, user?.uid, isJoining, hasPenalty]);
+
+  // 3. Room Listener (V2: Root Path with Sharding and Garbage Collection)
   useEffect(() => {
     if (!user?.uid) return;
-    const q = collection(db, 'pvp_room');
+    const q = query(collection(db, 'pvp_room'), where('gridId', '==', gridId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const pList = snapshot.docs.map(d => d.data());
+      const now = Date.now();
+      const pList = snapshot.docs
+        .map(d => d.data())
+        // Garbage Collection: Filter out players whose heartbeat died > 25 seconds ago
+        .filter(p => !p.lastAction || (now - p.lastAction) < 25000);
+        
       setPlayers(pList);
 
       const self = pList.find(p => p.uid === user.uid);
@@ -153,13 +188,20 @@ export const PvpRoomView = React.memo(() => {
           const hitId = self.lastHitId;
           const attackerId = self.lastHitBy;
           setLastProcessedHitId(hitId);
+          
+          // Show damage effect on the local player
+          const hitTextOptions = ['OUCH!', 'ARGH!', 'UGH!', 'GAH!'];
+          const feedbackText = hitTextOptions[Math.floor(Math.random() * hitTextOptions.length)];
+          setCombatAnim({ targetId: user.uid, type: 'hit', text: feedbackText });
+          setTimeout(() => setCombatAnim(null), 800);
+
           // Pass the fresh pList to ensure we find the attacker with current data
           processCounterAttack(attackerId, pList);
         }
       }
     });
     return () => unsubscribe();
-  }, [db, user.uid, lastProcessedHitId]);
+  }, [db, user.uid, lastProcessedHitId, gridId]);
 
   // 4. Global Chat Listener (V2: Root Path)
   useEffect(() => {
@@ -214,14 +256,23 @@ export const PvpRoomView = React.memo(() => {
   };
 
   const attackPlayer = useCallback(async (target) => {
-    if (!user?.uid || target.uid === user.uid || target.isDefeated || target.hp <= 0) return;
+    if (attackCooldownRef.current || !user?.uid || target.uid === user.uid || target.isDefeated || target.hp <= 0) return;
+
+    attackCooldownRef.current = true;
+    setTimeout(() => { attackCooldownRef.current = false; }, 1500);
 
     const hitChance = Math.min(98, (totalStats.dex / (totalStats.dex + target.stats.agi * 0.4)) * 100);
     const isHit = Math.random() * 100 < hitChance;
     const targetRef = doc(db, 'pvp_room', target.uid);
 
-    setCombatAnim({ targetId: target.uid, type: isHit ? 'hit' : 'miss' });
-    setTimeout(() => setCombatAnim(null), 600);
+    const hitTextOptions = ['BAM!', 'POW!', 'WHACK!', 'SPLAT!'];
+    const missTextOptions = ['SWOOSH!', 'DODGE!', 'MISS!', 'WHOOSH!'];
+    const feedbackText = isHit 
+      ? hitTextOptions[Math.floor(Math.random() * hitTextOptions.length)]
+      : missTextOptions[Math.floor(Math.random() * missTextOptions.length)];
+
+    setCombatAnim({ targetId: target.uid, type: isHit ? 'hit' : 'miss', text: feedbackText });
+    setTimeout(() => setCombatAnim(null), 800);
 
     if (isHit) {
       const dmg = Math.max(5, totalStats.str - Math.floor(target.stats.agi / 6));
@@ -269,7 +320,7 @@ export const PvpRoomView = React.memo(() => {
        {/* Arena Status Header */}
        <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">
          <div>
-            <p className="text-[8px] md:text-[10px] font-black text-cyan-400 uppercase tracking-widest leading-none">Sector Activity</p>
+            <p className="text-[8px] md:text-[10px] font-black text-cyan-400 uppercase tracking-widest leading-none">Sector {gridId} Activity</p>
             <p className="text-sm md:text-2xl font-black text-white uppercase italic tracking-tighter mt-1">Active: {players.length}</p>
          </div>
          <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-black rounded-full border border-green-500/30">
@@ -286,7 +337,8 @@ export const PvpRoomView = React.memo(() => {
                  key={p.uid} 
                  p={p} 
                  isSelf={p.uid === user.uid} 
-                 isTarget={combatAnim?.targetId === p.uid} 
+                 isTarget={false}
+                 combatAnim={combatAnim?.targetId === p.uid ? combatAnim : null}
                  onAttack={() => attackPlayer(p)} 
                />
              ))}

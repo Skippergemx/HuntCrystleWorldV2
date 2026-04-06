@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle } from 'lucide-react';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair } from 'lucide-react';
 import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
+import { calculateNagaStats } from '../utils/gameLogic';
 
 export const DragonsGroundView = React.memo(() => {
   const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, actions, openGuide } = useGame();
@@ -47,6 +48,8 @@ export const DragonsGroundView = React.memo(() => {
     elementalTheme === 'Hydro' ? 'blue-400' :
     elementalTheme === 'Gale' ? 'sky-300' :
     elementalTheme === 'Earthen' ? 'emerald-500' : 'cyan-400';
+
+  const nagaStats = calculateNagaStats(player);
 
   const feedGem = () => {
     if (crystalsInInventory <= 0) {
@@ -322,6 +325,36 @@ export const DragonsGroundView = React.memo(() => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Naga Combat Stats Panel */}
+        <div className="flex-none p-2 bg-emerald-950/80 border-b-2 border-emerald-900/50 relative z-20 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+           <div className="flex justify-between items-center bg-black/40 p-2 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2">
+                 <Shield className={`text-${activeGemx.color}-400`} size={16} />
+                 <div>
+                    <h4 className="text-[10px] font-black text-white uppercase italic tracking-wider">War Armor</h4>
+                    <div className="flex gap-2 text-[10px] font-black">
+                       <span className="text-emerald-400">HP {nagaStats.maxHp.toLocaleString()}</span>
+                       <span className={`text-${activeGemx.color}-400`}>+ SHIELD {nagaStats.shieldHp.toLocaleString()}</span>
+                    </div>
+                 </div>
+              </div>
+              <div className="flex items-center gap-4">
+                 <div className="flex flex-col items-center">
+                    <Swords className="text-red-400 mb-0.5" size={14} />
+                    <span className="text-[9px] font-black text-white">{nagaStats.str.toLocaleString()}</span>
+                 </div>
+                 <div className="flex flex-col items-center">
+                    <Zap className="text-amber-400 mb-0.5" size={14} />
+                    <span className="text-[9px] font-black text-white">{nagaStats.agi.toLocaleString()}</span>
+                 </div>
+                 <div className="flex flex-col items-center">
+                    <Crosshair className="text-cyan-400 mb-0.5" size={14} />
+                    <span className="text-[9px] font-black text-white">{nagaStats.dex.toLocaleString()}</span>
+                 </div>
+              </div>
+           </div>
         </div>
 
         <div className="flex-[8] relative border-t-4 border-black shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] overflow-x-hidden overflow-y-auto custom-scrollbar bg-emerald-950 flex flex-col items-center">

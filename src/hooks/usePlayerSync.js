@@ -214,6 +214,20 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 // Step 4: Register Local Session
                 await setDoc(docRef, { sessionId: localSessionId }, { merge: true });
                 setHasHydratedSession(true);
+
+                // Step 5: Mirror to Public Leaderboard Endpoint
+                import('firebase/firestore').then(({ doc: fsDoc, setDoc: fsSetDoc }) => {
+                   fsSetDoc(fsDoc(db, 'leaderboard', primaryAuthId), {
+                       name: sanitized.name || "Unknown",
+                       avatar: sanitized.avatar || 1,
+                       platform: sanitized.platform || 'web',
+                       level: sanitized.level || 1,
+                       totalBossDamage: sanitized.totalBossDamage || 0,
+                       maxDepthScore: sanitized.maxDepthScore || 0,
+                       tokens: sanitized.tokens || 0,
+                       updatedAt: Date.now()
+                   }, { merge: true }).catch(()=>{});
+                });
             } else {
                 console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
                 
@@ -357,6 +371,23 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           console.log(`System V4: Pushing Batch Update to Firestore [${activeDocId}]:`, Object.keys(payload));
           await updateDoc(docRef, payload);
           console.log("System V4: Remote Sector Synchronized.", activeDocId);
+
+          // --- LEADERBOARD PUBLIC ECHO PUSH ---
+          try {
+             import('firebase/firestore').then(({ doc: fsDoc, setDoc: fsSetDoc }) => {
+                const publicData = {
+                    name: next.name || "Unknown",
+                    avatar: next.avatar || 1,
+                    platform: next.platform || 'web',
+                    level: next.level || 1,
+                    totalBossDamage: next.totalBossDamage || 0,
+                    maxDepthScore: next.maxDepthScore || 0,
+                    tokens: next.tokens || 0,
+                    updatedAt: Date.now()
+                };
+                fsSetDoc(fsDoc(db, 'leaderboard', activeDocId), publicData, { merge: true }).catch(()=>{});
+             });
+          } catch(e) { console.error("Echo Error:", e); }
         } catch (e) {
           console.error("Sync Error:", e);
         }

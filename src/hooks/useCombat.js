@@ -345,11 +345,20 @@ export const useCombat = (
   }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, updateLeaderboard, playSFX, SOUNDS]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
+    // 1. SANITY CHECK: Anti-Cheat Bounds Limits
+    // Calculate the absolute highest possible damage (including crits and relic multipliers)
+    const maxTheoreticalDamage = Math.max(1000, (totalStats.str || 10) * 80); 
+    if (dmg < 0 || dmg > maxTheoreticalDamage) {
+       addLog("🚨 SYSTEM ANOMALY: Unauthorized payload detected. Strike dismissed!");
+       return; // Abort the hit injection
+    }
+
     const newTotal = (player?.totalBossDamage || 0) + dmg;
     const updates = { totalBossDamage: newTotal };
     
+    // 2. ECONOMY FIX: Hard Cap the exponential drop chance
     const milestoneMult = Math.pow(2, Math.floor(newTotal / 1000000));
-    const currentDropChance = BOSS.baseDropRate * milestoneMult;
+    const currentDropChance = Math.min(0.12, BOSS.baseDropRate * milestoneMult); // Capped at 12% max
 
     if (Math.random() < currentDropChance) {
       const relics = EQUIPMENT.filter(e => e.type === 'Relic');
@@ -376,7 +385,7 @@ export const useCombat = (
     syncPlayer(updates);
     updateLeaderboard({ score: newTotal });
     enemyTurn(BOSS, true);
-  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard]);
+  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard, totalStats, BOSS]);
 
   const handleAttack = useCallback((isBoss = false) => {
     // --- SYNCHRONOUS MUTEX GATE ---

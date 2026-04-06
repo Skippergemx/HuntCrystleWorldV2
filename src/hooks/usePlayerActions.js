@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc, deleteField } from 'firebase/firestore';
+import { calculateNagaStats } from '../utils/gameLogic';
 
 /**
  * usePlayerActions V2: Unified Action Engine
@@ -24,21 +25,11 @@ export const usePlayerActions = (
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
 
   const startGvGRaid = useCallback((warId, opponentId, defenderData, syndicateName = "Unknown", syndicateTag = "???") => {
-    if (!setBattleMode || !setGvgContext) return;
-    setBattleMode('GVG');
+    if (!setGvgContext || !setView) return;
     setGvgContext({ warId, opponentId });
-    setEnemy({
-       ...defenderData,
-       id: opponentId,
-       hp: defenderData.maxHp || 1000,
-       maxHp: defenderData.maxHp || 1000,
-       isPlayer: true,
-       syndicateName,
-       syndicateTag
-    });
-    setView('dungeon');
-    addLog(`🚩 BREACHING DEFENSES: Combat contact with ${defenderData.name}!`);
-  }, [setBattleMode, setGvgContext, setEnemy, setView, addLog]);
+    setView('naga_combat');
+    addLog(`🚩 NAGA RAID: Targeting [${syndicateTag}] ${defenderData.name}!`);
+  }, [setGvgContext, setView, addLog]);
 
   const handleHeal = useCallback(async () => {
     if (player.hp >= player.maxHp) return;
@@ -378,13 +369,15 @@ export const usePlayerActions = (
     const guildId = `guild_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     
     try {
-      const guildRef = doc(db, 'guilds', guildId); // V2: Root Path
+      const guildRef = doc(db, 'guilds', guildId);
       await setDoc(guildRef, {
         id: guildId,
         name,
         tag: tag?.toUpperCase() || 'GX',
-        leaderId: player.uid, // V2: UID Primary
+        leaderId: player.uid,
+        leaderName: player.name,
         members: [player.uid],
+        memberNames: { [player.uid]: player.name },
         gxVault: 0,
         level: 1,
         xp: 0,
@@ -411,7 +404,10 @@ export const usePlayerActions = (
       const data = guildSnap.data();
       if (data.members?.length >= 30) return addLog("🚨 ERROR: Faction at capacity.");
       
-      await updateDoc(guildRef, { members: arrayUnion(player.uid) }); // V2: UID Primary
+      await updateDoc(guildRef, { 
+         members: arrayUnion(player.uid),
+         [`memberNames.${player.uid}`]: player.name
+      });
       syncPlayer({ guildId: guildId, guildRole: 'MEMBER' });
       addLog(`🏮 UPLINK SECURED: Joined ${data.name}!`);
       playSFX(SOUNDS.obtainLevel);
@@ -424,8 +420,11 @@ export const usePlayerActions = (
   const leaveSyndicate = async () => {
     if (!player.guildId || player.guildRole === 'LEADER') return;
     try {
-      const guildRef = doc(db, 'guilds', player.guildId); // V2: Root Path
-      await updateDoc(guildRef, { members: arrayRemove(player.uid) }); // V2: UID Primary
+      const guildRef = doc(db, 'guilds', player.guildId);
+      await updateDoc(guildRef, { 
+         members: arrayRemove(player.uid),
+         [`memberNames.${player.uid}`]: null
+      });
       syncPlayer({ guildId: null, guildRole: null });
       addLog(`🏮 UPLINK TERMINATED: Syndicate link detached.`);
     } catch (e) {
@@ -438,7 +437,18 @@ export const usePlayerActions = (
     if (!player.guildId || player.guildRole !== 'LEADER') return;
     if (!window.confirm("🚨 NUCLEAR OPTION: Dissolve your Faction forever?")) return;
     try {
-      const guildRef = doc(db, 'guilds', player.guildId); // V2: Root Path
+      const guildRef = doc(db, 'guilds', player.guildId);
+      const guildSnap = await getDoc(guildRef);
+      if (guildSnap.exists() && guildSnap.data().activeWarId) {
+          const warId = guildSnap.data().activeWarId;
+          const warSnap = await getDoc(doc(db, 'guild_wars', warId));
+          if (warSnap.exists()) {
+             const wData = warSnap.data();
+             const otherGuildId = wData.guildA === player.guildId ? wData.guildB : wData.guildA;
+             await updateDoc(doc(db, 'guilds', otherGuildId), { activeWarId: null });
+          }
+          await deleteDoc(doc(db, 'guild_wars', warId));
+      }
       await deleteDoc(guildRef);
       syncPlayer({ guildId: null, guildRole: null });
       addLog(`💥 PROTOCOL 66: Syndicate erased from the grid.`);
@@ -456,30 +466,28 @@ export const usePlayerActions = (
     } catch (e) { console.error("Chat Error:", e); }
   };
 
-  const donateToSyndicateLab = async (item) => {
+  const donateToSyndicateLab = async () => {
     if (!player.guildId) return;
-    const inventory = [...(player.inventory || [])];
-    const targetIdx = inventory.findIndex(i => i.id === item.id);
-    if (targetIdx === -1) return;
+    if ((player.tokens || 0) < 10000) return addLog("🚨 INSUFFICIENT GX: Lab Upgrade costs 10,000 GX.");
     
     try {
-      const guildRef = doc(db, 'guilds', player.guildId); // V2: Root Path
-      const xpMap = { 'Common': 10, 'Uncommon': 25, 'Rare': 75, 'Epic': 200, 'Legendary': 1000 };
-      const gainedXp = xpMap[item.rarity] || 10;
-      await updateDoc(guildRef, { xp: increment(gainedXp), gxVault: increment(item.sellValue || 100) });
-      inventory.splice(targetIdx, 1);
-      syncPlayer({ inventory });
-      addLog(`🧪 DONATION: Contributed ${item.name} (+${gainedXp} XP)`);
-      playSFX(SOUNDS.obtainLoot);
-    } catch (e) { console.error("Lab Error:", e); }
+      const guildRef = doc(db, 'guilds', player.guildId);
+      await updateDoc(guildRef, { labLevel: increment(1), gxVault: increment(10000) });
+      syncPlayer({ tokens: player.tokens - 10000 });
+      addLog("🧪 LAB UPGRADE SUCCESS: Syndicate global combat power increased by 5%.");
+      playSFX(SOUNDS.obtainLevel);
+    } catch (e) {
+      console.error("Lab Error:", e);
+    }
   };
 
-  // --- WAR PROTOCOLS (V2) ---
-  const initiateSyndicateWar = async (targetGuildId, warSize = 1) => {
+  // --- NAGA WAR PROTOCOLS (V2) ---
+  const initiateSyndicateWar = async (targetGuildId, warSize = 2) => {
     if (!player.guildId || player.guildRole !== 'LEADER') return;
+    if (player.guildId === targetGuildId) return addLog("🚨 Cannot declare war on your own faction.");
     try {
       const warId = `war_${Date.now()}`;
-      const warRef = doc(db, 'guild_wars', warId); // V2: Root Path
+      const warRef = doc(db, 'guild_wars', warId);
       await setDoc(warRef, {
         id: warId,
         guildA: player.guildId,
@@ -491,12 +499,12 @@ export const usePlayerActions = (
         guildB_Attacks: {},
         defendersA: {}, 
         defendersB: {}, 
-        warSize: warSize || 1,
+        warSize: warSize,
         declaredAt: serverTimestamp()
       });
       await updateDoc(doc(db, 'guilds', player.guildId), { activeWarId: warId });
       await updateDoc(doc(db, 'guilds', targetGuildId), { activeWarId: warId });
-      addLog(`⚔️ WAR DECLARED: Request sent to rival Syndicate!`);
+      addLog(`⚔️ NAGA WAR DECLARED: Request sent to rival Syndicate!`);
     } catch (e) { console.error("War Init Error:", e); }
   };
 
@@ -505,8 +513,8 @@ export const usePlayerActions = (
     try {
       const warRef = doc(db, 'guild_wars', warId);
       if (accepted) {
-        await updateDoc(warRef, { status: 'PREPARATION' });
-        addLog(`⚔️ WAR ACCEPTED! Line up your Defenders.`);
+        await updateDoc(warRef, { status: 'ENROLLMENT', acceptedAt: serverTimestamp() });
+        addLog(`⚔️ NAGA WAR ACCEPTED! Guild members must now enroll their Nagas.`);
       } else {
         const warSnap = await getDoc(warRef);
         const data = warSnap.data();
@@ -516,6 +524,76 @@ export const usePlayerActions = (
         addLog(`🛡️ CHALLENGE REJECTED.`);
       }
     } catch (e) { console.error("War Response Error:", e); }
+  };
+
+  const abortSyndicateWar = async (warId) => {
+    if (!player.guildId || player.guildRole !== 'LEADER') return;
+    try {
+      const warRef = doc(db, 'guild_wars', warId);
+      const warSnap = await getDoc(warRef);
+      if (!warSnap.exists()) return;
+      const data = warSnap.data();
+      if (data.status === 'BATTLE' || data.status === 'COMPLETED') return;
+      
+      await deleteDoc(warRef);
+      await updateDoc(doc(db, 'guilds', data.guildA), { activeWarId: null });
+      await updateDoc(doc(db, 'guilds', data.guildB), { activeWarId: null });
+      addLog(`🛑 NAGA WAR ABORTED: The preparation phase was manually terminated.`);
+    } catch (e) { console.error("War Abort Error:", e); }
+  };
+
+  const enrollNagaInWar = async (warId) => {
+    if (!player.guildId) return addLog("🚨 No Active Guild.");
+    try {
+      const warRef = doc(db, 'guild_wars', warId);
+      const warSnap = await getDoc(warRef);
+      if (!warSnap.exists()) return addLog("🚨 War not found.");
+      
+      const data = warSnap.data();
+      if (data.status !== 'ENROLLMENT') return addLog("🚨 War is not in the enrollment phase.");
+
+      const side = data.guildA === player.guildId ? 'defendersA' : 'defendersB';
+      const sideDefenders = data[side] || {};
+
+      if (Object.keys(sideDefenders).length >= data.warSize) {
+         return addLog("🚨 Your guild's roster is already full!");
+      }
+      if (sideDefenders[player.uid]) {
+         return addLog("🚨 You have already enrolled your Naga.");
+      }
+
+      const guildRef = doc(db, 'guilds', player.guildId);
+      const guildSnap = await getDoc(guildRef);
+      const labLevel = guildSnap.exists() ? (guildSnap.data().labLevel || 0) : 0;
+      
+      const nagaStats = calculateNagaStats(player, labLevel);
+      
+      const enrollmentData = {
+         uid: player.uid,
+         name: player.name || 'Unknown Rider',
+         gemxAvatar: player.gemxAvatar || 'Cosmic gemx (1).gif',
+         stats: nagaStats,
+         currentHp: nagaStats.totalMaxHp,
+         isDead: false
+      };
+
+      await updateDoc(warRef, {
+         [`${side}.${player.uid}`]: enrollmentData
+      });
+
+      // Check if BOTH sides are now fully enrolled to push state
+      const updatedSnap = await getDoc(warRef);
+      const updatedData = updatedSnap.data();
+      const countA = Object.keys(updatedData.defendersA || {}).length;
+      const countB = Object.keys(updatedData.defendersB || {}).length;
+
+      if (countA >= updatedData.warSize && countB >= updatedData.warSize) {
+         await updateDoc(warRef, { status: 'BATTLE', battleStartedAt: serverTimestamp() });
+         addLog(`⚔️ BOARDS ARE SET: The Naga War has begun!`);
+      } else {
+         addLog(`🛡️ NAGA ENROLLED: Roster is filling up (${Object.keys(updatedData[side] || {}).length}/${updatedData.warSize}).`);
+      }
+    } catch (e) { console.error("Enrollment error:", e); }
   };
 
   const recordWarResult = async (warId, stars, opponentId, damagePercent) => {
@@ -539,50 +617,95 @@ export const usePlayerActions = (
     } catch (e) { console.error("War Result Error:", e); }
   };
 
-  const assignWarDefenders = async (warId, defenderIds = []) => {
-    if (!player.guildId || player.guildRole !== 'LEADER') return;
-    try {
-      const snapshots = {};
-      for (const uid of defenderIds) {
-         const pSnap = await getDoc(doc(db, 'players', uid)); // V2 Path
-         if (pSnap.exists()) snapshots[uid] = pSnap.data();
-      }
-      const warRef = doc(db, 'guild_wars', warId);
-      const warSnap = await getDoc(warRef);
-      const data = warSnap.data();
-      const sideField = data.guildA === player.guildId ? 'defendersA' : 'defendersB';
-      await updateDoc(warRef, { [sideField]: snapshots });
-      
-      const updated = await getDoc(warRef);
-      const u = updated.data();
-      if (Object.keys(u.defendersA || {}).length >= u.warSize && Object.keys(u.defendersB || {}).length >= u.warSize) {
-         await updateDoc(warRef, { status: 'BATTLE', battleStartedAt: serverTimestamp(), expiresAt: Date.now() + 180000 });
-      }
-      addLog(`🛡️ DEFENSE SET: Champions deployed.`);
-    } catch (e) { console.error("Def assignment error:", e); }
-  };
-
-  const finalizeSyndicateWar = async (warId) => {
+  const concludeNagaWar = async (warId) => {
     if (!player.guildId || player.guildRole !== 'LEADER') return;
     try {
       const warRef = doc(db, 'guild_wars', warId);
       const warSnap = await getDoc(warRef);
       if (!warSnap.exists()) return;
       const d = warSnap.data();
-      const isWinner = d.guildA === player.guildId ? d.guildA_Stars > d.guildB_Stars : d.guildB_Stars > d.guildA_Stars;
-      const xpReward = isWinner ? 500 : 50;
-      const gxReward = isWinner ? 10000 : 0;
       
-      await updateDoc(doc(db, 'guilds', player.guildId), { activeWarId: null, xp: increment(xpReward), gxVault: increment(gxReward) });
-      await updateDoc(warRef, { status: 'COMPLETED', finalizedAt: Date.now() });
-      addLog(`🏆 WAR COMPLETED: Received rewards.`);
-    } catch (e) { console.error("War Finalizing Error:", e); }
+      let deadB = 0;
+      Object.values(d.defendersB || {}).forEach(naga => { if (naga.currentHp <= 0) deadB++; });
+      let starsA = deadB === d.warSize ? 3 : (deadB >= d.warSize / 2 ? 2 : (deadB > 0 ? 1 : 0));
+      
+      let deadA = 0;
+      Object.values(d.defendersA || {}).forEach(naga => { if (naga.currentHp <= 0) deadA++; });
+      let starsB = deadA === d.warSize ? 3 : (deadA >= d.warSize / 2 ? 2 : (deadA > 0 ? 1 : 0));
+      
+      let winnerGuildId = (starsA > starsB) ? d.guildA : ((starsB > starsA) ? d.guildB : 'TIE');
+
+      await updateDoc(warRef, { 
+         status: 'COMPLETED', 
+         finalizedAt: Date.now(),
+         starsA,
+         starsB,
+         deadA,
+         deadB,
+         winnerGuildId
+      });
+      
+      await updateDoc(doc(db, 'guilds', d.guildA), { activeWarId: null });
+      await updateDoc(doc(db, 'guilds', d.guildB), { activeWarId: null });
+      
+      addLog(`🏆 NAGA WAR TALLY COMPLETE: Scoring finalization successful.`);
+    } catch (e) { console.error("War Conclude Error:", e); }
+  };
+
+  const claimNagaWarRewards = async (warId) => {
+    if (!player.guildId) return;
+    try {
+      const warRef = doc(db, 'guild_wars', warId);
+      const warSnap = await getDoc(warRef);
+      if (!warSnap.exists()) return;
+      const d = warSnap.data();
+
+      if (d.status !== 'COMPLETED') return;
+      
+      const side = d.guildA === player.guildId ? 'defendersA' : 'defendersB';
+      if (!d[side] || !d[side][player.uid]) {
+         addLog(`❌ DENIED: You did not enroll a Naga into this specific war.`);
+         return;
+      }
+      
+      if (d.claimed && d.claimed[player.uid]) {
+         addLog(`⚠️ ALREADY CLAIMED: You have secured your bounty.`);
+         return;
+      }
+      
+      const isWinner = d.winnerGuildId === player.guildId;
+      const isTie = d.winnerGuildId === 'TIE';
+      
+      let gxReward = isWinner ? 10000 : (isTie ? 7500 : 5000);
+      let scrollCount = isWinner ? 10 : (isTie ? 7 : 5);
+      
+      let updates = { tokens: (player.tokens || 0) + gxReward };
+      
+      // Auto-Scrolls 12m Generation
+      for (let i = 0; i < scrollCount; i++) {
+         const id = `auto_scroll_12m_${Date.now()}_${i}`;
+         updates[`inventory.${id}`] = {
+           id,
+           name: "Auto-Hunt (12m)",
+           sellValue: 1400,
+           type: "Consumable",
+           category: "Consumable",
+           duration: 720000,
+           description: "12 minutes of autonomous hunting."
+         };
+      }
+      
+      await updateDoc(warRef, { [`claimed.${player.uid}`]: true });
+      syncPlayer(updates);
+      
+      addLog(`🎁 WAR BOUNTY SECURED: +${gxReward} GX and +${scrollCount}x Auto Scrolls(12m)!`);
+    } catch (e) { console.error("Claim Reward Error:", e); }
   };
 
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
-    initiateSyndicateWar, respondToSyndicateWar, recordWarResult, assignWarDefenders, finalizeSyndicateWar, startGvGRaid
+    initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar
   };
 };

@@ -108,6 +108,51 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
 };
 
 /**
+ * Calculates Naga (Dragon) Combat Stats for Naga Wars
+ * Factors in Dragon Level for base stats, and Gemx Level for Shield HP and bonus stats.
+ */
+export const calculateNagaStats = (player, labLevel = 0) => {
+  const dragon = player?.dragon || { level: 1 };
+  const gemx = player?.gemx || { level: 1 };
+  const element = player?.gemxElement || 'Cosmic';
+
+  // Base Naga Stats
+  let maxHp = dragon.level * 500;
+  let str = dragon.level * 20; 
+  let agi = dragon.level * 10;
+  let dex = dragon.level * 15;
+
+  // Gemx acts as an HP Shield
+  const shieldHp = gemx.level * 300;
+
+  // Modify base stats depending on the Element of the Gemx equipped
+  if (element === 'Pyro') { str += gemx.level * 5; agi += gemx.level * 2; }
+  else if (element === 'Earthen') { dex += gemx.level * 8; maxHp += gemx.level * 50; }
+  else if (element === 'Hydro') { str += gemx.level * 3; dex += gemx.level * 5; }
+  else if (element === 'Gale') { agi += gemx.level * 8; }
+
+  if (labLevel > 0) {
+      const buffMultiplier = 1 + (labLevel * 0.05); // 5% per lab level
+      str *= buffMultiplier;
+      agi *= buffMultiplier;
+      dex *= buffMultiplier;
+      maxHp *= buffMultiplier;
+  }
+
+  return {
+    level: dragon.level,
+    gemxLevel: gemx.level,
+    element: element,
+    maxHp: maxHp,
+    shieldHp: shieldHp,
+    totalMaxHp: maxHp + shieldHp,
+    str: Math.floor(str),
+    agi: Math.floor(agi),
+    dex: Math.floor(dex)
+  };
+};
+
+/**
  * Elemental Affinity System
  */
 export const ELEMENT_ADVANTAGE = {
