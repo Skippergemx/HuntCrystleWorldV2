@@ -301,7 +301,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     });
 
     return () => unsubscribe();
-  }, [activeDocId, db, localSessionId, sessionConflict]);
+  }, [activeDocId, db, localSessionId, sessionConflict, hasHydratedSession]);
 
   // 3. Throttled Sync Mechanism (Batch Writing to Firestore)
   const syncPlayer = useCallback(async (updates) => {
