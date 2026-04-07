@@ -364,7 +364,7 @@ export const LoginView = ({ handleGoogleLogin, handleFarcasterLogin, farcasterCo
                          <div>
                             <p className="text-[9px] font-black text-black uppercase italic leading-tight mb-2 underline decoration-amber-500 decoration-2">Asset Verification.</p>
                             <ul className="text-[8px] font-black text-black uppercase italic space-y-1.5 list-disc list-inside">
-                               <li><b>Genesis NFT</b> ownership detection logic.</li>
+                               <li><b>Crystle NFT</b> ownership detection logic.</li>
                                <li>On-chain inventory & achievement synchronization.</li>
                                <li>Encrypted digital asset ownership proofs.</li>
                             </ul>

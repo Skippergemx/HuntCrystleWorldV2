@@ -96,7 +96,7 @@ export const MenuView = React.memo(() => {
       <NavBtn 
         onClick={() => setView('pets')} 
         icon={<Sparkles />} 
-        title="Genesis Pets" 
+        title="Crystle Pets" 
         sub="Web3" 
         color="bg-cyan-900 border-cyan-400/30" 
         backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
@@ -122,7 +122,7 @@ export const MenuView = React.memo(() => {
           onClick={() => setView('admin')} 
           icon={<ShieldAlert />} 
           title="Admin Panel" 
-          sub="Genesis Access" 
+          sub="Crystle Access" 
           color="bg-red-600 border-red-500" 
           backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg"
         />

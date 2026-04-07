@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.4.0',
+    date: '2026-04-07',
+    title: 'THE PET SANCTUARY & COMBAT STABILIZATION',
+    category: 'MAJOR STABILITY',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'Massive architectural hardening of the GvG combat engine and the unveiling of the Pet Sanctuary. All hunters now have universal access to the Genesis Companion squad.',
+    changes: [
+      'Syndicate: Resolved GvG Raid target acquisition & redirection bugs',
+      'Identity: Federated member resolution via public leaderboard registry',
+      'Pets: Universal Sanctuary access (Removed Web3 gating for testers)',
+      'UI: New Comical inspection modal for Genesis Companions',
+      'Stability: Proactive Forge & Labs inventory logic hardening'
+    ],
+    media: '/assets/pets/genesis-pets/Genesis Pets (1).jpg'
+  },
+  {
     id: '1.3.1',
     date: '2026-04-05',
     title: 'ADMIN REGISTRY HARDENING',

@@ -39,29 +39,11 @@ export const useLeaderboard = (user, player, db) => {
     fetchLeaderboard(sortField);
   }, [activeBoard, fetchLeaderboard]);
 
-  // V2.1: Echo public stats to the isolated 'leaderboard' collection to secure the root 'players' collection
-  const updateLeaderboard = useCallback(async (updates = {}) => {
-    if (!db || !user?.uid || !player) return;
-    try {
-       const publicData = {
-          name: player.name || "Unknown",
-          avatar: player.avatar || 1,
-          platform: player.platform || 'web',
-          level: updates.level || player.level || 1,
-          totalBossDamage: updates.score !== undefined ? updates.score : (updates.totalBossDamage || player.totalBossDamage || 0),
-          maxDepthScore: updates.maxDepthScore !== undefined ? updates.maxDepthScore : (player.maxDepthScore || 0),
-          tokens: updates.tokens !== undefined ? updates.tokens : (player.tokens || 0),
-          updatedAt: Date.now()
-       };
-       setDoc(doc(db, 'leaderboard', user.uid), publicData, { merge: true }).catch(() => {});
-    } catch (e) {
-       console.error("Failed to push public leaderboard footprint:", e);
-    }
-  }, [db, user?.uid, player]);
+  // updateLeaderboard removed: V3 now uses the unified 'Echo' pattern in usePlayerSync
+  // to prevent duplicate entries caused by conflicting Auth UID vs Global Identity ID.
 
   return {
     leaderboard,
-    updateLeaderboard,
     setActiveBoard,
     activeBoard
   };

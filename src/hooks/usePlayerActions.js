@@ -25,7 +25,11 @@ export const usePlayerActions = (
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
 
   const startGvGRaid = useCallback((warId, opponentId, defenderData, syndicateName = "Unknown", syndicateTag = "???") => {
-    if (!setGvgContext || !setView) return;
+    if (!setGvgContext || !setView) {
+        console.error("System V4: Battle Bridge Offline. Context missing.");
+        return;
+    }
+    console.log(`🚀 [WAR_PROTOCOL_V4]: Transitioning to Combat Bridge | Target: ${opponentId}`);
     setGvgContext({ warId, opponentId });
     setView('naga_combat');
     addLog(`🚩 NAGA RAID: Targeting [${syndicateTag}] ${defenderData.name}!`);
@@ -142,7 +146,8 @@ export const usePlayerActions = (
     });
   }, [player, ITEMS, syncPlayer, playSFX, SOUNDS]);
 
-  const equipItem = useCallback(async (itemId) => {
+  const equipItem = useCallback(async (itemOrId) => {
+    const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
     if (!player.inventory || !player.inventory[itemId]) return;
     const item = player.inventory[itemId];
     const slot = item.type;
@@ -157,7 +162,8 @@ export const usePlayerActions = (
         updates[`inventory.${oldItem.id || `OLD_${slot}`}`] = oldItem;
     }
 
-    updates.equipped = { ...player.equipped, [slot]: item };
+    // Use Dot-Notation for safety to prevent wiping other slots
+    updates[`equipped.${slot}`] = item;
     updates[`inventory.${itemId}`] = deleteField();
 
     syncPlayer(updates);
@@ -171,7 +177,7 @@ export const usePlayerActions = (
     
     syncPlayer({
         [`inventory.${item.id || `RET_${slot}`}`]: item,
-        equipped: { ...player.equipped, [slot]: null }
+        [`equipped.${slot}`]: deleteField()
     });
     
     playSFX(SOUNDS.unequipItem);
@@ -423,7 +429,7 @@ export const usePlayerActions = (
       const guildRef = doc(db, 'guilds', player.guildId);
       await updateDoc(guildRef, { 
          members: arrayRemove(player.uid),
-         [`memberNames.${player.uid}`]: null
+         [`memberNames.${player.uid}`]: deleteField()
       });
       syncPlayer({ guildId: null, guildRole: null });
       addLog(`🏮 UPLINK TERMINATED: Syndicate link detached.`);
@@ -571,7 +577,10 @@ export const usePlayerActions = (
       const enrollmentData = {
          uid: player.uid,
          name: player.name || 'Unknown Rider',
+         level: player.level || 1,
          gemxAvatar: player.gemxAvatar || 'Cosmic gemx (1).gif',
+         dragonAvatar: '/assets/dragonsground/dragons/DragonAvatar (1).jpg',
+         element: nagaStats.element || 'Cosmic',
          stats: nagaStats,
          currentHp: nagaStats.totalMaxHp,
          isDead: false

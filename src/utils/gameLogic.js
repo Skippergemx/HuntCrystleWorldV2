@@ -94,7 +94,7 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     else if (element === 'Gale') { stats.agi += 2 * lvl; }
   }
 
-  // Apply Genesis Pet Buffs
+  // Apply Crystle Pet Buffs
   if (player.petId) {
     stats.maxHp += 50;
   }

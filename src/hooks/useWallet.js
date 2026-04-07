@@ -7,7 +7,16 @@ export const useWallet = (addLog, farcasterContext) => {
   const { address, isConnected, isConnecting } = useAccount();
   const { disconnect } = useDisconnect();
   const { openConnectModal } = useConnectModal();
-  const [isGenesisHolder, setIsGenesisHolder] = useState(false);
+  const [isCrystleHolder, setIsCrystleHolder] = useState(false);
+
+  useEffect(() => {
+    // V3 MOCK: Always true if connected for Phase 1 testing
+    if (address || farcasterContext?.user?.fid) {
+      setIsCrystleHolder(true); 
+    } else {
+      setIsCrystleHolder(false);
+    }
+  }, [address, farcasterContext]);
 
   // WAGMI Integration replaces all legacy listeners
   // Connection is handled by RainbowKit's ConnectButton, 
@@ -19,7 +28,7 @@ export const useWallet = (addLog, farcasterContext) => {
 
   return {
     address, 
-    isGenesisHolder, 
+    isCrystleHolder, 
     loading: isConnecting,
     activeProviderType: isConnected ? 'EXTERNAL' : null,
     connectWallet: () => {

@@ -13,7 +13,6 @@ export const useCombat = (
   addLog,
   playSFX,
   SOUNDS,
-  updateLeaderboard,
   selectedMap,
   STUN_DURATION_NORMAL,
   STUN_DURATION_CRIT,
@@ -213,7 +212,7 @@ export const useCombat = (
     const e = enemyRef.current || enemy;
     const earnedXp = Math.floor(e.xp * (player?.petId ? 1.1 : 1.0));
     addLog(`Victory! Found ${e.loot} GX.`);
-    if (player?.petId) addLog("✨ GENESIS PULSE: +10% XP Bonus!");
+    if (player?.petId) addLog("✨ CRYSTLE PULSE: +10% XP Bonus!");
 
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000, nextAP = player?.abilityPoints || 0;
     let didLevelUp = false;
@@ -317,11 +316,6 @@ export const useCombat = (
                 maxDepth: nextDepth // Backwards compatibility
             };
             syncPlayer(depthUpdates);
-            updateLeaderboard({
-                level: nextLvl,
-                maxDepthScore: currentDepthScore,
-                maxDepthFloor: nextDepth
-            });
         }
         
         spawnNewEnemy(nextDepth);
@@ -332,9 +326,7 @@ export const useCombat = (
     }, 1500);
 
     if (didLevelUp) {
-      updateLeaderboard({
-        level: nextLvl
-      });
+      // syncPlayer(updates) already called above, which triggers the leaderboard echo
     }
 
     if (battleMode === 'GVG') {
@@ -342,7 +334,7 @@ export const useCombat = (
        setBattleMode('DUNGEON');
        setTimeout(() => setView('syndicate'), 1500);
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, updateLeaderboard, playSFX, SOUNDS]);
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, playSFX, SOUNDS]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
     // 1. SANITY CHECK: Anti-Cheat Bounds Limits
@@ -383,9 +375,8 @@ export const useCombat = (
     }
 
     syncPlayer(updates);
-    updateLeaderboard({ score: newTotal });
     enemyTurn(BOSS, true);
-  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, updateLeaderboard, totalStats, BOSS]);
+  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS]);
 
   const handleAttack = useCallback((isBoss = false) => {
     // --- SYNCHRONOUS MUTEX GATE ---

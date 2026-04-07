@@ -14,7 +14,7 @@ export const LaboratoryView = React.memo(() => {
   const [selectedRecipe, setSelectedRecipe] = useState(LAB_RECIPES[0]);
 
   const materials = useMemo(() => {
-    return player.inventory || [];
+    return Object.values(player.inventory || {});
   }, [player.inventory]);
 
   const getMaterialCount = (matId) => {

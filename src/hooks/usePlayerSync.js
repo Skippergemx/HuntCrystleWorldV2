@@ -25,6 +25,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   const [activeDocId, setActiveDocId] = useState(null);
   const [sessionConflict, setSessionConflict] = useState(false);
   const [hasHydratedSession, setHasHydratedSession] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncFailed, setLastSyncFailed] = useState(false);
   
   // UNIQUE LOCAL SESSION IDENTIFIER
   const localSessionId = useRef(`SESS_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`).current;
@@ -40,21 +42,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     const raw = addressToScan.trim();
 
     try {
-      // 1. Optimized Dual-Query (Indexed)
-      const qLower = query(collection(db, 'players'), where('walletAddress', '==', normalized));
-      const qRaw = query(collection(db, 'players'), where('walletAddress', '==', raw));
+      // 1. Optimized Dual-Query (Indexed for Hall of Fame)
+      // KEY: We scan the 'leaderboard' collection because it is public. 
+      // The 'players' collection is owner-locked for privacy.
+      const qLower = query(collection(db, 'leaderboard'), where('walletAddress', '==', normalized));
+      const qRaw = query(collection(db, 'leaderboard'), where('walletAddress', '==', raw));
       const [snapLower, snapRaw] = await Promise.all([getDocs(qLower), getDocs(qRaw)]);
       
       let collisionDoc = !snapLower.empty ? snapLower.docs[0] : (!snapRaw.empty ? snapRaw.docs[0] : null);
-
-      // 2. Deep-Scan Failsafe (Non-Indexed Sweep)
-      if (!collisionDoc) {
-        const broadSweep = await getDocs(query(collection(db, 'players'), limit(50)));
-        collisionDoc = broadSweep.docs.find(d => {
-          const docWallet = d.data()?.walletAddress?.toString().toLowerCase().trim();
-          return docWallet === normalized;
-        });
-      }
 
       const collisionId = collisionDoc?.id;
       if (collisionId && collisionId !== activeDocId) {
@@ -157,7 +152,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     const addr = (data.walletAddress || user.walletAddress);
                     const scan = await identitySentry(addr);
                     
-                    if (!scan.success && scan.collision.id !== primaryAuthId) {
+                    if (!scan.success && scan.collision && scan.collision.id !== primaryAuthId) {
                          console.warn(`System V3: Blockade Alert! Scrubbing unauthorized link to ${scan.collision.id}`);
                          walletConflict = {
                             ownerId: scan.collision.id,
@@ -165,7 +160,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                             isFarcaster: scan.collision.platform === 'FARCASTER'
                          };
                          activeWalletSync = null; 
-                    } else {
+                    } else if (scan.success) {
                         activeWalletSync = addr.toLowerCase().trim();
                     }
                 }
@@ -217,16 +212,17 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
                 // Step 5: Mirror to Public Leaderboard Endpoint
                 import('firebase/firestore').then(({ doc: fsDoc, setDoc: fsSetDoc }) => {
-                   fsSetDoc(fsDoc(db, 'leaderboard', primaryAuthId), {
-                       name: sanitized.name || "Unknown",
-                       avatar: sanitized.avatar || 1,
-                       platform: sanitized.platform || 'web',
-                       level: sanitized.level || 1,
-                       totalBossDamage: sanitized.totalBossDamage || 0,
-                       maxDepthScore: sanitized.maxDepthScore || 0,
-                       tokens: sanitized.tokens || 0,
-                       updatedAt: Date.now()
-                   }, { merge: true }).catch(()=>{});
+                    fsSetDoc(fsDoc(db, 'leaderboard', primaryAuthId), {
+                        name: sanitized.name || "Unknown",
+                        avatar: sanitized.avatar || 1,
+                        platform: sanitized.platform || 'web',
+                        level: sanitized.level || 1,
+                        totalBossDamage: sanitized.totalBossDamage || 0,
+                        maxDepthScore: sanitized.maxDepthScore || 0,
+                        tokens: sanitized.tokens || 0,
+                        walletAddress: sanitized.walletAddress || null,
+                        updatedAt: Date.now()
+                    }, { merge: true }).catch(()=>{});
                 });
             } else {
                 console.log(`System V3: No Archive Found for ${primaryAuthId}. Constructing Genesis Profile...`);
@@ -336,20 +332,24 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     // Local update for instant UI feedback
     setPlayer(prev => {
       const next = { ...prev };
-      Object.entries(sterilized).forEach(([key, value]) => {
+        Object.entries(sterilized).forEach(([key, value]) => {
+          // Detect Firestore deleteField sentinel or null as a delete signal
+          const isDelete = value === null || (value && typeof value === 'object' && value._methodName === 'deleteField');
+
           if (key.includes('.')) {
               const [parent, child] = key.split('.');
               if (next[parent] && typeof next[parent] === 'object') {
                   const updatedParent = { ...next[parent] };
-                  if (value === null) delete updatedParent[child];
+                  if (isDelete) delete updatedParent[child];
                   else updatedParent[child] = value;
                   next[parent] = updatedParent;
               }
           } else {
-              next[key] = value;
+              if (isDelete) delete next[key];
+              else next[key] = value;
           }
-      });
-      next.updatedAt = new Date();
+        });
+        next.updatedAt = new Date();
 
       // Queue these changes for the prochain Firestore sync
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
@@ -369,7 +369,10 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           }
           
           console.log(`System V4: Pushing Batch Update to Firestore [${activeDocId}]:`, Object.keys(payload));
+          setIsSyncing(true);
           await updateDoc(docRef, payload);
+          setIsSyncing(false);
+          setLastSyncFailed(false);
           console.log("System V4: Remote Sector Synchronized.", activeDocId);
 
           // --- LEADERBOARD PUBLIC ECHO PUSH ---
@@ -382,14 +385,21 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     level: next.level || 1,
                     totalBossDamage: next.totalBossDamage || 0,
                     maxDepthScore: next.maxDepthScore || 0,
+                    maxDepthMapName: next.maxDepthMapName || 'Neon Slums',
+                    maxDepthMapMinLevel: next.maxDepthMapMinLevel || 1,
                     tokens: next.tokens || 0,
+                    walletAddress: next.walletAddress || null,
                     updatedAt: Date.now()
                 };
-                fsSetDoc(fsDoc(db, 'leaderboard', activeDocId), publicData, { merge: true }).catch(()=>{});
+                setDoc(doc(db, 'leaderboard', activeDocId), publicData, { merge: true }).catch(()=>{});
              });
           } catch(e) { console.error("Echo Error:", e); }
         } catch (e) {
-          console.error("Sync Error:", e);
+          console.error("Sync Error - Retrying in next batch:", e);
+          // Failsafe: Restore unsynced data to the queue
+          pendingUpdatesRef.current = { ...payload, ...pendingUpdatesRef.current };
+          setLastSyncFailed(true);
+          setIsSyncing(false);
         }
       }, 2000); 
 
@@ -467,6 +477,10 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                   level: 1, tokens: 0, inventory: {}, // Wipe data to prevent duping
                   walletAddress: null // Release wallet ownership
               });
+
+              // Step 3: SECURE WIPE: Remove the old phantom from the public leaderboard
+              const oldLeaderboardRef = doc(db, 'leaderboard', sourceId);
+              transaction.delete(oldLeaderboardRef);
           });
 
           console.log(`✅ System V4: Atomic Migration Protocol Successful.`);
@@ -487,6 +501,6 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
       }
   }, [activeDocId, db]);
 
-  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict };
+  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict, isSyncing, lastSyncFailed };
 };
 

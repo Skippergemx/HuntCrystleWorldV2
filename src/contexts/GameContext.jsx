@@ -30,7 +30,7 @@ export const GameContext = createContext(null);
 
 export const useGame = () => {
   const context = useContext(GameContext);
-  if (!context) throw new Error('useGame must be used within a GameProvider');
+  // No error throw here yet, let components handle it or return null
   return context;
 };
 
@@ -94,7 +94,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const combat = useCombat(
     user, player, syncPlayer, 
     adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy,
-    totalStats, addLog, audio.playSFX, SOUNDS, leaderboardObj.updateLeaderboard, adventure.selectedMap,
+    totalStats, addLog, audio.playSFX, SOUNDS, adventure.selectedMap,
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
@@ -178,8 +178,10 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     linkWallet, migrateProfile,
     farcasterContext,
     telegram,
+    gvgContext, setGvgContext,
+    battleMode, setBattleMode,
     leaderboard: leaderboardObj.leaderboard,
-    updateLeaderboard: leaderboardObj.updateLeaderboard,
+    updateLeaderboard: syncPlayer, // Alias for backward compatibility if needed, though they should call syncPlayer
     updateBoardTab: leaderboardObj.setActiveBoard,
     activeBoardTab: leaderboardObj.activeBoard,
 

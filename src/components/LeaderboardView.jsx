@@ -120,6 +120,11 @@ export const LeaderboardView = React.memo(() => {
                    activeTab === 'level' ? entry.level :
                    (entry.maxDepthFloor || entry.maxDepth || 1)}
                 </p>
+                {activeTab === 'depth' && entry.maxDepthMapName && (
+                  <p className="text-[7px] font-black text-blue-400 uppercase italic tracking-tighter mb-1">
+                    {entry.maxDepthMapName} {entry.maxDepthMapMinLevel ? `(Lv.${entry.maxDepthMapMinLevel}+)` : ''}
+                  </p>
+                )}
                 <p className="text-[8px] font-black text-white/30 uppercase italic tracking-widest">
                   {activeTab === 'boss' ? 'CRITICAL DMG' : activeTab === 'gx' ? 'LIQUID GX' : activeTab === 'level' ? 'EXPERIENCE' : 'EXPEDITION DEPTH'}
                 </p>

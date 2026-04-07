@@ -1,13 +1,13 @@
 import React from 'react';
-import { TrendingUp, X, Skull, Shield, Swords, Target, Crosshair, Zap } from 'lucide-react';
+import { TrendingUp, X, Skull, Shield, Swords, Target, Crosshair, Zap, Rocket, Flame, MoveUp } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 import { ConfirmationModal } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { useNagaCombat } from '../hooks/useNagaCombat';
 
 export const NagaCombatView = React.memo(() => {
-  const { player, addLog, audio, SOUNDS, db, adventure } = useGame();
-  const { setView, gvgContext } = adventure;
+  const { player, addLog, audio, SOUNDS, db, adventure, actions, gvgContext } = useGame();
+  const { setView } = adventure;
 
   const nagaCombat = useNagaCombat(
     db,
@@ -17,187 +17,226 @@ export const NagaCombatView = React.memo(() => {
     audio.playSFX,
     SOUNDS,
     setView,
-    audio.triggerHaptic
+    audio.triggerHaptic,
+    actions.recordWarResult
   );
 
   const {
-    combatState, myNaga, enemyNaga, critAlert, missTimeLeft,
+    combatState, myNaga, enemyNaga, critAlert,
     impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt,
-    showDefeatedWindow, showVictoryWindow, handleAttack, handleRetreat
+    showDefeatedWindow, showVictoryWindow, handleAttack, handleRetreat,
+    resonanceScale, isResonating, rageMeter, comboCount, perfectTiming, triggerUltimate, momentum
   } = nagaCombat;
 
   const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
 
   if (combatState === 'LOADING' || !myNaga || !enemyNaga) {
-     return <div className="flex-1 flex items-center justify-center bg-slate-950 font-black text-white italic uppercase animate-pulse">Initializing Holo-Combat Grid...</div>;
+     return <div className="flex-1 flex items-center justify-center bg-slate-950 font-black text-white italic uppercase animate-pulse text-sm">Synchronizing Primal Resonance...</div>;
   }
 
-  const isMissed = missTimeLeft > 0;
-
   return (
-    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden bg-red-950/40`}>
-      <div className="absolute inset-0 z-0 select-none">
-        <img src="/assets/dungeonsground/PyroGroundBackdrop.jpg" className="w-full h-full object-cover opacity-30 mix-blend-luminosity grayscale" alt="" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-transparent to-black/90"></div>
-      </div>
-      <div className="absolute inset-0 opacity-20 pointer-events-none z-20 comic-halftone text-red-500"></div>
-
-      {/* --- HUD TOP --- */}
-      <div className="w-full flex justify-between items-start z-30 px-2 md:px-6 pt-2 md:pt-4">
-        <div className="flex items-center gap-1 md:gap-3">
-          <div className="flex items-center gap-2 px-3 md:px-6 py-2 md:py-4 bg-black border-[4px] border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] rounded text-red-400 transform -rotate-1">
-            <Swords size={20} className="animate-pulse" />
-            <div className="flex flex-col leading-none">
-              <span className="text-[10px] font-black uppercase text-red-600/70">Guild Vs Guild</span>
-              <span className="text-xl font-black tracking-widest italic uppercase">NAGA WAR</span>
-            </div>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowRetreatConfirm(true)}
-          className="p-3 bg-red-600 border-[4px] border-black text-white shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-2"
-          title="Flee Battle"
-        >
-          <X size={20} strokeWidth={4} />
-        </button>
+    <div className={`flex-1 p-2 md:p-4 flex flex-col items-center justify-between gap-1 md:gap-2 animate-in fade-in relative overflow-hidden bg-slate-950`}>
+      {/* BACKGROUND DEPTH */}
+      <div className="absolute inset-0 z-0">
+        <img src="/assets/dungeonsground/Backdrop_Void.jpg" className="w-full h-full object-cover opacity-20 grayscale" alt="" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black opacity-80"></div>
+        {perfectTiming && <div className="absolute inset-0 bg-white/5 animate-pulse"></div>}
       </div>
 
-      {/* --- BATTLE ARENA --- */}
-      <div className="w-full flex-1 relative z-40 flex flex-col lg:grid lg:grid-cols-2 gap-2 lg:gap-8 items-center px-2 md:px-12 py-1 md:py-4">
-        
-        <div className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">
-          <div className="w-24 h-24 bg-red-600 border-[8px] border-black rounded-full shadow-[10px_10px_0_rgba(0,0,0,1)] flex items-center justify-center transform -rotate-12 animate-kapow">
-            <span className="text-white font-black text-4xl italic tracking-tighter drop-shadow-[2px_2px_0_#000]">VS</span>
-          </div>
-        </div>
-
-        {/* ENEMY NAGA (LEFT) */}
-        <div className={`flex flex-col items-center lg:items-end gap-1.5 md:gap-6 transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
-          <div className="relative">
-            {currentTaunt && (
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[100] animate-in zoom-in slide-in-from-bottom-6 duration-300">
-                <div className="relative bg-black border-[4px] border-red-500 px-4 py-2 md:px-6 md:py-4 rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)] min-w-[120px] max-w-[240px]">
-                  <p className="text-[12px] font-black uppercase text-white italic text-center tracking-tight">{currentTaunt}</p>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-black border-r-[4px] border-b-[4px] border-red-500 rotate-45 transform"></div>
-                </div>
-              </div>
-            )}
-
-            <div className={`w-40 h-40 md:w-64 md:h-64 bg-black border-[6px] border-red-600 shadow-[10px_10px_0_rgba(220,38,38,0.5)] overflow-hidden relative transform -rotate-2 ${impactSplash ? 'animate-flinch' : 'animate-float'}`}>
-              <img src={`/assets/dragonsground/gemx/${enemyNaga.gemxAvatar}`} className="w-full h-full object-cover" alt="Enemy Naga" />
-              {enemyNaga.currentHp <= 0 && <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center backdrop-blur-sm"><Skull size={64} className="text-red-500" /></div>}
-              <ImpactSplash splash={impactSplash} />
-            </div>
-
-            {showVictoryWindow && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center animate-kapow">
-                 <div className="bg-yellow-400 border-[6px] border-black px-10 py-6 transform -rotate-6 shadow-[10px_10px_0_rgba(0,0,0,1)]">
-                   <p className="text-black font-black text-5xl uppercase italic drop-shadow-[2px_2px_0_#fff]">DECIMATED</p>
-                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="w-full max-w-[320px] space-y-4">
-            <div className="flex flex-col gap-2 relative">
-              <div className="bg-red-950 text-white px-5 py-2 border-[4px] border-red-600 transform rotate-1 flex flex-col">
-                <span className="text-[8px] font-black uppercase opacity-70 tracking-widest italic mb-0.5">Rival Vanguard</span>
-                <h2 className="text-xl font-black uppercase truncate">{enemyNaga.name} [Lvl {enemyNaga.stats.level}]</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-2 bg-black/80 border-4 border-red-900 p-2 transform -rotate-1">
-                <div className="flex flex-col items-center border-r border-white/10 text-red-500"><Swords size={12}/><span className="text-xs font-black italic">{enemyNaga.stats.str}</span></div>
-                <div className="flex flex-col items-center border-r border-white/10 text-amber-500"><Zap size={12}/><span className="text-xs font-black italic">{enemyNaga.stats.agi}</span></div>
-                <div className="flex flex-col items-center text-cyan-500"><Crosshair size={12}/><span className="text-xs font-black italic">{enemyNaga.stats.dex}</span></div>
-              </div>
-            </div>
-
-            <div className="w-full group bg-black p-2 border-[4px] border-red-900 shadow-[6px_6px_0_rgba(0,0,0,0.5)]">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] font-black text-red-500 uppercase flex items-center gap-1"><Shield size={10}/> ARMOR CORE</span>
-                <span className="text-[10px] font-black text-white">{Math.max(0, enemyNaga.currentHp)}/{enemyNaga.stats.totalMaxHp}</span>
-              </div>
-              <div className="h-6 bg-slate-900 overflow-hidden relative">
-                <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300" style={{ width: `${Math.max(0, (enemyNaga.currentHp / enemyNaga.stats.totalMaxHp) * 100)}%` }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* PLAYER NAGA (RIGHT) */}
-        <div className={`flex flex-col items-center md:items-start gap-1.5 md:gap-6 transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
-          <div className="relative">
-            {playerTaunt && (
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-6 duration-300">
-                <div className="relative bg-cyan-600 border-[4px] border-black px-4 py-2 md:px-6 md:py-4 rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)] min-w-[120px] max-w-[240px]">
-                  <p className="text-[12px] font-black uppercase text-black italic text-center tracking-tight">{playerTaunt}</p>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-cyan-600 border-r-[4px] border-b-[4px] border-black rotate-45 transform"></div>
-                </div>
-              </div>
-            )}
-
-            <div className={`w-40 h-40 md:w-64 md:h-64 bg-black border-[6px] border-cyan-500 shadow-[10px_10px_0_rgba(6,182,212,0.5)] overflow-hidden relative transform rotate-2 ${playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
-              <img src={`/assets/dragonsground/gemx/${myNaga.gemxAvatar}`} className="w-full h-full object-cover" alt="My Naga" />
-              {myNaga.currentHp <= 0 && <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center backdrop-blur-sm"><Skull size={64} className="text-red-500" /></div>}
-              <ImpactSplash splash={playerImpactSplash} />
-            </div>
-            
-            {showDefeatedWindow && (
-              <div className="absolute inset-0 z-50 flex items-center justify-center animate-kapow">
-                 <div className="bg-red-600 border-[6px] border-black px-10 py-6 transform rotate-6 shadow-[10px_10px_0_rgba(0,0,0,1)]">
-                   <p className="text-black font-black text-5xl uppercase italic drop-shadow-[2px_2px_0_#fff]">DEFEATED</p>
-                 </div>
-              </div>
-            )}
-          </div>
-
-          <div className="w-full max-w-[320px] space-y-4">
-            <div className="flex flex-col gap-2 relative">
-              <div className="bg-cyan-900 text-white px-5 py-2 border-[4px] border-cyan-500 transform -rotate-1 flex flex-col items-end">
-                <span className="text-[8px] font-black uppercase opacity-70 tracking-widest italic mb-0.5">Your Vanguard</span>
-                <h2 className="text-xl font-black uppercase truncate">[Lvl {myNaga.stats.level}] {myNaga.name}</h2>
-              </div>
-              <div className="grid grid-cols-3 gap-2 bg-black/80 border-4 border-cyan-900 p-2 transform rotate-1">
-                <div className="flex flex-col items-center border-r border-white/10 text-red-500"><Swords size={12}/><span className="text-xs font-black italic">{myNaga.stats.str}</span></div>
-                <div className="flex flex-col items-center border-r border-white/10 text-amber-500"><Zap size={12}/><span className="text-xs font-black italic">{myNaga.stats.agi}</span></div>
-                <div className="flex flex-col items-center text-cyan-500"><Crosshair size={12}/><span className="text-xs font-black italic">{myNaga.stats.dex}</span></div>
-              </div>
-            </div>
-
-            <div className="w-full group bg-black p-2 border-[4px] border-cyan-900 shadow-[-6px_6px_0_rgba(0,0,0,0.5)]">
-              <div className="flex justify-between items-center mb-1 flex-row-reverse">
-                <span className="text-[10px] font-black text-cyan-500 uppercase flex items-center gap-1"><Shield size={10}/> BIOLOGICAL CORE</span>
-                <span className="text-[10px] font-black text-white">{Math.max(0, myNaga.currentHp)}/{myNaga.stats.totalMaxHp}</span>
-              </div>
-              <div className="h-6 bg-slate-900 overflow-hidden relative">
-                <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 ml-auto" style={{ width: `${Math.max(0, (myNaga.currentHp / myNaga.stats.totalMaxHp) * 100)}%` }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* GUILD MOMENTUM BAR (TOP) */}
+      <div className="w-full max-w-md z-30 px-2 mt-1">
+         <div className="flex justify-between items-center mb-1">
+            <span className="text-[7px] md:text-[9px] font-black text-cyan-400 uppercase tracking-[0.2em] italic">SYNDICATE MOMENTUM</span>
+            <span className="text-[7px] md:text-[9px] font-black text-white uppercase italic">{momentum}%</span>
+         </div>
+         <div className="h-1.5 md:h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10 p-[1px]">
+            <div className={`h-full rounded-full transition-all duration-1000 ${momentum >= 100 ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)] animate-pulse' : 'bg-slate-600'}`} style={{ width: `${Math.min(100, momentum)}%` }}></div>
+         </div>
+         {momentum >= 100 && <p className="text-center text-[6px] md:text-[8px] text-cyan-400 font-bold uppercase mt-1 animate-bounce">OVERDRIVE ACTIVE: +25% DMG</p>}
       </div>
 
-      {/* --- HUD BOTTOM --- */}
-      <div className="w-full max-w-2xl px-4 mb-6 z-50">
-         <button
+      {/* --- ENEMY DISPLAY --- */}
+      <div className="w-full flex flex-col items-center gap-2 md:gap-4 z-20">
+         <div className={`relative transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-down' : ''}`}>
+             <div className={`w-32 h-32 md:w-56 md:h-56 bg-black border-[4px] border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.4)] overflow-hidden relative transform -rotate-1 ${impactSplash ? 'animate-flinch' : 'animate-float'}`}>
+               <img 
+                  src={enemyNaga.dragonAvatar || '/assets/dragonsground/dragons/DragonAvatar (1).jpg'} 
+                  alt="Enemy" 
+                  className={`w-full h-full object-cover ${enemyNaga.element === 'Pyro' ? 'hue-rotate-[340deg] saturate-200' : enemyNaga.element === 'Hydro' ? 'hue-rotate-[180deg]' : enemyNaga.element === 'Earthen' ? 'hue-rotate-[90deg] saturate-150' : enemyNaga.element === 'Gale' ? 'hue-rotate-[220deg] brightness-125' : ''}`}
+               />
+               <div className="absolute top-1 right-1 w-8 h-8 md:w-12 md:h-12 bg-black/80 rounded border border-red-600 overflow-hidden shadow-xl z-10">
+                  <img src={`/assets/dragonsground/gemx/${enemyNaga.gemxAvatar}`} className="w-full h-full object-cover" alt="Gemx" />
+               </div>
+               {enemyNaga.currentHp <= 0 && <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center backdrop-blur-sm z-20"><Skull size={40} className="text-red-500" /></div>}
+               <ImpactSplash splash={impactSplash} />
+             </div>
+             {currentTaunt && (
+               <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-red-600 border-2 border-black px-3 py-1 rounded-full animate-bounce z-40">
+                  <p className="text-[8px] md:text-[10px] font-black uppercase text-white italic whitespace-nowrap">{currentTaunt}</p>
+               </div>
+             )}
+         </div>
+
+         {/* ENEMY HP BAR */}
+         <div className="w-full max-w-[200px] md:max-w-xs px-4">
+            <div className="h-4 md:h-6 bg-black border-2 border-red-900 rounded-lg overflow-hidden relative shadow-inner">
+               <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300" style={{ width: `${Math.max(0, (enemyNaga.currentHp / enemyNaga.stats.totalMaxHp) * 100)}%` }}></div>
+               <span className="absolute inset-0 flex items-center justify-center text-[7px] md:text-[10px] font-black text-white italic drop-shadow-md">
+                   {enemyNaga.name} [{Math.max(0, enemyNaga.currentHp)}]
+               </span>
+            </div>
+         </div>
+      </div>
+
+      {/* --- CENTRAL RESONANCE ENGINE --- */}
+      <div className="relative flex items-center justify-center z-40">
+         {/* THE CORE BUTTON */}
+         <button 
             onClick={handleAttack}
-            disabled={isMissed || showDefeatedWindow || showVictoryWindow || combatState !== 'IDLE'}
-            className={`w-full py-6 rounded border-[5px] border-black font-black text-3xl md:text-5xl shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none italic flex flex-col items-center justify-center leading-none ${isMissed || combatState !== 'IDLE' ? 'bg-slate-700 text-white/50 grayscale' : 'bg-red-600 text-black hover:-translate-y-1 hover:text-white'} group overflow-hidden relative`}
+            className={`w-24 h-24 md:w-36 md:h-36 rounded-full relative group outline-none active:scale-95 transition-all
+               ${isResonating ? 'scale-110' : 'scale-100'}
+            `}
          >
-            <div className="absolute inset-0 comic-halftone opacity-30 text-black pointer-events-none group-hover:scale-125 transition-transform"></div>
-            {isMissed ? <span className="relative z-10 tracking-tighter">DEFLECTED</span> : <span className="relative z-10 tracking-tighter drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">DRACONIC STRIKE!</span>}
-            <span className="text-[10px] mt-2 opacity-70 tracking-[0.4em] uppercase relative z-10 font-black text-white/80">Execute Raid Protocol</span>
+            {/* RESONANCE RING */}
+            <div 
+               className={`absolute inset-0 rounded-full border-4 transition-transform duration-50
+                  ${perfectTiming ? 'border-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.8)]' : 'border-white/20'}
+               `}
+               style={{ transform: `scale(${resonanceScale})` }}
+            />
+            
+            {/* THE GEM CORE */}
+            <div className={`absolute inset-2 rounded-full overflow-hidden border-[3px] border-black shadow-2xl bg-black flex items-center justify-center
+               ${perfectTiming ? 'animate-pulse ring-4 ring-amber-400' : ''}
+            `}>
+               <img src={`/assets/dragonsground/gemx/${myNaga.gemxAvatar}`} className="w-full h-full object-cover scale-150 animate-slow-spin" alt="Core" />
+               <div className="absolute inset-0 bg-gradient-radial from-transparent to-black/60"></div>
+               {perfectTiming && <div className="absolute inset-0 bg-amber-400/20 mix-blend-overlay"></div>}
+            </div>
+
+            {/* COMBO INDICATOR */}
+            {comboCount > 0 && (
+               <div className="absolute -top-4 -right-4 bg-amber-500 text-black px-2 py-1 rounded-lg font-black text-xs md:text-sm transform rotate-12 shadow-lg animate-bounce border-2 border-black">
+                  x{comboCount}
+               </div>
+            )}
          </button>
       </div>
 
-      <ConfirmationModal 
-        isOpen={showRetreatConfirm}
-        onClose={() => setShowRetreatConfirm(false)}
-        onConfirm={handleRetreat}
-        title="ABANDON RAID?"
-        message="Retreating will take you back to the War Hub. Your Naga's health will not reset."
-        confirmText="RETREAT"
-        cancelText="KEEP FIGHTING"
-      />
+      {/* --- PLAYER DISPLAY --- */}
+      <div className="w-full flex flex-col items-center gap-2 md:gap-4 z-20">
+         {/* HP & RAGE GAUGES */}
+         <div className="w-full max-w-[200px] md:max-w-xs flex flex-col gap-2 px-4">
+            {/* PLAYER HP */}
+            <div className="h-3 md:h-4 bg-black border-2 border-cyan-900 rounded-md overflow-hidden relative shadow-inner">
+               <div className="h-full bg-gradient-to-r from-cyan-800 to-cyan-500 transition-all duration-300" style={{ width: `${Math.max(0, (myNaga.currentHp / myNaga.stats.totalMaxHp) * 100)}%` }}></div>
+               <span className="absolute inset-0 flex items-center justify-center text-[6px] md:text-[8px] font-black text-white italic drop-shadow-md uppercase tracking-widest">
+                   SHIELD CORE [{Math.max(0, myNaga.currentHp)}]
+               </span>
+            </div>
+
+            {/* RAGE METER (ULTIMATE) */}
+            <div className="h-6 md:h-10 bg-black border-[3px] border-slate-800 rounded-xl overflow-hidden relative">
+               <div 
+                  className={`h-full transition-all duration-300 ${rageMeter >= 100 ? 'bg-amber-500 animate-pulse' : 'bg-slate-700'}`} 
+                  style={{ width: `${rageMeter}%` }}
+               ></div>
+               {rageMeter >= 100 ? (
+                  <button 
+                     onClick={triggerUltimate}
+                     className="absolute inset-0 w-full h-full flex items-center justify-center gap-2 bg-amber-500 text-black font-black uppercase italic group hover:bg-white transition-colors animate-in zoom-in"
+                  >
+                     <Flame size={16} fill="black" /> RELEASE DRAGON BLAST <MoveUp size={16} className="animate-bounce" />
+                  </button>
+               ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-[7px] md:text-[10px] font-black text-white/40 italic uppercase tracking-[0.3em]">
+                     RAGE: {rageMeter}%
+                  </span>
+               )}
+            </div>
+         </div>
+
+         {/* PLAYER AVATAR */}
+         <div className={`relative transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-up' : ''}`}>
+             <div className={`w-32 h-32 md:w-56 md:h-56 bg-black border-[4px] border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.4)] overflow-hidden relative transform rotate-1 ${playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
+               <img 
+                  src={myNaga.dragonAvatar || '/assets/dragonsground/dragons/DragonAvatar (1).jpg'} 
+                  alt="My Naga" 
+                  className={`w-full h-full object-cover ${myNaga.element === 'Pyro' ? 'hue-rotate-[340deg] saturate-200' : myNaga.element === 'Hydro' ? 'hue-rotate-[180deg]' : myNaga.element === 'Earthen' ? 'hue-rotate-[90deg] saturate-150' : myNaga.element === 'Gale' ? 'hue-rotate-[220deg] brightness-125' : ''}`}
+               />
+               <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-cyan-600 text-white font-black text-[7px] md:text-[10px] italic skew-x-12 border border-black shadow-lg">LVL {myNaga.level || 1}</div>
+               {myNaga.currentHp <= 0 && <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center backdrop-blur-sm z-20"><Skull size={40} className="text-red-500" /></div>}
+               <ImpactSplash splash={playerImpactSplash} />
+             </div>
+             {playerTaunt && (
+               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-cyan-600 border-2 border-black px-3 py-1 rounded-full animate-bounce z-40">
+                  <p className="text-[8px] md:text-[10px] font-black uppercase text-white italic whitespace-nowrap">{playerTaunt}</p>
+               </div>
+             )}
+         </div>
+      </div>
+
+      {/* FOOTER CONTROLS */}
+      <div className="w-full flex justify-between items-center z-30 px-4 mb-2">
+         <button onClick={() => setShowRetreatConfirm(true)} className="p-2 md:p-3 bg-red-950/50 border border-red-500/50 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-all">
+            <X size={16} />
+         </button>
+         <div className="flex flex-col items-end">
+            <h4 className="text-white font-black text-[10px] md:text-sm uppercase italic tracking-tighter">{myNaga.name}</h4>
+         </div>
+      </div>
+
+       {showRetreatConfirm && (
+        <ConfirmationModal 
+          isOpen={true}
+          title="TACTICAL RETREAT?"
+          message="Retreating will end the raid immediately without securing your progress. Are you sure, operative?"
+          onConfirm={handleRetreat}
+          onClose={() => setShowRetreatConfirm(false)}
+          confirmText="Yes, Retreat"
+        />
+      )}
+
+      {showVictoryWindow && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md animate-in fade-in zoom-in duration-500">
+           <div className="bg-amber-400 border-[8px] border-black p-8 md:p-12 rotate-[-4deg] shadow-[15px_15px_0_rgba(0,0,0,1)] text-center max-w-[90%] md:max-w-md">
+              <h2 className="text-4xl md:text-7xl font-black text-black uppercase italic italic-shadow-white leading-none mb-4">VICTORY</h2>
+              <p className="text-black font-black uppercase text-xs md:text-sm italic tracking-widest bg-black/10 py-2">Rival Roster Compromised</p>
+              <div className="mt-8 flex justify-center gap-4">
+                 <Rocket className="text-black animate-bounce" size={48} />
+              </div>
+           </div>
+        </div>
+      )}
+
+      {showDefeatedWindow && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-red-950/80 backdrop-blur-md animate-in fade-in zoom-in duration-500">
+           <div className="bg-slate-900 border-[8px] border-black p-8 md:p-12 rotate-[4deg] shadow-[15px_15px_0_rgba(0,0,0,1)] text-center max-w-[90%] md:max-w-md">
+              <Skull className="text-red-500 mx-auto mb-4 animate-pulse" size={64} />
+              <h2 className="text-4xl md:text-7xl font-black text-white uppercase italic leading-none mb-4">DEFEATED</h2>
+              <p className="text-red-500 font-black uppercase text-xs md:text-sm italic tracking-widest border-2 border-red-500 py-2">Armor Core Destroyed</p>
+           </div>
+        </div>
+      )}
+
+      <style>{`
+        .bg-gradient-radial { background: radial-gradient(circle, var(--tw-gradient-from), var(--tw-gradient-to)); }
+        .italic-shadow-white { text-shadow: 2px 2px 0 #fff, 4px 4px 0 rgba(0,0,0,0.5); }
+        .animate-slow-spin { animation: spin 10s linear infinite; }
+        .animate-strike-up { animation: strikeUp 0.3s cubic-bezier(.17,.67,.83,.67); }
+        .animate-strike-down { animation: strikeDown 0.3s cubic-bezier(.17,.67,.83,.67); }
+        
+        @keyframes strikeUp {
+          0% { transform: translateY(0) rotate(1deg); }
+          50% { transform: translateY(-50px) scale(1.1); }
+          100% { transform: translateY(0); }
+        }
+        @keyframes strikeDown {
+          0% { transform: translateY(0) rotate(-1deg); }
+          50% { transform: translateY(50px) scale(1.1); }
+          100% { transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 });

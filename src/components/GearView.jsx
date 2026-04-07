@@ -234,7 +234,7 @@ export const GearView = React.memo(() => {
                 <div 
                   key={idx}
                   className="bg-slate-950 border-2 border-white/5 p-3 flex group hover:border-cyan-500/50 transition-all cursor-pointer relative overflow-hidden"
-                  onClick={() => equipItem(item)}
+                  onClick={() => equipItem(item.id)}
                 >
                    <div className="w-12 h-12 bg-slate-900 border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_rgba(0,0,0,1)] relative z-10 transition-transform group-hover:scale-110">
                       <span className="text-2xl filter drop-shadow-[0_0_5px_rgba(255,255,255,0.2)]">

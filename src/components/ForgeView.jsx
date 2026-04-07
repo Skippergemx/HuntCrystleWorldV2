@@ -76,7 +76,7 @@ export const ForgeView = React.memo(() => {
           
           // Check materials with robust matching (ID or Name-based fallback)
           const hasMaterials = materials.every(mat => {
-            const countInInv = player.inventory?.filter(i => {
+            const countInInv = Object.values(player.inventory || {}).filter(i => {
                const cleanId = i.id?.replace(/(_\d+)+$/, '');
                const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                return (cleanId === mat.id) || (master?.id === mat.id);
@@ -130,7 +130,7 @@ export const ForgeView = React.memo(() => {
                   <div className="absolute top-0 right-0 p-1 opacity-10 font-black italic text-[8px] uppercase tracking-[0.2em] -rotate-90 origin-top-right">Material Scan Complete</div>
                   {materials.map((mat, mIdx) => {
                     const loot = LOOTS.find(l => l.id === mat.id);
-                    const countInInv = player.inventory?.filter(i => {
+                    const countInInv = Object.values(player.inventory || {}).filter(i => {
                       const cleanId = i.id?.replace(/(_\d+)+$/, '');
                       const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                       return (cleanId === mat.id) || (master?.id === mat.id);
