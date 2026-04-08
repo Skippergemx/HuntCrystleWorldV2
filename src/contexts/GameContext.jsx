@@ -114,6 +114,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     addLog,
     combat,
     actions,
+    totalStats,
     showDefeatedWindow: combat.showDefeatedWindow
   });
 

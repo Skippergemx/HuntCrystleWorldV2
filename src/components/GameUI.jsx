@@ -137,7 +137,7 @@ export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed 
       <div className={`${color} bg-black p-1.5 md:p-2 rounded-lg border-[2px] border-white/20 shrink-0 shadow-lg ${isBuffed ? 'ring-2 ring-purple-500' : ''}`}>{icon}</div>
       <div className="min-w-0">
         <p className={`text-[8px] md:text-[10px] font-black uppercase leading-none mb-0.5 md:mb-1 tracking-tighter italic truncate ${isBuffed ? 'text-purple-300' : 'text-slate-500'}`}>{label} {isBuffed && 'BOOST'}</p>
-        <p className={`text-base md:text-xl font-black leading-none tracking-tight italic ${isBuffed ? 'text-white' : ''}`}>{value}</p>
+        <p className={`text-base md:text-xl font-black leading-none tracking-tight italic ${isBuffed ? 'text-white' : ''}`}>{typeof value === 'object' ? '???' : value}</p>
       </div>
     </div>
     {desc && <p className="text-[7px] md:text-[8px] text-slate-500 font-black leading-tight tracking-tighter uppercase border-t border-black/50 pt-1.5 md:pt-2 italic line-clamp-2">{desc}</p>}
@@ -149,7 +149,7 @@ export const AttributeRow = React.memo(({ label, value, onAdd, color, disabled, 
     <div className="flex flex-col items-start text-left shrink">
       <div className="flex items-baseline gap-2 md:gap-3 mb-1">
         <span className={`text-xs md:text-sm font-black uppercase ${color} italic underline decoration-black decoration-2`}>{label}</span>
-        <span className="text-xl md:text-3xl font-black text-black italic drop-shadow-sm">{value}</span>
+        <span className="text-xl md:text-3xl font-black text-black italic drop-shadow-sm">{typeof value === 'object' ? '???' : value}</span>
       </div>
       <span className="text-[7px] md:text-[9px] text-slate-500 font-black leading-tight uppercase italic max-w-[120px] md:max-w-[160px]">{desc}</span>
     </div>

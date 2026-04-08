@@ -336,45 +336,57 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     // Local update for instant UI feedback
     setPlayer(prev => {
       const next = { ...prev };
-        Object.entries(sterilized).forEach(([key, value]) => {
-          // Detect Firestore special sentinel types
-          const isSentinel = value && typeof value === 'object' && typeof value._methodName === 'string';
-          const isDelete = value === null || (isSentinel && value._methodName === 'deleteField');
-          const isArrayUnion = isSentinel && value._methodName === 'arrayUnion';
-          const isArrayRemove = isSentinel && value._methodName === 'arrayRemove';
-
-          if (key.includes('.')) {
-              const dotIndex = key.indexOf('.');
-              const parent = key.slice(0, dotIndex);
-              const child = key.slice(dotIndex + 1);
-              // Create the parent object if it doesn't exist (prevents silent drops)
-              const currentParent = (next[parent] && typeof next[parent] === 'object') ? next[parent] : {};
-              const updatedParent = { ...currentParent };
-              if (isDelete) delete updatedParent[child];
-              else updatedParent[child] = value;
-              next[parent] = updatedParent;
-          } else {
-              if (isDelete) {
-                delete next[key];
-              } else if (isArrayUnion) {
-                // Properly merge arrayUnion elements into local array
-                const elements = value._elements || [];
-                const existing = Array.isArray(next[key]) ? next[key] : [];
-                const merged = [...existing];
-                elements.forEach(el => { if (!merged.includes(el)) merged.push(el); });
-                next[key] = merged;
-              } else if (isArrayRemove) {
-                // Properly remove arrayRemove elements from local array
-                const elements = value._elements || [];
-                const existing = Array.isArray(next[key]) ? next[key] : [];
-                next[key] = existing.filter(el => !elements.includes(el));
-              } else if (!isSentinel) {
-                // Only write plain values — never write raw Firestore sentinels to local state
-                next[key] = value;
-              }
+      
+      Object.entries(sterilized).forEach(([key, value]) => {
+        // --- SENTINEL RESOLUTION ENGINE ---
+        const isSentinel = value && typeof value === 'object' && typeof value._methodName === 'string';
+        
+        const resolve = (current) => {
+          if (!isSentinel) return value;
+          const method = value._methodName;
+          
+          if (method === 'deleteField') return undefined;
+          if (method === 'increment') {
+            const operand = value._operand !== undefined ? value._operand : (value.Vc !== undefined ? value.Vc : 0);
+            return (Number(current) || 0) + Number(operand);
           }
-        });
-        next.updatedAt = new Date();
+          if (method === 'arrayUnion') {
+            const elements = value._elements || value.Vc || [];
+            const existing = Array.isArray(current) ? current : [];
+            const merged = [...existing];
+            const toAdd = Array.isArray(elements) ? elements : [elements];
+            toAdd.forEach(el => { if (!merged.includes(el)) merged.push(el); });
+            return merged;
+          }
+          if (method === 'arrayRemove') {
+            const elements = value._elements || value.Vc || [];
+            const existing = Array.isArray(current) ? current : [];
+            const toRemove = Array.isArray(elements) ? elements : [elements];
+            return existing.filter(el => !toRemove.includes(el));
+          }
+          return current; // Fallback
+        };
+
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let current = next;
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            current[part] = { ...(current[part] || {}) };
+            current = current[part];
+          }
+          const lastPart = parts[parts.length - 1];
+          const resolvedValue = resolve(current[lastPart]);
+          if (resolvedValue === undefined) delete current[lastPart];
+          else current[lastPart] = resolvedValue;
+        } else {
+          const resolvedValue = resolve(next[key]);
+          if (resolvedValue === undefined) delete next[key];
+          else next[key] = resolvedValue;
+        }
+      });
+      
+      next.updatedAt = new Date();
 
       // Queue these changes for the prochain Firestore sync
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };

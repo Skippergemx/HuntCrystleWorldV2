@@ -37,7 +37,7 @@ export const usePlayerActions = (
   }, [setGvgContext, setView, addLog]);
 
   const handleHeal = useCallback(async () => {
-    if (player.hp >= player.maxHp) return;
+    if (player.hp >= totalStats.maxHp) return;
     const inventory = Object.values(player.inventory || {});
     const selection = player.selectedPotionId || 'hp_potion';
     
@@ -62,10 +62,10 @@ export const usePlayerActions = (
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag.`);
     }
 
-    const healAmt = Math.floor(player.maxHp * spec.mult);
+    const healAmt = Math.floor(totalStats.maxHp * spec.mult);
     playSFX(SOUNDS.useHeal);
     
-    const updates = { hp: Math.min(player.maxHp, player.hp + healAmt) };
+    const updates = { hp: Math.min(totalStats.maxHp, player.hp + healAmt) };
     if (useCounter) {
       updates.potions = (player.potions || 0) - 1;
     } else {

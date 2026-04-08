@@ -7,6 +7,7 @@ export const useGameLoop = ({
   addLog,
   combat,
   actions,
+  totalStats,
   showDefeatedWindow
 }) => {
   const [autoTimeLeft, setAutoTimeLeft] = useState(0);
@@ -99,7 +100,7 @@ export const useGameLoop = ({
 
       if (busOpen && notStunned && notMissed) {
         // Priority 1: Heal when low HP
-        if (p.hp < p.maxHp * 0.4 && (p.potions || 0) > 0) {
+        if (p.hp < (totalStats?.maxHp || p.maxHp) * 0.4 && (p.potions || 0) > 0) {
           a.handleHeal();
         }
         // Priority 2: Synchronous enemy check via ref (no closure lag)

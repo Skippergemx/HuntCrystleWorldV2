@@ -242,7 +242,7 @@ export const useCombat = (
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
-      hp: Math.min(nextMaxHp, (player?.hp || 0) + 25),
+      hp: Math.min(totalStats.maxHp + (nextMaxHp - (player?.maxHp || 0)), (player?.hp || 0) + 25),
       abilityPoints: nextAP
     };
 
@@ -472,7 +472,7 @@ export const useCombat = (
       const lifesteal = effects.find(e => e.type === 'LifeSteal');
       if (lifesteal && Math.random() < lifesteal.chance) {
           const heal = Math.floor(dmg * lifesteal.amount);
-          syncPlayer({ hp: Math.min(player?.maxHp || 1000, (player?.hp || 0) + heal) });
+          syncPlayer({ hp: Math.min(totalStats.maxHp, (player?.hp || 0) + heal) });
           addLog(`🩸 LIFESTEAL: +${heal} HP`);
       }
       const allInOne = effects.find(e => e.type === 'AllInOne');
