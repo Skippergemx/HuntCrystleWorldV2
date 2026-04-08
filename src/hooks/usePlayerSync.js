@@ -203,7 +203,9 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     selectedPotionId: data.selectedPotionId || 'hp_potion',
                     selectedScrollId: data.selectedScrollId || 'auto_scroll',
                     avatar: data.avatar || 1,
-                    unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41]
+                    unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+                    // ID MIGRATION: 'dragon' -> 'hatchling_mate'
+                    hiredMate: data.hiredMate === 'dragon' ? 'hatchling_mate' : (data.hiredMate || null)
                 };
 
                 setPlayer(sanitized);

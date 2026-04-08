@@ -415,13 +415,20 @@ export const useCombat = (
 
     let stats = { ...totalStats };
     // Mate Proc Logic
-    if (player?.hiredMate && player?.buffUntil <= 0) {
+    if (player?.hiredMate && (player?.buffUntil || 0) <= Date.now()) {
       const mate = TAVERN_MATES.find(m => m.id === player?.hiredMate);
-      if (mate && mate.procChance < 1.0) { 
-        if (Math.random() < mate.procChance) {
-          syncPlayer({ buffUntil: Date.now() + COMPANION_BUFF_DURATION });
-          addLog(`✨ ${mate.name} activated their power!`);
-        }
+      if (mate && (mate.procChance >= 1.0 || Math.random() < mate.procChance)) {
+        const buffUntil = Date.now() + COMPANION_BUFF_DURATION;
+        syncPlayer({ buffUntil });
+        addLog(`✨ ${mate.name} activated their power!`);
+        
+        // Immediate Stat Injection: Apply multiplier to the local stats object 
+        // so the CURRENT attack (down the line at L452) benefits from it.
+        const mult = mate.multiplier || 2;
+        if (mate.type === 'STR') stats.str *= mult;
+        if (mate.type === 'AGI') stats.agi *= mult;
+        if (mate.type === 'DEX') stats.dex *= mult;
+        // NOTE: totalStats will catch up in the NEXT render via syncPlayer trigger.
       }
     }
 

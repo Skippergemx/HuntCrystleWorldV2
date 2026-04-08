@@ -20,11 +20,11 @@ export const DragonsGroundView = React.memo(() => {
   const groundRef = useRef(null);
 
   const MONSTER_POOL = [
-    { name: 'Gunk Dragon', icon: 'Gunk Dragon' },
-    { name: 'Cinder Sprout', icon: 'Cinder Sprout' },
-    { name: 'Azure Glider', icon: 'Azure Glider' },
-    { name: 'Void Stalker', icon: 'Void Stalker' },
-    { name: 'Sky Razer', icon: 'Sky Razer' }
+    { name: 'Venomhide Drake', folder: 'Neon Slums' },
+    { name: 'Bone Dragon', folder: 'Neon Slums' },
+    { name: 'Azure Glider', folder: 'Neon Slums' },
+    { name: 'Cinder Wyrm', folder: 'Inferno Crater' },
+    { name: 'Sky Razer', folder: 'Neon Slums' }
   ];
 
   const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
@@ -126,8 +126,9 @@ export const DragonsGroundView = React.memo(() => {
             const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
             return [...prev, {
               id: 'monster_' + Date.now() + Math.random(),
-              icon: mProto.icon,
+              icon: mProto.name,
               name: mProto.name,
+              folder: mProto.folder,
               x, y,
               targetX: 10 + Math.random() * 80,
               targetY: 10 + Math.random() * 80,
@@ -186,7 +187,8 @@ export const DragonsGroundView = React.memo(() => {
 
   const collectFruit = (fruit) => {
     setFruits(prev => prev.filter(f => f.id !== fruit.id));
-    syncPlayer({ inventory: [...Object.values(player.inventory || {}), fruit.data] });
+    const itemId = `${fruit.data.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+    syncPlayer({ [`inventory.${itemId}`]: fruit.data });
     setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
   };
 
@@ -386,11 +388,11 @@ export const DragonsGroundView = React.memo(() => {
                 <div className="animate-pulse w-full h-full relative">
                   <div className="w-full h-full rounded-full border-[3px] border-black bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden transform rotate-2">
                     <img
-                      src={`/assets/monsters/Neon Slums/${m.name}.jpg`}
+                      src={`/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.jpg`}
                       alt={m.name}
                       className="w-full h-full object-cover rounded-full opacity-80"
                       onError={(e) => {
-                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/Neon Slums/${m.name}.png`;
+                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.png`;
                         else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }
                       }}
                     />

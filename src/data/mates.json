@@ -22,7 +22,7 @@
     "procChance": 0.5
   },
   {
-    "id": "dragon",
+    "id": "hatchling_mate",
     "name": "Crimson Hatchling",
     "cost": 1000,
     "type": "DEX",
