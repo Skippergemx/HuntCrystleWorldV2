@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.5.0',
+    date: '2026-04-08',
+    title: 'ELEMENTAL PURIFICATION & XENON LAB REBIRTH',
+    category: 'NARRATIVE & BALANCE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'Major mechanical shift as Taming evolves into the Elemental Purification protocol. Complete rebalancing of high-rank sectors and a total redesign of the Xenon Laboratory into a comically cute research hub. This update synchronizes the narrative with the gameplay experience, ensuring a smoother progression for all hunters.',
+    changes: [
+      'Narrative: Transitioned "Taming" to "Elemental Purification" protocol',
+      'Balance: Sweeping HP/Strength rebalance of all Elemental Map monsters',
+      'UI: Redesigned Xenon Lab into a "Kawaii Scientist" research hub',
+      'UX: Integrated Resource Analysis tooltips for all lab ingredients',
+      'Mobile: Optimized Lab synthesizer layouts for small viewports'
+    ],
+    media: '/assets/pets/genesis-pets/Genesis Pets (43).jpg'
+  },
+  {
     id: '1.4.0',
     date: '2026-04-07',
     title: 'THE PET SANCTUARY & COMBAT STABILIZATION',

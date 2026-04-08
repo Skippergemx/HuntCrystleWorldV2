@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
-import { FlaskConical, Zap, Beaker, Pipette, Thermometer, ShieldCheck, ArrowLeft, Info, HelpCircle, Activity, ShoppingBag, Gem, Clock } from 'lucide-react';
+import { FlaskConical, Zap, Beaker, Pipette, Thermometer, ShieldCheck, ArrowLeft, Info, HelpCircle, Activity, ShoppingBag, Gem, Clock, Search, Sparkles } from 'lucide-react';
 import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const LaboratoryView = React.memo(() => {
   const { 
-    player, adventure, actions, LAB_RECIPES, ITEMS, addLog, openGuide, forgeResult, setForgeResult 
+    player, adventure, actions, LAB_RECIPES, ITEMS, MAPS, addLog, openGuide, forgeResult, setForgeResult 
   } = useGame();
   
   const { setView } = adventure;
   const { mixLaboratoryItem } = actions;
   
   const [selectedRecipe, setSelectedRecipe] = useState(LAB_RECIPES[0]);
+  const [hoveredSourceId, setHoveredSourceId] = useState(null);
 
   const materials = useMemo(() => {
     return Object.values(player.inventory || {});
@@ -29,28 +30,51 @@ export const LaboratoryView = React.memo(() => {
     return ITEMS.find(it => it.id === selectedRecipe.id);
   }, [selectedRecipe, ITEMS]);
 
+  const getItemSource = (itId) => {
+    const sources = MAPS.filter(m => m.lootTable?.includes(itId)).map(m => m.name);
+    if (sources.length > 0) return sources.join(", ");
+    if (LAB_RECIPES.some(r => r.id === itId)) return "Xenon Lab Synthesis";
+    return "Unknown Sector / Rare Drop";
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-950 relative overflow-hidden">
-      {/* Laboratory Background - Industrial/Chemical Tech */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#065f46_0%,transparent_70%)] opacity-30"></div>
-        <div className="absolute inset-0" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(16,185,129,0.03) 40px, rgba(16,185,129,0.03) 80px)' }}></div>
+      {/* Laboratory Background - Cute & Cosmic */}
+      <div className="absolute inset-0 z-0 opacity-40 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#4338ca_0%,transparent_70%)] opacity-30"></div>
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)', 
+          backgroundSize: '30px 30px' 
+        }}></div>
       </div>
 
-      <div className="p-4 z-10">
-        <Header 
-          title="Xenon Laboratory" 
-          onClose={adventure.goBack} 
-          onHelp={() => openGuide('laboratory')} 
-        />
+      <div className="p-4 z-10 flex items-center gap-4">
+        <div className="relative group">
+           <div className="absolute -inset-1 bg-pink-500 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+           <img 
+             src="/assets/pets/genesis-pets/Genesis Pets (43).jpg" 
+             className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] relative z-10"
+             alt="Researcher"
+           />
+        </div>
+        <div className="flex-1">
+          <Header 
+            title="Xenon Laboratory" 
+            onClose={adventure.goBack} 
+            onHelp={() => openGuide('laboratory')} 
+          />
+          <div className="bg-black text-emerald-400 text-[10px] font-black px-2 py-0.5 inline-block transform -rotate-1 mt-1 border-2 border-emerald-500/30">
+             PROFESSOR NEON: "LET'S MAKE SOMETHING CUTE!"
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col lg:grid lg:grid-cols-12 gap-4 p-4 overflow-hidden z-10">
         {/* Formula list (Left) */}
-        <div className="lg:col-span-4 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="lg:col-span-4 flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar bg-white/5 backdrop-blur-sm p-4 border-r-4 border-black/30">
           <div className="flex items-center gap-2 mb-2 px-1">
-            <Beaker size={16} className="text-emerald-400" />
-            <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest italic">Research Database</h3>
+            <Sparkles size={16} className="text-pink-400 animate-pulse" />
+            <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest italic">Secret Blueprints</h3>
           </div>
           
           {LAB_RECIPES.map(recipe => {
@@ -60,17 +84,18 @@ export const LaboratoryView = React.memo(() => {
               <button 
                 key={recipe.id}
                 onClick={() => setSelectedRecipe(recipe)}
-                className={`flex items-center gap-4 p-3 border-2 transition-all group ${
-                  isSelected ? 'bg-emerald-950 border-emerald-500 shadow-[4px_4px_0_rgba(16,185,129,1)] scale-[1.02]' : 'bg-slate-900/50 border-slate-800 hover:border-emerald-500/30'
+                className={`flex items-center gap-4 p-3 border-[4px] border-black transition-all group relative overflow-hidden ${
+                  isSelected ? 'bg-indigo-600 shadow-[4px_4px_0_rgba(0,0,0,1)] -translate-x-1 -translate-y-1' : 'bg-slate-900 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-slate-800'
                 }`}
               >
-                <div className={`w-12 h-12 flex items-center justify-center text-2xl border-2 border-black bg-slate-950 shadow-[2px_2px_0_rgba(0,0,0,1)] ${isSelected ? 'text-emerald-400' : 'text-slate-500 group-hover:text-emerald-300'}`}>
-                  {item?.id?.includes('scroll') ? '🪄' : '🧪'}
+                {isSelected && <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 -rotate-45 translate-x-12 -translate-y-12"></div>}
+                <div className={`w-12 h-12 flex items-center justify-center text-2xl border-[3px] border-black bg-white shadow-[2px_2px_0_rgba(0,0,0,1)] transform group-hover:rotate-6 transition-transform z-10`}>
+                  {item?.icon || (item?.id?.includes('scroll') ? '🪄' : '🧪')}
                 </div>
-                <div className="flex flex-col items-start min-w-0">
-                  <h4 className={`text-[11px] font-black uppercase italic truncate ${isSelected ? 'text-emerald-100' : 'text-slate-400'}`}>{item?.name}</h4>
-                  <span className={`text-[7px] font-bold uppercase tracking-widest ${isSelected ? 'text-emerald-500' : 'text-slate-600'}`}>
-                    {item?.id?.includes('scroll') ? 'Automation Logic' : 'Alchemical Mixture'}
+                <div className="flex flex-col items-start min-w-0 z-10">
+                  <h4 className={`text-[11px] font-black uppercase italic truncate ${isSelected ? 'text-white' : 'text-slate-300'}`}>{item?.name}</h4>
+                  <span className={`text-[7px] font-bold uppercase tracking-widest ${isSelected ? 'text-indigo-200' : 'text-slate-500'}`}>
+                    {item?.id?.includes('scroll') ? 'Magic Logic' : 'Cute Mixture'}
                   </span>
                 </div>
               </button>
@@ -80,43 +105,97 @@ export const LaboratoryView = React.memo(() => {
 
         {/* Synthesizer (Center/Right) */}
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <div className="bg-slate-900 border-[5px] border-black p-4 md:p-8 flex-1 flex flex-col items-center justify-center relative shadow-[10px_10px_0_rgba(0,0,0,1)] overflow-hidden group">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"></div>
+          <div className="bg-indigo-950/40 border-[6px] border-black p-4 md:p-8 flex-1 flex flex-col items-center justify-center relative shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden group">
+            {/* Animated Bubbles Background */}
+            <div className="absolute inset-0 z-0 overflow-hidden opacity-20">
+               {[...Array(6)].map((_, i) => (
+                 <div key={i} className="absolute bg-emerald-400 rounded-full animate-float-up" style={{
+                   width: Math.random() * 40 + 10 + 'px',
+                   height: Math.random() * 40 + 10 + 'px',
+                   left: Math.random() * 100 + '%',
+                   bottom: '-50px',
+                   animationDelay: i * 1.5 + 's',
+                   animationDuration: Math.random() * 4 + 3 + 's'
+                 }}></div>
+               ))}
+            </div>
+
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-indigo-500 to-emerald-500"></div>
             
+            {/* Assistant One - Aqua - Hidden on Mobile */}
+            <div className="absolute -bottom-4 -left-4 w-28 h-28 md:w-32 md:h-32 opacity-90 z-20 hover:scale-110 transition-all cursor-pointer group/ast hidden md:block">
+               <img src="/assets/pets/genesis-pets/Genesis Pets (1).jpg" className="w-full h-full object-contain rounded-full border-4 border-black shadow-lg" />
+               <div className="absolute -top-2 -right-2 bg-white border-2 border-black px-2 py-0.5 text-[8px] font-[1000] text-black transform -rotate-12 group-hover/ast:scale-110 transition-transform shadow-sm">"ALMOST DONE!"</div>
+            </div>
+
+            {/* Assistant Two - Blaze - Hidden on Mobile */}
+            <div className="absolute top-4 -right-10 w-32 h-32 md:w-40 md:h-40 opacity-90 z-20 rotate-12 hover:scale-110 transition-all cursor-pointer group/ast2 hidden md:block">
+               <img src="/assets/pets/genesis-pets/Genesis Pets (14).jpg" className="w-full h-full object-contain rounded-full border-4 border-black shadow-lg" />
+               <div className="absolute -top-2 -left-4 bg-white border-2 border-black px-2 py-0.5 text-[8px] font-[1000] text-black transform rotate-12 group-hover/ast2:scale-110 transition-transform shadow-sm">"SO COOL!"</div>
+            </div>
+
+            {/* Assistant Three - Forest */}
+            <div className="absolute bottom-10 -right-6 w-24 h-24 opacity-80 z-20 -rotate-6 hover:scale-110 transition-all cursor-pointer group/ast3 hidden md:block">
+               <img src="/assets/pets/genesis-pets/Genesis Pets (5).jpg" className="w-full h-full object-contain rounded-full border-4 border-black shadow-lg" />
+               <div className="absolute bottom-0 -left-2 bg-white border-2 border-black px-2 py-0.5 text-[8px] font-[1000] text-black transform rotate-6 group-hover/ast3:scale-110 transition-transform shadow-sm">"SCIENCE!"</div>
+            </div>
+
             {/* Holographic Display */}
-            <div className="flex flex-col items-center gap-8 w-full max-w-lg z-10">
-              <div className="relative">
-                <div className="absolute inset-0 bg-emerald-500 blur-3xl opacity-20 animate-pulse"></div>
-                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-[8px] border-black flex items-center justify-center bg-slate-950 relative shadow-2xl transform hover:rotate-6 transition-transform">
-                  <span className="text-6xl md:text-8xl filter drop-shadow-[0_0_15px_rgba(16,185,129,0.5)]">
-                    {currentMasterItem?.id?.includes('scroll') ? '🪄' : '🧪'}
+            <div className="flex flex-col items-center gap-6 w-full max-w-lg z-10">
+              <div className="relative group/main">
+                <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-30 animate-pulse"></div>
+                <div className="w-32 h-32 md:w-48 md:h-48 rounded-full border-[10px] border-black flex items-center justify-center bg-white relative shadow-[8px_8px_0_rgba(0,0,0,1)] transform hover:scale-105 transition-transform duration-500 overflow-hidden">
+                  <div className="absolute inset-0 bg-grid-slate-100 opacity-20"></div>
+                  <span className="text-6xl md:text-8xl filter drop-shadow-[0_0_10px_rgba(0,0,0,0.2)] animate-float relative z-10">
+                    {currentMasterItem?.icon || (currentMasterItem?.id?.includes('scroll') ? '🪄' : '🧪')}
                   </span>
-                  <div className="absolute -top-4 -right-4 bg-emerald-500 text-black px-3 py-1 font-black text-xs border-4 border-black rotate-12">
-                    STABLE
-                  </div>
+                </div>
+                {/* Badge moved outside overflow-hidden */}
+                <div className="absolute -top-4 -right-4 bg-emerald-500 text-black px-4 py-1.5 font-[1000] text-[10px] md:text-xs border-[4px] border-black rotate-12 shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase tracking-tighter italic z-30 group-hover/main:scale-110 transition-transform">
+                  MAD SCIENCE!
                 </div>
               </div>
 
-              <div className="text-center">
-                <h2 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter leading-none mb-2 drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">
+              <div className="text-center relative">
+                <h2 className="text-3xl md:text-5xl font-black text-white italic uppercase tracking-tighter leading-none mb-1 drop-shadow-[6px_6px_0_rgba(79,70,229,1)]">
                   {currentMasterItem?.name}
                 </h2>
-                <p className="text-[10px] md:text-xs font-bold text-emerald-500 uppercase tracking-[0.3em] font-mono">
-                  Synthesizing... Sequence Ready.
-                </p>
+                <div className="inline-flex items-center gap-2 bg-black/80 px-4 py-1 border-2 border-indigo-500 transform -rotate-1">
+                   <Zap size={10} className="text-amber-400 animate-bounce" />
+                   <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest font-mono">
+                     Status: Positively Radioactive
+                   </p>
+                </div>
               </div>
 
               {/* Mixing Components Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full relative">
+                <div className="absolute -inset-4 bg-white/5 border-2 border-dashed border-white/10 -z-10 rounded-2xl"></div>
                 {selectedRecipe.materials.map(mat => {
                   const master = ITEMS.find(it => it.id === mat.id);
                   const playerHas = getMaterialCount(mat.id);
                   const isMet = playerHas >= mat.count;
                   return (
-                    <div key={mat.id} className={`flex flex-col items-center p-3 border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] ${isMet ? 'bg-emerald-950/40 border-emerald-500/50' : 'bg-red-950/20 border-red-900/40 opacity-60'}`}>
-                      <span className="text-2xl mb-1">{master?.icon || '📦'}</span>
-                      <span className="text-[7px] font-black uppercase text-slate-400 mb-1 text-center truncate w-full">{master?.name}</span>
-                      <div className={`text-[10px] font-mono font-black ${isMet ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <div 
+                      key={mat.id} 
+                      onMouseEnter={() => setHoveredSourceId(mat.id)}
+                      onMouseLeave={() => setHoveredSourceId(null)}
+                      onClick={() => setHoveredSourceId(prev => prev === mat.id ? null : mat.id)}
+                      className={`flex flex-col items-center p-3 border-[4px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] relative cursor-help transition-all transform hover:-translate-y-2 hover:rotate-2 ${isMet ? 'bg-white border-emerald-500' : 'bg-slate-900 border-red-500/50 opacity-60'}`}
+                    >
+                      {hoveredSourceId === mat.id && (
+                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-40 bg-pink-600 border-[3px] border-black p-2 z-[100] shadow-[6px_6px_0_rgba(0,0,0,1)] animate-in fade-in zoom-in-90 duration-200 transform -rotate-2">
+                           <div className="flex items-center gap-1.5 mb-1">
+                              <Search size={10} className="text-white" />
+                              <span className="text-[7px] font-[1000] text-white uppercase tracking-tighter">WHERE IS IT?</span>
+                           </div>
+                           <div className="text-[8px] font-black text-black leading-tight uppercase bg-white px-1 py-0.5">{getItemSource(mat.id)}</div>
+                           <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-pink-600 border-b-[3px] border-r-[3px] border-black rotate-45"></div>
+                        </div>
+                      )}
+                      <span className="text-2xl mb-1 filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">{master?.icon || '📦'}</span>
+                      <span className="text-[7px] font-black uppercase text-slate-800 mb-1 text-center truncate w-full">{master?.name}</span>
+                      <div className={`text-[12px] font-mono font-black border-2 border-black px-2 bg-black/5 ${isMet ? 'text-emerald-600' : 'text-red-500'}`}>
                         {playerHas}/{mat.count}
                       </div>
                     </div>
@@ -126,40 +205,39 @@ export const LaboratoryView = React.memo(() => {
 
               {/* Action Button */}
               <div className="w-full flex flex-col gap-4 items-center">
-                <div className="flex items-center gap-6 px-8 py-3 bg-black/40 border-2 border-slate-800 rounded-full backdrop-blur-md">
+                <div className="flex items-center gap-6 px-10 py-4 bg-indigo-900/60 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] transform rotate-1">
                    <div className="flex flex-col items-center">
-                      <span className="text-[8px] font-black text-slate-500 uppercase italic">Power Charge</span>
-                      <span className="text-xl font-black text-amber-500 italic">{selectedRecipe.cost} GX</span>
+                      <span className="text-[9px] font-black text-indigo-300 uppercase italic">Synthesis Fee</span>
+                      <span className="text-2xl font-[1000] text-amber-500 italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{selectedRecipe.cost} GX</span>
                    </div>
-                   <div className="w-[2px] h-8 bg-slate-800"></div>
+                   <div className="w-[3px] h-10 bg-black"></div>
                    <div className="flex flex-col items-center">
-                      <span className="text-[8px] font-black text-slate-500 uppercase italic">SUCCESS REQ</span>
-                      <span className="text-xl font-black text-emerald-400 italic">100%</span>
+                      <span className="text-[9px] font-black text-indigo-300 uppercase italic">SUCCESS RATIO</span>
+                      <span className="text-2xl font-[1000] text-pink-400 italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">MAXIMUM</span>
                    </div>
                 </div>
 
                 <button 
                   onClick={() => mixLaboratoryItem(selectedRecipe)}
                   disabled={player.tokens < selectedRecipe.cost || !selectedRecipe.materials.every(m => getMaterialCount(m.id) >= m.count)}
-                  className="w-full max-w-sm px-10 py-5 bg-emerald-600 text-black hover:bg-emerald-400 disabled:opacity-30 disabled:grayscale transition-all font-black text-2xl uppercase italic border-[6px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden"
+                  className="w-full max-w-sm px-10 py-6 bg-emerald-500 text-black hover:bg-emerald-400 disabled:opacity-30 disabled:grayscale transition-all font-[1000] text-2xl md:text-3xl uppercase italic border-[6px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden transform -rotate-1 hover:rotate-0"
                 >
-                  <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  SYNTHESIZE OBJECT
+                  <div className="absolute inset-0 bg-white/30 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                  MATERIALIZE NOW!
                 </button>
               </div>
             </div>
 
-            {/* Tactical Scanners */}
-            <div className="absolute bottom-4 left-4 z-20 flex gap-4 opacity-50">
-               <div className="flex flex-col">
-                  <span className="text-[7px] font-black text-emerald-500 uppercase">Temp. Normal</span>
-                  <div className="flex gap-0.5 mt-1">
-                     {[...Array(5)].map((_, i) => <div key={i} className="w-1 h-3 bg-emerald-500/40"></div>)}
-                  </div>
+            {/* Tactile Dials - Hidden on Mobile */}
+            <div className="absolute bottom-6 left-6 z-20 hidden md:flex gap-6">
+               <div className="w-12 h-12 rounded-full border-[4px] border-black bg-indigo-600 shadow-[4px_4px_0_rgba(0,0,0,1)] relative flex items-center justify-center animate-spin" style={{ animationDuration: '3s' }}>
+                  <div className="w-1 h-6 bg-black absolute top-0 left-1/2 -translate-x-1/2"></div>
                </div>
-               <div className="flex flex-col">
-                  <span className="text-[7px] font-black text-emerald-500 uppercase">Pressure Stable</span>
-                  <Activity size={12} className="text-emerald-500 mt-1" />
+               <div className="flex flex-col justify-center">
+                  <span className="text-[8px] font-black text-indigo-400 uppercase italic">VIBRATIONAL STABILITY</span>
+                  <div className="h-2 w-32 bg-black border-2 border-indigo-500 mt-1 overflow-hidden relative">
+                     <div className="h-full bg-emerald-500 animate-pulse w-3/4"></div>
+                  </div>
                </div>
             </div>
           </div>

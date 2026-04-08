@@ -202,7 +202,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     performanceMode: data.performanceMode ?? false,
                     selectedPotionId: data.selectedPotionId || 'hp_potion',
                     selectedScrollId: data.selectedScrollId || 'auto_scroll',
-                    avatar: data.avatar || 1
+                    avatar: data.avatar || 1,
+                    unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41]
                 };
 
                 setPlayer(sanitized);
@@ -261,6 +262,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     selectedPotionId: 'hp_potion',
                     selectedScrollId: 'auto_scroll',
                     avatar: 1,
+                    unlockedPets: [1, 11, 21, 31, 41],
                     // Mirror TON wallet to primary walletAddress for TMA users if no Base wallet linked
                     walletAddress: (farcasterContext && user) ? user.walletAddress?.toLowerCase() || null : null,
                     tonWalletAddress: null,
@@ -333,20 +335,41 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     setPlayer(prev => {
       const next = { ...prev };
         Object.entries(sterilized).forEach(([key, value]) => {
-          // Detect Firestore deleteField sentinel or null as a delete signal
-          const isDelete = value === null || (value && typeof value === 'object' && value._methodName === 'deleteField');
+          // Detect Firestore special sentinel types
+          const isSentinel = value && typeof value === 'object' && typeof value._methodName === 'string';
+          const isDelete = value === null || (isSentinel && value._methodName === 'deleteField');
+          const isArrayUnion = isSentinel && value._methodName === 'arrayUnion';
+          const isArrayRemove = isSentinel && value._methodName === 'arrayRemove';
 
           if (key.includes('.')) {
-              const [parent, child] = key.split('.');
-              if (next[parent] && typeof next[parent] === 'object') {
-                  const updatedParent = { ...next[parent] };
-                  if (isDelete) delete updatedParent[child];
-                  else updatedParent[child] = value;
-                  next[parent] = updatedParent;
-              }
+              const dotIndex = key.indexOf('.');
+              const parent = key.slice(0, dotIndex);
+              const child = key.slice(dotIndex + 1);
+              // Create the parent object if it doesn't exist (prevents silent drops)
+              const currentParent = (next[parent] && typeof next[parent] === 'object') ? next[parent] : {};
+              const updatedParent = { ...currentParent };
+              if (isDelete) delete updatedParent[child];
+              else updatedParent[child] = value;
+              next[parent] = updatedParent;
           } else {
-              if (isDelete) delete next[key];
-              else next[key] = value;
+              if (isDelete) {
+                delete next[key];
+              } else if (isArrayUnion) {
+                // Properly merge arrayUnion elements into local array
+                const elements = value._elements || [];
+                const existing = Array.isArray(next[key]) ? next[key] : [];
+                const merged = [...existing];
+                elements.forEach(el => { if (!merged.includes(el)) merged.push(el); });
+                next[key] = merged;
+              } else if (isArrayRemove) {
+                // Properly remove arrayRemove elements from local array
+                const elements = value._elements || [];
+                const existing = Array.isArray(next[key]) ? next[key] : [];
+                next[key] = existing.filter(el => !elements.includes(el));
+              } else if (!isSentinel) {
+                // Only write plain values — never write raw Firestore sentinels to local state
+                next[key] = value;
+              }
           }
         });
         next.updatedAt = new Date();

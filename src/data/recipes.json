@@ -39,5 +39,50 @@
       { "id": "dark_matter", "count": 10 }
     ],
     "cost": 5000
+  },
+  {
+    "id": "magma_blade",
+    "materials": [
+      { "id": "magma_core", "count": 5 },
+      { "id": "fire_essence", "count": 10 },
+      { "id": "ember_shard", "count": 20 }
+    ],
+    "cost": 15000
+  },
+  {
+    "id": "tidal_plate",
+    "materials": [
+      { "id": "ocean_pearl", "count": 5 },
+      { "id": "water_essence", "count": 10 },
+      { "id": "sea_salt", "count": 20 }
+    ],
+    "cost": 15000
+  },
+  {
+    "id": "storm_boots",
+    "materials": [
+      { "id": "gale_feather", "count": 5 },
+      { "id": "storm_essence", "count": 10 },
+      { "id": "cloud_silk", "count": 20 }
+    ],
+    "cost": 15000
+  },
+  {
+    "id": "quake_helm",
+    "materials": [
+      { "id": "quake_stone", "count": 5 },
+      { "id": "earth_essence", "count": 10 },
+      { "id": "petrified_wood", "count": 20 }
+    ],
+    "cost": 15000
+  },
+  {
+    "id": "void_relic",
+    "materials": [
+      { "id": "black_hole_shard", "count": 3 },
+      { "id": "singularity", "count": 1 },
+      { "id": "dark_matter", "count": 50 }
+    ],
+    "cost": 50000
   }
 ]

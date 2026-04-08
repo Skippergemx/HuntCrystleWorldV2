@@ -1,12 +1,12 @@
 [
   { "id": "hp_potion", "name": "Small Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 10% Max HP." },
-  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
+  { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "icon": "🤖", "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
   { "id": "mega_hp_potion", "name": "Mega Potion", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
   { "id": "ultra_hp_potion", "name": "Ultra Potion", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
-  { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
-  { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
-  { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },
-  { "id": "auto_scroll_12m", "name": "Auto-Hunt (12m)", "sellValue": 1400, "type": "Consumable", "category": "Consumable", "duration": 720000, "description": "12 minutes of autonomous hunting." },
+  { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
+  { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
+  { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },
+  { "id": "auto_scroll_12m", "name": "Auto-Hunt (12m)", "sellValue": 1400, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 720000, "description": "12 minutes of autonomous hunting." },
 
   { "id": "steel_edge", "name": "Steel Edge", "cost": 100, "sellValue": 40, "reqLvl": 2, "icon": "🗡️", "stats": { "str": 10, "dex": 5, "agi": 0 }, "type": "Weapon", "category": "Equipment", "description": "A sharp blade for aspiring hunters." },
   { "id": "breaker_hammer", "name": "Breaker Hammer", "cost": 400, "sellValue": 160, "reqLvl": 8, "icon": "🔨", "stats": { "str": 25, "dex": -5, "agi": 0 }, "type": "Weapon", "category": "Equipment", "description": "Heavy trauma in every strike." },
@@ -131,6 +131,18 @@
   { "id": "plasma_lemon", "name": "Plasma Lemon", "icon": "🍋", "rarity": "Rare", "description": "Sour enough to jumpstart a dragon's metabolism.", "type": "Fruit", "category": "Fruit", "sellValue": 500, "exp": 5 },
   { "id": "neon_orange", "name": "Neon Orange", "icon": "🍊", "rarity": "Epic", "description": "Glowing citrus that enhances a dragon's natural abilities.", "type": "Fruit", "category": "Fruit", "sellValue": 1200, "exp": 10 },
   { "id": "crystle_pear", "name": "Crystle Pear", "icon": "🍏", "rarity": "Legendary", "description": "The ultimate fruit found only in the deepest parts of the Dragon Ground.", "type": "Fruit", "category": "Fruit", "sellValue": 5000, "exp": 25 },
+
+  { "id": "taming_hydro", "name": "Hydro Prism", "icon": "💠", "rarity": "Rare", "description": "Used to purify Hydro corruption. 50% success rate.", "type": "Tool", "category": "Consumable", "sellValue": 500 },
+  { "id": "taming_pyro", "name": "Pyro Prism", "icon": "💠", "rarity": "Rare", "description": "Used to purify Pyro corruption. 50% success rate.", "type": "Tool", "category": "Consumable", "sellValue": 500 },
+  { "id": "taming_gale", "name": "Gale Prism", "icon": "💠", "rarity": "Rare", "description": "Used to purify Gale corruption. 50% success rate.", "type": "Tool", "category": "Consumable", "sellValue": 500 },
+  { "id": "taming_earthen", "name": "Earthen Prism", "icon": "💠", "rarity": "Rare", "description": "Used to purify Earthen corruption. 50% success rate.", "type": "Tool", "category": "Consumable", "sellValue": 500 },
+  { "id": "taming_cosmic", "name": "Cosmic Prism", "icon": "💠", "rarity": "Rare", "description": "Used to purify Cosmic corruption. 50% success rate.", "type": "Tool", "category": "Consumable", "sellValue": 500 },
+
+  { "id": "magma_blade", "name": "Magma Greatsword", "sellValue": 5000, "reqLvl": 35, "icon": "🔥", "stats": { "str": 150, "dex": 40, "agi": 10 }, "type": "Weapon", "category": "Equipment", "rarity": "Legendary", "description": "A massive blade that radiates intense thermal energy." },
+  { "id": "tidal_plate", "name": "Abyssal Plate", "sellValue": 5000, "reqLvl": 35, "icon": "🌊", "stats": { "str": 40, "dex": 20, "agi": 120 }, "type": "Armor", "category": "Equipment", "rarity": "Legendary", "description": "Hydro-static armor capable of withstanding primordial pressure." },
+  { "id": "storm_boots", "name": "Gale Treaders", "sellValue": 5000, "reqLvl": 35, "icon": "🌪️", "stats": { "str": 20, "dex": 80, "agi": 80 }, "type": "Footwear", "category": "Equipment", "rarity": "Legendary", "description": "Boots that allow the wearer to walk upon the wind itself." },
+  { "id": "quake_helm", "name": "Tectonic Crown", "sellValue": 5000, "reqLvl": 35, "icon": "⛰️", "stats": { "str": 60, "dex": 100, "agi": 20 }, "type": "Headgear", "category": "Equipment", "rarity": "Legendary", "description": "A crown that resonates with the heartbeat of the planet." },
+  { "id": "void_relic", "name": "Singularity Core", "sellValue": 8000, "reqLvl": 45, "icon": "🌑", "stats": { "str": 100, "dex": 100, "agi": 100 }, "type": "Relic", "category": "Equipment", "rarity": "Legendary", "effect": { "type": "AllInOne", "chance": 0.15 }, "description": "The stabilized center of a collapsed star (15% Quad Damage)." },
 
   { "id": "schema_neon_plate", "name": "Schematic: Neon Chestplate", "rarity": "Uncommon", "icon": "📜", "sellValue": 500, "type": "Schematic", "category": "Loot", "recipeId": "neon_plate", "description": "Detailed blueprints for an advanced neon-infused chestplate." },
   { "id": "schema_tech_visor", "name": "Schematic: Tech Visor", "rarity": "Common", "icon": "📜", "sellValue": 300, "type": "Schematic", "category": "Loot", "recipeId": "tech_visor", "description": "Optical engineering data for a high-tech visor." },

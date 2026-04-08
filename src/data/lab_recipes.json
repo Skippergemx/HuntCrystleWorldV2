@@ -46,5 +46,50 @@
       { "id": "oil_drum", "count": 10 }
     ],
     "cost": 1500
+  },
+  {
+    "id": "taming_hydro",
+    "materials": [
+      { "id": "ocean_pearl", "count": 2 },
+      { "id": "sky_berry", "count": 5 },
+      { "id": "sea_salt", "count": 10 }
+    ],
+    "cost": 3000
+  },
+  {
+    "id": "taming_pyro",
+    "materials": [
+      { "id": "magma_core", "count": 2 },
+      { "id": "ember_grapes", "count": 5 },
+      { "id": "fire_essence", "count": 10 }
+    ],
+    "cost": 3000
+  },
+  {
+    "id": "taming_gale",
+    "materials": [
+      { "id": "gale_feather", "count": 2 },
+      { "id": "sky_berry", "count": 5 },
+      { "id": "storm_essence", "count": 10 }
+    ],
+    "cost": 3000
+  },
+  {
+    "id": "taming_earthen",
+    "materials": [
+      { "id": "quake_stone", "count": 2 },
+      { "id": "dragon_apple", "count": 5 },
+      { "id": "earth_essence", "count": 10 }
+    ],
+    "cost": 3000
+  },
+  {
+    "id": "taming_cosmic",
+    "materials": [
+      { "id": "black_hole_shard", "count": 2 },
+      { "id": "void_cherry", "count": 5 },
+      { "id": "dark_matter", "count": 10 }
+    ],
+    "cost": 3000
   }
 ]

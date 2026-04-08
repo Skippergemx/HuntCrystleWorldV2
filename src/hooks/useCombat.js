@@ -31,6 +31,7 @@ export const useCombat = (
   triggerFlinch,
   triggerHurt,
   TAVERN_MATES,
+  PETS_METADATA,
   gvgActions = {}
 ) => {
   const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic } = gvgActions;
@@ -49,6 +50,15 @@ export const useCombat = (
   const [killsInFloor, setKillsInFloor] = useState(0);
   const [lastLoot, setLastLoot] = useState(null);
   const [penaltyRemaining, setPenaltyRemaining] = useState(0);
+  const [floatingNumbers, setFloatingNumbers] = useState([]); // Phase 4: AAA UI Floating Numbers
+
+  const triggerFloatingNumber = useCallback((val, isCrit, side) => {
+    const id = Date.now() + Math.random();
+    setFloatingNumbers(prev => [...prev.slice(-10), { id, val, isCrit, side }]);
+    setTimeout(() => {
+      setFloatingNumbers(prev => prev.filter(n => n.id !== id));
+    }, 1000);
+  }, []);
 
   const stunRef = useRef(0);
   const missRef = useRef(0);
@@ -169,6 +179,7 @@ export const useCombat = (
       setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
       triggerHitEffects(dmg, isCrit, 'player', triggerFlinch, triggerHurt);
+      triggerFloatingNumber(dmg, isCrit, 'player');
 
       setTimeout(() => {
         const newHp = Math.floor(Math.max(0, (player?.hp || 0) - dmg));
@@ -206,13 +217,14 @@ export const useCombat = (
         combatBusRef.current = false; // RELEASE LOCK AFTER ENEMY MISS
       }, 500);
     }
-  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext]);
+  }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
-    const earnedXp = Math.floor(e.xp * (player?.petId ? 1.1 : 1.0));
+    const petMeta = player?.petId ? PETS_METADATA.find(p => p.id === player.petId) : null;
+    const earnedXp = Math.floor(e.xp * (petMeta?.xpMult || 1.0));
     addLog(`Victory! Found ${e.loot} GX.`);
-    if (player?.petId) addLog("✨ CRYSTLE PULSE: +10% XP Bonus!");
+    if (petMeta) addLog(`✨ ${petMeta.name.toUpperCase()} PULSE: +${Math.round((petMeta.xpMult - 1) * 100)}% XP Bonus!`);
 
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000, nextAP = player?.abilityPoints || 0;
     let didLevelUp = false;
@@ -268,25 +280,32 @@ export const useCombat = (
           }
 
           if (lootItem) {
-            const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}` };
+            // BUG-04 FIX: Add random suffix to prevent key collision on rapid kills
+            const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
             updates[`inventory.${itemWithId.id}`] = itemWithId;
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
             setLastLoot(itemWithId);
             setTimeout(() => setLastLoot(null), 3000);
+
+            // BUG-10 FIX: Track dropped item directly, no fragile key re-lookup
+            setSessionRewards(prev => ({
+              tokens: prev.tokens + e.loot,
+              xp: prev.xp + earnedXp,
+              loots: [...prev.loots, itemWithId]
+            }));
+          } else {
+            setSessionRewards(prev => ({
+              tokens: prev.tokens + e.loot,
+              xp: prev.xp + earnedXp,
+              loots: prev.loots
+            }));
           }
         }
       }
     }
 
     syncPlayer(updates);
-
-    const droppedItem = updates[`inventory.${Object.keys(updates).find(k => k.startsWith('inventory.'))?.split('.')[1]}`] || null;
-    setSessionRewards(prev => ({
-      tokens: prev.tokens + e.loot,
-      xp: prev.xp + earnedXp,
-      loots: droppedItem ? [...prev.loots, droppedItem] : prev.loots
-    }));
 
     setShowVictoryWindow(true);
     setCombatState('VICTORY');
@@ -337,9 +356,8 @@ export const useCombat = (
   }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, playSFX, SOUNDS]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
-    // 1. SANITY CHECK: Anti-Cheat Bounds Limits
-    // Calculate the absolute highest possible damage (including crits and relic multipliers)
-    const maxTheoreticalDamage = Math.max(1000, (totalStats.str || 10) * 80); 
+    // BUG-14 FIX: Raise cap to account for AllInOne (4x) + DoubleStrike (2x) = 8x valid multiplier
+    const maxTheoreticalDamage = Math.max(5000, (totalStats.str || 10) * 500); 
     if (dmg < 0 || dmg > maxTheoreticalDamage) {
        addLog("🚨 SYSTEM ANOMALY: Unauthorized payload detected. Strike dismissed!");
        return; // Abort the hit injection
@@ -363,11 +381,12 @@ export const useCombat = (
       }
     }
 
-    if (Math.random() < 0.3) {
+    // BUG-05 FIX: Schematic drop gated to 5% in deep floors only (was unconditional 30%)
+    if (depth >= 10 && Math.random() < 0.05) {
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
         const drop = schematics[Math.floor(Math.random() * schematics.length)];
-        const dropId = `${drop.id}_${Date.now()}`;
+        const dropId = `${drop.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
         updates[`inventory.${dropId}`] = { ...drop, id: dropId };
         addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
@@ -408,18 +427,17 @@ export const useCombat = (
 
     const target = isBoss ? BOSS : enemy;
 
+    let elementalMultiplier = 1.0;
     const monsterElement = selectedMap?.element;
     if (monsterElement) {
         const playerElement = player?.gemxElement || 'Cosmic';
         const isEffective = playerElement && ELEMENT_ADVANTAGE[playerElement] === monsterElement;
         
         if (!isEffective) {
-            addLog(`🛡️ DEFENSE ERROR: The monster is unaffected!`);
-            setPlayerTaunt("My attacks are doing nothing!");
-            setMissTimeLeft(1.2);
-            enemyTurn(target, isBoss);
-            // Lock stays true until enemyTurn resolves it (via miss setTimeouts)
-            return;
+            addLog(`⚠️ ELEMENTAL HANDICAP: Damage reduced by 75%!`);
+            setPlayerTaunt("My element is weak here!");
+            elementalMultiplier = 0.25;
+            // No longer returns; continues to attack with penalty
         }
     }
 
@@ -431,7 +449,7 @@ export const useCombat = (
 
     if (Math.random() * 100 < hitChance) {
       const isCrit = Math.random() < 0.15;
-      let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit));
+      let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit) * elementalMultiplier);
 
       const effects = Object.values(player?.equipped || {}).filter(i => i?.effect).map(i => i.effect);
       const critSpike = effects.find(e => e.type === 'CritSpike');
@@ -457,6 +475,7 @@ export const useCombat = (
       }
 
       triggerHitEffects(dmg, isCrit, 'monster', triggerFlinch, triggerHurt);
+      triggerFloatingNumber(dmg, isCrit, 'monster');
 
       const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
       setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
@@ -499,6 +518,8 @@ export const useCombat = (
 
   const handleRetreat = useCallback(() => {
     if (battleMode === 'GVG') {
+      // BUG-13 FIX: Reset session rewards on GVG retreat
+      setSessionRewards({ tokens: 0, xp: 0, loots: [] });
       recordGvGResult();
     } else {
       // WIPE SESSION REWARDS FOR NEXT RUN

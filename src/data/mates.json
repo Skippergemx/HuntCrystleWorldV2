@@ -59,11 +59,11 @@
     "name": "Colossal Guardian",
     "cost": 15000,
     "type": "STR",
-    "desc": "Persistent double Strength and +1000 HP bonus.",
+    "desc": "80% chance to double Strength. Permanent +1000 HP bonus regardless of proc.",
     "rarity": "Legendary",
     "icon": "🛡️",
     "multiplier": 2,
-    "procChance": 1.0,
+    "procChance": 0.8,
     "hpBonus": 1000
   }
 ]

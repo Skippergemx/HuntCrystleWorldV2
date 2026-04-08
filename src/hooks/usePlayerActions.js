@@ -20,6 +20,7 @@ export const usePlayerActions = (
   totalStats,
   db,
   appId,
+  PETS_METADATA,
   gvgActions = {}
 ) => {
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
@@ -186,9 +187,8 @@ export const usePlayerActions = (
 
   const allocateStat = (statName) => {
     if ((player.abilityPoints || 0) <= 0) return;
-    const newBase = { ...player.baseStats };
-    newBase[statName] = (newBase[statName] || 0) + 1;
-    syncPlayer({ baseStats: newBase, abilityPoints: player.abilityPoints - 1 });
+    // BUG-12 FIX: Use increment() to prevent race condition on rapid clicks
+    syncPlayer({ [`baseStats.${statName}`]: increment(1), abilityPoints: increment(-1) });
   };
 
   const buyItem = (item) => {
@@ -256,9 +256,10 @@ export const usePlayerActions = (
     if (!masterData) return addLog("❌ MIX ERROR: Unknown formula.");
     if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
 
-    const inventory = [...(player.inventory || [])];
+    // BUG-01 FIX: Use Object.values() — inventory is a keyed map, not an array
+    const inventoryArr = Object.values(player.inventory || {});
     const hasMaterials = recipe.materials.every(mat => {
-      const count = inventory.filter(i => {
+      const count = inventoryArr.filter(i => {
          const cleanId = i.id?.replace(/(_\d+)+$/, '');
          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
          return (cleanId === mat.id) || (master?.id === mat.id);
@@ -268,27 +269,97 @@ export const usePlayerActions = (
 
     if (!hasMaterials) return addLog("Insufficient experimental materials!");
 
+    // Build dot-notation updates — never overwrite full inventory
+    const updates = { tokens: player.tokens - (recipe.cost || 0) };
+    const remaining = [...inventoryArr];
+
     recipe.materials.forEach(mat => {
       for (let i = 0; i < mat.count; i++) {
-        const targetItem = inventory.find(item => {
+        const idx = remaining.findIndex(item => {
            const cleanId = item.id?.replace(/(_\d+)+$/, '');
            const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
            return (cleanId === mat.id) || (master?.id === mat.id);
         });
-        if (targetItem) {
-          const idx = inventory.findIndex(i => i.id === targetItem.id);
-          if (idx !== -1) inventory.splice(idx, 1);
+        if (idx !== -1) {
+          updates[`inventory.${remaining[idx].id}`] = deleteField(); // dot-notation delete
+          remaining.splice(idx, 1);
         }
       }
     });
 
     const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}` };
-    inventory.push(mixedItem);
+    updates[`inventory.${mixedItem.id}`] = mixedItem; // dot-notation add
 
-    syncPlayer({ tokens: player.tokens - (recipe.cost || 0), inventory: inventory });
+    syncPlayer(updates);
     addLog(`🧪 SUCCESS: Synthesized ${masterData.name}!`);
     playSFX(SOUNDS.obtainLoot);
     setForgeResult({ success: true, item: mixedItem });
+  };
+  
+  const handlePurify = async (monster, tamingItemId) => {
+    if (!monster || !tamingItemId) return;
+    
+    // Check if player has the tool
+    const inventory = Object.values(player.inventory || {});
+    const targetTool = inventory.find(i => i.id?.startsWith(tamingItemId));
+    if (!targetTool) return addLog(`❌ PURIFY FAILED: Missing ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism!`);
+
+    // Element check
+    const monsterElement = monster.id?.split('_')[0]?.charAt(0).toUpperCase() + monster.id?.split('_')[0]?.slice(1);
+    const cosmicMonsters = ['null_stalker', 'void_wraith', 'abyssal_crawler', 'singularity_orb', 'quantum_shade', 'gravity_eater', 'dimensional_shifter', 'entropy_golem', 'rift_lurker', 'paradox_husk'];
+    
+    let element = monsterElement;
+    if (cosmicMonsters.includes(monster.id)) element = 'Cosmic';
+
+    if (!tamingItemId.includes(element.toLowerCase())) {
+        return addLog(`❌ RESONANCE ERROR: Prism frequency doesn't match ${element} types.`);
+    }
+
+    playSFX(SOUNDS.useHeal);
+    const success = Math.random() > 0.5;
+    
+    const updates = {
+        [`inventory.${targetTool.id}`]: deleteField()
+    };
+
+    if (success) {
+        // Find all pets of this element
+        const elementPets = PETS_METADATA.filter(p => p.element === element);
+        
+        // ROLL FOR RARITY: Weighted Distribution
+        // Common: 60%, Uncommon: 25%, Rare: 12%, Epic: 3%
+        const roll = Math.random() * 100;
+        let selectedRarity = 'Common';
+        if (roll < 3) selectedRarity = 'Epic';
+        else if (roll < 15) selectedRarity = 'Rare';
+        else if (roll < 40) selectedRarity = 'Uncommon';
+        
+        const rarityPool = elementPets.filter(p => p.rarity === selectedRarity);
+        // Fallback to any pet if pool is empty for some reason
+        const poolToUse = rarityPool.length > 0 ? rarityPool : elementPets;
+        const newPet = poolToUse[Math.floor(Math.random() * poolToUse.length)];
+        
+        updates.petId = newPet.id;
+        updates.petLevel = 1;
+        updates.unlockedPets = arrayUnion(newPet.id);
+        
+        addLog(`✨ CORE PURIFIED: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
+        playSFX(SOUNDS.obtainLevel);
+        setForgeResult({ success: true, item: { ...newPet, icon: '✨' } });
+        
+        // Victory! End combat
+        if (setEnemy) setEnemy(null);
+        if (setView) setView('menu');
+    } else {
+        addLog(`🌫️ DISSIPATED: Purification failed! The corrupted energy vanished into the void.`);
+        playSFX(SOUNDS.monsterAttack);
+        
+        // Vanish! End combat
+        if (setEnemy) setEnemy(null);
+        if (setView) setView('menu');
+    }
+    
+    syncPlayer(updates);
   };
 
   const forgeCrystle = (recipe) => {
@@ -296,10 +367,11 @@ export const usePlayerActions = (
     const itemName = masterData?.name || recipe.name || "Unknown Tech";
     if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
 
-    const inventory = Object.values(player.inventory || {});
+    // BUG-02 FIX: Use Object.values() — inventory is a keyed map, not an array
+    const inventoryArr = Object.values(player.inventory || {});
     
     const hasMaterials = recipe.materials.every(mat => {
-      const count = inventory.filter(i => {
+      const count = inventoryArr.filter(i => {
          const cleanId = i.id?.replace(/(_\d+)+$/, '');
          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
          return (cleanId === mat.id) || (master?.id === mat.id);
@@ -314,29 +386,33 @@ export const usePlayerActions = (
     const roll = Math.random() * 100;
     const isSuccess = roll < successRate;
 
+    // Build dot-notation updates — never overwrite full inventory
+    const updates = { tokens: player.tokens - (recipe.cost || 0) };
+    const remaining = [...inventoryArr];
+
     recipe.materials.forEach(mat => {
       for (let i = 0; i < mat.count; i++) {
-        const targetItem = inventory.find(item => {
+        const idx = remaining.findIndex(item => {
            const cleanId = item.id?.replace(/(_\d+)+$/, '');
            const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
            return (cleanId === mat.id) || (master?.id === mat.id);
         });
-        if (targetItem) {
-          const idx = inventory.findIndex(i => i.id === targetItem.id);
-          if (idx !== -1) inventory.splice(idx, 1);
+        if (idx !== -1) {
+          updates[`inventory.${remaining[idx].id}`] = deleteField(); // dot-notation delete
+          remaining.splice(idx, 1);
         }
       }
     });
 
     if (isSuccess) {
       const forgedItem = { ...masterData, ...recipe, id: `${recipe.id}_${Date.now()}` };
-      inventory.push(forgedItem);
-      syncPlayer({ tokens: player.tokens - (recipe.cost || 0), inventory: inventory });
+      updates[`inventory.${forgedItem.id}`] = forgedItem; // dot-notation add
+      syncPlayer(updates);
       addLog(`✅ SUCCESS: Forged ${itemName}!`);
       playSFX(SOUNDS.obtainLoot);
       setForgeResult({ success: true, item: forgedItem });
     } else {
-      syncPlayer({ tokens: player.tokens - (recipe.cost || 0), inventory: inventory });
+      syncPlayer(updates); // Materials consumed even on failure
       addLog(`❌ FAILURE: The forging of ${itemName} failed!`);
       playSFX(SOUNDS.monsterAttack);
       setForgeResult({ success: false, item: masterData || recipe });
@@ -349,19 +425,19 @@ export const usePlayerActions = (
     
     const currentRecipes = Array.isArray(player.recipes) ? [...player.recipes] : [];
     const alreadyKnown = currentRecipes.includes(master.recipeId);
-    const currentInventory = Object.values(player.inventory || {});
-    const targetIdx = currentInventory.findIndex(i => i.id === item.id);
-    
-    if (targetIdx === -1) return addLog("❌ ERROR: Schematic no longer in bag.");
-    currentInventory.splice(targetIdx, 1);
+
+    // BUG-03 FIX: Check by key (O(1)) and use dot-notation delete — never overwrite full inventory
+    if (!player.inventory?.[item.id]) return addLog("❌ ERROR: Schematic no longer in bag.");
+
+    const updates = { [`inventory.${item.id}`]: deleteField() }; // dot-notation remove
 
     if (alreadyKnown) {
-      syncPlayer({ inventory: currentInventory });
+      syncPlayer(updates);
       return addLog(`📜 DUPLICATE: Pattern memory preserved.`);
     }
 
-    const newRecipes = [...currentRecipes, master.recipeId];
-    syncPlayer({ recipes: newRecipes, inventory: currentInventory });
+    updates.recipes = [...currentRecipes, master.recipeId];
+    syncPlayer(updates);
     addLog(`✨ DECRYPTED: ${master.name}!`);
     playSFX(SOUNDS.obtainLoot);
   };
@@ -711,9 +787,78 @@ export const usePlayerActions = (
     } catch (e) { console.error("Claim Reward Error:", e); }
   };
 
+  const salvageItems = useCallback((itemIds) => {
+    if (!itemIds || itemIds.length === 0) return;
+    const inventory = player.inventory || {};
+    const targets = itemIds.map(id => inventory[id]).filter(Boolean);
+    if (targets.length === 0) return;
+
+    const rarity = targets[0].rarity;
+    if (!targets.every(t => t.rarity === rarity)) {
+      return addLog("❌ SALVAGE ERROR: Materials must share the same rarity.");
+    }
+
+    let required = 0;
+    let nextRarity = "";
+    if (rarity === "Common") { required = 10; nextRarity = "Uncommon"; }
+    else if (rarity === "Uncommon") { required = 5; nextRarity = "Rare"; }
+    else { return addLog("❌ SALVAGE ERROR: Only Common and Uncommon items can be salvaged."); }
+
+    if (targets.length < required) {
+      return addLog(`❌ SALVAGE ERROR: Need ${required} ${rarity} items (have ${targets.length}).`);
+    }
+
+    // Pick top 'required' items
+    const toConsume = itemIds.slice(0, required);
+    const updates = {};
+    toConsume.forEach(id => {
+      updates[`inventory.${id}`] = deleteField();
+    });
+
+    // Pick random reward from same tier
+    const pool = ITEMS.filter(i => i.rarity === nextRarity && (i.category === "Loot" || i.category === "Equipment"));
+    const rewardBase = pool[Math.floor(Math.random() * pool.length)];
+    const reward = { ...rewardBase, id: `${rewardBase.id}_${Date.now()}` };
+    
+    updates[`inventory.${reward.id}`] = reward;
+    syncPlayer(updates);
+    
+    addLog(`♻️ SALVAGE SUCCESS: Recycled ${required} ${rarity} items into ${reward.name}!`);
+    playSFX(SOUNDS.obtainLoot);
+    if (setForgeResult) setForgeResult({ success: true, item: reward });
+  }, [player, ITEMS, syncPlayer, addLog, playSFX, SOUNDS, setForgeResult]);
+
+  const claimGuildBounty = useCallback(async (guildData) => {
+    if (!player.guildId || !guildData) return addLog("❌ BOUNTY ERROR: No active Syndicate link.");
+    
+    const now = Date.now();
+    const lastClaim = player.lastBountyClaimed || 0;
+    const cooldown = 24 * 60 * 60 * 1000; // 24 Hours
+
+    if (now - lastClaim < cooldown) {
+      const wait = Math.ceil((cooldown - (now - lastClaim)) / (60 * 60 * 1000));
+      return addLog(`❌ BOUNTY ERROR: Recharge in progress. Wait ${wait}h.`);
+    }
+
+    const reward = 5000 + ((guildData.labLevel || 0) * 1000);
+    const updates = {
+      tokens: increment(reward),
+      lastBountyClaimed: now
+    };
+
+    try {
+      await syncPlayer(updates);
+      addLog(`💎 BOUNTY SECURED: +${reward} GX Syndicate Subsidy claimed!`);
+      playSFX(SOUNDS.success);
+    } catch (e) {
+      console.error("Bounty Claim Error:", e);
+      addLog("❌ BOUNTY ERROR: Transmission failed.");
+    }
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
-    mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll,
+    mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar
   };

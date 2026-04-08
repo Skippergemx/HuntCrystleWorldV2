@@ -6,6 +6,7 @@ import CRYSTLE_RECIPES from '../data/recipes.json';
 import MAPS from '../data/maps.json';
 import ITEMS from '../data/items.json';
 import LAB_RECIPES from '../data/lab_recipes.json';
+import PETS_METADATA from '../data/pets_metadata.json';
 
 import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
@@ -78,13 +79,17 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const audio = useAudioEngine(adventure.view, adventure.enemy?.isBoss);
   
   const totalStats = useMemo(() => {
-    if (!player) return calculateStats({ level: 1, baseStats: { str: 10, agi: 10, dex: 10 }, equipped: {} }, TAVERN_MATES, false, false);
-    return calculateStats(player, TAVERN_MATES, false, false); 
+    if (!player) return calculateStats({ level: 1, baseStats: { str: 10, agi: 10, dex: 10 }, equipped: {} }, TAVERN_MATES, false, false, PETS_METADATA);
+    const buffActive = (player.buffUntil || 0) > Date.now();
+    // BUG-09 FIX: Dragon uses summonUntil, NOT autoUntil (which is the auto-scroll timer)
+    const dragonActive = (player.dragon?.summonUntil || 0) > Date.now();
+    return calculateStats(player, TAVERN_MATES, buffActive, dragonActive, PETS_METADATA); 
   }, [player]);
 
   const actions = usePlayerActions(
     player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, 
     TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId,
+    PETS_METADATA,
     { setBattleMode, setGvgContext, setEnemy: adventure.setEnemy, setView: adventure.setView }
   );
 
@@ -98,7 +103,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
-    adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES,
+    adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES, PETS_METADATA,
     { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic }
   );
   
@@ -114,7 +119,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
   const dynamicStats = useMemo(() => {
     if (!player) return totalStats;
-    return calculateStats(player, TAVERN_MATES, gameLoop.buffTimeLeft > 0, gameLoop.dragonTimeLeft > 0);
+    return calculateStats(player, TAVERN_MATES, gameLoop.buffTimeLeft > 0, gameLoop.dragonTimeLeft > 0, PETS_METADATA);
   }, [player, gameLoop.buffTimeLeft, gameLoop.dragonTimeLeft, totalStats]);
 
   useEffect(() => {
@@ -186,7 +191,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     activeBoardTab: leaderboardObj.activeBoard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
-    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES,
+    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA,
     BOSS, BOSS_MEDIA_FILES, SOUNDS
   };
 

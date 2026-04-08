@@ -93,6 +93,10 @@ export const GameLayout = ({ onLogout }) => {
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors relative`}>
       <AnimatedBackground MONSTERS={MONSTERS} performanceMode={player.performanceMode} />
+      
+      {/* AAA Premium Overlay: Grid & Scanlines */}
+      <div className="fixed inset-0 pointer-events-none z-[999] opacity-20 bg-scanline"></div>
+      <div className="fixed inset-0 pointer-events-none z-[998] opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
 
       {showDefeatedWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">

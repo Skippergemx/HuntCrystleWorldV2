@@ -292,6 +292,37 @@ export const SyndicateView = () => {
                        <span className="text-xl md:text-4xl font-black text-amber-500 italic drop-shadow-[0_0_10px_rgba(245,158,11,0.3)]">{(guildData?.gxVault || 0).toLocaleString()} GX</span>
                     </div>
                  </div>
+
+                 <div className="w-full lg:w-80 bg-slate-900 border-4 md:border-8 border-black rounded-[30px] md:rounded-[40px] p-6 md:p-8 shadow-[8px_8px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] flex flex-col">
+                    <h3 className="text-lg md:text-xl font-black text-emerald-400 uppercase italic mb-4 md:mb-8 flex items-center gap-3"><Star size={20} className="text-emerald-400" /> Daily Mission</h3>
+                    <div className="flex-1 flex flex-col justify-between gap-4">
+                       <div className="bg-black/80 p-4 md:p-6 border-[3px] border-black rounded-2xl">
+                          <p className="text-[8px] font-black text-white/40 uppercase mb-2">Subsidy Status</p>
+                          {(() => {
+                             const cooldown = 24 * 60 * 60 * 1000;
+                             const canClaim = !player.lastBountyClaimed || (Date.now() - player.lastBountyClaimed >= cooldown);
+                             return (
+                               <div className="flex flex-col gap-3">
+                                  <div className="flex items-center gap-2">
+                                     <div className={`w-2 h-2 rounded-full ${canClaim ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`}></div>
+                                     <span className={`text-[10px] font-black uppercase ${canClaim ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                        {canClaim ? 'READY FOR UPLINK' : 'RECHARGING'}
+                                     </span>
+                                  </div>
+                                  <button 
+                                     onClick={() => actions.claimGuildBounty(guildData)}
+                                     disabled={!canClaim}
+                                     className={`w-full py-2 rounded-lg font-black uppercase italic text-[10px] border-2 border-black transition-all ${canClaim ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-[3px_3px_0_rgba(0,0,0,1)]' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed'}`}
+                                  >
+                                     Claim Bounty
+                                  </button>
+                               </div>
+                             );
+                          })()}
+                       </div>
+                       <p className="text-[6px] text-white/20 uppercase text-center italic">Rewards scale with Syndicate Lab Level</p>
+                    </div>
+                 </div>
               </div>
 
               <div className="flex flex-col lg:flex-row gap-6 md:gap-10">

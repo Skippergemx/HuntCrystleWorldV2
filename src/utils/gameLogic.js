@@ -1,13 +1,13 @@
 // Game Constants and Math Utilities
 
 export const DIFFICULTY_MULTIPLIER = 1.04;
-export const XP_BASE = 100;
+export const XP_BASE = 60; // Phase 4: Lowered from 100 for faster early-game pacing to Lv30
 /**
  * Calculates XP required for next level (Phase 3 Exponential Scaling)
  */
 export const getXpRequired = (level) => Math.floor(XP_BASE * Math.pow(level, 1.5));
 export const AP_PER_LEVEL = 5;
-export const MAX_CRIT_CHANCE = 0.5;
+export const MAX_CRIT_CHANCE = 0.25; // Phase 4: Capped at 25% (was 50%) — prevents deep-floor perma-stun
 export const BASE_CRIT_CHANCE = 0.05;
 export const CRIT_SCALING_PER_FLOOR = 0.01;
 
@@ -16,7 +16,7 @@ export const STUN_DURATION_NORMAL = 2000;
 export const STUN_DURATION_CRIT = 4000;
 export const DEFEAT_WINDOW_DURATION = 3000;
 export const AUTO_SCROLL_DURATION = 60000;
-export const COMPANION_BUFF_DURATION = 10000;
+export const COMPANION_BUFF_DURATION = 30000; // Phase 4: Extended from 10s to 30s — buffs feel meaningful
 
 /**
  * Calculates a scaled monster based on floor depth
@@ -42,7 +42,7 @@ export const scaleMonster = (baseMonster, depth) => {
 /**
  * Calculates player stats with equipment and buffs
  */
-export const calculateStats = (player, tavernMates, buffActive, dragonActive) => {
+export const calculateStats = (player, tavernMates, buffActive, dragonActive, PETS_METADATA = []) => {
   if (!player) return { str: 0, agi: 0, dex: 0, maxHp: 100 };
   
   const stats = { 
@@ -61,24 +61,25 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     }
   });
 
-  // Apply Mate Buffs (Active or Guaranteed)
+  // Apply Mate Buffs
   if (player.hiredMate) {
     const mate = tavernMates.find(m => m.id === player.hiredMate);
     if (mate) {
-      // Guaranteed Persistent Buffs (procChance === 1.0) or Active Timer-based Buffs
+      // Phase 4: HP bonus is ALWAYS permanent — independent of buff timer
+      if (mate.hpBonus) stats.maxHp += mate.hpBonus;
+      // Stat multipliers only apply when buff is actively proc'd
       if (mate.procChance >= 1.0 || buffActive) {
         const mult = mate.multiplier || 2;
         if (mate.type === 'STR') stats.str *= mult;
         if (mate.type === 'AGI') stats.agi *= mult;
         if (mate.type === 'DEX') stats.dex *= mult;
-        if (mate.hpBonus) stats.maxHp += mate.hpBonus;
       }
     }
   }
 
   // Apply Dragon Buffs (Requires Dragon to be Summoned)
   if (player.dragon && player.dragon.level > 0 && dragonActive) {
-    const dragonBonus = 5 * player.dragon.level;
+    const dragonBonus = 15 * player.dragon.level; // Phase 4: Raised from 5 to 15 — competitive vs Titan
     stats.str += dragonBonus;
     stats.agi += dragonBonus;
     stats.dex += dragonBonus;
@@ -94,10 +95,35 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive) =>
     else if (element === 'Gale') { stats.agi += 2 * lvl; }
   }
 
-  // Apply Crystle Pet Buffs
-  if (player.petId) {
-    stats.maxHp += 50;
+  // Apply Crystle Pet Buffs & Set Bonuses
+  let petStatsMult = 1.0;
+  const unlockedPets = player.unlockedPets || [];
+  
+  if (unlockedPets.length > 0) {
+    const counts = { 'Pyro': 0, 'Hydro': 0, 'Gale': 0, 'Earthen': 0, 'Cosmic': 0 };
+    unlockedPets.forEach(id => {
+      const p = PETS_METADATA.find(pm => pm.id === id);
+      if (p && counts[p.element] !== undefined) counts[p.element]++;
+    });
+
+    // Calculate Highest Set Multiplier
+    Object.values(counts).forEach(count => {
+      if (count >= 10) petStatsMult = Math.max(petStatsMult, 1.20);
+      else if (count >= 6) petStatsMult = Math.max(petStatsMult, 1.12);
+      else if (count >= 3) petStatsMult = Math.max(petStatsMult, 1.05);
+    });
   }
+
+  if (player.petId) {
+    const activePet = PETS_METADATA.find(p => p.id === player.petId);
+    if (activePet) {
+      stats.maxHp += (activePet.hpBonus || 50);
+    }
+  }
+
+  stats.str *= petStatsMult;
+  stats.agi *= petStatsMult;
+  stats.dex *= petStatsMult;
 
   // Final Safety Rounding
   stats.str = Math.floor(stats.str);

@@ -31,6 +31,9 @@ export const useGameLoop = ({
     combatRef.current = combat;
   }, [combat]);
 
+  // BUG-08 FIX: use refs for timer values inside interval to avoid constant teardown/recreation
+  const timersRef = useRef({ autoTimeLeft: 0, buffTimeLeft: 0, penaltyRemaining: 0, dragonTimeLeft: 0 });
+
   // --- Main Pulse (Stat Ticks & Debuffs) ---
   useEffect(() => {
     const interval = setInterval(() => {
@@ -41,22 +44,21 @@ export const useGameLoop = ({
         c.setMissTimeLeft(prev => Math.max(0, prev - 0.2));
       }
 
-
       const p = playerRef.current;
       if (!p) return;
 
       const now = Date.now();
 
-      // 2. Sync timed states from player record
+      // 2. Sync timed states from player record (compare against ref, not state)
       const newAutoTime = p.autoUntil && p.autoUntil > now ? Math.ceil((p.autoUntil - now) / 1000) : 0;
       const newBuffTime = p.buffUntil && p.buffUntil > now ? Math.ceil((p.buffUntil - now) / 1000) : 0;
       const newPenaltyTime = p.penaltyUntil && p.penaltyUntil > now ? Math.ceil((p.penaltyUntil - now) / 1000) : 0;
       const newDragonTime = p.dragon?.summonUntil && p.dragon.summonUntil > now ? Math.ceil((p.dragon.summonUntil - now) / 1000) : 0;
 
-      if (newAutoTime !== autoTimeLeft) setAutoTimeLeft(newAutoTime);
-      if (newBuffTime !== buffTimeLeft) setBuffTimeLeft(newBuffTime);
-      if (newPenaltyTime !== penaltyRemaining) setPenaltyRemaining(newPenaltyTime);
-      if (newDragonTime !== dragonTimeLeft) setDragonTimeLeft(newDragonTime);
+      if (newAutoTime !== timersRef.current.autoTimeLeft) { setAutoTimeLeft(newAutoTime); timersRef.current.autoTimeLeft = newAutoTime; }
+      if (newBuffTime !== timersRef.current.buffTimeLeft) { setBuffTimeLeft(newBuffTime); timersRef.current.buffTimeLeft = newBuffTime; }
+      if (newPenaltyTime !== timersRef.current.penaltyRemaining) { setPenaltyRemaining(newPenaltyTime); timersRef.current.penaltyRemaining = newPenaltyTime; }
+      if (newDragonTime !== timersRef.current.dragonTimeLeft) { setDragonTimeLeft(newDragonTime); timersRef.current.dragonTimeLeft = newDragonTime; }
 
       // 3. COMBAT HEARTBEAT / SAFETY RESET (Bulletproof V3)
       if (c && c.combatState !== 'IDLE' && c.combatState !== 'DEFEATED' && c.combatState !== 'VICTORY') {
@@ -75,7 +77,7 @@ export const useGameLoop = ({
     }, 200);
 
     return () => clearInterval(interval);
-  }, [view, autoTimeLeft, buffTimeLeft, penaltyRemaining, dragonTimeLeft]);
+  }, [view]); // BUG-08 FIX: Only re-create on view change, not on every timer tick
 
   // --- Auto-Pilot Loop ---
   const isCombatActive = autoTimeLeft > 0 || combat.battleMode === 'GVG';
