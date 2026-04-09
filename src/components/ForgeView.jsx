@@ -11,11 +11,13 @@ export const ForgeView = React.memo(() => {
   const getMasterData = (id) => ITEMS.find(i => i.id === id);
 
   return (
-    <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[1000px] relative custom-scrollbar">
-      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
+    <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[1000px] relative custom-scrollbar bg-slate-950">
+      {/* Visual Character: Plasma Smelter Atmosphere */}
+      <div className="absolute inset-0 bg-heat-gradient opacity-30 animate-pulse pointer-events-none" />
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 2px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+      <div className="scanline-move opacity-20" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.6)' }} />
       
-      <Header title="Identity Lab: Forge" onClose={adventure.goBack}        onHelp={() => openGuide('forge')} 
-/>
+      <Header title="IDENTITY LAB: FORGE" onClose={adventure.goBack} onHelp={() => openGuide('forge')} />
       
       {/* Forge Result Modal (Comic Aesthetic) */}
       {forgeResult && (

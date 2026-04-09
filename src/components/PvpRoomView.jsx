@@ -21,7 +21,7 @@ const PlayerCard = React.memo(({ p, isSelf, combatAnim, onAttack }) => {
           {isSelf && <span className="absolute top-1 md:top-2 right-1 md:right-2 bg-blue-600 text-white text-[7px] md:text-[8px] font-black px-1.5 py-0.5 border border-white/10 uppercase italic">YOU</span>}
           
           <div className="w-16 h-20 md:w-24 md:h-28 border-2 md:border-4 border-black overflow-hidden bg-slate-900 relative mt-4 md:mt-6">
-              <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover" />
+              <AvatarMedia num={p.avatar} animated={!p.isDefeated && p.hp > 0} className="w-full h-full object-cover object-top" />
               {(p.isDefeated || p.hp <= 0) && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm"><Skull size={24} className="text-white animate-pulse md:hidden" /><Skull size={40} className="text-white animate-pulse hidden md:block" /></div>}
               {isTarget && combatAnim.type === 'hit' && <div className="absolute inset-0 flex items-center justify-center animate-ping"><Sword size={24} className="text-white drop-shadow-[0_0_15px_red] md:hidden" /><Sword size={48} className="text-white drop-shadow-[0_0_15px_red] hidden md:block" /></div>}
           </div>

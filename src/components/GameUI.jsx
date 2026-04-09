@@ -94,14 +94,14 @@ export const GuideModal = React.memo(({ isOpen, onClose, title, content = [] }) 
   );
 });
 
-export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop }) => (
+export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop, children }) => (
   <button 
     onClick={onClick} 
     disabled={disabled} 
-    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-950 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)]'} transition-all duration-200`}
+    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-950 cursor-not-allowed opacity-50 shadow-none translate-x-1 translate-y-1' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)]'} transition-all duration-200`}
   >
     {backdrop && (
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none rounded-[inherit] overflow-hidden">
         <img 
           src={backdrop} 
           className="w-full h-full object-cover grayscale-[0.4] contrast-150 opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700" 
@@ -123,6 +123,7 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
       <h3 className="font-black text-[9px] md:text-xs uppercase tracking-widest text-white italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none">{title}</h3>
       <p className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase mt-0.5 md:mt-1 tracking-tighter italic leading-none opacity-80">{sub}</p>
     </div>
+    {children}
   </button>
 ));
 

@@ -239,13 +239,13 @@ export const useCombat = (
     }
 
     const updates = {
-      tokens: increment(e.loot),
+      tokens: (player?.tokens || 0) + e.loot,
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
       hp: Math.min(totalStats.maxHp + (nextMaxHp - (player?.maxHp || 0)), (player?.hp || 0) + 25)
     };
-    if (apGained > 0) updates.abilityPoints = increment(apGained);
+    if (apGained > 0) updates.abilityPoints = (player?.abilityPoints || 0) + apGained;
 
     if (selectedMap && selectedMap.lootTable) {
       const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));

@@ -9,9 +9,13 @@ export const TavernView = () => {
   const { hireMate, dismissMate } = actions;
 
   return (
-    <div className="flex-1 p-6 space-y-6 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
-      <Header title="Hero for Hire: Tavern" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
+    <div className="flex-1 p-6 space-y-6 relative overflow-y-auto bg-slate-950 custom-scrollbar">
+      {/* Visual Character: Warm Safe Haven Atmosphere */}
+      <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 2px, transparent 1px)', backgroundSize: '16px 16px' }} />
+      <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)] pointer-events-none" />
+      
+      <Header title="HERO FOR HIRE: TAVERN" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
       
       {player.hiredMate && (
         <div className="bg-purple-950 border-2 border-purple-500 p-2 mb-2 flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">

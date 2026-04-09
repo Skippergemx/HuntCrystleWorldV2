@@ -124,7 +124,7 @@ export const GameLayout = ({ onLogout }) => {
                   <div className="absolute inset-0 bg-red-900/40 mix-blend-multiply z-10"></div>
                   {player.avatar && (
                     <div className="grayscale contrast-125 opacity-70 scale-110">
-                      <AvatarMedia num={player.avatar} animated={false} className="w-full h-full object-cover" />
+                      <AvatarMedia num={player.avatar} animated={false} className="w-full h-full object-cover object-top" />
                     </div>
                   )}
                   <div className="absolute inset-0 flex items-center justify-center z-20">
@@ -248,7 +248,7 @@ export const GameLayout = ({ onLogout }) => {
 
         {player.avatar && (
           <div className="absolute inset-0 pointer-events-none z-0">
-            <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover opacity-40 blur-[2px] scale-110" />
+            <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top opacity-40 blur-[2px] scale-110" />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-slate-950"></div>
           </div>
         )}
@@ -257,7 +257,7 @@ export const GameLayout = ({ onLogout }) => {
           {/* PROFILE CARD - COMPACT CHARACTER CARD */}
           <div className="w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] border-black rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20">
             <div className="absolute inset-0 z-0">
-              <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
+              <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
             </div>
 

@@ -423,7 +423,7 @@ export const CombatView = React.memo(() => {
                 <div className="absolute inset-0 bg-gradient-to-tl from-black/80 via-transparent to-transparent z-10"></div>
                 <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-0"></div>
                 {player.avatar && (
-                  <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover filter contrast-125" />
+                  <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top filter contrast-125" />
                 )}
                 <ImpactSplash splash={playerImpactSplash} />
 
@@ -436,7 +436,7 @@ export const CombatView = React.memo(() => {
                   ))}
                 </div>
 
-                <div className="absolute top-1 right-1 sm:top-2 sm:right-2 z-30 flex flex-col gap-1 transform rotate-3 scale-90 sm:scale-110 origin-top-right">
+                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-30 flex flex-col gap-1 transform rotate-3 scale-90 sm:scale-110 origin-bottom-right">
                    <div className="bg-cyan-500 border-[3.5px] border-black px-2 py-1 sm:px-3 sm:py-1.5 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center gap-1 group overflow-hidden relative">
                       <div className="absolute inset-0 comic-halftone opacity-30 text-black"></div>
                       <TrendingUp size={12} className="text-black animate-pulse" />

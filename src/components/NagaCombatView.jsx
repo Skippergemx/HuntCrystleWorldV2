@@ -164,7 +164,7 @@ export const NagaCombatView = React.memo(() => {
                   alt="My Naga" 
                   className={`w-full h-full object-cover ${myNaga.element === 'Pyro' ? 'hue-rotate-[340deg] saturate-200' : myNaga.element === 'Hydro' ? 'hue-rotate-[180deg]' : myNaga.element === 'Earthen' ? 'hue-rotate-[90deg] saturate-150' : myNaga.element === 'Gale' ? 'hue-rotate-[220deg] brightness-125' : ''}`}
                />
-               <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-cyan-600 text-white font-black text-[7px] md:text-[10px] italic skew-x-12 border border-black shadow-lg">LVL {myNaga.level || 1}</div>
+               <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-cyan-600 text-white font-black text-[7px] md:text-[10px] italic skew-x-12 border border-black shadow-lg">LVL {myNaga.level || 1}</div>
                {myNaga.currentHp <= 0 && <div className="absolute inset-0 bg-red-950/80 flex items-center justify-center backdrop-blur-sm z-20"><Skull size={40} className="text-red-500" /></div>}
                <ImpactSplash splash={playerImpactSplash} />
              </div>

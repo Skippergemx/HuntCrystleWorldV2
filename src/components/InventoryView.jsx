@@ -71,10 +71,13 @@ export const InventoryView = React.memo(() => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden">
-       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+    <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden custom-scrollbar">
+       {/* Visual Character: Tactical Cache Atmosphere */}
+       <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none" />
+       <div className="scanline-move opacity-5" />
+       <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)] pointer-events-none" />
        
-       <Header title="STORAGE CORE: ASSET BAG" onClose={adventure.goBack} onHelp={() => openGuide('menu')} icon={<Package className="text-emerald-400" />} />
+       <Header title="STORAGE CORE: ASSET BAG" onClose={adventure.goBack} onHelp={() => openGuide('menu')} icon={<Package className="text-emerald-400 animate-pulse" />} />
 
        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 relative z-10">
           {stats.map(s => (
@@ -177,7 +180,13 @@ export const InventoryView = React.memo(() => {
                        >
                         <div className="flex items-center gap-3">
                            <div className="relative shrink-0">
-                              <div className={`w-14 h-14 border-2 border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform group-hover:-rotate-3 transition-transform ${item.type === 'Schematic' ? 'bg-cyan-900 border-cyan-400' : rarity === 'Legendary' ? 'border-amber-400 shadow-[3px_3px_0_rgba(245,158,11,1)]' : rarity === 'Epic' ? 'border-purple-400 shadow-[3px_3px_0_rgba(168,85,247,1)]' : 'bg-white'}`}>
+                              <div className={`w-14 h-14 border-2 border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform group-hover:-rotate-3 transition-transform ${
+                                item.type === 'Schematic' ? 'bg-cyan-900 border-cyan-400 glow-cyan' : 
+                                rarity === 'Legendary' ? 'border-amber-400 shadow-[3px_3px_0_rgba(245,158,11,1)] rarity-legendary' : 
+                                rarity === 'Epic' ? 'border-purple-400 shadow-[3px_3px_0_rgba(168,85,247,1)] rarity-epic' : 
+                                rarity === 'Rare' ? 'rarity-rare' :
+                                rarity === 'Uncommon' ? 'rarity-uncommon' : 'bg-white rarity-common'
+                              }`}>
                                  <span className={`text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)] ${item.type === 'Schematic' ? 'text-cyan-200' : ''}`}>{icon}</span>
                               </div>
                               {item.count > 1 && (

@@ -327,9 +327,12 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   }, [activeDocId, db, localSessionId, sessionConflict, hasHydratedSession]);
 
   // 3. Throttled Sync Mechanism (Batch Writing to Firestore)
+  //
+  // ARCHITECTURE: Two explicit paths to prevent the "doubling" bug.
+  //   - LOCAL PATH: Converts Firestore sentinels to plain math for instant UI feedback.
+  //   - REMOTE PATH: Passes the original sentinel payload directly to Firestore.
+  // This is more readable and immune to Firestore SDK internal property renames.
   const syncPlayer = useCallback(async (updates) => {
-    // If the database doc identifier isn't ready, halt the queue.
-    // Telegram users use anonymous auth so `user` will exist but may not have farcasterFID.
     if (!user && !isTelegram) return;
     if (farcasterContext && !user?.farcasterFID) return;
     if (!activeDocId) return;
@@ -342,97 +345,60 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
         }
     });
 
-    // Local update for instant UI feedback
+    // LOCAL PATH: Apply changes to React state with explicit maths — NO sentinel objects in local state.
     setPlayer(prev => {
       const next = { ...prev };
-      
-      Object.entries(sterilized).forEach(([key, value]) => {
-        // --- SENTINEL RESOLUTION ENGINE ---
-        const isSentinel = value && typeof value === 'object' && typeof value._methodName === 'string';
-        
-        const resolve = (current) => {
-          if (!isSentinel) return value;
-          const method = value._methodName;
-          
-          if (method === 'deleteField') return undefined;
-          if (method === 'increment') {
-            const operand = value._operand !== undefined ? value._operand : (value.Vc !== undefined ? value.Vc : 0);
-            return (Number(current) || 0) + Number(operand);
-          }
-          if (method === 'arrayUnion') {
-            const elements = value._elements || value.Vc || [];
-            const existing = Array.isArray(current) ? current : [];
-            const merged = [...existing];
-            const toAdd = Array.isArray(elements) ? elements : [elements];
-            toAdd.forEach(el => { if (!merged.includes(el)) merged.push(el); });
-            return merged;
-          }
-          if (method === 'arrayRemove') {
-            const elements = value._elements || value.Vc || [];
-            const existing = Array.isArray(current) ? current : [];
-            const toRemove = Array.isArray(elements) ? elements : [elements];
-            return existing.filter(el => !toRemove.includes(el));
-          }
-          return current; // Fallback
-        };
 
-        if (key.includes('.')) {
-          const parts = key.split('.');
-          let current = next;
-          for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            current[part] = { ...(current[part] || {}) };
-            current = current[part];
-          }
-          const lastPart = parts[parts.length - 1];
-          const resolvedValue = resolve(current[lastPart]);
-          if (resolvedValue === undefined) delete current[lastPart];
-          else current[lastPart] = resolvedValue;
-        } else {
-          const resolvedValue = resolve(next[key]);
-          if (resolvedValue === undefined) delete next[key];
-          else next[key] = resolvedValue;
+      const applyToTarget = (target, key, value) => {
+        // Firestore sentinel: deleteField()
+        if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+          delete target[key];
+          return;
         }
-      });
-      
-      next.updatedAt = new Date();
-
-      // Queue these changes for the prochain Firestore sync with Accumulation Logic
-      const mergeUpdates = (existing, incoming) => {
-        const merged = { ...existing };
-        Object.entries(incoming).forEach(([key, value]) => {
-          const prevValue = merged[key];
-          const isSentinel = (v) => v && typeof v === 'object' && typeof v._methodName === 'string';
-          
-          if (prevValue && isSentinel(prevValue) && isSentinel(value) && prevValue._methodName === value._methodName) {
-            const method = value._methodName;
-            if (method === 'increment') {
-              const op1 = prevValue._operand !== undefined ? prevValue._operand : (prevValue.Vc !== undefined ? prevValue.Vc : 0);
-              const op2 = value._operand !== undefined ? value._operand : (value.Vc !== undefined ? value.Vc : 0);
-              merged[key] = increment(Number(op1) + Number(op2));
-              return;
-            }
-            if (method === 'arrayUnion') {
-              const el1 = prevValue._elements || prevValue.Vc || [];
-              const el2 = value._elements || value.Vc || [];
-              const combined = [...(Array.isArray(el1) ? el1 : [el1]), ...(Array.isArray(el2) ? el2 : [el2])];
-              merged[key] = arrayUnion(...combined); // Note: arrayUnion handles duplicates itself in Firestore
-              return;
-            }
-            if (method === 'arrayRemove') {
-              const el1 = prevValue._elements || prevValue.Vc || [];
-              const el2 = value._elements || value.Vc || [];
-              const combined = [...(Array.isArray(el1) ? el1 : [el1]), ...(Array.isArray(el2) ? el2 : [el2])];
-              merged[key] = arrayRemove(...combined);
-              return;
-            }
-          }
-          merged[key] = value;
-        });
-        return merged;
+        // Firestore sentinel: increment(n)
+        if (value && typeof value === 'object' && value._methodName === 'increment') {
+          const operand = value._operand ?? 0;
+          target[key] = (Number(target[key]) || 0) + Number(operand);
+          return;
+        }
+        // Firestore sentinel: arrayUnion(...elements)
+        if (value && typeof value === 'object' && value._methodName === 'arrayUnion') {
+          const toAdd = Array.isArray(value._elements) ? value._elements : [];
+          const existing = Array.isArray(target[key]) ? target[key] : [];
+          const merged = [...existing];
+          toAdd.forEach(el => { if (!merged.includes(el)) merged.push(el); });
+          target[key] = merged;
+          return;
+        }
+        // Firestore sentinel: arrayRemove(...elements)
+        if (value && typeof value === 'object' && value._methodName === 'arrayRemove') {
+          const toRemove = Array.isArray(value._elements) ? value._elements : [];
+          target[key] = (Array.isArray(target[key]) ? target[key] : []).filter(el => !toRemove.includes(el));
+          return;
+        }
+        // Plain value
+        target[key] = value;
       };
 
-      pendingUpdatesRef.current = { ...mergeUpdates(pendingUpdatesRef.current, sterilized), updatedAt: serverTimestamp() };
+      Object.entries(sterilized).forEach(([key, value]) => {
+        if (key.includes('.')) {
+          // Dot-notation path: e.g. 'baseStats.str'
+          const parts = key.split('.');
+          let cursor = next;
+          for (let i = 0; i < parts.length - 1; i++) {
+            cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+            cursor = cursor[parts[i]];
+          }
+          applyToTarget(cursor, parts[parts.length - 1], value);
+        } else {
+          applyToTarget(next, key, value);
+        }
+      });
+
+      next.updatedAt = new Date();
+
+      // REMOTE PATH: Queue the ORIGINAL sentinel payload for Firestore — no transformation needed.
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 

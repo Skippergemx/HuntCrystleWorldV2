@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc, deleteField } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField } from 'firebase/firestore';
 import { calculateNagaStats } from '../utils/gameLogic';
 
 /**
@@ -192,10 +192,16 @@ export const usePlayerActions = (
   }, [player, syncPlayer, playSFX, SOUNDS]);
 
   const allocateStat = (statName) => {
+    // Guard: synchronous ref prevents rapid-click over-spending before React re-renders
     if (remainingApRef.current <= 0) return;
     remainingApRef.current -= 1;
-    // BUG-12 FIX: Use increment() to prevent race condition on rapid clicks
-    syncPlayer({ [`baseStats.${statName}`]: increment(1), abilityPoints: increment(-1) });
+
+    // Compute new plain-number values — no Firestore sentinels
+    const newStat = (player?.baseStats?.[statName] ?? 0) + 1;
+    const newAP   = Math.max(0, (player?.abilityPoints ?? 0) - 1);
+
+    // syncPlayer handles both local state update AND the Firestore write
+    syncPlayer({ [`baseStats.${statName}`]: newStat, abilityPoints: newAP });
   };
 
   const buyItem = (item) => {
@@ -849,7 +855,7 @@ export const usePlayerActions = (
 
     const reward = 5000 + ((guildData.labLevel || 0) * 1000);
     const updates = {
-      tokens: increment(reward),
+      tokens: (player?.tokens || 0) + reward,
       lastBountyClaimed: now
     };
 
