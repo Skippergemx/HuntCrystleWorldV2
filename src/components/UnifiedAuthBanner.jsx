@@ -58,7 +58,7 @@ function TonWalletStatus({ syncPlayer, player }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // UnifiedAuthBanner — Main banner component for all 3 platforms
 // ─────────────────────────────────────────────────────────────────────────────
-const UnifiedAuthBanner = () => {
+export const UnifiedAuthBanner = () => {
   const { isFarcaster } = useUnifiedAuth();
   const game = useGame();
   const { user, player, wallet, farcasterContext, telegram, syncPlayer } = game || {};
@@ -189,4 +189,3 @@ const UnifiedAuthBanner = () => {
   );
 };
 
-export default UnifiedAuthBanner;

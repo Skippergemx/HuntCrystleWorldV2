@@ -3,12 +3,12 @@ import { GameProvider } from './contexts/GameContext';
 import { GameLayout } from './components/GameLayout';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
-import UnifiedAuthBanner from './components/UnifiedAuthBanner';
+import { UnifiedAuthBanner } from './components/UnifiedAuthBanner';
 import { NetworkAlert } from './components/NetworkAlert';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 import { useAccount } from 'wagmi';
 
-const App = () => {
+export const App = () => {
   const { user, loading, isFarcaster, isTelegram, farcasterContext, telegramUserData, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
   const { address, isConnected } = useAccount();
 
@@ -41,4 +41,3 @@ const App = () => {
   );
 };
 
-export default App;

@@ -38,7 +38,7 @@ import { PetsView } from './PetsView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
 import { AnimatedBackground } from './AnimatedBackground';
-import UnifiedAuthBanner from './UnifiedAuthBanner';
+import { UnifiedAuthBanner } from './UnifiedAuthBanner';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
 import { useGame } from '../contexts/GameContext';

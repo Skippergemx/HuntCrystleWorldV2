@@ -226,25 +226,26 @@ export const useCombat = (
     addLog(`Victory! Found ${e.loot} GX.`);
     if (petMeta) addLog(`✨ ${petMeta.name.toUpperCase()} PULSE: +${Math.round((petMeta.xpMult - 1) * 100)}% XP Bonus!`);
 
-    let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000, nextAP = player?.abilityPoints || 0;
+    let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000;
+    let apGained = 0;
     let didLevelUp = false;
     while (nextXp >= getXpRequired(nextLvl)) {
       nextXp -= getXpRequired(nextLvl);
       nextLvl++;
       nextMaxHp += 50;
-      nextAP += AP_PER_LEVEL;
+      apGained += AP_PER_LEVEL;
       addLog(`LVL UP! +5 AP.`);
       didLevelUp = true;
     }
 
     const updates = {
-      tokens: (player?.tokens || 0) + e.loot,
+      tokens: increment(e.loot),
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
-      hp: Math.min(totalStats.maxHp + (nextMaxHp - (player?.maxHp || 0)), (player?.hp || 0) + 25),
-      abilityPoints: nextAP
+      hp: Math.min(totalStats.maxHp + (nextMaxHp - (player?.maxHp || 0)), (player?.hp || 0) + 25)
     };
+    if (apGained > 0) updates.abilityPoints = increment(apGained);
 
     if (selectedMap && selectedMap.lootTable) {
       const dropChance = Math.min(0.95, 0.30 + (depth * 0.015));

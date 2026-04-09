@@ -22,13 +22,13 @@ export const AttributesView = React.memo(() => {
 
         <div className="space-y-6">
           <div className="transform -rotate-1">
-            <AttributeRow label="STRENGTH [STR]" value={player.baseStats.str} onAdd={() => allocateStat('str')} color="text-red-600" disabled={!player.abilityPoints} desc="Unleash raw power to annihilate enemies." />
+            <AttributeRow label="STRENGTH [STR]" value={player.baseStats.str} onAdd={() => allocateStat('str')} color="text-red-600" disabled={(player.abilityPoints || 0) <= 0} desc="Unleash raw power to annihilate enemies." />
           </div>
           <div className="transform rotate-1">
-            <AttributeRow label="AGILITY [AGI]" value={player.baseStats.agi} onAdd={() => allocateStat('agi')} color="text-emerald-600" disabled={!player.abilityPoints} desc="Evade strikes and outpace your foes." />
+            <AttributeRow label="AGILITY [AGI]" value={player.baseStats.agi} onAdd={() => allocateStat('agi')} color="text-emerald-600" disabled={(player.abilityPoints || 0) <= 0} desc="Evade strikes and outpace your foes." />
           </div>
           <div className="transform -rotate-1">
-            <AttributeRow label="DEXTERITY [DEX]" value={player.baseStats.dex} onAdd={() => allocateStat('dex')} color="text-amber-600" disabled={!player.abilityPoints} desc="Strike with surgical precision and speed." />
+            <AttributeRow label="DEXTERITY [DEX]" value={player.baseStats.dex} onAdd={() => allocateStat('dex')} color="text-amber-600" disabled={(player.abilityPoints || 0) <= 0} desc="Strike with surgical precision and speed." />
           </div>
         </div>
       </div>

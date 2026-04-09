@@ -107,7 +107,7 @@ export const PetsView = () => {
                     <Heart size={12} className="text-red-600 fill-red-600 animate-pulse md:w-[14px]" /> 
                     <span className="text-[7px] md:text-[10px] font-black text-black uppercase tracking-[0.2em] italic">Companion Subsystem Online</span>
                   </div>
-                  <h2 className="text-xl md:text-5xl font-black text-black italic uppercase drop-shadow-[2px_2px_0_#fff] md:drop-shadow-[3px_3px_0_#fff] tracking-tighter leading-none">Crystle <span className="underline decoration-4 md:decoration-[6px] decoration-black">Academy</span></h2>
+                  <h2 className="text-xl md:text-5xl font-black text-black italic uppercase drop-shadow-[2px_2px_0_#fff] md:drop-shadow-[3px_3px_0_#fff] tracking-tighter leading-none">Crystles</h2>
               </div>
               <div className="flex gap-2 md:gap-6">
                   <div className="bg-black/10 border-2 border-black/20 p-2 md:p-3 rounded-lg md:rounded-xl flex flex-col items-center min-w-[50px] md:min-w-[80px]">

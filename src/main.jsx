@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Buffer } from "buffer";
 import './index.css'
-import App from './App.jsx'
+import { App } from './App.jsx'
 import { Web3Provider } from './contexts/Web3Provider'
 
 window.global = window;

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, increment, deleteDoc, deleteField } from 'firebase/firestore';
 import { calculateNagaStats } from '../utils/gameLogic';
 
@@ -24,6 +24,12 @@ export const usePlayerActions = (
   gvgActions = {}
 ) => {
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
+
+  // Track synchronous AP to prevent rapid-click negative balances
+  const remainingApRef = useRef(0);
+  useEffect(() => {
+    remainingApRef.current = player?.abilityPoints || 0;
+  }, [player?.abilityPoints]);
 
   const startGvGRaid = useCallback((warId, opponentId, defenderData, syndicateName = "Unknown", syndicateTag = "???") => {
     if (!setGvgContext || !setView) {
@@ -186,7 +192,8 @@ export const usePlayerActions = (
   }, [player, syncPlayer, playSFX, SOUNDS]);
 
   const allocateStat = (statName) => {
-    if ((player.abilityPoints || 0) <= 0) return;
+    if (remainingApRef.current <= 0) return;
+    remainingApRef.current -= 1;
     // BUG-12 FIX: Use increment() to prevent race condition on rapid clicks
     syncPlayer({ [`baseStats.${statName}`]: increment(1), abilityPoints: increment(-1) });
   };

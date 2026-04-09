@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, onSnapshot, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
 
 /**
  * usePlayerSync V2: The Primary Data Hub
@@ -167,6 +167,14 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
                 // ENFORCED GLOBAL SCHEMA (UID-First)
                 // Use _tgUser (synchronous window read) for TG fields, not async state.
+                const level = data.level || 1;
+                const baseStats = data.baseStats || { str: 10, agi: 10, dex: 10 };
+                
+                // Algorithmic AP Auto-Heal: Rebuild precise remaining AP for legacy characters or corrupted attributes
+                const spentAP = (Math.max(10, baseStats.str) - 10) + (Math.max(10, baseStats.agi) - 10) + (Math.max(10, baseStats.dex) - 10);
+                const earnedAP = level * 5;
+                const trueAP = earnedAP - spentAP;
+
                 const sanitized = {
                     ...data,
                     uid: user?.uid || null,
@@ -182,12 +190,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     tonWalletAddress: data.tonWalletAddress || null,
                     walletConflict: walletConflict || null,
 
-                    level: data.level || 1,
+                    level: level,
                     xp: data.xp || 0,
                     tokens: data.tokens || 100,
                     hp: data.hp ?? 150,
                     maxHp: data.maxHp ?? 150,
-                    baseStats: data.baseStats || { str: 10, agi: 10, dex: 10 },
+                    abilityPoints: (data.abilityPoints !== undefined && data.abilityPoints >= 0) ? data.abilityPoints : Math.max(0, trueAP),
+                    baseStats: baseStats,
                     gemx: data.gemx || { level: 1, crystalsFed: 0 },
                     dragon: data.dragon || { level: 1, fruitsFed: 0 },
                     gemxAvatar: data.gemxAvatar || 'Cosmic gemx (1).gif',
@@ -388,8 +397,42 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
       
       next.updatedAt = new Date();
 
-      // Queue these changes for the prochain Firestore sync
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
+      // Queue these changes for the prochain Firestore sync with Accumulation Logic
+      const mergeUpdates = (existing, incoming) => {
+        const merged = { ...existing };
+        Object.entries(incoming).forEach(([key, value]) => {
+          const prevValue = merged[key];
+          const isSentinel = (v) => v && typeof v === 'object' && typeof v._methodName === 'string';
+          
+          if (prevValue && isSentinel(prevValue) && isSentinel(value) && prevValue._methodName === value._methodName) {
+            const method = value._methodName;
+            if (method === 'increment') {
+              const op1 = prevValue._operand !== undefined ? prevValue._operand : (prevValue.Vc !== undefined ? prevValue.Vc : 0);
+              const op2 = value._operand !== undefined ? value._operand : (value.Vc !== undefined ? value.Vc : 0);
+              merged[key] = increment(Number(op1) + Number(op2));
+              return;
+            }
+            if (method === 'arrayUnion') {
+              const el1 = prevValue._elements || prevValue.Vc || [];
+              const el2 = value._elements || value.Vc || [];
+              const combined = [...(Array.isArray(el1) ? el1 : [el1]), ...(Array.isArray(el2) ? el2 : [el2])];
+              merged[key] = arrayUnion(...combined); // Note: arrayUnion handles duplicates itself in Firestore
+              return;
+            }
+            if (method === 'arrayRemove') {
+              const el1 = prevValue._elements || prevValue.Vc || [];
+              const el2 = value._elements || value.Vc || [];
+              const combined = [...(Array.isArray(el1) ? el1 : [el1]), ...(Array.isArray(el2) ? el2 : [el2])];
+              merged[key] = arrayRemove(...combined);
+              return;
+            }
+          }
+          merged[key] = value;
+        });
+        return merged;
+      };
+
+      pendingUpdatesRef.current = { ...mergeUpdates(pendingUpdatesRef.current, sterilized), updatedAt: serverTimestamp() };
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
