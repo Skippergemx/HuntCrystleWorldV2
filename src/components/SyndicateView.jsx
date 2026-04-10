@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Shield, Crown, Users, Rocket, Zap, Settings, 
   ArrowRight, Plus, Terminal, AlertTriangle, Search,
   RefreshCw, LogOut, UserPlus, Send, FlaskConical, MessageSquare,
-  Swords, Target, Flame, Trophy, Star, Skull
+  Swords, Target, Flame, Trophy, Star, Skull, Check, Sparkles, HelpCircle
 } from 'lucide-react';
 import { doc, getDoc, getDocs, collection, onSnapshot, query, limit, orderBy, deleteDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import React from 'react';
+import { AvatarMedia } from './GameUI';
 
 /**
  * SyndicateView V2: Neon Faction Hub
@@ -39,6 +41,53 @@ export const SyndicateView = () => {
   const chatEndRef = useRef(null);
   const [memberDetails, setMemberDetails] = useState({});
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_syndicate_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Neon Syndicate",
+      npc: 1,
+      visualType: 'factions',
+      text: "Syndicates are player-forged factions. Joining a Syndicate grants access to global combat buffs, exclusive chat, and Guild Wars.",
+      hint: "Tip: Larger Syndicates offer stronger progression."
+    },
+    {
+      title: "Capital Subsidy",
+      npc: 14,
+      visualType: 'treasury',
+      text: "By investing GX Tokens into the Research Lab, you increase your Syndicate's Tech Level, continuously improving Combat Power for all enrolled Nagas.",
+      hint: "Strategy: Claim your daily bounty to earn back investments."
+    },
+    {
+      title: "Naga Wars",
+      npc: 12,
+      visualType: 'wars',
+      text: "In the Wars tab, the leader can declare rival skirmishes. Enroll your Naga to lock in stats and attack the enemy roster for victory!",
+      hint: "Warning: Once enrolled, stats cannot be updated until the war ends."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_syndicate_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   // 1. Unified Syndicate Data Sync (V2: Root Path)
   useEffect(() => {
@@ -137,7 +186,12 @@ export const SyndicateView = () => {
       <div className="flex-1 flex flex-col p-4 md:p-8 animate-in zoom-in duration-500 overflow-y-auto relative scrollbar-hide">
         {!showFinder ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh]">
-            <button onClick={() => adventure.setView('menu')} className="absolute top-4 right-4 bg-slate-800 text-white px-6 md:px-8 py-2 md:py-3 rounded-2xl border-2 border-white/20 font-black uppercase italic shadow-[6px_6px_0_rgba(0,0,0,0.5)] hover:scale-105 transition-all z-20 text-[10px] md:text-sm">Terminating Sector</button>
+            <div className="absolute top-4 right-4 flex gap-2 z-20">
+              <button onClick={() => { setTutorialStep(0); setShowTutorial(true); }} className="bg-red-600 text-white px-3 py-2 md:py-3 rounded-2xl border-2 border-white/20 font-black shadow-[4px_4px_0_rgba(0,0,0,0.5)] hover:scale-105 transition-all">
+                <HelpCircle size={20} className="md:w-6 md:h-6" />
+              </button>
+              <button onClick={() => adventure.setView('menu')} className="bg-slate-800 text-white px-6 md:px-8 py-2 md:py-3 rounded-2xl border-2 border-white/20 font-black uppercase italic shadow-[6px_6px_0_rgba(0,0,0,0.5)] hover:scale-105 transition-all text-[10px] md:text-sm">Terminating Sector</button>
+            </div>
             <div className="w-full max-w-4xl flex flex-col items-center gap-6 md:gap-10">
               <div className="text-center group flex flex-col items-center">
                 <div className="w-24 h-24 md:w-32 md:h-32 bg-red-600 border-4 md:border-8 border-black rounded-full shadow-[10px_10px_0_rgba(0,0,0,0.8)] flex items-center justify-center mb-4 md:mb-6 group-hover:rotate-12 transition-transform duration-500">
@@ -240,7 +294,12 @@ export const SyndicateView = () => {
             ))}
           </div>
           
-          <button onClick={() => adventure.setView('menu')} className="w-full md:w-auto bg-slate-800 text-white px-8 py-2 md:py-3 rounded-xl md:rounded-2xl border-[3px] md:border-4 border-black font-black uppercase italic shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all text-[9px] md:text-xs">EXIT</button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button onClick={() => { setTutorialStep(0); setShowTutorial(true); }} className="bg-red-600 text-white px-3 md:px-4 py-2 md:py-3 rounded-xl md:rounded-2xl border-[3px] md:border-4 border-black font-black uppercase italic shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-red-500 hover:scale-105 active:scale-95 transition-all flex items-center justify-center">
+              <HelpCircle size={16} />
+            </button>
+            <button onClick={() => adventure.setView('menu')} className="w-full md:w-auto bg-slate-800 text-white px-8 py-2 md:py-3 rounded-xl md:rounded-2xl border-[3px] md:border-4 border-black font-black uppercase italic shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all text-[9px] md:text-xs">EXIT</button>
+          </div>
        </div>
 
        <div className="flex-1 flex flex-col overflow-hidden">
@@ -683,8 +742,117 @@ export const SyndicateView = () => {
                    </div>
                 </div>
              </div>
-          )}
+           )}
        </div>
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* The Comic Panel Shadow */}
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-red-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              {/* Halftone Overlay Background */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-red-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">
+                  {tutorialSteps[tutorialStep].title}
+                </h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                  Step {tutorialStep + 1} / {tutorialSteps.length}
+                </div>
+              </div>
+
+              {/* NPC & Topic Visual Section */}
+              <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
+                {/* NPC Avatar */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <div className="absolute inset-x-0 bottom-0 bg-red-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                   <div className="w-1 h-1 bg-red-400 rounded-full animate-ping" />
+                   <div className="w-[1px] h-3 bg-gradient-to-b from-red-400 to-transparent" />
+                </div>
+
+                {/* Topic Visual Aid */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black relative shadow-[4px_4px_0_rgba(255,255,255,0.1)] bg-slate-950 flex items-center justify-center shrink-0 group">
+                   {tutorialSteps[tutorialStep].visualType === 'factions' && (
+                     <Shield className="text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 animate-bounce" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'treasury' && (
+                     <Zap className="text-amber-400 drop-shadow-[0_0_10px_rgba(245,158,11,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'wars' && (
+                     <Swords className="text-pink-400 drop-shadow-[0_0_10px_rgba(244,114,182,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                </div>
+                
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none opacity-10">
+                   <div className="w-full h-full rounded-full border-2 border-dashed border-red-400 animate-spin-slow"></div>
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
+                <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
+                  <div className="absolute -top-3 -left-1 bg-red-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                    Incoming Transmission
+                  </div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                    "{tutorialSteps[tutorialStep].text}"
+                  </p>
+                  
+                  {/* Speech Bubble Arrow */}
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+
+                <div className="bg-black/60 p-1.5 rounded-lg border border-red-500/30 mb-3 shrink-0">
+                   <p className="text-[8px] font-black text-red-400 uppercase italic tracking-widest text-center">
+                      ⚡ {tutorialSteps[tutorialStep].hint}
+                   </p>
+                </div>
+
+                {/* Don't show again checkbox */}
+                <div className="flex items-center justify-center gap-1.5 mb-3 shrink-0">
+                   <button 
+                     onClick={() => setDontShowAgain(!dontShowAgain)}
+                     className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-red-500' : 'bg-slate-800'}`}
+                   >
+                     {dontShowAgain && <Check size={10} className="text-white" />}
+                   </button>
+                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>
+                     Don't show this briefing again
+                   </span>
+                </div>
+
+                <div className="flex gap-2 shrink-0 pb-1">
+                   {tutorialStep > 0 && (
+                      <button
+                        onClick={() => setTutorialStep(prev => prev - 1)}
+                        className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px]"
+                      >
+                        BACK
+                      </button>
+                   )}
+                  <button
+                    onClick={nextStep}
+                    className="flex-[2] bg-red-600 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-red-500 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[10px] md:text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {tutorialStep === tutorialSteps.length - 1 ? 'ENTER FACTION' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
        <style>{`
          .custom-scrollbar::-webkit-scrollbar { width: 8px; }

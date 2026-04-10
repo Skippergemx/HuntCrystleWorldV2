@@ -136,7 +136,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 if (farcasterContext && user.walletAddress) {
                     const scan = await identitySentry(user.walletAddress);
                     
-                    if (!scan.success && scan.collision.id !== primaryAuthId) {
+                    if (!scan.success && scan.collision && scan.collision.id !== primaryAuthId) {
                         walletConflict = {
                           ownerId: scan.collision.id,
                           isFarcaster: scan.collision.platform === 'FARCASTER',
@@ -171,9 +171,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 const baseStats = data.baseStats || { str: 10, agi: 10, dex: 10 };
                 
                 // Algorithmic AP Auto-Heal: Rebuild precise remaining AP for legacy characters or corrupted attributes
-                const spentAP = (Math.max(10, baseStats.str) - 10) + (Math.max(10, baseStats.agi) - 10) + (Math.max(10, baseStats.dex) - 10);
-                const earnedAP = level * 5;
-                const trueAP = earnedAP - spentAP;
+                const safeStr = Number(baseStats.str) || 10;
+                const safeAgi = Number(baseStats.agi) || 10;
+                const safeDex = Number(baseStats.dex) || 10;
+                
+                const spentAP = (Math.max(10, safeStr) - 10) + (Math.max(10, safeAgi) - 10) + (Math.max(10, safeDex) - 10);
+                const earnedAP = (Number(level) || 1) * 5;
+                const trueAP = isNaN(earnedAP - spentAP) ? 0 : (earnedAP - spentAP);
 
                 const sanitized = {
                     ...data,
@@ -193,15 +197,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     level: level,
                     xp: data.xp || 0,
                     tokens: data.tokens || 100,
-                    hp: data.hp ?? 150,
-                    maxHp: data.maxHp ?? 150,
-                    abilityPoints: (data.abilityPoints !== undefined && data.abilityPoints >= 0) ? data.abilityPoints : Math.max(0, trueAP),
+                    hp: Number(data.hp ?? 150),
+                    maxHp: Number(data.maxHp ?? 150),
+                    abilityPoints: (data.abilityPoints !== undefined && data.abilityPoints !== null && !isNaN(data.abilityPoints) && data.abilityPoints >= 0) ? data.abilityPoints : Math.max(0, trueAP),
                     baseStats: baseStats,
                     gemx: data.gemx || { level: 1, crystalsFed: 0 },
                     dragon: data.dragon || { level: 1, fruitsFed: 0 },
                     gemxAvatar: data.gemxAvatar || 'Cosmic gemx (1).gif',
                     recipes: data.recipes || ['crystle_blade'],
-                    inventory: Array.isArray(data.inventory) ? Object.fromEntries(data.inventory.map(i => [i.id || `ITEM_${Date.now()}_${Math.random()}`, i])) : (data.inventory || {}),
+                    inventory: Array.isArray(data.inventory) ? Object.fromEntries(data.inventory.filter(i => i).map(i => [i.id || `ITEM_${Date.now()}_${Math.random()}`, i])) : (data.inventory || {}),
                     equipped: data.equipped || { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
                     maxDepth: data.maxDepth || 1,
                     maxDepthScore: data.maxDepthScore || (100000 + (data.maxDepth || 1)),
@@ -332,7 +336,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   //   - LOCAL PATH: Converts Firestore sentinels to plain math for instant UI feedback.
   //   - REMOTE PATH: Passes the original sentinel payload directly to Firestore.
   // This is more readable and immune to Firestore SDK internal property renames.
-  const syncPlayer = useCallback(async (updates) => {
+  const syncPlayer = useCallback(async (updates, immediate = false) => {
     if (!user && !isTelegram) return;
     if (farcasterContext && !user?.farcasterFID) return;
     if (!activeDocId) return;
@@ -402,7 +406,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
-      syncTimeoutRef.current = setTimeout(async () => {
+      const performSync = async () => {
         try {
           const docRef = doc(db, 'players', activeDocId);
           
@@ -447,7 +451,13 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           setLastSyncFailed(true);
           setIsSyncing(false);
         }
-      }, 2000); 
+      };
+
+      if (immediate) {
+        performSync();
+      } else {
+        syncTimeoutRef.current = setTimeout(performSync, 2000); 
+      }
 
       return next;
     });

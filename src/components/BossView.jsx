@@ -1,5 +1,6 @@
-import React from 'react';
-import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw, Check, Sparkles } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
 import { X } from 'lucide-react';
@@ -34,6 +35,53 @@ export const BossView = () => {
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
   const { autoTimeLeft, dragonTimeLeft } = gameLoop;
   const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_boss_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Abyssal Breach",
+      npc: 17,
+      visualType: 'boss',
+      text: "Warning! You have entered Sector Ω. Boss entities here are Immortal and cannot be destroyed. Your goal is to survive and deal maximum damage.",
+      hint: "Tip: Ensure you have enough HP Potions equipped."
+    },
+    {
+      title: "Damage Record",
+      npc: 6,
+      visualType: 'damage',
+      text: "Every point of damage you deal is permanently added to your Global Boss Damage rating, which is tracked on the Leaderboard.",
+      hint: "Strategy: Maximize your Strength (STR) for higher output."
+    },
+    {
+      title: "Overload Protocol",
+      npc: 12,
+      visualType: 'combat',
+      text: "Spam the Overload button to attack! But be careful—Bosses can strike back with devastating stuns that disable your systems temporarily.",
+      hint: "Warning: Retreating will save your accumulated damage."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_boss_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   const isAutoActive = autoTimeLeft > 0;
   const isStunned = stunTimeLeft > 0;
@@ -80,7 +128,10 @@ export const BossView = () => {
                     <span className="text-[7px] md:text-[10px] font-black uppercase tracking-widest italic leading-none">Sector Ω</span>
                 </div>
                 <button 
-                  onClick={() => openGuide('boss')} 
+                  onClick={() => {
+                    setTutorialStep(0);
+                    setShowTutorial(true);
+                  }} 
                   className="p-1.5 md:p-2.5 bg-red-600 border-[2px] md:border-[3px] border-black text-white shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-red-400 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform rotate-3"
                   title="Tactical Intel"
                 >
@@ -327,6 +378,115 @@ export const BossView = () => {
           cancelText="NO, CONTINUE"
         />
       </div>
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* The Comic Panel Shadow */}
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-red-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              {/* Halftone Overlay Background */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-red-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">
+                  {tutorialSteps[tutorialStep].title}
+                </h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                  Step {tutorialStep + 1} / {tutorialSteps.length}
+                </div>
+              </div>
+
+              {/* NPC & Topic Visual Section */}
+              <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
+                {/* NPC Avatar */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <div className="absolute inset-x-0 bottom-0 bg-red-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                   <div className="w-1 h-1 bg-red-400 rounded-full animate-ping" />
+                   <div className="w-[1px] h-3 bg-gradient-to-b from-red-400 to-transparent" />
+                </div>
+
+                {/* Topic Visual Aid */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black relative shadow-[4px_4px_0_rgba(255,255,255,0.1)] bg-slate-950 flex items-center justify-center shrink-0 group">
+                   {tutorialSteps[tutorialStep].visualType === 'boss' && (
+                     <Skull className="text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 animate-bounce" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'damage' && (
+                     <TrendingUp className="text-orange-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'combat' && (
+                     <Activity className="text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                </div>
+                
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none opacity-10">
+                   <div className="w-full h-full rounded-full border-2 border-dashed border-red-400 animate-spin-slow"></div>
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
+                <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
+                  <div className="absolute -top-3 -left-1 bg-red-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                    Incoming Transmission
+                  </div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                    "{tutorialSteps[tutorialStep].text}"
+                  </p>
+                  
+                  {/* Speech Bubble Arrow */}
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+
+                <div className="bg-black/60 p-1.5 rounded-lg border border-red-500/30 mb-3 shrink-0">
+                   <p className="text-[8px] font-black text-red-400 uppercase italic tracking-widest text-center">
+                      ⚡ {tutorialSteps[tutorialStep].hint}
+                   </p>
+                </div>
+
+                {/* Don't show again checkbox */}
+                <div className="flex items-center justify-center gap-1.5 mb-3 shrink-0">
+                   <button 
+                     onClick={() => setDontShowAgain(!dontShowAgain)}
+                     className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-red-500' : 'bg-slate-800'}`}
+                   >
+                     {dontShowAgain && <Check size={10} className="text-white" />}
+                   </button>
+                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>
+                     Don't show this briefing again
+                   </span>
+                </div>
+
+                <div className="flex gap-2 shrink-0 pb-1">
+                   {tutorialStep > 0 && (
+                      <button
+                        onClick={() => setTutorialStep(prev => prev - 1)}
+                        className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px]"
+                      >
+                        BACK
+                      </button>
+                   )}
+                  <button
+                    onClick={nextStep}
+                    className="flex-[2] bg-red-600 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-red-500 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[10px] md:text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {tutorialStep === tutorialSteps.length - 1 ? 'ENGAGE TARGET' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

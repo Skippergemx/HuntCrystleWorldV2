@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send, MessageSquare } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send, MessageSquare, Check, Sparkles } from 'lucide-react';
 import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getFirestore, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -61,6 +62,53 @@ export const PvpRoomView = React.memo(() => {
   const attackCooldownRef = useRef(false);
   const [combatAnim, setCombatAnim] = useState(null); 
   const [isJoining, setIsJoining] = useState(true);
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_pvp_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "The Battle Grid",
+      npc: 1,
+      visualType: 'grid',
+      text: "You have entered a highly unstable PvP Sector. Here, you are placed in a live sharded environment with other active hunters.",
+      hint: "Tip: The grid synchronizes in real-time."
+    },
+    {
+      title: "Live Combat",
+      npc: 11,
+      visualType: 'combat',
+      text: "Tap on any networked enemy to initiate a strike! Your Strength (STR) dictates your damage, while Agility (AGI) increases dodge chances against incoming hits.",
+      hint: "Strategy: Watch their HP bars and exploit weak targets."
+    },
+    {
+      title: "System Defeat",
+      npc: 17,
+      visualType: 'penalty',
+      text: "If your core HP reaches zero, you will face a fatal crash. Defeat results in an immediate ejection and a 30-second grid lockout penalty.",
+      hint: "Warning: Retreat via the EXIT button before HP hits 0!"
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_pvp_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   // Sharding: Randomly assign user to a distinct Grid to limit Firestore read burst.
   const GRIDS = ['Alpha', 'Beta', 'Omega', 'Sigma'];
@@ -315,7 +363,10 @@ export const PvpRoomView = React.memo(() => {
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic h-full min-h-[500px]">
-       <Header title="NEON ARENA: PVP GRID" onClose={adventure.goBack} onHelp={() => openGuide('pvp')} />
+       <Header title="NEON ARENA: PVP GRID" onClose={adventure.goBack} onHelp={() => {
+         setTutorialStep(0);
+         setShowTutorial(true);
+       }} />
 
        {/* Arena Status Header */}
        <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">
@@ -378,6 +429,115 @@ export const PvpRoomView = React.memo(() => {
             <MessageSquare size={24} />
          </button>
        )}
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* The Comic Panel Shadow */}
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-cyan-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              {/* Halftone Overlay Background */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-cyan-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">
+                  {tutorialSteps[tutorialStep].title}
+                </h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                  Step {tutorialStep + 1} / {tutorialSteps.length}
+                </div>
+              </div>
+
+              {/* NPC & Topic Visual Section */}
+              <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
+                {/* NPC Avatar */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <div className="absolute inset-x-0 bottom-0 bg-cyan-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                   <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+                   <div className="w-[1px] h-3 bg-gradient-to-b from-cyan-400 to-transparent" />
+                </div>
+
+                {/* Topic Visual Aid */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black relative shadow-[4px_4px_0_rgba(255,255,255,0.1)] bg-slate-950 flex items-center justify-center shrink-0 group">
+                   {tutorialSteps[tutorialStep].visualType === 'grid' && (
+                     <Target className="text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'combat' && (
+                     <Sword className="text-red-400 drop-shadow-[0_0_10px_rgba(239,68,68,0.5)] z-10 animate-bounce" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'penalty' && (
+                     <Skull className="text-orange-400 drop-shadow-[0_0_10px_rgba(249,115,22,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                </div>
+                
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none opacity-10">
+                   <div className="w-full h-full rounded-full border-2 border-dashed border-cyan-400 animate-spin-slow"></div>
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
+                <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
+                  <div className="absolute -top-3 -left-1 bg-cyan-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                    Incoming Transmission
+                  </div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                    "{tutorialSteps[tutorialStep].text}"
+                  </p>
+                  
+                  {/* Speech Bubble Arrow */}
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+
+                <div className="bg-black/60 p-1.5 rounded-lg border border-cyan-500/30 mb-3 shrink-0">
+                   <p className="text-[8px] font-black text-cyan-400 uppercase italic tracking-widest text-center">
+                      ⚡ {tutorialSteps[tutorialStep].hint}
+                   </p>
+                </div>
+
+                {/* Don't show again checkbox */}
+                <div className="flex items-center justify-center gap-1.5 mb-3 shrink-0">
+                   <button 
+                     onClick={() => setDontShowAgain(!dontShowAgain)}
+                     className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-cyan-500' : 'bg-slate-800'}`}
+                   >
+                     {dontShowAgain && <Check size={10} className="text-white" />}
+                   </button>
+                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>
+                     Don't show this briefing again
+                   </span>
+                </div>
+
+                <div className="flex gap-2 shrink-0 pb-1">
+                   {tutorialStep > 0 && (
+                      <button
+                        onClick={() => setTutorialStep(prev => prev - 1)}
+                        className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px]"
+                      >
+                        BACK
+                      </button>
+                   )}
+                  <button
+                    onClick={nextStep}
+                    className="flex-[2] bg-cyan-600 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-cyan-500 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[10px] md:text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {tutorialStep === tutorialSteps.length - 1 ? 'ENTER GRID' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
        <style>{`
          .custom-scrollbar::-webkit-scrollbar { width: 5px; }

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
-import { Trophy, Skull, Star, ChevronUp, Swords, Medal, Coins } from 'lucide-react';
+import { Trophy, Skull, Star, ChevronUp, Swords, Medal, Coins, Check, Sparkles } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import React from 'react';
 
@@ -13,6 +14,53 @@ export const LeaderboardView = React.memo(() => {
   const { leaderboard, user, player, gameLoop, TAVERN_MATES, adventure, openGuide, updateBoardTab, activeBoardTab } = useGame();
   const { setView } = adventure;
   const { dragonTimeLeft } = gameLoop;
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_leaderboard_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Hall of Fame",
+      npc: 4,
+      visualType: 'fame',
+      text: "Welcome to the central terminal of the highest-ranking Hunters in the Meta-verse. Check your global standing here.",
+      hint: "Tip: Top Hunters receive exclusive seasonal rewards!"
+    },
+    {
+      title: "Ranking Metrics",
+      npc: 2,
+      visualType: 'categories',
+      text: "You can filter the leaderboard by multiple categories: Player Level, Boss Damage output, Dungeon Depth, and Token Wealth.",
+      hint: "Strategy: Specialize in one area to climb faster."
+    },
+    {
+      title: "Identity Uplink",
+      npc: 5,
+      visualType: 'uplink',
+      text: "As long as your network connection is active, your stats are periodically updated and synchronized with the global grid.",
+      hint: "Warning: Updates may take a few moments to broadcast."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_leaderboard_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   // Tabs configuration
   const tabs = [
@@ -37,7 +85,10 @@ export const LeaderboardView = React.memo(() => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
 
-      <Header title="ELITE HALL OF FAME" onClose={adventure.goBack} onHelp={() => openGuide('leaderboard')} icon={<Trophy className="text-amber-400" />} />
+      <Header title="ELITE HALL OF FAME" onClose={adventure.goBack} onHelp={() => {
+        setTutorialStep(0);
+        setShowTutorial(true);
+      }} icon={<Trophy className="text-amber-400" />} />
 
       {/* Your Rank Pin (V2 Design) */}
       {selfRank && (
@@ -137,6 +188,115 @@ export const LeaderboardView = React.memo(() => {
           );
         })}
       </div>
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* The Comic Panel Shadow */}
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-yellow-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              {/* Halftone Overlay Background */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #eab308 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-yellow-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">
+                  {tutorialSteps[tutorialStep].title}
+                </h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                  Step {tutorialStep + 1} / {tutorialSteps.length}
+                </div>
+              </div>
+
+              {/* NPC & Topic Visual Section */}
+              <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
+                {/* NPC Avatar */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <div className="absolute inset-x-0 bottom-0 bg-yellow-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">BROADCASTER</div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                   <div className="w-1 h-1 bg-yellow-400 rounded-full animate-ping" />
+                   <div className="w-[1px] h-3 bg-gradient-to-b from-yellow-400 to-transparent" />
+                </div>
+
+                {/* Topic Visual Aid */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black relative shadow-[4px_4px_0_rgba(255,255,255,0.1)] bg-slate-950 flex items-center justify-center shrink-0 group">
+                   {tutorialSteps[tutorialStep].visualType === 'fame' && (
+                     <Trophy className="text-yellow-400 drop-shadow-[0_0_10px_rgba(234,179,8,0.5)] z-10 animate-bounce" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'categories' && (
+                     <Star className="text-purple-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'uplink' && (
+                     <Medal className="text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] z-10 animate-pulse" size={40} />
+                   )}
+                </div>
+                
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none opacity-10">
+                   <div className="w-full h-full rounded-full border-2 border-dashed border-yellow-400 animate-spin-slow"></div>
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
+                <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
+                  <div className="absolute -top-3 -left-1 bg-yellow-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                    Incoming Transmission
+                  </div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                    "{tutorialSteps[tutorialStep].text}"
+                  </p>
+                  
+                  {/* Speech Bubble Arrow */}
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+
+                <div className="bg-black/60 p-1.5 rounded-lg border border-yellow-500/30 mb-3 shrink-0">
+                   <p className="text-[8px] font-black text-yellow-400 uppercase italic tracking-widest text-center">
+                      ⚡ {tutorialSteps[tutorialStep].hint}
+                   </p>
+                </div>
+
+                {/* Don't show again checkbox */}
+                <div className="flex items-center justify-center gap-1.5 mb-3 shrink-0">
+                   <button 
+                     onClick={() => setDontShowAgain(!dontShowAgain)}
+                     className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-yellow-500' : 'bg-slate-800'}`}
+                   >
+                     {dontShowAgain && <Check size={10} className="text-black" />}
+                   </button>
+                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>
+                     Don't show this briefing again
+                   </span>
+                </div>
+
+                <div className="flex gap-2 shrink-0 pb-1">
+                   {tutorialStep > 0 && (
+                      <button
+                        onClick={() => setTutorialStep(prev => prev - 1)}
+                        className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px]"
+                      >
+                        BACK
+                      </button>
+                   )}
+                  <button
+                    onClick={nextStep}
+                    className="flex-[2] bg-yellow-600 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-yellow-500 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[10px] md:text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {tutorialStep === tutorialSteps.length - 1 ? 'VIEW STANDINGS' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }

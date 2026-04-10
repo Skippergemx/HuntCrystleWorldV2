@@ -15,6 +15,7 @@ export const AdminPanelView = React.memo(() => {
   const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', or 'system'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [errorReports, setErrorReports] = useState([]);
   const itemsPerPage = 10;
 
   const isAdmin = userEmail === 'skippergemx@gmail.com';
@@ -190,6 +191,33 @@ export const AdminPanelView = React.memo(() => {
   };
 
 
+
+  const fetchErrorReports = async () => {
+    setLoading(true);
+    try {
+      const reportsSnap = await getDocs(query(collection(db, 'error_reports')));
+      const reports = [];
+      reportsSnap.forEach(d => reports.push({ id: d.id, ...d.data() }));
+      setErrorReports(reports.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Failed to fetch error reports.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteErrorReport = async (id) => {
+    if (!window.confirm("Purge this diagnostic log from primary memory?")) return;
+    try {
+       await deleteDoc(doc(db, 'error_reports', id));
+       setErrorReports(prev => prev.filter(r => r.id !== id));
+       setMessage({ type: 'success', text: 'System log ejected successfully.' });
+    } catch (e) {
+       console.error(e);
+       setMessage({ type: 'error', text: 'Ejection failed.' });
+    }
+  };
 
   const syncAllPlayersToLeaderboard = async () => {
     if (!window.confirm("RANKING HEAL PROTOCOL: This will migrate legacy 'maxDepth' data to the new 'maxDepthFloor' and 'maxDepthScore' format for all players. Continue?")) return;
@@ -544,6 +572,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'system' ? 'bg-emerald-600 text-white border-emerald-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           System Health
+        </button>
+        <button 
+          onClick={() => { setActiveTab('errors'); fetchErrorReports(); }}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'errors' ? 'bg-red-500 text-white border-red-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          Fault Logs
         </button>
       </div>
 
@@ -914,7 +948,61 @@ export const AdminPanelView = React.memo(() => {
             </table>
           </div>
         </div>
-      ) : (
+      ) : activeTab === 'errors' ? (
+        <div className="bg-black border-4 border-black p-4 md:p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4">
+           <div className="flex justify-between items-center border-l-4 border-red-600 pl-4">
+              <h2 className="text-xl font-black text-white uppercase italic">Diagnostic Fault Logs</h2>
+              <button 
+                onClick={fetchErrorReports} 
+                className="p-2 bg-slate-900 border-2 border-slate-800 text-red-500 hover:bg-red-600 hover:text-white transition-all rounded"
+              >
+                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              </button>
+           </div>
+
+           <div className="grid gap-4">
+              {errorReports.map(err => (
+                 <div key={err.id} className="bg-slate-900/50 border-2 border-slate-800 p-4 rounded-xl flex flex-col gap-2 relative group overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                       <button onClick={() => deleteErrorReport(err.id)} className="text-red-500 hover:text-red-400 p-1 bg-black rounded shadow-lg border border-red-900">
+                          <Trash2 size={14} />
+                       </button>
+                    </div>
+
+                    <div className="flex justify-between items-start gap-4 flex-wrap">
+                       <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                          <span className="text-[10px] md:text-sm font-black text-white uppercase italic">{err.message}</span>
+                       </div>
+                       <span className="text-[8px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">{err.timestamp?.toDate ? err.timestamp.toDate().toLocaleString() : 'Just Now'}</span>
+                    </div>
+
+                    <div className="bg-black/40 p-3 rounded-lg border border-slate-800/50 overflow-x-auto">
+                       <p className="text-[8px] md:text-[10px] font-mono text-slate-500/80 leading-none line-clamp-2 md:line-clamp-none italic whitespace-nowrap md:whitespace-normal">{err.stack}</p>
+                    </div>
+
+                    <div className="flex items-center gap-4 flex-wrap mt-1">
+                       <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-800 rounded border border-slate-700">
+                          <Users size={10} className="text-slate-500" />
+                          <span className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase">{err.userName || 'Unknown'} <span className="opacity-40 italic">({err.userId?.slice(0,6)})</span></span>
+                       </div>
+                       <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-800 rounded border border-slate-700">
+                          <Activity size={10} className="text-cyan-500" />
+                          <span className="text-[8px] md:text-[9px] font-black text-cyan-400 uppercase italic">VIEW: {err.view || 'N/A'}</span>
+                       </div>
+                       <div className="text-[7px] md:text-[8px] font-mono text-slate-600 truncate max-w-[200px] md:max-w-xs">{err.userAgent}</div>
+                    </div>
+                 </div>
+              ))}
+              {errorReports.length === 0 && !loading && (
+                 <div className="py-20 text-center border-2 border-dashed border-slate-800 rounded-2xl">
+                    <CheckCircle2 size={48} className="mx-auto text-emerald-900 mb-4 opacity-50" />
+                    <p className="text-slate-600 font-black uppercase italic tracking-[0.2em]">All sectors functional. Zero faults detected.</p>
+                 </div>
+              )}
+           </div>
+        </div>
+      ) : activeTab === 'system' ? (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
            <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-emerald-600 pl-4">Metametrics Analyzer</h2>
 
@@ -1004,6 +1092,22 @@ export const AdminPanelView = React.memo(() => {
                  </div>
               </div>
            </div>
+        </div>
+      ) : (
+        <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4">
+          <h2 className="text-xl font-black text-white uppercase italic mb-6">System Health Matrix</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border-2 border-slate-800 p-6 rounded-xl relative overflow-hidden">
+               <Activity className="absolute bottom-[-20px] right-[-20px] w-24 h-24 text-cyan-500/10 -rotate-12" />
+               <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest mb-2">Neural Latency</p>
+               <p className="text-2xl font-black text-white italic">24ms <span className="text-xs text-emerald-500 uppercase not-italic">Nominal</span></p>
+            </div>
+            <div className="bg-slate-900 border-2 border-slate-800 p-6 rounded-xl relative overflow-hidden">
+               <ShieldAlert className="absolute bottom-[-20px] right-[-20px] w-54 h-54 text-emerald-500/10 -rotate-12" />
+               <p className="text-slate-500 font-black text-[10px] uppercase tracking-widest mb-2">Blockade Status</p>
+               <p className="text-2xl font-black text-white italic">ACTIVE <span className="text-xs text-cyan-500 uppercase not-italic">v4.0.2</span></p>
+            </div>
+          </div>
         </div>
       )}
     </div>

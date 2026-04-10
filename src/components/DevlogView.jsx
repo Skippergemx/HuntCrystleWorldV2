@@ -23,6 +23,28 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.6.0',
+    date: '2026-04-10',
+    title: 'GLOBAL TUTORIAL NETWORK — FULL GRID BRIEFING DEPLOYED',
+    category: 'UX & ONBOARDING',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'purple',
+    description: 'The Hunt Crystle Grid is now fully briefed. Every major game module has received its own context-aware, comic-panel style tutorial briefing system — featuring NPC narrators, thematic color accents, visual icons, and a "Don\'t show this again" persistence toggle backed by localStorage.',
+    changes: [
+      'New: Portal-based Tutorial Modals deployed to ALL 19 game modules',
+      'UX: Each module has 3-step, context-specific onboarding content',
+      'UX: "Don\'t show again" toggle with localStorage persistence per module',
+      'UI: Comic-panel aesthetic — halftone backgrounds, tilted banners, speech bubbles',
+      'UI: NPC avatar + topic icon displayed side-by-side per tutorial step',
+      'Feature: Help (?) button on every Header to manually re-trigger briefing',
+      'Modules: Menu Hub, Dungeon Map, PvP Arena, Tavern, Forge, Gear, Inventory',
+      'Modules: Shop, Marketplace, Laboratory, Database, Leaderboard, Pets',
+      'Modules: Boss Breach, Syndicate, Dragons Ground, Identity, Naga Combat, Attributes'
+    ],
+    media: '/assets/monsters/Void Sector 7/Void Wraith.jpg'
+  },
+  {
     id: '1.5.0',
     date: '2026-04-08',
     title: 'ELEMENTAL PURIFICATION & XENON LAB REBIRTH',

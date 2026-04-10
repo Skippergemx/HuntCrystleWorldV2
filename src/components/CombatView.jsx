@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight, RefreshCw, FlaskConical, WandSparkles, Sparkles } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
@@ -122,6 +122,20 @@ export const CombatView = React.memo(() => {
   const requiredTool = useMemo(() => tamingTools[currentEnemyElement], [tamingTools, currentEnemyElement]);
   const hasRequiredTool = useMemo(() => requiredTool && Object.values(player.inventory || {}).some(i => i.id?.startsWith(requiredTool)), [player.inventory, requiredTool]);
   const toolDetails = useMemo(() => requiredTool ? LOOTS.find(l => l.id === requiredTool) : null, [requiredTool, LOOTS]);
+
+  useEffect(() => {
+    // Phase 4: Emergency Gate Reset on Mount
+    // Ensures if the player re-enters rapidly, the mutex is clean
+    if (combat.combatBusRef) {
+      combat.combatBusRef.current = false;
+    }
+  }, []);
+
+  if (!enemy) return (
+    <div className="flex-1 flex items-center justify-center bg-black text-cyan-500 font-black italic uppercase tracking-widest animate-pulse">
+      Initialising Combat Stream...
+    </div>
+  );
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}>

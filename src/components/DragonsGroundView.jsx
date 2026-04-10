@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair } from 'lucide-react';
-import { Header } from './GameUI';
+import { createPortal } from 'react-dom';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair, Check } from 'lucide-react';
+import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { calculateNagaStats } from '../utils/gameLogic';
 
@@ -17,7 +18,61 @@ export const DragonsGroundView = React.memo(() => {
   const [fruits, setFruits] = useState([]);
   const [monsters, setMonsters] = useState([]);
   const [message, setMessage] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
   const groundRef = useRef(null);
+
+  // Auto-tutorial trigger
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_dragons_ground_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Welcome, Hunter",
+      npc: 1,
+      visualType: 'fruit',
+      text: "Welcome to the Dragons Ground! This sacred field attracts elusive Crystle Monsters. Every time a Crystle Monster reaches its destination, it has a 15% CHANCE to manifest a Dragon Fruit. Harvest them quickly to begin your journey!",
+      hint: "Tip: Collect Rare/Legendary fruits for much faster leveling."
+    },
+    {
+      title: "The GEMX Beacon",
+      npc: 4,
+      visualType: 'gemx',
+      text: "At the center of this field is the GEMX. It acts as a biological beacon that attracts Crystle Monsters and the Dragon/Naga. You can level up your GEMX with Crystle Shards obtained in the Dungeons (Neon Slump). When you happen to collect one, keep your Crystle Shard for your GEMX upgrade! Higher levels attract MORE Crystle Monsters.",
+      hint: "Storage: Keep Shards for GEMX Resonance."
+    },
+    {
+      title: "Patience of the Sentinel",
+      npc: 2,
+      visualType: 'monster',
+      text: "Crystle Monsters take time to be attracted to the Dragons Ground. Be patient! You can leave this screen open while you do other work. Note: Fruits ONLY spawn while you are actively on these grounds. Leaving or closing the game stops the harvest cycle.",
+      hint: "Note: Stay connected to keep the harvest active."
+    },
+    {
+      title: "Companion Ascension",
+      npc: 5,
+      visualType: 'dragon',
+      text: "Leveling up your Dragon/Naga unlocks a powerful stat boost for your character. To activate these stat boosts, you need to summon the Blessing of your Dragon/Naga by offering a stash of your accumulated GX treasures! Just click the \"Summon\" button whenever you are ready. These boosts are active for 24 hours!",
+      hint: "Ritual: Offer GX to activate the Blessing."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_dragons_ground_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   const MONSTER_POOL = [
     { name: 'Venomhide Drake', folder: 'Neon Slums' },
@@ -112,9 +167,9 @@ export const DragonsGroundView = React.memo(() => {
   // Spawn and Move logic (Dependency-free interval for smooth roaming)
   useEffect(() => {
     const timer = setInterval(() => {
-      // 1. Spawn monsters (Cap at 15 for performance)
+      // 1. Spawn monsters (Scaling capacity per GEMX Level)
       setMonsters(prev => {
-        if (prev.length < Math.min(15, gemx.level * 3)) {
+        if (prev.length < Math.min(50, gemx.level * 3)) {
           if (Math.random() < 0.4) {
             const spawnSide = Math.floor(Math.random() * 4);
             let x, y;
@@ -214,11 +269,25 @@ export const DragonsGroundView = React.memo(() => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-emerald-950/40 relative">
+      {message && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
+          <div className={`px-4 py-1.5 rounded-lg border-2 font-black uppercase italic text-[10px] shadow-2xl backdrop-blur-md ${message.type === 'success' ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' :
+            message.type === 'error' ? 'bg-red-950/90 border-red-500 text-red-100' :
+              'bg-blue-950/90 border-blue-500 text-blue-100'
+            }`}>
+            {message.type === 'success' && '🌟 '}{message.text}
+          </div>
+        </div>
+      )}
+
       <div className="p-4 z-30">
         <Header 
           title="Dragons Ground" 
           onClose={adventure.goBack} 
-          onHelp={() => openGuide('menu')}
+          onHelp={() => {
+            setTutorialStep(0);
+            setShowTutorial(true);
+          }}
         />
         <div className="flex items-center gap-2 mt-2">
           <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
@@ -240,17 +309,6 @@ export const DragonsGroundView = React.memo(() => {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-none p-2 md:p-3 grid grid-cols-2 gap-2 md:gap-4 bg-emerald-950/40 border-b-2 border-black z-20 relative">
-          {message && (
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 animate-in slide-in-from-top-2 fade-in duration-300 pointer-events-none w-max">
-              <div className={`px-4 py-1.5 rounded-lg border-2 font-black uppercase italic text-[10px] shadow-xl backdrop-blur-md ${message.type === 'success' ? 'bg-emerald-950/90 border-emerald-500 text-emerald-400' :
-                message.type === 'error' ? 'bg-red-950/90 border-red-500 text-red-100' :
-                  'bg-blue-950/90 border-blue-500 text-blue-100'
-                }`}>
-                {message.text}
-              </div>
-            </div>
-          )}
-
           <div className="bg-black/40 border-2 border-cyan-500/30 rounded-xl p-2 flex items-center gap-3">
             <div className="relative group cursor-pointer shrink-0" onClick={feedGem}>
               <div className="absolute inset-0 bg-cyan-400 blur-xl opacity-30 animate-pulse"></div>
@@ -436,6 +494,152 @@ export const DragonsGroundView = React.memo(() => {
           <p className="text-[7px] md:text-[9px] font-black text-slate-400 uppercase tracking-wider">Boost Stats</p>
         </div>
       </div>
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* The Comic Panel Shadow */}
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-cyan-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              {/* Halftone Overlay Background */}
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-cyan-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                  {tutorialSteps[tutorialStep].title}
+                </h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                  Step {tutorialStep + 1} / {tutorialSteps.length}
+                </div>
+              </div>
+
+              {/* NPC & Topic Visual Section */}
+              <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
+                {/* NPC Avatar */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <div className="absolute inset-x-0 bottom-0 bg-cyan-600 text-[6px] font-black text-white text-center py-0.5 uppercase italic">SENTINEL</div>
+                </div>
+
+                <div className="flex flex-col items-center gap-1">
+                   <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+                   <div className="w-[1px] h-3 bg-gradient-to-b from-cyan-400 to-transparent" />
+                </div>
+
+                {/* Topic Visual Aid */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black relative shadow-[4px_4px_0_rgba(255,255,255,0.1)] bg-slate-950 flex items-center justify-center shrink-0 group">
+                   {tutorialSteps[tutorialStep].visualType === 'fruit' && (
+                     <div className="relative flex items-center justify-center">
+                       <div className="text-3xl md:text-5xl animate-bounce drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] z-10">🍒</div>
+                       <img 
+                         src="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" 
+                         className="absolute -bottom-1 -right-2 md:-right-3 md:-bottom-2 w-6 h-6 md:w-8 md:h-8 rounded-full border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] object-cover bg-slate-800 z-20" 
+                         alt="Monster" 
+                       />
+                     </div>
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'gemx' && (
+                     <div className="relative flex items-center justify-center w-full h-full">
+                       <img 
+                         src={`/assets/dragonsground/gemx/${player.gemxAvatar || 'gemx (1).gif'}`} 
+                         className="w-full h-full object-cover animate-pulse rounded-lg z-10" 
+                         alt="Gemx Info" 
+                       />
+                       <div className="absolute -bottom-1 -right-2 md:-right-3 md:-bottom-2 w-6 h-6 md:w-8 md:h-8 rounded-full border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] bg-slate-800 z-20 flex items-center justify-center">
+                         <Gem size={14} className="text-cyan-400 absolute" />
+                       </div>
+                     </div>
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'monster' && (
+                     <div className="relative flex items-center justify-center w-full h-full">
+                       <img 
+                         src="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" 
+                         className="w-full h-full object-cover animate-in slide-in-from-right-10 rounded-lg z-10" 
+                         alt="Monster Info" 
+                       />
+                       <div className="absolute -bottom-1 -right-2 md:-right-3 md:-bottom-2 w-6 h-6 md:w-8 md:h-8 rounded-full border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] bg-slate-800 z-20 flex items-center justify-center text-[11px] md:text-sm">
+                         🍒
+                       </div>
+                     </div>
+                   )}
+                   {tutorialSteps[tutorialStep].visualType === 'dragon' && (
+                     <div className="relative flex items-center justify-center w-full h-full">
+                       <img 
+                         src="/assets/dragonsground/dragons/DragonAvatar (1).jpg" 
+                         className={`w-full h-full object-cover contrast-125 rounded-lg z-10 ${elementalTheme === 'Pyro' ? 'hue-rotate-[340deg] saturate-150' : elementalTheme === 'Hydro' ? 'hue-rotate-[180deg]' : elementalTheme === 'Earthen' ? 'hue-rotate-[90deg]' : ''}`} 
+                         alt="Dragon Info" 
+                       />
+                       <div className="absolute -bottom-1 -right-2 md:-right-3 md:-bottom-2 w-6 h-6 md:w-8 md:h-8 rounded-full border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] bg-slate-800 z-20 flex items-center justify-center text-[11px] md:text-sm">
+                         🍒
+                       </div>
+                     </div>
+                   )}
+                </div>
+                
+                {/* Background Glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 pointer-events-none opacity-10">
+                   <div className="w-full h-full rounded-full border-2 border-dashed border-cyan-400 animate-spin-slow"></div>
+                </div>
+              </div>
+
+              {/* Dialogue Box */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
+                <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
+                  <div className="absolute -top-3 -left-1 bg-amber-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                    Incoming Transmission
+                  </div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                    "{tutorialSteps[tutorialStep].text}"
+                  </p>
+                  
+                  {/* Speech Bubble Arrow */}
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+
+                <div className="bg-black/60 p-1.5 rounded-lg border border-cyan-500/30 mb-3 shrink-0">
+                   <p className="text-[8px] font-black text-cyan-400 uppercase italic tracking-widest text-center">
+                      ⚡ {tutorialSteps[tutorialStep].hint}
+                   </p>
+                </div>
+
+                {/* Don't show again checkbox */}
+                <div className="flex items-center justify-center gap-1.5 mb-3 shrink-0">
+                   <button 
+                     onClick={() => setDontShowAgain(!dontShowAgain)}
+                     className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-cyan-500' : 'bg-slate-800'}`}
+                   >
+                     {dontShowAgain && <Check size={10} className="text-white" />}
+                   </button>
+                   <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>
+                     Don't show this briefing again
+                   </span>
+                </div>
+
+                <div className="flex gap-2 shrink-0 pb-1">
+                   {tutorialStep > 0 && (
+                      <button
+                        onClick={() => setTutorialStep(prev => prev - 1)}
+                        className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px]"
+                      >
+                        BACK
+                      </button>
+                   )}
+                  <button
+                    onClick={nextStep}
+                    className="flex-[2] bg-cyan-600 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-cyan-500 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[10px] md:text-xs flex items-center justify-center gap-1.5"
+                  >
+                    {tutorialStep === tutorialSteps.length - 1 ? 'READY TO HARVEST' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 });

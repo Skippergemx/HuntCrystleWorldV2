@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Send, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
@@ -46,6 +47,53 @@ export const IdentityView = React.memo(() => {
   const [isLinking, setIsLinking] = useState(false);
   const [localError, setLocalError] = useState(null);
 
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_identity_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Hunter Identity",
+      npc: 1,
+      visualType: 'identity',
+      text: "This is your personal Identity Core. It holds your Hunter profile, linked wallet address, and avatar configuration for the Hunt Crystle network.",
+      hint: "Tip: A unique name and avatar helps allies recognize you."
+    },
+    {
+      title: "Wallet Uplink",
+      npc: 6,
+      visualType: 'wallet',
+      text: "Connecting a wallet allows your Hunter profile to be permanently anchored to a blockchain node — securing your on-chain identity and future relic claims.",
+      hint: "Strategy: Telegram users should connect their TON wallet."
+    },
+    {
+      title: "Avatar System",
+      npc: 14,
+      visualType: 'avatar',
+      text: "Select from 34 unique Hunter Avatars. You can enable Animated Mode to display a dynamic avatar in your profile and on the PvP Grid.",
+      hint: "Warning: Avatar does not affect your combat stats."
+    }
+  ];
+
+  const nextTutorialStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_identity_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
+
   const handleManualLink = async (address) => {
     if (!address || isLinking) return;
     setIsLinking(true);
@@ -66,7 +114,7 @@ export const IdentityView = React.memo(() => {
   return (
     <div className="flex-1 p-6 space-y-6 flex flex-col items-center justify-start overflow-y-auto max-h-[600px] relative no-scrollbar">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-      <Header title="Identity Core" onClose={adventure.goBack} onHelp={() => openGuide('menu')} />
+      <Header title="Identity Core" onClose={adventure.goBack} onHelp={() => { setTutorialStep(0); setShowTutorial(true); }} />
       
       <div className="w-full max-w-sm flex flex-col items-center">
         {/* --- HERO AVATAR SECTION --- */}
@@ -279,6 +327,62 @@ export const IdentityView = React.memo(() => {
           ))}
         </div>
       </div>
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-cyan-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 mt-1 mb-1 pointer-events-none"></div>
+            <div className="relative bg-slate-900 border-[3px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+              <div className="w-full bg-cyan-500 py-2 border-b-[3px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl font-black text-black text-center uppercase tracking-tighter italic">{tutorialSteps[tutorialStep].title}</h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">Step {tutorialStep + 1} / {tutorialSteps.length}</div>
+              </div>
+              <div className="py-3 relative flex justify-center items-center gap-3 w-full z-10">
+                <div className="w-16 h-16 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0">
+                  <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                  <div className="absolute inset-x-0 bottom-0 bg-cyan-500 text-[6px] font-black text-black text-center py-0.5 uppercase italic">SYSTEM</div>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-1 h-1 bg-cyan-400 rounded-full animate-ping" />
+                  <div className="w-[1px] h-3 bg-gradient-to-b from-cyan-400 to-transparent" />
+                </div>
+                <div className="w-16 h-16 rounded-xl border-[3px] border-black bg-slate-950 flex items-center justify-center shrink-0">
+                  {tutorialSteps[tutorialStep].visualType === 'identity' && <User className="text-cyan-400 animate-pulse" size={36} />}
+                  {tutorialSteps[tutorialStep].visualType === 'wallet' && <Wallet className="text-amber-400 animate-bounce" size={36} />}
+                  {tutorialSteps[tutorialStep].visualType === 'avatar' && <ShieldCheck className="text-green-400 animate-pulse" size={36} />}
+                </div>
+              </div>
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col">
+                <div className="bg-white text-black p-3 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                  <div className="absolute -top-3 -left-1 bg-cyan-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic">Incoming Transmission</div>
+                  <p className="text-[10px] font-bold text-slate-800 uppercase leading-[1.3] tracking-tight italic">"{tutorialSteps[tutorialStep].text}"</p>
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+                <div className="bg-black/60 p-1.5 rounded-lg border border-cyan-500/30 mb-3">
+                  <p className="text-[8px] font-black text-cyan-400 uppercase italic tracking-widest text-center">⚡ {tutorialSteps[tutorialStep].hint}</p>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 mb-3">
+                  <button onClick={() => setDontShowAgain(!dontShowAgain)} className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-cyan-500' : 'bg-slate-800'}`}>
+                    {dontShowAgain && <Check size={10} className="text-white" />}
+                  </button>
+                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show this briefing again</span>
+                </div>
+                <div className="flex gap-2 pb-1">
+                  {tutorialStep > 0 && (
+                    <button onClick={() => setTutorialStep(prev => prev - 1)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] italic text-[9px]">BACK</button>
+                  )}
+                  <button onClick={nextTutorialStep} className="flex-[2] bg-cyan-500 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-cyan-400 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] italic text-[10px] flex items-center justify-center gap-1.5">
+                    {tutorialStep === tutorialSteps.length - 1 ? 'ACCESS CORE' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 });

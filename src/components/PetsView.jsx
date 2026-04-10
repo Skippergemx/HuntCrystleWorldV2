@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, ShieldCheck, AlertCircle, Wallet, ArrowRight, Heart, Zap, Star, Lock } from 'lucide-react';
+import { Sparkles, ShieldCheck, AlertCircle, Wallet, ArrowRight, Heart, Zap, Star, Lock, Check, HelpCircle } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 
@@ -9,6 +9,53 @@ export const PetsView = () => {
   const { setView } = adventure;
   const [loading, setLoading] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_pets_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Crystle Companions",
+      npc: 1,
+      visualType: 'companions',
+      text: "Welcome to the Sanctuary. Crystles are rare entities that boost your system's efficiency, granting massive bonuses to Experience and Core HP.",
+      hint: "Tip: Examine each Crystle to find the optimal specs."
+    },
+    {
+      title: "Soul Unlocking",
+      npc: 11,
+      visualType: 'unlocking',
+      text: "Many Crystles remain dormant. You must purify corrupted anomalies or complete specific raids to unlock their signatures.",
+      hint: "Strategy: Watch for special event transmissions."
+    },
+    {
+      title: "Active Link",
+      npc: 14,
+      visualType: 'activation',
+      text: "Your HUD can only support one active Crystle link at a time. The active Crystle will accompany you in dungeon exploration.",
+      hint: "Warning: Changing companions may alter your combat stats."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_pets_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
 
   const handleAdopt = async (num) => {
     const isUnlocked = player.unlockedPets?.includes(num);
@@ -95,7 +142,10 @@ export const PetsView = () => {
         <div className="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-cyan-950/40 to-transparent"></div>
       </div>
 
-      <Header title="PET SANCTUARY" onClose={adventure.goBack} />
+      <Header title="PET SANCTUARY" onClose={adventure.goBack} onHelp={() => {
+         setTutorialStep(0);
+         setShowTutorial(true);
+       }} />
       
       <div className="flex-1 flex flex-col gap-4 md:gap-8 overflow-hidden z-10 relative">
         {/* CRYSTLE WELCOME BANNER (COMICAL STYLE) */}

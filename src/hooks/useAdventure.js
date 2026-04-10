@@ -14,9 +14,10 @@ export const useAdventure = () => {
   
   const enemyInternalRef = useRef(null);
   
-  const spawnNewEnemy = useCallback((currentDepth = 1) => {
-    // Filter monsters by the current map's name if available
-    const folderName = selectedMap?.name || 'Neon Slums';
+  const spawnNewEnemy = useCallback((currentDepth = 1, overrideMap = null) => {
+    // BUG-Fix: Use overrideMap if provided to avoid stale state in handleMapSelect closure
+    const targetMap = overrideMap || selectedMap;
+    const folderName = targetMap?.folder || (targetMap?.name || 'Neon Slums');
     const pool = MONSTERS.filter(m => m.folder === folderName);
       
     // Fallback to Neon Slums ONLY if the specific map has 0 monsters defined
@@ -27,6 +28,11 @@ export const useAdventure = () => {
     setEnemy(scaled);
     enemyInternalRef.current = scaled;
   }, [selectedMap]);
+
+  const clearEnemy = useCallback(() => {
+    setEnemy(null);
+    enemyInternalRef.current = null;
+  }, []);
 
   const triggerFlinch = () => {
     setEnemyFlinch(true);
@@ -77,6 +83,7 @@ export const useAdventure = () => {
     isHurt,
     enemyRef: enemyInternalRef,
     spawnNewEnemy,
+    clearEnemy,
     triggerFlinch,
     triggerHurt,
     selectedMap,

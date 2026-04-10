@@ -54,6 +54,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const [showBlockadeModal, setShowBlockadeModal] = useState(false);
   const [blockadeError, setBlockadeError] = useState(null);
   const [collisionProfile, setCollisionProfile] = useState(null);
+  const [globalError, setGlobalError] = useState(null); // { message, stack, timestamp, view, depth }
 
   // Telegram SDK
   const telegram = useTelegram();
@@ -65,6 +66,9 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   }, []);
 
   const addLog = useCallback((msg) => setLogs(prev => [msg, ...prev.slice(0, 7)]), []);
+
+  // Tracking refs for the global error sentry to avoid dependency re-runs
+  const sentryStateRef = useRef({ view: 'menu', depth: 1 });
 
   // --- CORE SYSTEM INITIALIZATION ---
   const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict } = usePlayerSync(user, db, appId, farcasterContext, telegram);
@@ -98,7 +102,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
   const combat = useCombat(
     user, player, syncPlayer, 
-    adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy,
+    adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy, adventure.clearEnemy,
     totalStats, addLog, audio.playSFX, SOUNDS, adventure.selectedMap,
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
@@ -161,7 +165,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const handleLogout = async (signOutFn) => {
      try {
        if (player.autoUntil > 0 || player.buffUntil > 0) {
-         await syncPlayer({ autoUntil: 0, buffUntil: 0 });
+         await syncPlayer({ autoUntil: 0, buffUntil: 0 }, true);
        }
        await signOutFn();
        adventure.setView('menu');
@@ -169,6 +173,61 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
        console.error("Logout error:", e);
      }
   };
+
+  const submitErrorReport = useCallback(async (err) => {
+    if (!err) return;
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+      await addDoc(collection(db, 'error_reports'), {
+        userId: player?.uid || user?.uid || 'anonymous',
+        userName: player?.name || 'Unknown',
+        message: err.message,
+        stack: err.stack,
+        view: err.view,
+        depth: err.depth,
+        userAgent: navigator.userAgent,
+        timestamp: serverTimestamp()
+      });
+      return { success: true };
+    } catch (e) {
+      console.error("Failed to submit error report:", e);
+      return { success: false, error: e.message };
+    }
+  }, [db, player, user]);
+
+  // --- GLOBAL ERROR SENTRY (Ref-Locked) ---
+  useEffect(() => {
+    sentryStateRef.current = { view: adventure.view, depth: adventure.depth };
+  }, [adventure.view, adventure.depth]);
+
+  useEffect(() => {
+    const handleError = (event) => {
+      // Ignore some common non-critical errors or third-party noise if needed
+      if (event.message?.includes('ResizeObserver')) return;
+
+      const errorMsg = event.reason?.message || event.message || "Unknown Runtime Critical Failure";
+      const stack = event.reason?.stack || event.error?.stack || "No stack trace available.";
+      
+      console.error("🚀 [GLOBAL_SENTRY] Error Caught:", errorMsg);
+
+      setGlobalError({
+        message: errorMsg,
+        stack: stack,
+        timestamp: Date.now(),
+        // We capture these via refs to avoid closure stale state or dependency issues
+        view: sentryStateRef.current.view,
+        depth: sentryStateRef.current.depth
+      });
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []); // Only mount once
 
   const engine = {
     user, player, syncPlayer, logs, addLog, currentTime,
@@ -192,6 +251,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     activeBoardTab: leaderboardObj.activeBoard,
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
+    globalError, setGlobalError, submitErrorReport,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA,
     BOSS, BOSS_MEDIA_FILES, SOUNDS
   };

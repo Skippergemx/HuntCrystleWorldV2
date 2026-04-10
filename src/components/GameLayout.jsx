@@ -8,7 +8,9 @@ import {
   Book, Globe, Database, HardHat, Footprints,
   Volume2, VolumeX, Music, Music2, SkipForward,
   Calendar, Wallet, ShieldAlert,
-  Share2, Twitter, MessageSquare
+  Share2, Twitter, MessageSquare,
+  Bug, ShieldAlert as AlertShield, Terminal, Sparkles as SparkleIcon, AlertTriangle,
+  Rocket, ExternalLink
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -43,6 +45,86 @@ import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
 import { useGame } from '../contexts/GameContext';
 
+const GlobalErrorOverlay = ({ error, onReport }) => {
+  const [reported, setReported] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleReport = async () => {
+    setIsSubmitting(true);
+    const res = await onReport(error);
+    setIsSubmitting(false);
+    if (res?.success) setReported(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4">
+       <div className="max-w-xl w-full relative">
+          {/* Comic Shadow */}
+          <div className="absolute inset-0 bg-red-900 rounded-[2rem] transform translate-x-3 translate-y-3 opacity-30"></div>
+          
+          <div className="relative bg-slate-950 border-[4px] md:border-[6px] border-black rounded-[2rem] overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="bg-red-600 p-4 md:p-6 border-b-[4px] md:border-[6px] border-black transform -rotate-1 relative overflow-hidden">
+               <div className="absolute inset-0 opacity-20 comic-halftone text-black"></div>
+               <div className="flex items-center gap-4 relative z-10">
+                  <div className="p-2 md:p-3 bg-black border-4 border-white rounded-2xl animate-pulse">
+                    <AlertShield size={24} md:size={32} className="text-red-500" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-[1000] text-white uppercase italic tracking-tighter drop-shadow-lg">LINK_FAILURE</h2>
+                    <p className="text-[8px] md:text-xs font-black text-black uppercase opacity-80 italic">Neural Integrity: CRITICAL_ERR</p>
+                  </div>
+               </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 md:p-8 space-y-4 md:space-y-6">
+               <div className="bg-red-950/30 border-2 border-red-500/30 p-4 rounded-xl md:rounded-2xl relative">
+                  <div className="absolute -top-3 left-4 bg-red-600 text-white text-[8px] md:text-[10px] font-black px-2 md:px-3 py-0.5 border-2 border-black uppercase rotate-1">Diagnostic Log</div>
+                  <p className="text-red-400 font-mono text-[10px] md:text-xs leading-tight break-words">{error.message}</p>
+               </div>
+
+               <div className="bg-black/60 border-2 border-slate-800 p-3 md:p-4 rounded-xl md:rounded-2xl font-mono text-[7px] md:text-[9px] text-slate-500 max-h-32 md:max-h-40 overflow-y-auto custom-scrollbar">
+                  <p className="uppercase font-black text-slate-400 mb-2 border-b border-slate-800 pb-1">Trace Dump:</p>
+                  <p className="whitespace-pre-nowrap leading-none opacity-40">{error.stack}</p>
+               </div>
+
+               <div className="grid grid-cols-2 gap-3 md:gap-4 pt-2">
+                  <button 
+                    onClick={handleReport}
+                    disabled={reported || isSubmitting}
+                    className={`py-3 md:py-4 rounded-xl md:rounded-2xl border-[3px] md:border-[4px] border-black font-black uppercase italic transition-all flex items-center justify-center gap-2 text-[10px] md:text-sm ${reported ? 'bg-emerald-600 text-white' : 'bg-amber-400 hover:bg-amber-300 text-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none'}`}
+                  >
+                    {isSubmitting ? <RefreshCw className="animate-spin w-3 h-3 md:w-4 md:h-4" /> : reported ? <SparkleIcon className="w-3 h-3 md:w-4 md:h-4" /> : <Bug className="w-3 h-3 md:w-4 md:h-4" />}
+                    {reported ? 'TRANSMITTED' : 'REPORT DISASTER'}
+                  </button>
+                  
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="py-3 md:py-4 bg-white hover:bg-slate-100 text-black rounded-xl md:rounded-2xl border-[3px] md:border-[4px] border-black font-black uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2 text-[10px] md:text-sm"
+                  >
+                    <RefreshCw className="w-3 h-3 md:w-4 md:h-4" /> RELOAD GRID
+                  </button>
+               </div>
+
+               {reported && (
+                 <div className="bg-emerald-500/10 border-2 border-emerald-500/30 p-2 md:p-3 rounded-lg md:rounded-xl flex items-center gap-2 md:gap-3 animate-in fade-in slide-in-from-bottom-2">
+                    <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-emerald-500 rounded-full animate-ping"></div>
+                    <span className="text-[7px] md:text-[9px] text-emerald-400 font-black uppercase italic">Report uplink established. Admins notified.</span>
+                 </div>
+               )}
+            </div>
+
+            {/* Footer Tag */}
+            <div className="bg-black p-2 md:p-3 text-center border-t-[4px] border-slate-900">
+               <span className="text-[7px] md:text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] md:tracking-[0.4em]">RECOVERY_PROT_ALPHA // ERROR_EJECTION_NODE</span>
+            </div>
+          </div>
+       </div>
+    </div>
+  );
+};
+
 export const GameLayout = ({ onLogout }) => {
   const engine = useGame();
   const { 
@@ -52,6 +134,7 @@ export const GameLayout = ({ onLogout }) => {
     sessionConflict,
     adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
     db, appId, totalStats, handleLogout, openGuide,
+    globalError, submitErrorReport,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
 
@@ -255,31 +338,33 @@ export const GameLayout = ({ onLogout }) => {
 
         <div className="max-w-5xl mx-auto flex flex-row gap-2 md:gap-4 relative z-10 items-stretch">
           {/* PROFILE CARD - COMPACT CHARACTER CARD */}
-          <div className="w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] border-black rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20">
+          <div className={`w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20 transition-all duration-500 ${view === 'menu' ? 'border-cyan-500/40 hover:border-cyan-400' : 'border-black'}`}>
             <div className="absolute inset-0 z-0">
               <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
             </div>
 
-            {/* Float Edit Button */}
-            <button
-              onClick={() => setView('avatars')}
-              className="absolute top-1 right-1 z-20 p-1 md:p-2 bg-black/60 hover:bg-cyan-500 text-white hover:text-black rounded-md border border-black/50 backdrop-blur-md transition-all group/btn"
-              title="Edit Avatar"
-            >
-              <MousePointer size={10} md:size={14} className="group-hover/btn:scale-125 transition-transform" />
-            </button>
+            {/* Float Edit Button - ONLY ACTIVE ON MAIN MENU */}
+            {view === 'menu' && (
+              <button
+                onClick={() => setView('avatars')}
+                className="absolute top-1 right-1 z-20 p-1 md:p-2 bg-black/60 hover:bg-cyan-500 text-white hover:text-black rounded-md border border-black/50 backdrop-blur-md transition-all group/btn shadow-lg"
+                title="Edit Identity"
+              >
+                <RefreshCw size={10} md:size={14} className="group-hover/btn:rotate-180 transition-transform duration-500" />
+              </button>
+            )}
 
             {/* Bottom Shade Info */}
-            <div className="absolute inset-x-0 bottom-0 p-1.5 md:p-2.5 bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+            <div className="absolute inset-x-0 bottom-0 p-1.5 md:p-2.5 bg-gradient-to-t from-black via-black/90 to-transparent z-10">
               {(player.walletAddress || wallet.address) && (
                 <div className="flex items-center gap-1 mb-1 px-1.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-sm">
-                  <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_5px_rgba(52,211,153,1)]"></div>
+                  <div className="w-1 h-1 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]"></div>
                   <span className="text-[5px] md:text-[7px] font-mono text-emerald-400 font-black tracking-widest uppercase opacity-80 italic">UPLINK_SYNCED</span>
                 </div>
               )}
-              <div className="bg-cyan-400 text-black text-[7px] md:text-[11px] font-[1000] uppercase py-1 px-2 rounded-sm border-[2px] border-black inline-block shadow-[3px_3px_0_rgba(0,0,0,1)] mb-1 md:mb-1.5 animate-in slide-in-from-left-4 duration-500">UNIT {player.level}</div>
-              <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
+              <div className="bg-cyan-400 text-black text-[7px] md:text-[11px] font-[1000] uppercase py-1 px-2 rounded-sm border-[2px] border-black inline-block shadow-[3px_3px_0_rgba(0,0,0,1)] mb-1 md:mb-1.5 animate-in slide-in-from-left-4 duration-500 group-hover:bg-white transition-colors">UNIT {player.level}</div>
+              <div className="text-[5px] md:text-[7px] text-white/50 font-black uppercase tracking-widest truncate group-hover:text-cyan-400 transition-colors">{player.hiredMate ? TAVERN_MATES.find(m => m.id === player.hiredMate)?.name : 'SOLO AGENT'}</div>
             </div>
           </div>
 
@@ -409,32 +494,51 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
             </div>
 
-            {/* Resources Hub - Compact Row */}
-            <div className="flex items-center gap-1.5 md:gap-3 bg-black/40 border-[1.5px] border-white/10 p-1 md:p-2 rounded-lg mb-1.5 md:mb-2 overflow-x-auto no-scrollbar shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)]">
-              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-cyan-500/10">
-                <div className="bg-cyan-400 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-6"><Coins size={10} md:size={14} className="text-black" /></div>
-                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{Math.floor(player.tokens).toLocaleString()} <span className="text-[7px] md:text-[9px] text-cyan-400 opacity-60">GX</span></span>
+            {/* Resources Hub - Premium Tactical Display */}
+            <div className="flex items-center gap-1.5 md:gap-3 bg-slate-950/60 border-[1.5px] border-white/5 p-1.5 md:p-2 rounded-xl mb-1.5 md:mb-2 overflow-x-auto no-scrollbar shadow-inner relative group/hub">
+              <div className="absolute inset-0 bg-cyan-500/5 opacity-0 group-hover/hub:opacity-100 transition-opacity pointer-events-none" />
+              
+              <div className="flex items-center gap-2 shrink-0 bg-black/40 px-2.5 md:px-4 py-1.5 rounded-lg border border-white/5 hover:border-amber-500/30 transition-all group/stat">
+                <div className="w-5 h-5 md:w-7 md:h-7 bg-amber-400 flex items-center justify-center rounded-md border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover/stat:scale-110 transition-transform">
+                  <Coins size={12} md:size={16} className="text-black" />
+                </div>
+                <div className="flex flex-col -gap-1">
+                  <span className="text-[10px] md:text-sm font-black text-white italic tracking-tighter tabular-nums">{Math.floor(player.tokens).toLocaleString()}</span>
+                  <span className="text-[6px] md:text-[8px] text-amber-500 font-black uppercase tracking-[0.2em] leading-none">Credits</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-red-500/10">
-                <div className="bg-red-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black -rotate-3"><Coffee size={10} md:size={14} className="text-black" /></div>
-                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.potions || 0} <span className="text-[7px] md:text-[9px] text-red-400 opacity-60">POT</span></span>
+              <div className="flex items-center gap-2 shrink-0 bg-black/40 px-2.5 md:px-4 py-1.5 rounded-lg border border-white/5 hover:border-red-500/30 transition-all group/stat">
+                <div className="w-5 h-5 md:w-7 md:h-7 bg-red-500 flex items-center justify-center rounded-md border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover/stat:rotate-12 transition-transform">
+                  <Coffee size={12} md:size={16} className="text-black" />
+                </div>
+                <div className="flex flex-col -gap-1">
+                  <span className="text-[10px] md:text-sm font-black text-white italic tracking-tighter tabular-nums">{player.potions || 0}</span>
+                  <span className="text-[6px] md:text-[8px] text-red-500 font-black uppercase tracking-[0.2em] leading-none">Supplies</span>
+                </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0 bg-slate-950/80 px-2 md:px-3 py-1 rounded-md border border-blue-500/10">
-                <div className="bg-blue-500 p-0.5 md:p-1 rounded-sm border-[1.5px] border-black rotate-12"><MousePointer size={10} md:size={14} className="text-black" /></div>
-                <span className="text-[10px] md:text-base font-black text-white italic tracking-tighter">{player.autoScrolls || 0} <span className="text-[7px] md:text-[9px] text-blue-400 opacity-60">AUT</span></span>
+              <div className="flex items-center gap-2 shrink-0 bg-black/40 px-2.5 md:px-4 py-1.5 rounded-lg border border-white/5 hover:border-blue-500/30 transition-all group/stat">
+                <div className="w-5 h-5 md:w-7 md:h-7 bg-blue-500 flex items-center justify-center rounded-md border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] group-hover/stat:-translate-y-0.5 transition-transform">
+                  <MousePointer size={12} md:size={16} className="text-black" />
+                </div>
+                <div className="flex flex-col -gap-1">
+                  <span className="text-[10px] md:text-sm font-black text-white italic tracking-tighter tabular-nums">{player.autoScrolls || 0}</span>
+                  <span className="text-[6px] md:text-[8px] text-blue-400 font-black uppercase tracking-[0.2em] leading-none">Automata</span>
+                </div>
               </div>
 
-              <div className="ml-auto flex items-center gap-1 shrink-0 bg-black/60 p-0.5 md:p-1 rounded-md border border-white/5">
-                <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1 md:p-1.5 rounded transition-all ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
-                  {isMusicOn ? <Music size={12} md:size={14} /> : <Music2 size={12} md:size={14} />}
+              <div className="ml-auto flex items-center gap-1 shrink-0 bg-slate-900/80 p-1 rounded-lg border border-white/5">
+                <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1.5 md:p-2 rounded-md transition-all hover:bg-white/5 ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
+                  {isMusicOn ? <Music size={14} md:size={16} /> : <Music2 size={14} md:size={16} />}
                 </button>
-                <button onClick={skipTrack} className="p-1 md:p-1.5 rounded text-slate-400 hover:text-cyan-400 transition-all" title="Next Track">
-                  <SkipForward size={12} md:size={14} />
+                <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
+                <button onClick={skipTrack} className="p-1.5 md:p-2 rounded-md text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-all" title="Next Track">
+                  <SkipForward size={14} md:size={16} />
                 </button>
-                <button onClick={() => setIsSfxOn(!isSfxOn)} className={`p-1 md:p-1.5 rounded transition-all ${isSfxOn ? 'text-amber-400' : 'text-slate-600'}`}>
-                  {isSfxOn ? <Volume2 size={12} md:size={14} /> : <VolumeX size={12} md:size={14} />}
+                <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
+                <button onClick={() => setIsSfxOn(!isSfxOn)} className={`p-1.5 md:p-2 rounded-md transition-all hover:bg-white/5 ${isSfxOn ? 'text-amber-400' : 'text-slate-600'}`}>
+                  {isSfxOn ? <Volume2 size={14} md:size={16} /> : <VolumeX size={14} md:size={16} />}
                 </button>
               </div>
             </div>
@@ -737,6 +841,8 @@ export const GameLayout = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {globalError && <GlobalErrorOverlay error={globalError} onReport={submitErrorReport} />}
     </div>
   );
 };

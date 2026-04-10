@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Map as MapIcon, 
   Beer, 
@@ -20,58 +21,11 @@ import {
   BookOpen,
   Shield,
   ShieldAlert,
-  Radio
+  Radio,
+  Check
 } from 'lucide-react';
 import { NavBtn, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
-
-const SHOUT_POOLS = {
-  dungeon: ["BAM!", "SLA-A-AY!", "FIGHT!", "KRA-KOW!", "DIVE!", "CLASH!", "POW!"],
-  tavern: ["ALE!", "REST!", "HEAL!", "HIRE!", "CHILL!"],
-  attributes: ["BUFF!", "GROW!", "STR!", "META!", "UP!"],
-  gear: ["PRO!", "LOAD!", "GEAR!", "MOD!", "ZAP!"],
-  inventory: ["LOOT!", "BAG!", "BOX!", "FIND!", "FULL!"],
-  shop: ["BUY!", "SALE!", "DEAL!", "NEW!", "SAVE!"],
-  market: ["TRADE!", "BID!", "P2P!", "CRY-X!", "SELL!"],
-  forge: ["SMELT!", "CRAFT!", "HOT!", "ELITE!", "RELIC!"],
-  database: ["DATA!", "LORE!", "INFO!", "SCAN!", "READ!"],
-  leaderboard: ["TOP!", "RANK #1", "MVP!", "KING!", "FAME!"],
-  dragon: ["WILD!", "SOUL!", "LINK!", "GROW!", "TAME!"],
-  lab: ["BREW!", "CHEM!", "MIXT!", "EXP!", "ZAP!"],
-  boss: ["RAID!", "ELITE!", "DROP!", "KILL!", "DANGER!"],
-  guild: ["WAR!", "GUILD!", "RAID!", "WIN!", "GLORY!"],
-  pvp: ["DUEL!", "PWN!", "REMATCH!", "GG!", "WIN!"],
-  pets: ["TAME!", "BUDDY!", "HATCH!", "CUTE!", "LINK!"],
-  manual: ["LEARN!", "HELP!", "WIKI!", "TIPS!", "GUIDE!"],
-  devlog: ["NEW!", "FIX!", "PATCH!", "LOG!", "WIP!"]
-};
-
-const MenuShout = ({ pool = SHOUT_POOLS.dungeon, color = "bg-yellow-400" }) => {
-  const [shout, setShout] = React.useState(pool[0]);
-  const [visible, setVisible] = React.useState(false);
-
-  React.useEffect(() => {
-    const cycle = setInterval(() => {
-      setShout(pool[Math.floor(Math.random() * pool.length)]);
-      setVisible(true);
-      setTimeout(() => setVisible(false), 1800);
-    }, 4500 + Math.random() * 3000); 
-    return () => clearInterval(cycle);
-  }, [pool]);
-
-  if (!visible) return null;
-
-  return (
-    <div className="absolute -top-6 -right-6 z-[100] pointer-events-none animate-kapow">
-      <div className={`${color} border-[3px] border-black px-4 py-2 shadow-[8px_8px_0_rgba(0,0,0,1)] transform rotate-12 relative scale-110`}>
-        <span className="text-base font-black text-black italic uppercase tracking-tighter whitespace-nowrap">
-          {shout}
-        </span>
-        <div className={`absolute -bottom-2 left-1/4 w-4 h-4 ${color} border-r-[3px] border-b-[3px] border-black transform rotate-45`} />
-      </div>
-    </div>
-  );
-};
 
 const DIALOGUE_POOL = {
   idle: [
@@ -218,7 +172,7 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta }) => {
 
       {/* Speech Bubble */}
       <div className="flex-1 relative">
-        <div className={`bg-white border-[3px] border-black p-2 shadow-[6px_6px_0_rgba(0,0,0,1)] relative transform min-h-[50px] flex items-center transition-all ${isPetTalking ? 'rotate-1' : '-rotate-1'}`}>
+        <div className={`bg-white border-[3px] border-black p-3 shadow-[6px_6px_0_rgba(0,0,0,1)] relative transform min-h-[70px] flex items-center transition-all ${isPetTalking ? 'rotate-1' : '-rotate-1'}`}>
           <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black transform rotate-45" />
           
           <p className="text-[11px] font-black text-black uppercase italic leading-tight tracking-tight">
@@ -248,6 +202,53 @@ export const MenuView = React.memo(() => {
   const isPenalized = penaltyRemaining > 0;
   const isAdmin = user?.email === 'skippergemx@gmail.com';
 
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  useEffect(() => {
+    const isHidden = localStorage.getItem('hide_menu_tutorial') === 'true';
+    if (!isHidden) {
+      setShowTutorial(true);
+      setTutorialStep(0);
+    }
+  }, []);
+
+  const tutorialSteps = [
+    {
+      title: "Hunter Hub",
+      npc: 1,
+      visualType: 'hub',
+      text: "This is your Hunter Hub — your command center. From here you can access every module in the Hunt Crystle world. Your character info is displayed at the top.",
+      hint: "Tip: Tap the character card to cycle through NPC dialogue."
+    },
+    {
+      title: "Module Navigation",
+      npc: 11,
+      visualType: 'nav',
+      text: "Each tile takes you to a different system — Dungeon, Forge, Market, Tavern, PvP, and more. Explore them all to grow your Hunter efficiently.",
+      hint: "Strategy: Start with Dungeon to earn GX Tokens and XP!"
+    },
+    {
+      title: "Dungeon Entry",
+      npc: 17,
+      visualType: 'dungeon',
+      text: "Tap the Dungeon tile to access the World Sector Map. Select a sector, fight monsters, and dive deeper for better loot and score. Be careful — defeat results in a penalty!",
+      hint: "Warning: If defeated, you must wait out a penalty timer."
+    }
+  ];
+
+  const nextStep = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      if (dontShowAgain) {
+        localStorage.setItem('hide_menu_tutorial', 'true');
+      }
+      setShowTutorial(false);
+    }
+  };
+
   const startDungeon = () => {
     if (!isPenalized) {
       setView('map');
@@ -275,54 +276,18 @@ export const MenuView = React.memo(() => {
         color={isPenalized ? "bg-slate-800 grayscale" : "bg-cyan-600"} 
         disabled={isPenalized} 
         backdrop="/assets/monsters/Rust Canyon/Rust Cat 0-0.jpg"
-      >
-        <MenuShout />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" >
-        <MenuShout pool={SHOUT_POOLS.tavern} color="bg-orange-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub="Stats" color="bg-orange-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" >
-        <MenuShout pool={SHOUT_POOLS.attributes} color="bg-cyan-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('gear')} icon={<Zap />} title="Gear" sub="Tactical" color="bg-cyan-700" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg" >
-        <MenuShout pool={SHOUT_POOLS.gear} color="bg-yellow-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('inventory')} icon={<Package />} title="Bag" sub="Inventory" color="bg-emerald-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 1.jpg" >
-        <MenuShout pool={SHOUT_POOLS.inventory} color="bg-emerald-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" backdrop="/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg" >
-        <MenuShout pool={SHOUT_POOLS.shop} color="bg-indigo-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('market')} icon={<Tag />} title="Market" sub="P2P Trade" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg" >
-        <MenuShout pool={SHOUT_POOLS.market} color="bg-amber-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" >
-        <MenuShout pool={SHOUT_POOLS.forge} color="bg-red-500 text-white" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" >
-        <MenuShout pool={SHOUT_POOLS.database} color="bg-blue-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" >
-        <MenuShout pool={SHOUT_POOLS.leaderboard} color="bg-purple-400" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" >
-        <MenuShout pool={SHOUT_POOLS.dragon} color="bg-emerald-500" />
-      </NavBtn>
-
-      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" >
-        <MenuShout pool={SHOUT_POOLS.lab} color="bg-pink-400" />
-      </NavBtn>
-
+      />
+      <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" />
+      <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub="Stats" color="bg-orange-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" />
+      <NavBtn onClick={() => setView('gear')} icon={<Zap />} title="Gear" sub="Tactical" color="bg-cyan-700" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg" />
+      <NavBtn onClick={() => setView('inventory')} icon={<Package />} title="Bag" sub="Inventory" color="bg-emerald-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 1.jpg" />
+      <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" backdrop="/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg" />
+      <NavBtn onClick={() => setView('market')} icon={<Tag />} title="Market" sub="P2P Trade" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg" />
+      <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" />
+      <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" />
+      <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
+      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" />
+      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" />
       <NavBtn 
         onClick={startBoss} 
         icon={<AlertCircle />} 
@@ -331,9 +296,7 @@ export const MenuView = React.memo(() => {
         color="bg-red-700" 
         disabled={isPenalized} 
         backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
-      >
-        <MenuShout pool={SHOUT_POOLS.boss} color="bg-red-600" />
-      </NavBtn>
+      />
       <NavBtn 
         onClick={() => setView('syndicate')} 
         icon={<Shield />} 
@@ -341,10 +304,7 @@ export const MenuView = React.memo(() => {
         sub="Naga War" 
         color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" 
         backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
-      >
-        <MenuShout pool={SHOUT_POOLS.guild} color="bg-red-600" />
-      </NavBtn>
-
+      />
       <NavBtn 
         onClick={() => setView('pvp')} 
         icon={<Swords />} 
@@ -352,10 +312,7 @@ export const MenuView = React.memo(() => {
         sub="Holo-Grid" 
         color="bg-red-900 border-red-500/50" 
         backdrop="/assets/monsters/Gale Empire/Vortex Vanguard.jpg"
-      >
-        <MenuShout pool={SHOUT_POOLS.pvp} color="bg-red-400" />
-      </NavBtn>
-
+      />
       <NavBtn 
         onClick={() => setView('pets')} 
         icon={<Sparkles />} 
@@ -363,10 +320,7 @@ export const MenuView = React.memo(() => {
         sub="Web3" 
         color="bg-cyan-900 border-cyan-400/30" 
         backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
-      >
-        <MenuShout pool={SHOUT_POOLS.pets} color="bg-cyan-400" />
-      </NavBtn>
-
+      />
       <NavBtn 
         onClick={() => setView('manual')} 
         icon={<BookOpen />} 
@@ -374,10 +328,7 @@ export const MenuView = React.memo(() => {
         sub="How to Play" 
         color="bg-cyan-600 border-cyan-400/50" 
         backdrop="/assets/monsters/Void Sector 7/Rift Lurker.jpg"
-      >
-        <MenuShout pool={SHOUT_POOLS.manual} color="bg-cyan-200" />
-      </NavBtn>
-
+      />
       <NavBtn 
         onClick={() => setView('devlog')} 
         icon={<div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>} 
@@ -385,9 +336,7 @@ export const MenuView = React.memo(() => {
         sub="Dev Updates" 
         color="bg-purple-900 border-purple-500/50" 
         backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
-      >
-        <MenuShout pool={SHOUT_POOLS.devlog} color="bg-pink-400" />
-      </NavBtn>
+      />
       {isAdmin && (
         <NavBtn 
           onClick={() => setView('admin')} 
@@ -397,6 +346,68 @@ export const MenuView = React.memo(() => {
           color="bg-red-600 border-red-500" 
           backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg"
         />
+      )}
+
+      {showTutorial && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            <div className="absolute inset-x-0 top-0 bottom-0 bg-emerald-900 rounded-3xl transform translate-x-1.5 translate-y-1.5 mt-1 mb-1 pointer-events-none"></div>
+            <div className="relative bg-slate-900 border-[3px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+              {/* Header Banner */}
+              <div className="w-full bg-emerald-500 py-2 border-b-[3px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl font-black text-black text-center uppercase tracking-tighter italic">{tutorialSteps[tutorialStep].title}</h2>
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">Step {tutorialStep + 1} / {tutorialSteps.length}</div>
+              </div>
+
+              {/* NPC & Visual */}
+              <div className="py-3 relative flex justify-center items-center gap-3 w-full z-10">
+                <div className="w-16 h-16 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0">
+                  <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                  <div className="absolute inset-x-0 bottom-0 bg-emerald-500 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="w-1 h-1 bg-emerald-400 rounded-full animate-ping" />
+                  <div className="w-[1px] h-3 bg-gradient-to-b from-emerald-400 to-transparent" />
+                </div>
+                <div className="w-16 h-16 rounded-xl border-[3px] border-black bg-slate-950 flex items-center justify-center shrink-0">
+                  {tutorialSteps[tutorialStep].visualType === 'hub' && <Globe className="text-emerald-400 animate-pulse" size={36} />}
+                  {tutorialSteps[tutorialStep].visualType === 'nav' && <MapIcon className="text-cyan-400 animate-bounce" size={36} />}
+                  {tutorialSteps[tutorialStep].visualType === 'dungeon' && <Swords className="text-red-400 animate-pulse" size={36} />}
+                </div>
+              </div>
+
+              {/* Dialogue */}
+              <div className="px-4 pb-3 w-full relative z-10 flex flex-col">
+                <div className="bg-white text-black p-3 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                  <div className="absolute -top-3 -left-1 bg-emerald-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic">Incoming Transmission</div>
+                  <p className="text-[10px] font-bold text-slate-800 uppercase leading-[1.3] tracking-tight italic">"{tutorialSteps[tutorialStep].text}"</p>
+                  <div className="absolute -bottom-2 left-6 w-3 h-3 bg-white border-b-[3px] border-l-[3px] border-black transform rotate-[30deg]"></div>
+                </div>
+                <div className="bg-black/60 p-1.5 rounded-lg border border-emerald-500/30 mb-3">
+                  <p className="text-[8px] font-black text-emerald-400 uppercase italic tracking-widest text-center">⚡ {tutorialSteps[tutorialStep].hint}</p>
+                </div>
+                <div className="flex items-center justify-center gap-1.5 mb-3">
+                  <button onClick={() => setDontShowAgain(!dontShowAgain)} className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-emerald-500' : 'bg-slate-800'}`}>
+                    {dontShowAgain && <Check size={10} className="text-white" />}
+                  </button>
+                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show this briefing again</span>
+                </div>
+                <div className="flex gap-2 pb-1">
+                  {tutorialStep > 0 && (
+                    <button onClick={() => setTutorialStep(prev => prev - 1)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] italic text-[9px]">BACK</button>
+                  )}
+                  <button onClick={nextStep} className="flex-[2] bg-emerald-500 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-400 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] italic text-[10px] flex items-center justify-center gap-1.5">
+                    {tutorialStep === tutorialSteps.length - 1 ? 'ENTER THE HUB' : 'TRANSMIT MORE'}
+                    <Sparkles size={12} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

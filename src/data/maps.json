@@ -40,11 +40,12 @@
     "unlocked": false,
     "lootTable": [
       "void_shard", "dark_matter", "gravity_well", "neural_net", "plasma_core", 
-      "void_crystal", "singularity", "event_horizon", "quantum_bit", "nanite_cloud", 
-      "warp_drive_part", "cyber_heart", "stardust", "obsidian_glass", "void_tear", 
+      "void_crystal", "singularity", "quantum_bit", "nanite_cloud", "toxic_sludge",
+      "cyber_heart", "stardust", "obsidian_glass", "void_tear", "mutant_tooth",
       "shadow_pulse", "entropy_coil", "null_point", "void_membrane", "black_hole_shard", 
-      "time_drift", "phase_module", "void_beacon", "dark_energy_cell", "void_fang",
-      "void_essence", "core_pulse", "omega_crystle", "ancient_gear", "titanium_link", "void_cherry"
+      "phase_module", "void_beacon", "dark_energy_cell", "void_fang", "rusty_wire",
+      "void_essence", "core_pulse", "omega_crystle", "ancient_gear", "titanium_link", 
+      "void_cherry", "neon_dust"
     ]
   },
   {

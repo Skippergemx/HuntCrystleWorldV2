@@ -9,6 +9,7 @@ export const useCombat = (
   setEnemy,
   enemyRef,
   spawnNewEnemy,
+  clearEnemy,
   totalStats,
   addLog,
   playSFX,
@@ -525,20 +526,34 @@ export const useCombat = (
   }, [battleMode, enemy, gvgContext, recordWarResult, setBattleMode, setView]);
 
   const handleRetreat = useCallback(() => {
+    if (processingRef.current === 'RETREATING') return;
+    
     if (battleMode === 'GVG') {
       // BUG-13 FIX: Reset session rewards on GVG retreat
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
       recordGvGResult();
     } else {
+      processingRef.current = 'RETREATING';
       // WIPE SESSION REWARDS FOR NEXT RUN
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
       setKillsInFloor(0);
       resetCombatEngine(); // NUCLEAR RESET ON RETREAT
+      
+      // BUG-Fix: Clear enemy from state to prevent UI rendering stale data
+      if (clearEnemy) clearEnemy();
+      
       setView('menu');
       setDepth(1);
-      if (player?.autoUntil > 0) syncPlayer({ autoUntil: 0 });
+
+      // System Pulse: Critical State Sync must be immediate to prevent refresh-race-conditions
+      if (player?.autoUntil > 0) syncPlayer({ autoUntil: 0 }, true);
+      
+      // Release retreat lock after transition
+      setTimeout(() => {
+        if (processingRef.current === 'RETREATING') processingRef.current = 'IDLE';
+      }, 500);
     }
-  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer, resetCombatEngine]);
+  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer, resetCombatEngine, clearEnemy]);
 
   // SAFETY HEARTBEAT - Force release bus if stalled
   useEffect(() => {
