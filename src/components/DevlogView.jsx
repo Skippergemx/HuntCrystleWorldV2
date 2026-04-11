@@ -23,6 +23,26 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.7.0',
+    date: '2026-04-11',
+    title: 'PLASMA-TECH COMBAT & EFFECTS LAB DEPLOYMENT',
+    category: 'VISUALS & PERFORMANCE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'A revolutionary visual overhaul of the battle experience. We have deployed the "Effects Lab" research sandbox and integrated the V4 Ultra-Performance particle engine, delivering visceral Plasma-Tech hit effects with zero system lag.',
+    changes: [
+      'New: "Research Labs" (Effects Playground) sandbox for particle engineering',
+      'System: Deployed V4 Ultra-Performance Particle Engine (0% Idle CPU Loop)',
+      'UI: Comic-Tech Combat Tac-Interface — Avatar-anchored tactical clusters',
+      'UX: Quick Exit (X) Safeguard — Integrated termination confirmation prompt',
+      'Visuals: High-velocity Plasma/Spark impact effects with coordinate mapping',
+      'Engine: Adaptive "Low-FX" scaling for older hardware stability',
+      'Dev: Live Manifest Export protocol for rapid impact calibration'
+    ],
+    media: '/assets/monsters/Void Sector 7/Void Wraith.jpg'
+  },
+  {
     id: '1.6.0',
     date: '2026-04-10',
     title: 'GLOBAL TUTORIAL NETWORK — FULL GRID BRIEFING DEPLOYED',

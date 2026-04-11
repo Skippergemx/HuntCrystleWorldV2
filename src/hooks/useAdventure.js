@@ -60,9 +60,11 @@ export const useAdventure = () => {
   const getParentView = (currentView) => {
     switch (currentView) {
       case 'dungeon': return 'map';
-      case 'map': return 'menu';
-      case 'boss': return 'menu';
-      case 'pvp': return 'menu';
+      case 'map': return 'dungeon_menu';
+      case 'boss': return 'dungeon_menu';
+      case 'pvp': return 'dungeon_menu';
+      case 'syndicate': return 'dungeon_menu';
+      case 'dungeon_menu': return 'menu';
       default: return 'menu';
     }
   };

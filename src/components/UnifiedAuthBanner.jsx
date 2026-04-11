@@ -61,7 +61,7 @@ function TonWalletStatus({ syncPlayer, player }) {
 export const UnifiedAuthBanner = () => {
   const { isFarcaster } = useUnifiedAuth();
   const game = useGame();
-  const { user, player, wallet, farcasterContext, telegram, syncPlayer } = game || {};
+  const { user, player, wallet, farcasterContext, telegram, syncPlayer, lowPerfMode, setLowPerfMode } = game || {};
   const isTelegram = telegram?.isTelegram;
   const tgUser = telegram?.user;
 

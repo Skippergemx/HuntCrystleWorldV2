@@ -266,35 +266,6 @@ export const IdentityView = React.memo(() => {
           )}
         </div>
 
-        {/* --- SYSTEM SETTINGS --- */}
-        <div className="grid grid-cols-1 gap-3 w-full mb-8">
-          <div className="flex items-center justify-between bg-slate-800/50 p-3 pr-4 rounded-xl border border-slate-700">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Animated Mode</span>
-              <span className="text-[7px] text-slate-500 font-bold uppercase">Dynamic avatar visuals</span>
-            </div>
-            <button
-              onClick={() => { syncPlayer({ avatarAnimated: !player.avatarAnimated }); addLog(`Animated mode ${!player.avatarAnimated ? 'enabled' : 'disabled'}.`); }}
-              className={`relative w-10 h-6 rounded-full transition-colors ${player.avatarAnimated ? 'bg-cyan-500' : 'bg-slate-600'}`}
-            >
-              <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.avatarAnimated ? 'translate-x-4 shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'translate-x-0'}`}></div>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between bg-slate-800/50 p-3 pr-4 rounded-xl border border-slate-700">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Reduced FX Mode</span>
-              <span className="text-[7px] text-slate-500 font-bold uppercase italic">Recommended for Mobile / Heat reduction</span>
-            </div>
-            <button
-              onClick={() => { syncPlayer({ performanceMode: !player.performanceMode }); addLog(`Performance Mode ${!player.performanceMode ? 'Activated' : 'Deactivated'}.`); }}
-              className={`relative w-10 h-6 rounded-full transition-colors ${player.performanceMode ? 'bg-amber-500' : 'bg-slate-600'}`}
-            >
-              <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform ${player.performanceMode ? 'translate-x-4 shadow-[0_0_10px_rgba(245,158,11,0.8)]' : 'translate-x-0'}`}></div>
-            </button>
-          </div>
-        </div>
-
         {/* --- FARCASTER META (If applicable) --- */}
         {farcasterContext?.user && (
           <div className="w-full bg-indigo-950/30 border-2 border-indigo-900/50 rounded-2xl p-4 mb-8">

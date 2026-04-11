@@ -55,6 +55,13 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const [blockadeError, setBlockadeError] = useState(null);
   const [collisionProfile, setCollisionProfile] = useState(null);
   const [globalError, setGlobalError] = useState(null); // { message, stack, timestamp, view, depth }
+  const [lowPerfMode, setLowPerfMode] = useState(() => localStorage.getItem('low_perf_mode') === 'true');
+
+  // Sync Body Attribute for CSS Global Selectors (Low Performance Mode)
+  useEffect(() => {
+    document.body.setAttribute('data-perf-mode', lowPerfMode ? 'low' : 'high');
+    localStorage.setItem('low_perf_mode', lowPerfMode);
+  }, [lowPerfMode]);
 
   // Telegram SDK
   const telegram = useTelegram();
@@ -105,7 +112,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy, adventure.clearEnemy,
     totalStats, addLog, audio.playSFX, SOUNDS, adventure.selectedMap,
     STUN_DURATION_NORMAL, STUN_DURATION_CRIT, PENALTY_DURATION, DEFEAT_WINDOW_DURATION,
-    COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS,
+    COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS, ITEMS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES, PETS_METADATA,
     { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic }
@@ -252,6 +259,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
     globalError, setGlobalError, submitErrorReport,
+    lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA,
     BOSS, BOSS_MEDIA_FILES, SOUNDS
   };

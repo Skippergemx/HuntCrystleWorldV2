@@ -4,13 +4,13 @@ import {
   Map as MapIcon, ChevronRight, Heart, Zap, Target,
   Wind, Lock, User, RefreshCw, AlertCircle, Sparkles,
   Hammer, Gem, Package, X, TrendingUp, Skull, Flame, Clock,
-  PlusCircle, Activity, Coffee, MousePointer, Beer, Users,
+  PlusCircle, Activity, Coffee, MousePointer, Beer, Users, HelpCircle,
   Book, Globe, Database, HardHat, Footprints,
   Volume2, VolumeX, Music, Music2, SkipForward,
   Calendar, Wallet, ShieldAlert,
   Share2, Twitter, MessageSquare,
   Bug, ShieldAlert as AlertShield, Terminal, Sparkles as SparkleIcon, AlertTriangle,
-  Rocket, ExternalLink
+  Rocket, ExternalLink, FlaskConical
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -19,6 +19,7 @@ import { ImpactSplash, BossImpactSplash } from './CombatEffects';
 import { MenuView } from './MenuView';
 import { CombatView } from './CombatView';
 import { NagaCombatView } from './NagaCombatView';
+import { DungeonMenuView } from './DungeonMenuView';
 import { BossView } from './BossView';
 import { TavernView } from './TavernView';
 import { AttributesView } from './AttributesView';
@@ -39,6 +40,7 @@ import { SyndicateView } from './SyndicateView';
 import { PetsView } from './PetsView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
+import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { UnifiedAuthBanner } from './UnifiedAuthBanner';
 import { GUIDE_CONTENT } from '../data/guideContent';
@@ -127,6 +129,12 @@ const GlobalErrorOverlay = ({ error, onReport }) => {
 
 export const GameLayout = ({ onLogout }) => {
   const engine = useGame();
+  
+  if (!engine) {
+    console.warn("🚀 [SYSTEM_DIAGNOSTIC] GameLayout rendered without context. Postponing hydration...");
+    return <LoadingScreen />;
+  }
+
   const { 
     user, player, setPlayer, syncPlayer, logs, addLog,
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
@@ -135,10 +143,29 @@ export const GameLayout = ({ onLogout }) => {
     adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
     db, appId, totalStats, handleLogout, openGuide,
     globalError, submitErrorReport,
+    lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS
   } = engine;
 
   const [isMigrating, setIsMigrating] = useState(false);
+  const [displayedTip, setDisplayedTip] = useState("");
+  const fullTipText = "STUTTERING? TOGGLE LOW-FX MODE TO STABILIZE UPLINK.";
+
+  useEffect(() => {
+    let timeout;
+    if (displayedTip.length < fullTipText.length) {
+      timeout = setTimeout(() => {
+        setDisplayedTip(fullTipText.slice(0, displayedTip.length + 1));
+      }, 40);
+    } else {
+      // Loop after 10 seconds of staying complete
+      timeout = setTimeout(() => {
+        setDisplayedTip("");
+      }, 10000);
+    }
+    return () => clearTimeout(timeout);
+  }, [displayedTip]);
+
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, handleAttack } = combat;
@@ -175,7 +202,7 @@ export const GameLayout = ({ onLogout }) => {
 
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors relative`}>
-      <AnimatedBackground MONSTERS={MONSTERS} performanceMode={player.performanceMode} />
+      <AnimatedBackground MONSTERS={MONSTERS} performanceMode={lowPerfMode} />
       
       {/* AAA Premium Overlay: Grid & Scanlines */}
       <div className="fixed inset-0 pointer-events-none z-[999] opacity-20 bg-scanline"></div>
@@ -331,7 +358,7 @@ export const GameLayout = ({ onLogout }) => {
 
         {player.avatar && (
           <div className="absolute inset-0 pointer-events-none z-0">
-            <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top opacity-40 blur-[2px] scale-110" />
+            <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top opacity-40 blur-[2px] scale-110" />
             <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/60 to-slate-950"></div>
           </div>
         )}
@@ -340,7 +367,7 @@ export const GameLayout = ({ onLogout }) => {
           {/* PROFILE CARD - COMPACT CHARACTER CARD */}
           <div className={`w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20 transition-all duration-500 ${view === 'menu' ? 'border-cyan-500/40 hover:border-cyan-400' : 'border-black'}`}>
             <div className="absolute inset-0 z-0">
-              <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
+              <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
             </div>
 
@@ -528,7 +555,30 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
               </div>
 
-              <div className="ml-auto flex items-center gap-1 shrink-0 bg-slate-900/80 p-1 rounded-lg border border-white/5">
+              <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                {/* IN-LINE NPC GUIDE (NOW MOBILE-READY) */}
+                <div className="flex items-center gap-1.5 md:gap-2 bg-black/20 px-1.5 md:px-2 py-1 rounded-lg border border-white/5 max-w-[120px] md:max-w-[180px] animate-in fade-in duration-1000">
+                  <div className="w-6 h-6 md:w-7 md:h-7 rounded border border-cyan-500/30 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(6,182,212,0.1)]">
+                    <AvatarMedia num={player.avatar || 1} animated={true} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-[4px] md:text-[5px] font-black text-cyan-500 uppercase leading-none mb-0.5">Guide</span>
+                    <p className="text-[6px] md:text-[7px] font-bold text-white/70 uppercase italic leading-none tracking-tighter truncate md:whitespace-normal">
+                      {displayedTip}<span className="animate-pulse text-cyan-400">_</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-lg border border-white/5">
+                  <button 
+                    onClick={() => setLowPerfMode(!lowPerfMode)} 
+                  className={`flex flex-col items-center gap-0.5 p-1 px-1.5 md:p-2 rounded-md transition-all hover:bg-white/5 ${lowPerfMode ? 'text-amber-500 animate-pulse' : 'text-cyan-400'}`}
+                  title={lowPerfMode ? "Switch to High Graphics" : "Switch to Battery Saver"}
+                >
+                  {lowPerfMode ? <Zap size={12} md:size={14} /> : <Activity size={12} md:size={14} />}
+                  <span className="text-[5px] md:text-[6px] font-black uppercase tracking-tighter leading-none">{lowPerfMode ? 'LOW-FX' : 'HI-FI'}</span>
+                </button>
+                <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
                 <button onClick={() => setIsMusicOn(!isMusicOn)} className={`p-1.5 md:p-2 rounded-md transition-all hover:bg-white/5 ${isMusicOn ? 'text-cyan-400' : 'text-slate-600'}`}>
                   {isMusicOn ? <Music size={14} md:size={16} /> : <Music2 size={14} md:size={16} />}
                 </button>
@@ -542,9 +592,10 @@ export const GameLayout = ({ onLogout }) => {
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Vitals Progress */}
-            <div className="space-y-1 md:space-y-1.5 mb-1.5 md:mb-2">
+          {/* Vitals Progress */}
+          <div className="space-y-1 md:space-y-1.5 mb-1.5 md:mb-2">
               <div className="flex items-center gap-2 md:gap-3">
                 <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
                   <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
@@ -605,6 +656,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'dungeon' && (
             <CombatView />
+          )}
+
+          {view === 'dungeon_menu' && (
+            <DungeonMenuView />
           )}
 
           {view === 'naga_combat' && (
@@ -691,6 +746,10 @@ export const GameLayout = ({ onLogout }) => {
             <DevlogView />
           )}
 
+          {view === 'playground' && (
+            <EffectsPlayground />
+          )}
+
         </div>
 
         <div className="bg-amber-400 border-[4px] border-black rounded-lg p-3 h-28 overflow-y-auto relative shadow-[4px_4px_0_rgba(0,0,0,1)] custom-scrollbar">
@@ -717,6 +776,16 @@ export const GameLayout = ({ onLogout }) => {
           <a href="https://t.me/skippergemx" target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-slate-400 hover:text-blue-400 uppercase italic tracking-wider transition-colors">Telegram</a>
           <div className="text-[10px] font-black text-slate-500 uppercase italic tracking-wider cursor-help" title="Discord: skippergemx">Discord: skippergemx</div>
           <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>
+          
+          {/* Secret Developer Uplink - Effects Lab */}
+          <button 
+            onClick={() => setView('playground')}
+            className="p-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 rounded-lg hover:bg-cyan-500/20 transition-all group flex items-center gap-2"
+            title="Access Effects Lab"
+          >
+            <FlaskConical size={12} className="group-hover:rotate-12 transition-transform" />
+            <span className="text-[8px] font-black uppercase italic tracking-widest">Neural Research</span>
+          </button>
         </div>
       </footer>
 

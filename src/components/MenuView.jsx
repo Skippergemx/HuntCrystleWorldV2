@@ -77,7 +77,7 @@ const DUO_DIALOGUE = [
   ["H: These crystal pets are smarter than they look.", "P: We're literally built from ancient logic-gems, boss."]
 ];
 
-const CharacterDash = ({ player, penaltyRemaining, petsMeta }) => {
+const CharacterDash = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
   const [fullMsg, setFullMsg] = React.useState("");
   const [displayedMsg, setDisplayedMsg] = React.useState("");
   const [lineIdx, setLineIdx] = React.useState(0);
@@ -146,7 +146,7 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta }) => {
         {/* Main Avatar */}
         <div className={`w-20 h-24 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-800 ring-2 ring-cyan-500/20 relative z-10 transition-all ${isHunterTalking ? 'scale-105 ring-cyan-400' : 'opacity-80 scale-95'}`}>
           {player.avatar ? (
-            <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top" />
+            <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top" />
           ) : (
             <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name}`} className="w-full h-full object-cover" />
           )}
@@ -196,7 +196,7 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta }) => {
 };
 
 export const MenuView = React.memo(() => {
-  const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA } = useGame();
+  const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA, lowPerfMode, setLowPerfMode } = useGame();
   const { setView } = adventure;
   const { penaltyRemaining, autoTimeLeft } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
@@ -226,14 +226,14 @@ export const MenuView = React.memo(() => {
       title: "Module Navigation",
       npc: 11,
       visualType: 'nav',
-      text: "Each tile takes you to a different system — Dungeon, Forge, Market, Tavern, PvP, and more. Explore them all to grow your Hunter efficiently.",
-      hint: "Strategy: Start with Dungeon to earn GX Tokens and XP!"
+      text: "Each tile takes you to a different system — Battle Hub, Forge, Market, Tavern, PvP, and more. Explore them all to grow your Hunter efficiently.",
+      hint: "Strategy: Start with the Battle Hub to earn GX Tokens and XP!"
     },
     {
-      title: "Dungeon Entry",
+      title: "Battle Hub Entry",
       npc: 17,
       visualType: 'dungeon',
-      text: "Tap the Dungeon tile to access the World Sector Map. Select a sector, fight monsters, and dive deeper for better loot and score. Be careful — defeat results in a penalty!",
+      text: "Tap the Battle Hub tile to access your deployment zones. Select Dungeons, Boss Rooms, or PvP to begin your operations. Be careful — defeat results in a penalty!",
       hint: "Warning: If defeated, you must wait out a penalty timer."
     }
   ];
@@ -250,32 +250,22 @@ export const MenuView = React.memo(() => {
   };
 
   const startDungeon = () => {
-    if (!isPenalized) {
-      setView('map');
-    }
-  };
-
-  const startBoss = () => {
-    if (!isPenalized) {
-      setView('boss');
-      if (autoTimeLeft > 0) syncPlayer({ autoUntil: 0 });
-    }
+    setView('dungeon_menu');
   };
 
   return (
     <div className="flex-1 p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative overflow-y-auto custom-scrollbar bg-slate-950">
       <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none" />
       
-      <CharacterDash player={player} penaltyRemaining={penaltyRemaining} petsMeta={PETS_METADATA} />
+      <CharacterDash player={player} penaltyRemaining={penaltyRemaining} petsMeta={PETS_METADATA} lowPerfMode={lowPerfMode} />
 
       <NavBtn 
         onClick={startDungeon} 
-        icon={isPenalized ? <Clock className="animate-pulse" /> : <MapIcon />} 
-        title="Dungeon" 
-        sub={isPenalized ? `Wait ${penaltyRemaining}s` : "Battle"} 
-        color={isPenalized ? "bg-slate-800 grayscale" : "bg-cyan-600"} 
-        disabled={isPenalized} 
-        backdrop="/assets/monsters/Rust Canyon/Rust Cat 0-0.jpg"
+        icon={isPenalized ? <Clock className="animate-pulse" /> : <Swords />} 
+        title="Battle Hub" 
+        sub={isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon"} 
+        color={isPenalized ? "bg-slate-800 grayscale" : "bg-red-600"} 
+        backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
       />
       <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" />
       <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub="Stats" color="bg-orange-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" />
@@ -288,31 +278,6 @@ export const MenuView = React.memo(() => {
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
       <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" />
       <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" />
-      <NavBtn 
-        onClick={startBoss} 
-        icon={<AlertCircle />} 
-        title="Boss" 
-        sub="High Yield" 
-        color="bg-red-700" 
-        disabled={isPenalized} 
-        backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
-      />
-      <NavBtn 
-        onClick={() => setView('syndicate')} 
-        icon={<Shield />} 
-        title="Guild Vs Guild" 
-        sub="Naga War" 
-        color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" 
-        backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
-      />
-      <NavBtn 
-        onClick={() => setView('pvp')} 
-        icon={<Swords />} 
-        title="PVP Arena" 
-        sub="Holo-Grid" 
-        color="bg-red-900 border-red-500/50" 
-        backdrop="/assets/monsters/Gale Empire/Vortex Vanguard.jpg"
-      />
       <NavBtn 
         onClick={() => setView('pets')} 
         icon={<Sparkles />} 

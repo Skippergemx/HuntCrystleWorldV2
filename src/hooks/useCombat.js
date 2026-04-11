@@ -25,6 +25,7 @@ export const useCombat = (
   AP_PER_LEVEL,
   EQUIPMENT,
   LOOTS,
+  ITEMS,
   depth,
   setDepth,
   view,
@@ -220,6 +221,98 @@ export const useCombat = (
     }
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber]);
 
+  const [isTreasury, setIsTreasury] = useState(false);
+  const MAX_DUNGEON_DEPTH = 40;
+
+  const handleTreasuryReached = useCallback(() => {
+    setIsTreasury(true);
+    setCombatState('VICTORY');
+    setShowVictoryWindow(true);
+    addLog(`💎 TREASURY REACHED! Sector Node Cleared.`);
+    playSFX(SOUNDS.obtainLoot);
+
+    const rewards = [];
+    const updates = {};
+    
+    // 1. AUTO-SCROLL REWARD (Choose 1)
+    // 9m and 12m are rare
+    const scrollPool = [
+      { id: 'auto_scroll_3m', weight: 40 },
+      { id: 'auto_scroll_6m', weight: 35 },
+      { id: 'auto_scroll_9m', weight: 15 },
+      { id: 'auto_scroll_12m', weight: 10 }
+    ];
+    const totalScrollWeight = scrollPool.reduce((sum, s) => sum + s.weight, 0);
+    let scrollRand = Math.random() * totalScrollWeight;
+    let selectedScrollId = 'auto_scroll_3m';
+    for (const s of scrollPool) {
+      if (scrollRand < s.weight) {
+        selectedScrollId = s.id;
+        break;
+      }
+      scrollRand -= s.weight;
+    }
+    const scrollItem = ITEMS.find(i => i.id === selectedScrollId);
+    if (scrollItem) {
+      const itemWithId = { ...scrollItem, id: `${scrollItem.id}_TREASURY_${Date.now()}` };
+      rewards.push(itemWithId);
+      updates[`inventory.${itemWithId.id}`] = itemWithId;
+      addLog(`🎁 FOUND: ${scrollItem.name}`);
+    }
+
+    // 2. RANDOM LOOT (5 PCS)
+    if (selectedMap && selectedMap.lootTable) {
+      const lootPool = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean);
+      if (lootPool.length > 0) {
+        const baseLoot = lootPool[Math.floor(Math.random() * lootPool.length)];
+        for (let i = 0; i < 5; i++) {
+          const itemWithId = { ...baseLoot, id: `${baseLoot.id}_TREASURY_PCS_${i}_${Date.now()}` };
+          rewards.push(itemWithId);
+          updates[`inventory.${itemWithId.id}`] = itemWithId;
+        }
+        addLog(`🎁 COLLECTED: 5x ${baseLoot.name}`);
+      }
+    }
+
+    // Since user mentioned "10 pcs" but also "1 random item (5pcs of it)", 
+    // maybe they wanted 5 entries of scrolls too? 
+    // Let's stick to 1 scroll + 5 items as per the latest detail, or fill to 10 if intended.
+    // The user said: "rewards are 3,6,9,12 auto scroll - random, 10 pcs" earlier.
+    // Let's give 5 scrolls and 5 items to make it 10 pcs total as per "10 pcs" request.
+    while (rewards.length < 10) {
+       const extraScrollRand = Math.random() * totalScrollWeight;
+       let extraId = 'auto_scroll_3m';
+       let tempWeight = extraScrollRand;
+       for (const s of scrollPool) {
+         if (tempWeight < s.weight) {
+           extraId = s.id;
+           break;
+         }
+         tempWeight -= s.weight;
+       }
+       const extraItem = ITEMS.find(i => i.id === extraId);
+       const extraWithId = { ...extraItem, id: `${extraItem.id}_TREASURY_FILL_${rewards.length}_${Date.now()}` };
+       rewards.push(extraWithId);
+       updates[`inventory.${extraWithId.id}`] = extraWithId;
+    }
+
+    setSessionRewards(prev => ({
+      ...prev,
+      loots: [...prev.loots, ...rewards]
+    }));
+
+    syncPlayer(updates);
+
+    setTimeout(() => {
+      resetCombatEngine();
+      setKillsInFloor(0);
+      setDepth(1);
+      setIsTreasury(false);
+      setView('menu');
+      addLog("🏁 Mission Parameters Met. Returning to Command Center.");
+    }, 4500); // Longer delay to enjoy the treasury victory
+  }, [selectedMap, LOOTS, ITEMS, syncPlayer, resetCombatEngine, setView, setDepth, addLog, playSFX, SOUNDS]);
+
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
     const petMeta = player?.petId ? PETS_METADATA.find(p => p.id === player.petId) : null;
@@ -309,12 +402,17 @@ export const useCombat = (
 
     syncPlayer(updates);
 
+    const newKills = killsRef.current + 1;
+    if (newKills >= 10 && depth >= MAX_DUNGEON_DEPTH) {
+       handleTreasuryReached();
+       return;
+    }
+
     setShowVictoryWindow(true);
     setCombatState('VICTORY');
 
     setTimeout(() => {
       resetCombatEngine(); // RESET ALL LOCKS AND STATES
-      const newKills = killsRef.current + 1;
       if (newKills >= 10) {
         setKillsInFloor(0);
         const nextDepth = depth + 1;
@@ -322,8 +420,6 @@ export const useCombat = (
         addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
         
         // --- STRATEGIC DEPTH SCORING V4 ---
-        // Logic: Rank first by Map Difficulty (minLevel), then by Floor.
-        // Formula: (minLevel * 100000) + floor
         const currentMapFactor = (selectedMap?.minLevel || 1) * 100000;
         const currentDepthScore = currentMapFactor + nextDepth;
         const previousMaxScore = player?.maxDepthScore || 0;
@@ -347,7 +443,7 @@ export const useCombat = (
     }, 1500);
 
     if (didLevelUp) {
-      // syncPlayer(updates) already called above, which triggers the leaderboard echo
+      // syncPlayer(updates) already called above
     }
 
     if (battleMode === 'GVG') {
@@ -355,7 +451,7 @@ export const useCombat = (
        setBattleMode('DUNGEON');
        setTimeout(() => setView('syndicate'), 1500);
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, playSFX, SOUNDS]);
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, playSFX, SOUNDS, handleTreasuryReached]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
     // BUG-14 FIX: Raise cap to account for AllInOne (4x) + DoubleStrike (2x) = 8x valid multiplier
@@ -602,6 +698,7 @@ export const useCombat = (
     enemyRef,
     battleMode,
     setBattleMode,
+    isTreasury,
     handleRetreat
   };
 };

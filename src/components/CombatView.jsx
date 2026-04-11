@@ -1,17 +1,20 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight, RefreshCw, FlaskConical, WandSparkles, Sparkles } from 'lucide-react';
-import { ImpactSplash } from './CombatEffects';
+import { ImpactSplash, BattleParticles } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer
+    LOOTS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
-  const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, lastLoot } = combat;
+  const { 
+    stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
+    strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury 
+  } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft } = gameLoop;
 
@@ -35,6 +38,11 @@ export const CombatView = React.memo(() => {
   const [isPossibleDropsModalOpen, setIsPossibleDropsModalOpen] = useState(false);
   const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
   const [showPurifyConfirm, setShowPurifyConfirm] = useState(false);
+  
+  const battleParticlesRef = useRef(null);
+  const enemyContainerRef = useRef(null);
+  const playerContainerRef = useRef(null);
+  const arenaRef = useRef(null);
 
   const possibleDrops = useMemo(() => {
     return selectedMap?.lootTable ? selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
@@ -131,6 +139,33 @@ export const CombatView = React.memo(() => {
     }
   }, []);
 
+  // PLASMA IMPACT ENGINE: Synchronized with Combat Bus (V4 Shared Arena)
+  useEffect(() => {
+    if (impactSplash && battleParticlesRef.current && enemyContainerRef.current && arenaRef.current) {
+      const rect = enemyContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      battleParticlesRef.current.emit(
+        (rect.left - arenaRect.left) + rect.width / 2, 
+        (rect.top - arenaRect.top) + rect.height / 2, 
+        'spark', 
+        { speed: 20, size: 20, gravity: -0.2, count: 80 }
+      );
+    }
+  }, [impactSplash]);
+
+  useEffect(() => {
+    if (playerImpactSplash && battleParticlesRef.current && playerContainerRef.current && arenaRef.current) {
+      const rect = playerContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      battleParticlesRef.current.emit(
+        (rect.left - arenaRect.left) + rect.width / 2, 
+        (rect.top - arenaRect.top) + rect.height / 2, 
+        'spark', 
+        { speed: 20, size: 20, gravity: -0.2, count: 80 }
+      );
+    }
+  }, [playerImpactSplash]);
+
   if (!enemy) return (
     <div className="flex-1 flex items-center justify-center bg-black text-cyan-500 font-black italic uppercase tracking-widest animate-pulse">
       Initialising Combat Stream...
@@ -138,7 +173,11 @@ export const CombatView = React.memo(() => {
   );
 
   return (
-    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}>
+    <div 
+      ref={arenaRef}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}
+    >
+      <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
       {/* Dynamic Background Backdrop */}
       {arenaTheme.backdrop && (
         <div className="absolute inset-0 z-0 select-none">
@@ -152,479 +191,371 @@ export const CombatView = React.memo(() => {
       {/* Halftone Overlay HUD */}
       <div className="absolute inset-0 opacity-10 pointer-events-none z-20 comic-halftone" style={{ color: arenaTheme.dot }}></div>
 
-      {/* --- HUD TOP --- */}
-      <div className="w-full flex justify-between items-start z-30 px-2 md:px-6 pt-2 md:pt-4">
-        <div className="flex flex-col gap-1 md:gap-3">
-          <div className="flex items-center gap-1 md:gap-3">
-            <div className={`flex items-center gap-1 md:gap-3 px-2 md:px-5 py-1 md:py-3 bg-black border-[3px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.4)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${arenaTheme.text} transform -rotate-1`}>
-              <TrendingUp size={10} className="md:w-5 md:h-5 animate-pulse" />
-              <div className="flex flex-col leading-none">
-                <span className="text-[5px] md:text-[10px] font-black uppercase opacity-70">
-                  {combat.battleMode === 'GVG' ? `TARGET: [${enemy.syndicateTag || '???'}] ${enemy.syndicateName || 'SYN'}` : 'Sector Alpha'}
-                </span>
-                <span className="text-[9px] md:text-lg font-black tracking-widest italic uppercase">
-                  {combat.battleMode === 'GVG' ? 'SYNDICATE RAID' : `Floor ${depth}`}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={() => openGuide('dungeon')}
-              className={`p-1.5 md:p-3 ${arenaTheme.banner} border-[3px] md:border-[4px] border-black text-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:brightness-110 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform rotate-3`}
-              title="Tactical Guide"
-            >
-              <HelpCircle size={12} className="md:w-5 md:h-5" strokeWidth={4} />
-            </button>
-            <button
-              onClick={() => adventure.goBack()}
-              className="p-1.5 md:p-3 bg-red-600 border-[3px] md:border-[4px] border-black text-white shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-2"
-              title="Quick Exit"
-            >
-              <X size={12} className="md:w-5 md:h-5" strokeWidth={4} />
-            </button>
-          </div>
+      {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
+      <div className="w-full z-50 px-2 md:px-6 pt-2 md:pt-4 flex flex-row items-center justify-between gap-1 md:gap-4 overflow-x-auto no-scrollbar pb-2">
+        
+        {/* 1. TACTICAL GUIDE (LEFT ALIGNED) */}
+        <button
+          onClick={() => openGuide('dungeon')}
+          className={`p-1.5 md:p-3 ${arenaTheme.banner} border-[2px] md:border-[4px] border-black text-black shadow-[2px_2px_0_rgba(0,0,0,1)] hover:brightness-110 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0`}
+          title="Tactical Guide"
+        >
+          <HelpCircle size={14} className="md:w-6 md:h-6" strokeWidth={4} />
+        </button>
 
+        {/* 2. CONSOLIDATED SECTOR & NODE PROGRESS */}
+        <div className={`flex items-center gap-2 md:gap-4 px-2 md:px-4 py-1.5 md:py-2.5 bg-black border-[2px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] flex-1 min-w-[140px] max-w-[420px]`}>
+          <div className="flex flex-col leading-none shrink-0 border-r border-white/10 pr-2">
+            <span className="text-[5px] md:text-[9px] font-black uppercase opacity-70 whitespace-nowrap text-white">
+              {combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')}
+            </span>
+            <span className="text-[9px] md:text-base font-black tracking-widest italic uppercase whitespace-nowrap text-white">
+              {combat.battleMode === 'GVG' ? 'SYN_RAID' : `Floor ${depth}`}
+            </span>
+          </div>
+          
           {combat.battleMode !== 'GVG' && (
-            <div className="flex flex-col gap-1 p-1 bg-black/40 border border-white/5 rounded backdrop-blur-sm max-w-[100px] md:max-w-none">
-              <div className="flex justify-between items-center px-1">
-                <span className="text-[5px] md:text-[8px] font-black text-slate-400 uppercase italic">Progress</span>
-                <span className="text-[6px] md:text-[8px] font-black text-cyan-400">{combat.killsInFloor}/10</span>
+            <div className="flex-1 flex flex-col gap-1 min-w-0">
+              <div className="flex justify-between items-center px-0.5">
+                <span className="text-[5px] md:text-[8px] font-black text-cyan-400 uppercase italic tracking-tighter">NODE_SYNC</span>
+                <span className="text-[5px] md:text-[9px] font-black text-white font-mono">N_{combat.killsInFloor.toString().padStart(2, '0')}/10</span>
               </div>
-              <div className="flex gap-0.5 md:gap-1">
+              <div className="flex gap-0.5 md:gap-1 h-1 md:h-2">
                 {[...Array(10)].map((_, i) => (
-                  <div key={i} className={`flex-1 h-1 md:h-2.5 border border-black/50 transition-all duration-300 ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[0_0_5px_#06b6d4]' : 'bg-slate-800'}`} />
+                  <div key={i} className={`flex-1 rounded-full border border-black/50 transition-all duration-500 ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[0_0_8px_#06b6d4]' : 'bg-slate-900'}`} />
                 ))}
               </div>
             </div>
           )}
+
         </div>
 
-        <div className="flex flex-col items-end gap-2 md:gap-4 scale-90 sm:scale-100 origin-top-right">
-          <div className="flex gap-2 md:gap-4">
-            <div className="flex items-center gap-1 md:gap-2">
-              <button onClick={cyclePotion} className="p-1 md:p-3 bg-slate-800 border-[2px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] group" title="Swap Potion">
-                <RefreshCw size={12} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
-              </button>
-              <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-[2px] md:border-[4px] border-black px-1 md:px-5 py-1 md:py-3 rounded hover:bg-red-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 group relative overflow-hidden w-20 md:w-28">
-                <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-                <span className="text-[10px] md:text-xl relative z-10 group-hover:scale-110 transition-transform">🧪</span>
-                <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0">
-                  <span className="text-[5px] md:text-[9px] font-black uppercase text-white/70 italic whitespace-nowrap overflow-hidden text-ellipsis w-full text-left">
-                    {potionCountData.selected === 'hp_potion' ? 'SMALL' : potionCountData.selected?.replace('mega_hp_potion', 'MEGA').replace('ultra_hp_potion', 'ULTRA') || 'HEAL'}
-                  </span>
-                  <span className="text-[10px] md:text-lg font-black text-white italic">{potionCountData.count}</span>
-                </div>
-              </button>
-            </div>
+        {/* 2.5 MISSION ASSETS (MANIFEST) */}
+        <button
+          onClick={() => setIsPossibleDropsModalOpen(true)}
+          className="group flex flex-col items-center justify-center w-8 h-8 md:w-12 md:h-12 bg-slate-900 border-2 border-cyan-500 rounded md:rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
+          title="Sector Drop Manifest"
+        >
+          <Search size={14} className="text-cyan-500 group-hover:text-black transition-colors md:w-6 md:h-6" />
+          <span className="hidden md:block text-[6px] font-black text-cyan-500 group-hover:text-black uppercase mt-0.5 tracking-tighter">DROPS</span>
+        </button>
 
 
-
-            {combat.battleMode !== 'GVG' && (
-              <div className="flex flex-col gap-1.5 items-end">
-                {isAutoActive ? (
-                  <div className="flex items-center gap-1 bg-gradient-to-r from-cyan-600 to-cyan-400 border-[2px] md:border-[4px] border-black px-1.5 md:px-5 py-1 md:py-3 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative overflow-hidden transition-all animate-pulse transform rotate-1 w-20 md:w-32">
-                    <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-                    <div className="relative z-10 shrink-0 transform -rotate-1 animate-spin-slow text-black">
-                      <WandSparkles size={12} md:size={20} />
-                    </div>
-                    <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0">
-                      <span className="text-[4px] md:text-[9px] font-black uppercase text-black/70 italic transform -rotate-1 whitespace-nowrap">
-                        ACTIVE
-                      </span>
-                      <span className="text-[10px] md:text-lg font-black text-black italic transform -rotate-1">{autoTimeLeft}s</span>
-                    </div>
-                  </div>
-                ) : (
-                  hasAnyScrolls && (
-                    <div className="flex items-center gap-1 md:gap-2">
-                      <button onClick={cycleScroll} className="p-1 md:p-3 bg-slate-800 border-[2px] md:border-[4px] border-black text-white hover:text-cyan-400 hover:border-cyan-400/80 rounded transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] group" title="Swap Scroll">
-                        <RefreshCw size={12} className="md:w-6 md:h-6 group-hover:rotate-180 transition-transform duration-500" />
-                      </button>
-                      <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-[2px] md:border-[4px] border-black px-1 md:px-5 py-1 md:py-3 rounded hover:bg-cyan-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] active:shadow-none active:translate-x-1 active:translate-y-1 group relative overflow-hidden w-20 md:w-36">
-                        <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-black"></div>
-                        <div className="relative z-10 shrink-0 group-hover:scale-110 transition-transform text-black">
-                          <WandSparkles size={12} md:size={22} />
-                        </div>
-                        <div className="flex flex-col items-start bg-transparent leading-none relative z-10 min-w-0 overflow-hidden">
-                          <span className="text-[5px] md:text-[9px] font-black uppercase text-black/70 italic truncate w-full text-left">
-                            {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected.split('_').pop().toUpperCase()}
-                          </span>
-                          <span className="text-[10px] md:text-lg font-black text-black italic">{scrollCountData.count}</span>
-                        </div>
-                      </button>
-                    </div>
-                  )
-                )}
+        {/* 3. CONSOLIDATED BIOLOGICAL/RESONANCE TOOLS */}
+        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md">
+          {/* Potion Slot */}
+          <div className="flex items-center gap-1">
+            <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
+              <RefreshCw size={10} className="md:w-4 md:h-4" />
+            </button>
+            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-2 border-black px-1.5 md:px-3 py-1 rounded hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 group">
+              <span className="text-[10px] md:text-lg">🧪</span>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[4px] md:text-[7px] font-black uppercase text-white/70 italic">{potionCountData.selected === 'hp_potion' ? 'SM' : 'MAX'}</span>
+                <span className="text-[8px] md:text-sm font-black text-white italic">{potionCountData.count}</span>
               </div>
-            )}
+            </button>
           </div>
-        </div>
-      </div>
 
+          <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
 
-      {/* --- BATTLE ARENA: SYMMETRICAL GRID --- */}
-      <div className="w-full flex-1 relative z-40 flex flex-col lg:grid lg:grid-cols-2 gap-2 lg:gap-8 items-center px-2 md:px-12 py-1 md:py-4">
-
-        {/* VS CENTRAL BADGE (ABSOLUTE OVERLAY) - Hidden on Mobile to prevent overlap */}
-        <div className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">
-          <div className="w-24 h-24 bg-yellow-400 border-[8px] border-black rounded-full shadow-[10px_10px_0_rgba(0,0,0,1)] flex items-center justify-center transform -rotate-12 animate-kapow">
-            <span className="text-black font-black text-4xl italic tracking-tighter drop-shadow-[2px_2px_0_#fff]">VS</span>
-          </div>
-        </div>
-
-        {/* ENEMY PANEL (LEFT) */}
-        <div className={`flex flex-col items-center lg:items-end gap-1.5 md:gap-6 transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
-          <div className="relative">
-            {currentTaunt && (
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[100] animate-in zoom-in slide-in-from-bottom-6 duration-300">
-                <div className="relative bg-white border-[4px] border-black px-4 py-2 md:px-6 md:py-4 rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)] min-w-[100px] md:min-w-[120px] max-w-[200px] md:max-w-[240px]">
-                  <p className="text-[10px] md:text-[12px] font-black uppercase text-black italic text-center leading-none tracking-tight">{currentTaunt}</p>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 md:w-6 md:h-6 bg-white border-r-[4px] border-b-[4px] border-black rotate-45 transform"></div>
+          {/* Scroll Slot */}
+          {combat.battleMode !== 'GVG' && (
+            <div className="flex items-center gap-1">
+              {isAutoActive ? (
+                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-2 md:px-4 py-1 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] animate-pulse">
+                  <WandSparkles size={12} className="text-black animate-spin-slow" />
+                  <span className="text-[9px] md:text-base font-black text-black italic">{autoTimeLeft}s</span>
                 </div>
-              </div>
-            )}
-
-            <div className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}>
-              <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
-              <div className="absolute inset-0 opacity-20 comic-halftone text-red-500 z-0"></div>
-              {combat.battleMode === 'GVG' ? (
-                <img
-                  src={`/assets/playeravatar/CrystleHunterAvatar (${enemy.avatarNum || 1}).jpg`}
-                  className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
-                  alt={enemy.name}
-                />
               ) : (
-                <img
-                  src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.jpg`}
-                  alt={enemy.name}
-                  className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
-                  onError={(e) => {
-                    const folder = enemy.folder || 'Neon Slums';
-                    if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.png`;
-                    else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
-                  }}
-                />
+                hasAnyScrolls && (
+                  <>
+                    <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
+                      <RefreshCw size={10} className="md:w-4 md:h-4" />
+                    </button>
+                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-2 border-black px-1.5 md:px-4 py-1 rounded hover:bg-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                      <WandSparkles size={12} className="text-black" />
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="text-[4px] md:text-[7px] font-black uppercase text-black/70 italic">{scrollCountData.selected === 'auto_scroll' ? '1M' : 'MAX'}</span>
+                        <span className="text-[8px] md:text-sm font-black text-black italic">{scrollCountData.count}</span>
+                      </div>
+                    </button>
+                  </>
+                )
               )}
-              <div className="absolute top-1 right-1 sm:top-2 sm:right-2 z-30 flex flex-col gap-1 transform rotate-3 scale-75 sm:scale-100 origin-top-right">
-                <div className="bg-emerald-600 border-[3px] border-black px-2 py-0.5 sm:px-3 sm:py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-1 group overflow-hidden relative">
-                  <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
-                  <Star size={10} className="text-white animate-pulse" />
-                  <span className="text-[8px] sm:text-[10px] font-black text-white italic drop-shadow-md">XP {enemy.xp}</span>
-                </div>
-                <div className="bg-amber-500 border-[3px] border-black px-2 py-0.5 sm:px-3 sm:py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-1 group overflow-hidden relative">
-                  <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
-                  <Gem size={10} className="text-white" />
-                  <span className="text-[8px] sm:text-[10px] font-black text-white italic drop-shadow-md">GX {enemy.loot}</span>
-                </div>
-              </div>
-
-              <ImpactSplash splash={impactSplash} />
             </div>
-
-
-            {combat.showVictoryWindow && (
-              <div className="absolute inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center animate-in zoom-in duration-300 border-[6px] md:border-[8px] border-black shadow-2xl">
-                <div className="absolute inset-0 comic-halftone opacity-40 text-yellow-500"></div>
-                <div className="flex flex-col items-center gap-3 md:gap-4 animate-kapow relative z-10">
-                  <div className="bg-yellow-400 border-[4px] md:border-[6px] border-black px-6 py-3 md:px-10 md:py-6 transform -rotate-6 shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)]">
-                    <p className="text-black font-black text-2xl md:text-5xl uppercase italic tracking-tighter drop-shadow-[2px_2px_0_#fff]">BATTLE WON!</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* FLOATING NUMBERS FOR ENEMY */}
-            <div className="absolute inset-0 pointer-events-none z-[100] flex items-center justify-center">
-              {combat.floatingNumbers?.filter(n => n.side === 'monster').map(n => (
-                <div key={n.id} className={`absolute font-black italic select-none animate-float-up ${n.isCrit ? 'text-yellow-400 text-3xl md:text-6xl drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]' : 'text-white text-xl md:text-4xl'}`}>
-                  {n.isCrit ? '⚡' : ''}{n.val}{n.isCrit ? '!' : ''}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full max-w-[280px] md:max-w-[320px] space-y-2 md:space-y-4">
-            <div className="flex flex-col gap-2 relative">
-              <div className="flex justify-between items-end">
-                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] flex flex-col">
-                  <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Threat Identified</span>
-                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate max-w-[120px] md:max-w-none">{enemy.name}</h2>
-                </div>
-
-                {requiredTool && (
-                  <div className="absolute -top-10 md:-top-14 right-0 animate-in slide-in-from-right-6 duration-500 z-50">
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="bg-emerald-600/90 backdrop-blur-md border-[3px] border-black px-2 md:px-4 py-0.5 md:py-1.5 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-2 flex items-center gap-2">
-                        <Sparkles size={10} className="text-white animate-pulse md:w-4 md:h-4" />
-                        <span className="text-[7px] md:text-[10px] font-black text-white uppercase italic tracking-tighter">CORRUPTED CORE DETECTED</span>
-                      </div>
-                      <div className="bg-black/90 border border-white/20 px-1.5 md:px-3 py-0.5 md:py-1 flex items-center gap-1.5 transform -rotate-1 shadow-lg">
-                        <span className="text-[10px] md:text-sm">{toolDetails?.icon || '💠'}</span>
-                        <span className="text-[6px] md:text-[8px] font-black text-slate-300 uppercase tracking-widest">Requires: {toolDetails?.name || requiredTool}</span>
-                      </div>
-                      {hasRequiredTool && (
-                         <button
-                           onClick={() => setShowPurifyConfirm(true)}
-                           disabled={isStunned || isMissed || combat.showDefeatedWindow || combat.showVictoryWindow || combat.combatBusRef.current}
-                           className="mt-1 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:grayscale border-[3px] border-black px-3 md:px-6 py-1 md:py-2 text-black font-[1000] text-[9px] md:text-sm uppercase italic tracking-tighter shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none hover:scale-105 transition-all transform"
-                         >
-                           PURIFY CORE
-                         </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-
-              <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 transform -rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-red-500">
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
-                  <span className="text-[10px] md:text-xs font-black italic">{enemy.str}</span>
-                </div>
-                <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-emerald-500">
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
-                  <span className="text-[10px] md:text-xs font-black italic">{enemy.agi}</span>
-                </div>
-                <div className="flex flex-col items-center p-0.5 md:p-1 text-cyan-500">
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
-                  <span className="text-[10px] md:text-xs font-black italic">{enemy.dex}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="w-full group">
-              <div className="flex justify-between items-center mb-0.5 px-1">
-                <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase italic">Power Core</span>
-                <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(enemy.hp)}/{Math.floor(enemy.maxHp)}</span>
-              </div>
-              <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] flex items-center overflow-hidden">
-                {/* LAGGING SHADOW BAR */}
-                <div className="absolute h-full bg-red-400 opacity-30 transition-all duration-700 ease-out" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}></div>
-                {/* MAIN HP BAR */}
-                <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300 relative" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}>
-                  <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
-                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* PLAYER PANEL (RIGHT) */}
-        <div className={`flex flex-col items-center md:items-start gap-1.5 md:gap-6 transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
-          <div className="relative">
-            {playerTaunt && (
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 z-[60] animate-in zoom-in slide-in-from-bottom-6 duration-300">
-                <div className="relative bg-cyan-500 border-[4px] border-black px-4 py-2 md:px-6 md:py-4 rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)] min-w-[100px] md:min-w-[120px] max-w-[200px] md:max-w-[240px]">
-                  <p className="text-[10px] md:text-[12px] font-black uppercase text-white italic text-center leading-none tracking-tight">{playerTaunt}</p>
-                  <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 md:w-6 md:h-6 bg-cyan-500 border-r-[4px] border-b-[4px] border-black rotate-45 transform"></div>
-                </div>
-              </div>
-            )}
-
-            {lastLoot && (
-              <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-[70] animate-bounce">
-                <div className="bg-yellow-400 border-[4px] md:border-[5px] border-black p-2 md:p-3 flex flex-col items-center shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] transform rotate-12">
-                  <div className="absolute inset-0 comic-halftone opacity-20 text-white"></div>
-                  <span className="text-2xl md:text-4xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,0.5)]">{lastLoot.icon}</span>
-                  <span className="text-[8px] md:text-[10px] font-black uppercase text-black italic tracking-tighter mt-0.5 md:mt-1 whitespace-nowrap">FOUND: {lastLoot.name}!</span>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3 md:gap-8">
-              <div className={`w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
-                <div className="absolute inset-0 bg-gradient-to-tl from-black/80 via-transparent to-transparent z-10"></div>
-                <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-0"></div>
-                {player.avatar && (
-                  <AvatarMedia num={player.avatar} animated={player.avatarAnimated} className="w-full h-full object-cover object-top filter contrast-125" />
-                )}
-                <ImpactSplash splash={playerImpactSplash} />
-
-                {/* FLOATING NUMBERS FOR PLAYER */}
-                <div className="absolute inset-0 pointer-events-none z-[100] flex items-center justify-center">
-                  {combat.floatingNumbers?.filter(n => n.side === 'player').map(n => (
-                    <div key={n.id} className={`absolute font-black italic select-none animate-float-up ${n.isCrit ? 'text-yellow-400 text-3xl md:text-6xl drop-shadow-[0_0_8px_rgba(234,179,8,0.8)]' : 'text-cyan-400 text-xl md:text-4xl'}`}>
-                      {n.isCrit ? '⚡' : ''}{n.val}{n.isCrit ? '!' : ''}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 z-30 flex flex-col gap-1 transform rotate-3 scale-90 sm:scale-110 origin-bottom-right">
-                   <div className="bg-cyan-500 border-[3.5px] border-black px-2 py-1 sm:px-3 sm:py-1.5 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center gap-1 group overflow-hidden relative">
-                      <div className="absolute inset-0 comic-halftone opacity-30 text-black"></div>
-                      <TrendingUp size={12} className="text-black animate-pulse" />
-                      <span className="text-[10px] sm:text-xs font-[1000] text-black italic leading-none">LVL {player.level}</span>
-                   </div>
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <SquadHUD player={player} dragonTimeLeft={dragonTimeLeft} TAVERN_MATES={TAVERN_MATES} />
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full max-w-[280px] md:max-w-[320px] space-y-2 md:space-y-4">
-            <div className="flex flex-col gap-2 relative">
-              <div className="flex justify-between items-end flex-row-reverse">
-                <div className="bg-cyan-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black transform -rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] flex flex-col items-end">
-                  <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Assigned Hunter</span>
-                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate max-w-[120px] md:max-w-none">{player.name}</h2>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 transform rotate-1 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'STR' ? 'text-yellow-400' : 'text-red-500'}`}>
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
-                  <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'STR' ? 'animate-pulse' : ''}`}>{totalStats.str}</span>
-                </div>
-                <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'AGI' ? 'text-yellow-400' : 'text-emerald-500'}`}>
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
-                  <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'AGI' ? 'animate-pulse' : ''}`}>{totalStats.agi}</span>
-                </div>
-                <div className={`flex flex-col items-center p-0.5 md:p-1 ${isMateBuffActive && activeMate?.type === 'DEX' ? 'text-yellow-400' : 'text-cyan-500'}`}>
-                  <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
-                  <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'DEX' ? 'animate-pulse' : ''}`}>{totalStats.dex}</span>
-                </div>
-              </div>
-
-              {/* MATE BUFF INDICATOR */}
-              {isMateBuffActive && activeMate && (
-                <div className="flex items-center gap-1.5 bg-yellow-400 border-2 border-black px-2 py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1 animate-in slide-in-from-left-4 duration-300">
-                  <span className="text-sm">{activeMate.icon}</span>
-                  <div className="flex flex-col leading-none">
-                    <span className="text-[7px] md:text-[8px] font-black uppercase text-black italic tracking-wider">{activeMate.name}</span>
-                    <span className="text-[6px] md:text-[7px] font-black text-black/60 uppercase">BUFF ACTIVE · {Math.ceil(buffTimeLeft)}s</span>
-                  </div>
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-black animate-ping"></div>
-                </div>
-              )}
-
-              {/* TITAN PERSISTENT BUFF */}
-              {!isMateBuffActive && player.hiredMate === 'titan' && (
-                <div className="flex items-center gap-1.5 bg-slate-700 border-2 border-white/20 px-2 py-1">
-                  <span className="text-sm">🛡️</span>
-                  <span className="text-[7px] font-black uppercase text-white/60 italic">Titan Guard · Persistent</span>
-                </div>
-              )}
-
-              {/* PET COMPANION BADGE */}
-              {activePet && (
-                <div className="flex items-center gap-1.5 border-2 border-black px-2 py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 animate-in slide-in-from-right-4 duration-300"
-                  style={{ background: activePet.element === 'Pyro' ? '#7c2d12' : activePet.element === 'Hydro' ? '#1e3a5f' : activePet.element === 'Gale' ? '#4c1d95' : activePet.element === 'Earthen' ? '#14532d' : '#1e293b' }}
-                >
-                  <div className="w-7 h-7 md:w-9 md:h-9 shrink-0 border-2 border-black overflow-hidden">
-                    <img
-                      src={`/assets/pets/genesis-pets/Genesis Pets (${activePet.id}).jpg`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="flex flex-col leading-none min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px]">{petElementIcon}</span>
-                      <span className="text-[7px] md:text-[8px] font-black uppercase text-white italic tracking-wide truncate">{activePet.name}</span>
-                    </div>
-                    <div className="flex gap-2 mt-0.5">
-                      <span className="text-[5px] md:text-[6px] font-black text-cyan-300 uppercase">+{activePet.hpBonus} HP</span>
-                      <span className="text-[5px] md:text-[6px] font-black text-emerald-300 uppercase">x{activePet.xpMult?.toFixed(2)} XP</span>
-                    </div>
-                  </div>
-                  <div className="ml-auto shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_#4ade80]"></div>
-                </div>
-              )}
-            </div>
-
-
-            <div className="w-full group">
-              <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
-                <span className="text-[8px] md:text-[9px] font-black text-cyan-500 uppercase italic">Biological Core</span>
-                <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
-              </div>
-              <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] md:shadow-[-6px_6px_0_rgba(6,182,212,0.3)] transition-all overflow-hidden flex items-center">
-                {/* LAGGING SHADOW BAR */}
-                <div className="absolute h-full bg-cyan-400 opacity-30 transition-all duration-700 ease-out right-0" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}></div>
-                {/* MAIN HP BAR */}
-                <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
-                  <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
-                  <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 4. QUICK EXIT (RIGHT ALIGNED) */}
+        <button
+          onClick={() => setShowRetreatConfirm(true)}
+          className="p-1.5 md:p-3 bg-red-600 border-[2px] md:border-[4px] border-black text-white shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
+          title="Quick Exit"
+        >
+          <X size={14} className="md:w-6 md:h-6" strokeWidth={4} />
+        </button>
       </div>
 
-      {/* --- HUD BOTTOM --- */}
-      <div className="w-full max-w-2xl space-y-2 md:space-y-6 z-50 px-4 mb-2 md:mb-6">
-        <div className="flex flex-col md:flex-row gap-2 md:gap-4 relative">
-          <div className="flex-1 flex gap-2 md:gap-4 relative group">
+
+      {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}
+      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col relative z-40 px-2 md:px-12 py-2">
+        
+        {/* VS CENTRAL BADGE */}
+        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">
+           <div className="w-12 h-12 md:w-24 md:h-24 bg-yellow-400 border-[4px] md:border-[8px] border-black rounded-full shadow-[5px_5px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] flex items-center justify-center transform -rotate-12 animate-kapow">
+             <span className="text-black font-black text-xl md:text-4xl italic tracking-tighter drop-shadow-[2px_2px_0_#fff]">VS</span>
+           </div>
+        </div>
+
+        {/* BATTLE LOCKOUT OVERLAYS */}
         {isStunned && (
-          <div className="absolute inset-0 bg-black/95 backdrop-blur-md border-[4px] md:border-[5px] border-red-600 z-30 flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.5)] transform scale-[1.03] animate-in zoom-in">
-            <div className="flex items-center gap-2 md:gap-4 animate-pulse">
-              <Skull size={20} className="md:w-6 md:h-6 text-red-500" />
-              <p className="font-black text-sm md:text-2xl uppercase italic drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">SYSTEM STUNNED! {Math.ceil(stunTimeLeft)}s</p>
+          <div className="absolute inset-x-2 md:inset-x-12 top-[40%] -translate-y-1/2 bg-black/95 backdrop-blur-md border-[4px] md:border-[6px] border-red-600 z-[110] flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.5)] transform -rotate-1 animate-in zoom-in py-6 md:py-10">
+            <div className="flex items-center gap-4 md:gap-8 animate-pulse">
+              <Skull size={32} className="md:w-12 md:h-12 text-red-500" />
+              <div className="flex flex-col items-center">
+                <p className="font-black text-lg md:text-5xl uppercase italic drop-shadow-[0_0_15px_rgba(239,68,68,0.8)] text-white text-center">SYSTEM STUNNED!</p>
+                <p className="text-red-500 font-black text-[10px] md:text-xl uppercase tracking-[0.3em] font-mono italic mt-2">REBOOTING: {Math.ceil(stunTimeLeft)}S</p>
+              </div>
             </div>
           </div>
         )}
 
         {isMissed && !isStunned && (
-          <div className="absolute inset-0 bg-slate-400 border-[4px] md:border-[5px] border-black z-30 flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.2)] transform scale-[1.03] animate-in zoom-in">
+          <div className="absolute inset-x-2 md:inset-x-12 top-[40%] -translate-y-1/2 bg-slate-400 border-[4px] md:border-[6px] border-black z-[110] flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)] transform rotate-1 animate-in zoom-in py-6 md:py-10">
             <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
-            <p className="font-black text-sm md:text-2xl uppercase italic text-black tracking-tight">ATTACK DEFLECTED! {missTimeLeft.toFixed(1)}s</p>
+            <div className="flex items-center gap-4 md:gap-8">
+               <Activity size={32} className="md:w-12 md:h-12 text-black" />
+               <p className="font-black text-lg md:text-5xl uppercase italic text-black tracking-tight text-center">ATTACK DEFLECTED!</p>
+            </div>
           </div>
         )}
 
-          <button
-            onClick={() => combat.handleAttack()}
-            disabled={isStunned || isMissed || combat.showDefeatedWindow || combat.showVictoryWindow || combat.combatBusRef.current}
-            className={`flex-1 py-3 md:py-6 rounded border-[4px] md:border-[5px] border-black font-black text-xl md:text-4xl shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center gap-0 leading-tight ${(isStunned || isMissed || combat.combatBusRef.current) ? 'opacity-30 grayscale' : 'bg-red-600 text-white'} ${isAutoActive ? 'animate-pulse' : ''} group overflow-hidden relative`}
-          >
-            <div className="absolute inset-0 comic-halftone opacity-30 text-black pointer-events-none group-hover:scale-125 transition-transform"></div>
-            <span className="relative z-10 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] tracking-tighter">{isAutoActive ? 'LOCK-ON FIRE' : 'STRIKE!'}</span>
-            <span className="text-[7px] md:text-[9px] opacity-70 tracking-[0.3em] uppercase relative z-10 font-black">Combat Execution Phase</span>
-          </button>
+        {/* ENGAGEMENT ZONE (AVATARS) */}
+        <div className="grid grid-cols-2 gap-4 md:gap-12 items-center mb-4 md:mb-8">
+          {/* ENEMY AVATAR */}
+          <div className={`flex flex-col items-center lg:items-end transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
+             <div className="relative">
+                <div 
+                  ref={enemyContainerRef}
+                  className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
+                  <div className="absolute inset-0 opacity-20 comic-halftone text-red-500 z-0"></div>
+                  {combat.battleMode === 'GVG' ? (
+                    <img
+                      src={`/assets/playeravatar/CrystleHunterAvatar (${enemy.avatarNum || 1}).jpg`}
+                      className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
+                      alt={enemy.name}
+                    />
+                  ) : (
+                    <img
+                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.jpg`}
+                      alt={enemy.name}
+                      className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
+                      onError={(e) => {
+                        const folder = enemy.folder || 'Neon Slums';
+                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.png`;
+                        else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
+                      }}
+                    />
+                  )}
+                  
+                  {/* RECTANGULAR TAUNT OVERLAY (ENEMY) */}
+                  {currentTaunt && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-red-600 border-t-4 border-black py-2 px-1 z-30 animate-in slide-in-from-bottom-full duration-300">
+                      <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
+                      <p className="relative z-10 text-[9px] md:text-[14px] font-[1000] text-white italic text-center uppercase tracking-tighter drop-shadow-md">
+                        {currentTaunt}
+                      </p>
+                    </div>
+                  )}
 
-        {combat.battleMode !== 'GVG' && (
-          <button
-            onClick={handleSkip}
-            className="flex-[0.3] py-3 md:py-6 rounded border-[4px] md:border-[5px] border-black font-black text-xs md:text-lg shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:-translate-y-1 italic flex flex-col items-center justify-center bg-slate-800 text-white group overflow-hidden relative"
-          >
-            <div className="absolute inset-0 comic-halftone opacity-20 pointer-events-none text-white group-hover:scale-125 transition-transform"></div>
-            <RotateCw size={14} className="md:w-5 md:h-5 text-cyan-400 group-hover:rotate-45 transition-transform relative z-10" />
-            <span className="relative z-10 uppercase tracking-widest">SKIP</span>
-          </button>
-        )}
+                  {/* QUICK-STRIKE TACTICAL OVERLAY */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!combat.combatBusRef.current && !combat.showVictoryWindow && !combat.showDefeatedWindow) {
+                        combat.handleAttack();
+                      }
+                    }}
+                    className={`absolute top-1 left-1 z-40 bg-red-600 border-2 border-white rounded md:rounded-lg p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white hover:border-red-600 group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${(combat.combatBusRef.current) ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
+                  >
+                    <span className="text-xs md:text-xl group-hover:animate-bounce">⚔️</span>
+                    <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-red-600 uppercase italic tracking-tighter leading-none mt-0.5">STRIKE</span>
+                  </button>
+
+                  {/* SKIP TRIGGER OVERLAY */}
+                  {combat.battleMode !== 'GVG' && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSkip();
+                      }}
+                      className="absolute top-1 right-1 z-40 bg-blue-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
+                    >
+                      <span className="text-xs md:text-xl group-hover:animate-pulse">⏭️</span>
+                      <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-blue-600 uppercase italic tracking-tighter leading-none mt-0.5">SKIP</span>
+                    </button>
+                  )}
+
+                  <ImpactSplash splash={impactSplash} />
+                </div>
+             </div>
+          </div>
+
+          {/* PLAYER AVATAR */}
+          <div className={`flex flex-col items-center lg:items-start transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
+             <div className="relative">
+                <div className="flex items-center gap-2 md:gap-6">
+                  <div 
+                    ref={playerContainerRef}
+                    className={`w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-2 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-tl from-black/80 via-transparent to-transparent z-10"></div>
+                    <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-0"></div>
+                    {player.avatar && (
+                      <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top filter contrast-125" />
+                    )}
+
+                    {/* RECTANGULAR TAUNT OVERLAY (PLAYER) */}
+                    {playerTaunt && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-cyan-600 border-t-4 border-black py-2 px-1 z-30 animate-in slide-in-from-bottom-full duration-300">
+                        <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
+                        <p className="relative z-10 text-[9px] md:text-[14px] font-[1000] text-white italic text-center uppercase tracking-tighter drop-shadow-md">
+                          {playerTaunt}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* TACTICAL WITHDRAWAL & REWARDS OVERLAY */}
+                    <div className="absolute top-1 right-1 z-40 flex flex-row gap-1">
+                      {/* RETREAT TRIGGER */}
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowRetreatConfirm(true);
+                        }}
+                        className="bg-slate-800 border-2 border-white rounded md:rounded-lg p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
+                      >
+                        <span className="text-xs md:text-lg group-hover:animate-out group-hover:slide-out-to-right-4 transition-all">🏃</span>
+                        <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-slate-800 uppercase italic tracking-tighter leading-none mt-0.5">RETREAT</span>
+                      </button>
+
+                      {/* REWARDS TRIGGER */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsLootModalOpen(true);
+                        }}
+                        className="group relative flex flex-col items-center justify-center bg-slate-900 border-2 border-amber-500 rounded md:rounded-lg p-0.5 md:p-1 shadow-[1px_1px_0_rgba(0,0,0,1)] hover:bg-amber-500 transition-all active:scale-95"
+                      >
+                        <Gift size={10} className="text-amber-500 group-hover:text-black transition-colors md:w-5 md:h-5" />
+                        <div className="absolute -top-1 -right-1 bg-black border border-amber-500 px-1 py-0.5 text-[4px] md:text-[6px] font-black text-amber-500 rounded uppercase animate-pulse">
+                          {combat.sessionRewards?.loots?.length || 0}
+                        </div>
+                        <span className="text-[4px] md:text-[6px] font-black text-amber-500 group-hover:text-black uppercase italic tracking-tighter leading-none mt-0.5">LOOT</span>
+                      </button>
+                    </div>
+
+                    <ImpactSplash splash={playerImpactSplash} />
+                  </div>
+                  <div className="flex-shrink-0">
+                    <SquadHUD 
+                      player={player} 
+                      dragonTimeLeft={dragonTimeLeft} 
+                      TAVERN_MATES={TAVERN_MATES} 
+                      isBuffActive={buffTimeLeft > 0 || player.hiredMate === 'titan'}
+                      isPetActive={!!player.petId}
+                    />
+                  </div>
+                </div>
+             </div>
+          </div>
+        </div>
+
+        {/* STATUS COMMAND TIER (HORIZONTALLY ALIGNED) */}
+        <div className="grid grid-cols-2 gap-4 md:gap-12 items-start mb-8">
+          {/* ENEMY STATUS */}
+          <div className="w-full flex flex-col items-center lg:items-end space-y-2 md:space-y-4">
+              <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
+                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col transform -rotate-1">
+                  <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Threat Identified</span>
+                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate">{enemy.name}</h2>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
+                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-red-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{enemy.str}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-emerald-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{enemy.agi}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-0.5 md:p-1 text-cyan-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{enemy.dex}</span>
+                  </div>
+                </div>
+
+                <div className="w-full group">
+                  <div className="flex justify-between items-center mb-0.5 px-1">
+                    <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase italic">Power Core</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(enemy.hp)}/{Math.floor(enemy.maxHp)}</span>
+                  </div>
+                  <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center overflow-hidden">
+                    <div className="absolute h-full bg-red-400 opacity-30 transition-all duration-700 ease-out" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}></div>
+                    <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300 relative" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}>
+                      <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          {/* PLAYER STATUS */}
+          <div className="w-full flex flex-col items-center lg:items-start space-y-2 md:space-y-4">
+              <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
+                <div className="bg-cyan-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col items-end transform rotate-1">
+                  <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Assigned Hunter</span>
+                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate">{player.name}</h2>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
+                  <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'STR' ? 'text-yellow-400' : 'text-red-500'}`}>
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
+                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'STR' ? 'animate-pulse' : ''}`}>{totalStats.str}</span>
+                  </div>
+                  <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'AGI' ? 'text-yellow-400' : 'text-emerald-500'}`}>
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
+                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'AGI' ? 'animate-pulse' : ''}`}>{totalStats.agi}</span>
+                  </div>
+                  <div className={`flex flex-col items-center p-0.5 md:p-1 ${isMateBuffActive && activeMate?.type === 'DEX' ? 'text-yellow-400' : 'text-cyan-500'}`}>
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
+                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'DEX' ? 'animate-pulse' : ''}`}>{totalStats.dex}</span>
+                  </div>
+                </div>
+
+                <div className="w-full group">
+                  <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
+                    <span className="text-[8px] md:text-[9px] font-black text-cyan-500 uppercase italic">Biological Core</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
+                  </div>
+                  <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] transition-all overflow-hidden flex items-center">
+                    <div className="absolute h-full bg-cyan-400 opacity-30 transition-all duration-700 ease-out right-0" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}></div>
+                    <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
+                      <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
+                      <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
+        </div>
       </div>
 
-          <button
-            onClick={() => setShowRetreatConfirm(true)}
-            className={`flex-1 py-3 md:py-6 rounded font-black uppercase text-[10px] md:text-lg tracking-widest border-[4px] md:border-[5px] border-black transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic bg-slate-300 text-black hover:bg-white flex items-center justify-center hover:shadow-[10px_10px_0_rgba(0,0,0,1)]`}
-          >
-            RETREAT
-          </button>
-        </div>
-
-        {/* Categorized Drop Manifest Button */}
-        <div className="flex justify-center gap-2 md:gap-4 mb-2">
-          <button
-            onClick={() => setIsLootModalOpen(true)}
-            className="group flex items-center gap-2 md:gap-4 bg-black/80 hover:bg-black border-2 border-cyan-500/30 hover:border-cyan-400 p-2 md:p-3 rounded-full backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-          >
-            <div className="flex items-center gap-2 px-3 md:px-6 py-1.5 md:py-3 bg-amber-500 border-[3px] border-black text-black font-black text-[10px] md:text-sm uppercase italic rounded-full shadow-[4px_4px_0_rgba(0,0,0,1)] group-hover:bg-amber-400 transition-colors">
-              <Gift size={16} /> SESSION REWARDS
-            </div>
-          </button>
-
-          <button
-            onClick={() => setIsPossibleDropsModalOpen(true)}
-            className="group flex items-center gap-2 md:gap-4 bg-black/80 hover:bg-black border-2 border-cyan-500/30 hover:border-cyan-400 p-2 md:p-3 rounded-full backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-          >
-            <div className="flex items-center gap-2 px-3 md:px-6 py-1.5 md:py-3 bg-cyan-600 border-[3px] border-black text-white font-black text-[10px] md:text-sm uppercase italic rounded-full shadow-[4px_4px_0_rgba(0,0,0,1)] group-hover:bg-cyan-500 transition-colors">
-              <Search size={16} /> DROP TABLE
-            </div>
-          </button>
-        </div>
 
         {/* Tactical Drop Manifest Modal */}
         {isLootModalOpen && (
@@ -793,27 +724,25 @@ export const CombatView = React.memo(() => {
             </div>
           </div>
         )}
-        {/* Confirmation Modal */}
-        <ConfirmationModal 
-          isOpen={showRetreatConfirm}
-          onClose={() => setShowRetreatConfirm(false)}
-          onConfirm={combat.handleRetreat}
-          title="ABANDON INCURSION?"
-          message="Retreating will end your current floor progress and drop any active session multipliers. Do you accept the strategic withdrawal?"
-          confirmText="YES, RETREAT"
-          cancelText="NO, CONTINUE"
-        />
-        <ConfirmationModal 
-          isOpen={showPurifyConfirm}
-          onClose={() => setShowPurifyConfirm(false)}
-          onConfirm={() => actions.handlePurify(enemy, requiredTool)}
-          title="INITIATE PURIFICATION?"
-          message={`Attempting to purify the corrupted core of this ${currentEnemyElement} monster requires 1x ${toolDetails?.name}. Failure will cause the energy to dissipate and the monster to vanish. Proceed?`}
-          confirmText="YES, PURIFY"
-          cancelText="NO, STRIKE INSTEAD"
-        />
-      </div>
-
+      {/* Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={showRetreatConfirm}
+        onClose={() => setShowRetreatConfirm(false)}
+        onConfirm={combat.handleRetreat}
+        title="ABANDON INCURSION?"
+        message="Retreating will end your current floor progress and drop any active session multipliers. Do you accept the strategic withdrawal?"
+        confirmText="YES, RETREAT"
+        cancelText="NO, CONTINUE"
+      />
+      <ConfirmationModal 
+        isOpen={showPurifyConfirm}
+        onClose={() => setShowPurifyConfirm(false)}
+        onConfirm={() => actions.handlePurify(enemy, requiredTool)}
+        title="INITIATE PURIFICATION?"
+        message={`Attempting to purify the corrupted core of this ${currentEnemyElement} monster requires 1x ${toolDetails?.name}. Failure will cause the energy to dissipate and the monster to vanish. Proceed?`}
+        confirmText="YES, PURIFY"
+        cancelText="NO, STRIKE INSTEAD"
+      />
     </div>
   );
 });

@@ -37,6 +37,7 @@
 .animate-damage {
     animation: damage-shake 0.3s cubic-bezier(.36, .07, .19, .97) both;
     box-shadow: inset 0 0 100px rgba(239, 68, 68, 0.4);
+    will-change: transform, filter;
 }
 
 @keyframes strike-right {
@@ -184,6 +185,7 @@
 
   .animate-float {
     animation: float 4s ease-in-out infinite;
+    will-change: transform;
   }
 
   @keyframes flinch {
@@ -304,4 +306,54 @@
 
 .animate-tame-shine {
     animation: tame-shine 1.5s infinite ease-in-out;
+}
+
+/* --- LOW PERFORMANCE MODE OPTIMIZATIONS --- */
+body[data-perf-mode="low"] * {
+    /* Disable expensive backdrop effects which cause jitter on mobile browser GPUs */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    
+    /* Disable heavy filter effects */
+    /* filter: none !important; */ /* Too aggressive, but can be used if needed */
+}
+
+body[data-perf-mode="low"] .bg-black\/95, 
+body[data-perf-mode="low"] .bg-black\/90,
+body[data-perf-mode="low"] .bg-slate-900\/60,
+body[data-perf-mode="low"] .bg-slate-950\/80 {
+    /* Replace semi-transparent blurred backgrounds with solid ones */
+    background-color: rgb(0, 0, 0) !important;
+}
+
+body[data-perf-mode="low"] .animate-pulse,
+body[data-perf-mode="low"] .animate-bounce,
+body[data-perf-mode="low"] .animate-shimmer,
+body[data-perf-mode="low"] .animate-glow-pulse {
+    /* Stop heavy persistent animations */
+    animation: none !important;
+}
+
+body[data-perf-mode="low"] .animate-float-slow,
+body[data-perf-mode="low"] .animate-float {
+    /* Slow down necessary floats or disable them */
+    animation-duration: 20s !important;
+}
+
+body[data-perf-mode="low"] .bg-scanline,
+body[data-perf-mode="low"] .bg-cyber-grid,
+body[data-perf-mode="low"] .comic-halftone {
+    /* Disable pattern overlays that add rendering passes */
+    background-image: none !important;
+}
+
+body[data-perf-mode="low"] .custom-scrollbar::-webkit-scrollbar-thumb {
+    /* Simplify scrollbars */
+    border: none !important;
+    background: #06b6d4 !important;
+}
+
+body[data-perf-mode="low"] video {
+    /* Potentially disable videos if they cause lag, but let's keep them for now */
+    /* display: none !important; */
 }

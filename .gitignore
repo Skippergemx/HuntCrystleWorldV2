@@ -31,3 +31,6 @@ dist-ssr
 
 # Firebase
 firestore.rules
+
+# Research & Playground (Ignore from Git)
+src/components/EffectsPlayground.jsx
