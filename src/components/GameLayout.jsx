@@ -40,7 +40,7 @@ import { SyndicateView } from './SyndicateView';
 import { PetsView } from './PetsView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
-import { EffectsPlayground } from './EffectsPlayground';
+// import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { UnifiedAuthBanner } from './UnifiedAuthBanner';
 import { GUIDE_CONTENT } from '../data/guideContent';
@@ -746,9 +746,9 @@ export const GameLayout = ({ onLogout }) => {
             <DevlogView />
           )}
 
-          {view === 'playground' && (
+          {/* {view === 'playground' && (
             <EffectsPlayground />
-          )}
+          )} */}
 
         </div>
 
@@ -778,14 +778,14 @@ export const GameLayout = ({ onLogout }) => {
           <div className="text-[10px] font-black text-white/40 uppercase italic tracking-widest border-l border-white/10 pl-4">Dev: Skipper Gemx</div>
           
           {/* Secret Developer Uplink - Effects Lab */}
-          <button 
+          {/* <button 
             onClick={() => setView('playground')}
             className="p-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 rounded-lg hover:bg-cyan-500/20 transition-all group flex items-center gap-2"
             title="Access Effects Lab"
           >
             <FlaskConical size={12} className="group-hover:rotate-12 transition-transform" />
             <span className="text-[8px] font-black uppercase italic tracking-widest">Neural Research</span>
-          </button>
+          </button> */}
         </div>
       </footer>
 
