@@ -137,7 +137,7 @@ export const GameLayout = ({ onLogout }) => {
 
   const { 
     user, player, setPlayer, syncPlayer, logs, addLog,
-    currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
+    currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showBlockadeModal, setShowBlockadeModal, blockadeError, collisionProfile,
     sessionConflict,
     adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
@@ -168,7 +168,7 @@ export const GameLayout = ({ onLogout }) => {
 
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
-  const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, handleAttack } = combat;
+  const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, showVictoryWindow, setShowVictoryWindow, handleAttack } = combat;
   const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem } = actions;
   const { autoTimeLeft, buffTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
   const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX, skipTrack } = audio;
@@ -276,7 +276,7 @@ export const GameLayout = ({ onLogout }) => {
         </div>
       )}
 
-      {showSuccessWindow && (
+      {showVictoryWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">
           <div className="relative max-w-sm w-full">
             {/* The Comic Panel Shadow */}
@@ -339,7 +339,7 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
 
                 <button
-                  onClick={() => { setShowSuccessWindow(false); setView('map'); }}
+                  onClick={() => { combat.setShowVictoryWindow(false); adventure.setView('map'); }}
                   className="w-full bg-black text-white py-4 rounded-xl font-black uppercase tracking-tighter hover:bg-slate-800 transition-all border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-lg"
                 >
                   CONFIRM & RETURN

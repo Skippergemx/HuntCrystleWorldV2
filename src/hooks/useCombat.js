@@ -222,7 +222,7 @@ export const useCombat = (
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber]);
 
   const [isTreasury, setIsTreasury] = useState(false);
-  const MAX_DUNGEON_DEPTH = 40;
+  const MAX_DUNGEON_DEPTH = 5;
 
   const handleTreasuryReached = useCallback(() => {
     setIsTreasury(true);
@@ -346,14 +346,14 @@ export const useCombat = (
       if (Math.random() < dropChance) {
         const pool = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(l => {
           if (!l) return false;
-          if (l.rarity === 'Legendary' && depth < 20) return false;
-          if (l.rarity === 'Epic' && depth < 10) return false;
-          if (l.rarity === 'Rare' && depth < 5) return false;
+          if (l.rarity === 'Legendary' && depth < 5) return false;
+          if (l.rarity === 'Epic' && depth < 4) return false;
+          if (l.rarity === 'Rare' && depth < 2) return false;
           return true;
         });
 
         // Add small chance for schematics in deep floors
-        if (depth >= 5 && Math.random() < 0.05) {
+        if (depth >= 3 && Math.random() < 0.05) {
            const schematics = LOOTS.filter(l => l.type === 'Schematic');
            if (schematics.length > 0) pool.push(schematics[Math.floor(Math.random() * schematics.length)]);
         }
@@ -480,7 +480,7 @@ export const useCombat = (
     }
 
     // BUG-05 FIX: Schematic drop gated to 5% in deep floors only (was unconditional 30%)
-    if (depth >= 10 && Math.random() < 0.05) {
+    if (depth >= 5 && Math.random() < 0.05) {
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
         const drop = schematics[Math.floor(Math.random() * schematics.length)];
@@ -677,6 +677,7 @@ export const useCombat = (
     playerTaunt,
     showDefeatedWindow,
     showVictoryWindow,
+    setShowVictoryWindow,
     sessionRewards,
     killsInFloor,
     lastLoot,

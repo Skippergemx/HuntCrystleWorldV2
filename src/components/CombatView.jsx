@@ -679,9 +679,9 @@ export const CombatView = React.memo(() => {
                     const weight = rarityWeights[item.rarity] || 10;
                     const chance = (weight / totalWeight) * 100;
                     
-                    const isUnlocked = (item.rarity === 'Legendary' && depth >= 20) ||
-                                       (item.rarity === 'Epic' && depth >= 10) ||
-                                       (item.rarity === 'Rare' && depth >= 5) ||
+                    const isUnlocked = (item.rarity === 'Legendary' && depth >= 5) ||
+                                       (item.rarity === 'Epic' && depth >= 4) ||
+                                       (item.rarity === 'Rare' && depth >= 2) ||
                                        (['Common', 'Uncommon'].includes(item.rarity));
 
                     return (
@@ -707,7 +707,7 @@ export const CombatView = React.memo(() => {
                             <span className="text-[10px] font-black text-cyan-400 italic">~{chance.toFixed(1)}% ID</span>
                           </div>
                           {!isUnlocked && (
-                            <p className="text-[7px] font-black text-red-500 uppercase mt-1">Requires Floor {item.rarity === 'Legendary' ? '20' : item.rarity === 'Epic' ? '10' : '5'}+</p>
+                            <p className="text-[7px] font-black text-red-500 uppercase mt-1">Requires Floor {item.rarity === 'Legendary' ? '5' : item.rarity === 'Epic' ? '4' : '2'}+</p>
                           )}
                         </div>
                       </div>
