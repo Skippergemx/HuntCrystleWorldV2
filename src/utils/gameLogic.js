@@ -125,6 +125,18 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   stats.agi *= petStatsMult;
   stats.dex *= petStatsMult;
 
+  // Apply Food Buff (short-term flat bonus)
+  const now = Date.now();
+  if (player.activeFoodEffect && (player.activeFoodUntil || 0) > now) {
+    const fx = player.activeFoodEffect;
+    if (fx.stat === 'str') stats.str += fx.amount || 0;
+    else if (fx.stat === 'dex') stats.dex += fx.amount || 0;
+    else if (fx.stat === 'agi') stats.agi += fx.amount || 0;
+    if (fx.stat2 === 'str') stats.str += fx.amount2 || 0;
+    else if (fx.stat2 === 'dex') stats.dex += fx.amount2 || 0;
+    else if (fx.stat2 === 'agi') stats.agi += fx.amount2 || 0;
+  }
+
   // Final Safety Rounding
   stats.str = Math.floor(stats.str);
   stats.agi = Math.floor(stats.agi);

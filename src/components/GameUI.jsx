@@ -130,13 +130,22 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
   </button>
 ));
 
-export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed }) => (
-  <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all h-full transform md:-rotate-1 relative overflow-hidden ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>
+export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed, activeFoodEffect, isFoodActive }) => (
+  <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all h-full transform md:-rotate-1 relative overflow-visible ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>
     {isBuffed && (
-       <div className="absolute top-0 right-0 p-1 bg-purple-500 text-white leading-none">
+       <div className="absolute top-0 right-0 p-1 bg-purple-500 text-white leading-none z-10">
           <Sparkles size={8} className="animate-spin" />
        </div>
     )}
+
+    {/* Food Sticker Overlay */}
+    {isFoodActive && (activeFoodEffect?.stat === label?.toLowerCase() || activeFoodEffect?.stat2 === label?.toLowerCase()) && (
+      <div className="absolute -top-1.5 -right-1.5 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-6 z-30 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+        <span>{activeFoodEffect.icon || '🍛'}</span>
+        <span>+{activeFoodEffect.stat === label?.toLowerCase() ? activeFoodEffect.amount : (activeFoodEffect.amount2 || activeFoodEffect.amount)}</span>
+      </div>
+    )}
+
     <div className="flex items-center gap-2 md:gap-3">
       <div className={`${color} bg-black p-1.5 md:p-2 rounded-lg border-[2px] border-white/20 shrink-0 shadow-lg ${isBuffed ? 'ring-2 ring-purple-500' : ''}`}>{icon}</div>
       <div className="min-w-0">

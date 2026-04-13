@@ -48,5 +48,10 @@ export const GUIDE_CONTENT = {
   database: [
     { topic: 'Archive Wiki', text: 'The totality of the In-Game items is documented here. Use this as a wiki to study monster behaviors, drop probabilities, and item tech specs.' },
     { topic: 'Asset Analysis', text: 'Switch tabs to scan Beast Lore, Crystle Materials, and Equipment tiers. Live probability scanners show real-time drop chances per sector.' }
+  ],
+  crystle_town: [
+    { topic: 'Town Citizenship', text: 'Help 30 unique NPCs with their community projects. Hand over dungeon materials and fruits to earn exclusive Food Rewards.' },
+    { topic: 'Food Buffs', text: 'Emoji-based food items provide powerful short-term STR, DEX, or AGI boosts. You can only have ONE food buff active at a time.' },
+    { topic: 'Quest Rotation', text: 'Fulfilled requests are replaced by new citizens. Complete all 30 unique storylines to maximize your town influence and combat readiness.' }
   ]
 };

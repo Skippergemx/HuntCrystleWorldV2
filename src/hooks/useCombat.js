@@ -36,7 +36,7 @@ export const useCombat = (
   PETS_METADATA,
   gvgActions = {}
 ) => {
-  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic } = gvgActions;
+  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic, setShowSuccessWindow } = gvgActions;
   const [critAlert, setCritAlert] = useState(false);
   const [stunTimeLeft, setStunTimeLeft] = useState(0);
   const [missTimeLeft, setMissTimeLeft] = useState(0);
@@ -61,6 +61,22 @@ export const useCombat = (
       setFloatingNumbers(prev => prev.filter(n => n.id !== id));
     }, 1000);
   }, []);
+
+  // Phase 4: Session Hard-Reset Logic
+  // Ensures every time we enter the dungeon/boss from a menu, the loot stack is wiped fresh.
+  const prevViewRef = useRef(view);
+  useEffect(() => {
+    const combatViews = ['dungeon', 'boss'];
+    const enteringCombat = combatViews.includes(view);
+    const wasInCombat = combatViews.includes(prevViewRef.current);
+
+    if (enteringCombat && !wasInCombat) {
+      console.log("🏙️ [DUNGEON_ENTRY] Resetting Session Rewards and Floor Kills.");
+      setSessionRewards({ tokens: 0, xp: 0, loots: [] });
+      setKillsInFloor(0);
+    }
+    prevViewRef.current = view;
+  }, [view]);
 
   const stunRef = useRef(0);
   const missRef = useRef(0);
@@ -196,7 +212,10 @@ export const useCombat = (
 
           setShowDefeatedWindow(true);
           setCombatState('DEFEATED');
-          syncPlayer({ hp: player?.maxHp || 1000, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 });
+          const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
+          const destructUpdates = { hp: player?.maxHp || 1000, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 };
+          if (remainingAutoTime > 0) destructUpdates.autoTimeLeftSaved = remainingAutoTime;
+          syncPlayer(destructUpdates);
           setTimeout(() => { 
             resetCombatEngine(); // RESET ALL LOCKS AND STATES
             setDepth(1); 
@@ -222,20 +241,26 @@ export const useCombat = (
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber]);
 
   const [isTreasury, setIsTreasury] = useState(false);
-  const MAX_DUNGEON_DEPTH = 5;
+  const MAX_DUNGEON_DEPTH = 40;
 
   const handleTreasuryReached = useCallback(() => {
     setIsTreasury(true);
     setCombatState('VICTORY');
-    setShowVictoryWindow(true);
+    if (setShowSuccessWindow) setShowSuccessWindow(true);
     addLog(`💎 TREASURY REACHED! Sector Node Cleared.`);
     playSFX(SOUNDS.obtainLoot);
 
     const rewards = [];
     const updates = {};
     
-    // 1. AUTO-SCROLL REWARD (Choose 1)
-    // 9m and 12m are rare
+    // Save remaining auto time if active right when treasury is reached for AFK safety
+    const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
+    if (remainingAutoTime > 0) {
+      updates.autoTimeLeftSaved = remainingAutoTime;
+      updates.autoUntil = 0;
+    }
+    
+    // REWARD: 5 random auto scrolls (weighted)
     const scrollPool = [
       { id: 'auto_scroll_3m', weight: 40 },
       { id: 'auto_scroll_6m', weight: 35 },
@@ -243,58 +268,23 @@ export const useCombat = (
       { id: 'auto_scroll_12m', weight: 10 }
     ];
     const totalScrollWeight = scrollPool.reduce((sum, s) => sum + s.weight, 0);
-    let scrollRand = Math.random() * totalScrollWeight;
-    let selectedScrollId = 'auto_scroll_3m';
-    for (const s of scrollPool) {
-      if (scrollRand < s.weight) {
-        selectedScrollId = s.id;
-        break;
-      }
-      scrollRand -= s.weight;
-    }
-    const scrollItem = ITEMS.find(i => i.id === selectedScrollId);
-    if (scrollItem) {
-      const itemWithId = { ...scrollItem, id: `${scrollItem.id}_TREASURY_${Date.now()}` };
-      rewards.push(itemWithId);
-      updates[`inventory.${itemWithId.id}`] = itemWithId;
-      addLog(`🎁 FOUND: ${scrollItem.name}`);
-    }
 
-    // 2. RANDOM LOOT (5 PCS)
-    if (selectedMap && selectedMap.lootTable) {
-      const lootPool = selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean);
-      if (lootPool.length > 0) {
-        const baseLoot = lootPool[Math.floor(Math.random() * lootPool.length)];
-        for (let i = 0; i < 5; i++) {
-          const itemWithId = { ...baseLoot, id: `${baseLoot.id}_TREASURY_PCS_${i}_${Date.now()}` };
-          rewards.push(itemWithId);
-          updates[`inventory.${itemWithId.id}`] = itemWithId;
-        }
-        addLog(`🎁 COLLECTED: 5x ${baseLoot.name}`);
+    for (let i = 0; i < 5; i++) {
+      let rand = Math.random() * totalScrollWeight;
+      let selectedId = 'auto_scroll_3m';
+      for (const s of scrollPool) {
+        if (rand < s.weight) { selectedId = s.id; break; }
+        rand -= s.weight;
+      }
+      const scrollItem = ITEMS.find(item => item.id === selectedId);
+      if (scrollItem) {
+        const itemWithId = { ...scrollItem, id: `${scrollItem.id}_TREASURY_${i}_${Date.now()}` };
+        rewards.push(itemWithId);
+        updates[`inventory.${itemWithId.id}`] = itemWithId;
       }
     }
 
-    // Since user mentioned "10 pcs" but also "1 random item (5pcs of it)", 
-    // maybe they wanted 5 entries of scrolls too? 
-    // Let's stick to 1 scroll + 5 items as per the latest detail, or fill to 10 if intended.
-    // The user said: "rewards are 3,6,9,12 auto scroll - random, 10 pcs" earlier.
-    // Let's give 5 scrolls and 5 items to make it 10 pcs total as per "10 pcs" request.
-    while (rewards.length < 10) {
-       const extraScrollRand = Math.random() * totalScrollWeight;
-       let extraId = 'auto_scroll_3m';
-       let tempWeight = extraScrollRand;
-       for (const s of scrollPool) {
-         if (tempWeight < s.weight) {
-           extraId = s.id;
-           break;
-         }
-         tempWeight -= s.weight;
-       }
-       const extraItem = ITEMS.find(i => i.id === extraId);
-       const extraWithId = { ...extraItem, id: `${extraItem.id}_TREASURY_FILL_${rewards.length}_${Date.now()}` };
-       rewards.push(extraWithId);
-       updates[`inventory.${extraWithId.id}`] = extraWithId;
-    }
+    addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
 
     setSessionRewards(prev => ({
       ...prev,
@@ -303,15 +293,17 @@ export const useCombat = (
 
     syncPlayer(updates);
 
-    setTimeout(() => {
-      resetCombatEngine();
-      setKillsInFloor(0);
-      setDepth(1);
-      setIsTreasury(false);
-      setView('menu');
-      addLog("🏁 Mission Parameters Met. Returning to Command Center.");
-    }, 4500); // Longer delay to enjoy the treasury victory
-  }, [selectedMap, LOOTS, ITEMS, syncPlayer, resetCombatEngine, setView, setDepth, addLog, playSFX, SOUNDS]);
+  }, [ITEMS, syncPlayer, addLog, playSFX, SOUNDS, player?.autoUntil]);
+
+  const handleCloseVictoryWindow = useCallback(() => {
+    resetCombatEngine();
+    setKillsInFloor(0);
+    setDepth(1);
+    setIsTreasury(false);
+    if (setShowSuccessWindow) setShowSuccessWindow(false);
+    setView('menu');
+    addLog("🏁 Mission Parameters Met. Returning to Command Center.");
+  }, [resetCombatEngine, setDepth, setView, addLog, setShowSuccessWindow]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
@@ -642,7 +634,10 @@ export const useCombat = (
       setDepth(1);
 
       // System Pulse: Critical State Sync must be immediate to prevent refresh-race-conditions
-      if (player?.autoUntil > 0) syncPlayer({ autoUntil: 0 }, true);
+      const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
+      const closingUpdates = { autoUntil: 0 };
+      if (remainingAutoTime > 0) closingUpdates.autoTimeLeftSaved = remainingAutoTime;
+      syncPlayer(closingUpdates, true);
       
       // Release retreat lock after transition
       setTimeout(() => {
@@ -678,6 +673,7 @@ export const useCombat = (
     showDefeatedWindow,
     showVictoryWindow,
     setShowVictoryWindow,
+    handleCloseVictoryWindow,
     sessionRewards,
     killsInFloor,
     lastLoot,

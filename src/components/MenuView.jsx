@@ -22,7 +22,8 @@ import {
   Shield,
   ShieldAlert,
   Radio,
-  Check
+  Check,
+  Brain
 } from 'lucide-react';
 import { NavBtn, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
@@ -277,6 +278,8 @@ export const MenuView = React.memo(() => {
       <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" />
       <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
       <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" />
+      <NavBtn onClick={() => setView('crystle_town')} icon={<span className="text-lg">🏙️</span>} title="Crystle Town" sub="Mini Quests" color="bg-amber-800" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" />
+      <NavBtn onClick={() => setView('ilearn')} icon={<Brain />} title="iLearn" sub="Knowledge" color="bg-blue-800" backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg" />
       <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" />
       <NavBtn 
         onClick={() => setView('pets')} 
@@ -328,7 +331,7 @@ export const MenuView = React.memo(() => {
 
               {/* NPC & Visual */}
               <div className="py-3 relative flex justify-center items-center gap-3 w-full z-10">
-                <div className="w-16 h-16 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0">
+                <div className="w-16 h-28 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0">
                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
                   <div className="absolute inset-x-0 bottom-0 bg-emerald-500 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
                 </div>

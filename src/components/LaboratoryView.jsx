@@ -6,7 +6,7 @@ import { useGame } from '../contexts/GameContext';
 
 export const LaboratoryView = React.memo(() => {
   const { 
-    player, adventure, actions, LAB_RECIPES, ITEMS, MAPS, addLog, openGuide, forgeResult, setForgeResult 
+    player, adventure, actions, LAB_RECIPES, ITEMS, MAPS, addLog, openGuide, forgeResult, setForgeResult, syncPlayer, FOODS, user
   } = useGame();
   
   const { setView } = adventure;
@@ -14,6 +14,8 @@ export const LaboratoryView = React.memo(() => {
   
   const [selectedRecipe, setSelectedRecipe] = useState(LAB_RECIPES[0]);
   const [hoveredSourceId, setHoveredSourceId] = useState(null);
+
+
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -68,6 +70,7 @@ export const LaboratoryView = React.memo(() => {
 
   const getMaterialCount = (matId) => {
     return materials.filter(i => {
+      if (!i) return false;
       const cleanId = i.id?.replace(/(_\d+)+$/, '');
       const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
       return (cleanId === matId) || (master?.id === matId);
@@ -104,6 +107,7 @@ export const LaboratoryView = React.memo(() => {
              className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] relative z-10"
              alt="Researcher"
            />
+
         </div>
         <div className="flex-1">
           <Header 
@@ -351,7 +355,7 @@ export const LaboratoryView = React.memo(() => {
               {/* NPC & Topic Visual Section */}
               <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
                 {/* NPC Avatar */}
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                <div className="w-16 h-28 md:w-20 md:h-36 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
                    <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
                    <div className="absolute inset-x-0 bottom-0 bg-pink-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">SCIENTIST</div>
                 </div>

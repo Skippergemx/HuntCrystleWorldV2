@@ -1,0 +1,98 @@
+[
+  {
+    "id": "grilled_steak",
+    "name": "Grilled Beast Steak",
+    "icon": "🥩",
+    "description": "Seared over canyon fire. Raw power in every bite.",
+    "effectLabel": "+8 STR for 3 min",
+    "effect": { "stat": "str", "amount": 8, "duration": 180000 }
+  },
+  {
+    "id": "techno_ramen",
+    "name": "Techno Ramen",
+    "icon": "🍜",
+    "description": "Underground noodles, suspicious broth, guaranteed gains.",
+    "effectLabel": "+6 STR for 4 min",
+    "effect": { "stat": "str", "amount": 6, "duration": 240000 }
+  },
+  {
+    "id": "canyon_jerky",
+    "name": "Canyon Jerky",
+    "icon": "🍖",
+    "description": "Dried, smoked, packed with anger. Pure muscle fuel.",
+    "effectLabel": "+10 STR for 2 min",
+    "effect": { "stat": "str", "amount": 10, "duration": 120000 }
+  },
+  {
+    "id": "focus_brew",
+    "name": "Focus Brew",
+    "icon": "🍵",
+    "description": "Bitter. Quiet. Precise. Clears the noise, sharpens the hand.",
+    "effectLabel": "+8 DEX for 3 min",
+    "effect": { "stat": "dex", "amount": 8, "duration": 180000 }
+  },
+  {
+    "id": "neon_bubble_tea",
+    "name": "Neon Bubble Tea",
+    "icon": "🧋",
+    "description": "Glows in the dark. Tastes like lightning. Aim improves inexplicably.",
+    "effectLabel": "+6 DEX for 4 min",
+    "effect": { "stat": "dex", "amount": 6, "duration": 240000 }
+  },
+  {
+    "id": "precision_bento",
+    "name": "Precision Bento",
+    "icon": "🍱",
+    "description": "Every piece in its place. Eat with discipline, strike with purpose.",
+    "effectLabel": "+10 DEX for 2 min",
+    "effect": { "stat": "dex", "amount": 10, "duration": 120000 }
+  },
+  {
+    "id": "energy_shot",
+    "name": "Energy Shot",
+    "icon": "⚡",
+    "description": "Mainline it. One sip, full sprint. Don't think, just move.",
+    "effectLabel": "+8 AGI for 3 min",
+    "effect": { "stat": "agi", "amount": 8, "duration": 180000 }
+  },
+  {
+    "id": "turbo_smoothie",
+    "name": "Turbo Smoothie",
+    "icon": "🥤",
+    "description": "Blended too fast for the human eye to follow. Drink. Run.",
+    "effectLabel": "+6 AGI for 4 min",
+    "effect": { "stat": "agi", "amount": 6, "duration": 240000 }
+  },
+  {
+    "id": "street_taco",
+    "name": "Street Taco",
+    "icon": "🌮",
+    "description": "Questionable meat. Undeniable speed. Don't ask, just eat.",
+    "effectLabel": "+10 AGI for 2 min",
+    "effect": { "stat": "agi", "amount": 10, "duration": 120000 }
+  },
+  {
+    "id": "power_curry",
+    "name": "Power Curry",
+    "icon": "🍛",
+    "description": "Hits your stomach like a freight train. Built for the relentless.",
+    "effectLabel": "+5 STR & +5 AGI for 3 min",
+    "effect": { "stat": "str", "amount": 5, "stat2": "agi", "amount2": 5, "duration": 180000 }
+  },
+  {
+    "id": "hearty_gruel",
+    "name": "Hearty Gruel",
+    "icon": "🍲",
+    "description": "Looks like sludge. Performs like a weapon. Old town recipe.",
+    "effectLabel": "+5 STR & +5 DEX for 3 min",
+    "effect": { "stat": "str", "amount": 5, "stat2": "dex", "amount2": 5, "duration": 180000 }
+  },
+  {
+    "id": "void_sushi",
+    "name": "Void Sushi",
+    "icon": "🍣",
+    "description": "Sourced from the dark side of the market. Impossibly fresh.",
+    "effectLabel": "+5 DEX & +5 AGI for 3 min",
+    "effect": { "stat": "dex", "amount": 5, "stat2": "agi", "amount2": 5, "duration": 180000 }
+  }
+]

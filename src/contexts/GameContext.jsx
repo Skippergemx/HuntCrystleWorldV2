@@ -7,6 +7,8 @@ import MAPS from '../data/maps.json';
 import ITEMS from '../data/items.json';
 import LAB_RECIPES from '../data/lab_recipes.json';
 import PETS_METADATA from '../data/pets_metadata.json';
+import FOODS from '../data/foods.json';
+import TOWN_QUESTS from '../data/town_quests.json';
 
 import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
@@ -115,7 +117,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS, ITEMS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES, PETS_METADATA,
-    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic }
+    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic, setShowSuccessWindow }
   );
   
   const gameLoop = useGameLoop({
@@ -137,6 +139,18 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   useEffect(() => {
     combat.setPenaltyRemaining(gameLoop.penaltyRemaining);
   }, [gameLoop.penaltyRemaining]);
+
+  // Initialize town quest slots on first load (7 random quests, no repeats)
+  useEffect(() => {
+    if (!player) return;
+    const slots = player.townQuestSlots;
+    if (!slots || slots.length === 0) {
+      const completed = player.completedTownQuests || {};
+      const available = TOWN_QUESTS.filter(q => !completed[q.id]);
+      const shuffled = [...available].sort(() => Math.random() - 0.5);
+      syncPlayer({ townQuestSlots: shuffled.slice(0, 10).map(q => q.id) });
+    }
+  }, [player?.uid]);
 
   // --- GLOBAL SECURITY SENTRY ---
   // Watches for any wallet connection and triggers a blockade scan
@@ -171,8 +185,23 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
   const handleLogout = async (signOutFn) => {
      try {
-       if (player.autoUntil > 0 || player.buffUntil > 0) {
-         await syncPlayer({ autoUntil: 0, buffUntil: 0 }, true);
+       const updates = {};
+       if (player.autoUntil > Date.now()) {
+         updates.autoTimeLeftSaved = player.autoUntil - Date.now();
+         updates.autoUntil = 0;
+       } else if (player.autoUntil > 0) {
+         updates.autoUntil = 0;
+       }
+       
+       if (player.buffUntil > Date.now()) {
+         updates.buffTimeLeftSaved = player.buffUntil - Date.now();
+         updates.buffUntil = 0;
+       } else if (player.buffUntil > 0) {
+         updates.buffUntil = 0;
+       }
+
+       if (Object.keys(updates).length > 0) {
+         await syncPlayer(updates, true);
        }
        await signOutFn();
        adventure.setView('menu');
@@ -260,7 +289,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     db, appId, totalStats: dynamicStats, handleLogout, openGuide,
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode,
-    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA,
+    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
     BOSS, BOSS_MEDIA_FILES, SOUNDS
   };
 

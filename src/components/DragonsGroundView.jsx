@@ -82,8 +82,8 @@ export const DragonsGroundView = React.memo(() => {
     { name: 'Sky Razer', folder: 'Neon Slums' }
   ];
 
-  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
-  const fruitsInInventory = Object.values(player.inventory || {}).filter(i => i.type === 'Fruit').length || 0;
+  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i && i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
+  const fruitsInInventory = Object.values(player.inventory || {}).filter(i => i && i.type === 'Fruit').length || 0;
 
   const gemxNextLevelRequirement = gemx.level * 10;
   const dragonNextLevelRequirement = dragonStats.level * 5;

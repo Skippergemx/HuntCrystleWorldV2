@@ -6,10 +6,18 @@ import { useGame } from '../contexts/GameContext';
 import { AP_PER_LEVEL } from '../utils/gameLogic';
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-const StatCard = ({ statKey, label, abbr, value, icon: Icon, color, borderColor, glowColor, desc, onAdd, disabled }) => (
+const StatCard = ({ statKey, label, abbr, value, icon: Icon, color, borderColor, glowColor, desc, onAdd, disabled, activeFoodEffect, isFoodActive }) => (
   <div className={`relative bg-slate-900 border-[3px] ${disabled ? 'border-slate-700' : borderColor} shadow-[5px_5px_0_rgba(0,0,0,1)] transition-all duration-200 ${!disabled ? `hover:shadow-[8px_8px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:${glowColor}` : ''} p-4 md:p-5 flex items-center gap-4`}>
     {/* Halftone overlay */}
     <div className={`absolute inset-0 opacity-5 pointer-events-none comic-halftone ${color}`} />
+
+    {/* STR/AGI/DEX Sticker Overlay */}
+    {isFoodActive && (activeFoodEffect?.stat === statKey || activeFoodEffect?.stat2 === statKey) && (
+      <div className="absolute -top-3 -right-2 bg-emerald-400 text-black px-2 py-1 text-[8px] md:text-[10px] font-[1000] border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] rotate-6 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1.5">
+        <span>{activeFoodEffect.icon || '🍛'}</span>
+        <span>+{activeFoodEffect.stat === statKey ? activeFoodEffect.amount : (activeFoodEffect.amount2 || activeFoodEffect.amount)} {(activeFoodEffect.name || 'BUFF')}</span>
+      </div>
+    )}
 
     {/* Icon badge */}
     <div className={`shrink-0 w-11 h-11 md:w-14 md:h-14 flex items-center justify-center border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] bg-black`}>
@@ -31,7 +39,7 @@ const StatCard = ({ statKey, label, abbr, value, icon: Icon, color, borderColor,
       id={`allocate-${statKey}`}
       onClick={onAdd}
       disabled={disabled}
-      className={`shrink-0 w-11 h-11 md:w-14 md:h-14 flex items-center justify-center border-[3px] border-black font-black transition-all
+      className={`relative z-20 shrink-0 w-11 h-11 md:w-14 md:h-14 flex items-center justify-center border-[3px] border-black font-black transition-all
         shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none
         ${disabled
           ? 'bg-slate-800 text-slate-600 cursor-not-allowed shadow-none'
@@ -213,6 +221,8 @@ export const AttributesView = React.memo(() => {
               {...s}
               onAdd={() => allocateStat(s.statKey)}
               disabled={!hasAP}
+              activeFoodEffect={player.activeFoodEffect}
+              isFoodActive={player.activeFoodUntil > Date.now()}
             />
           </div>
         ))}

@@ -7,7 +7,7 @@ import { useGame } from '../contexts/GameContext';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode
+    LOOTS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
@@ -15,8 +15,8 @@ export const CombatView = React.memo(() => {
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury 
   } = combat;
-  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
-  const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft } = gameLoop;
+  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
+  const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
 
   const isAutoActive = autoTimeLeft > 0;
   const isStunned = stunTimeLeft > 0;
@@ -70,8 +70,24 @@ export const CombatView = React.memo(() => {
     };
   }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
 
-  const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+
+
+  const foodInventory = useMemo(() => {
+    if (!FOODS) return [];
+    const owned = [];
+    FOODS.forEach(food => {
+      const instances = Object.values(player.inventory || {}).filter(i => i?.id?.startsWith(food.id));
+      if (instances.length > 0) owned.push({ ...food, count: instances.length, instanceId: instances[0].id });
+    });
+    return owned;
+  }, [player.inventory, FOODS]);
+  const [selectedFoodIdx, setSelectedFoodIdx] = useState(0);
+  const selectedFood = foodInventory[selectedFoodIdx] || null;
+  const isFoodActive = (foodTimeLeft || 0) > 0;
+
+  const cycleFoodSelection = () => setSelectedFoodIdx(prev => foodInventory.length > 0 ? (prev + 1) % foodInventory.length : 0);
 
   const categorizedLoot = useMemo(() => {
     const categories = {};
@@ -203,31 +219,16 @@ export const CombatView = React.memo(() => {
           <HelpCircle size={14} className="md:w-6 md:h-6" strokeWidth={4} />
         </button>
 
-        {/* 2. CONSOLIDATED SECTOR & NODE PROGRESS */}
-        <div className={`flex items-center gap-2 md:gap-4 px-2 md:px-4 py-1.5 md:py-2.5 bg-black border-[2px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] flex-1 min-w-[140px] max-w-[420px]`}>
-          <div className="flex flex-col leading-none shrink-0 border-r border-white/10 pr-2">
-            <span className="text-[5px] md:text-[9px] font-black uppercase opacity-70 whitespace-nowrap text-white">
+        {/* 2. CONSOLIDATED MISSION BADGE */}
+        <div className={`flex items-center justify-center px-4 md:px-8 py-1.5 md:py-2.5 bg-black border-[2px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] flex-1 min-w-[120px] max-w-[320px] transform -rotate-1`}>
+          <div className="flex flex-col items-center leading-none">
+            <span className="text-[5px] md:text-[9px] font-black uppercase opacity-70 whitespace-nowrap text-white tracking-widest">
               {combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')}
             </span>
-            <span className="text-[9px] md:text-base font-black tracking-widest italic uppercase whitespace-nowrap text-white">
+            <span className="text-[10px] md:text-xl font-black tracking-[0.2em] italic uppercase whitespace-nowrap text-white">
               {combat.battleMode === 'GVG' ? 'SYN_RAID' : `Floor ${depth}`}
             </span>
           </div>
-          
-          {combat.battleMode !== 'GVG' && (
-            <div className="flex-1 flex flex-col gap-1 min-w-0">
-              <div className="flex justify-between items-center px-0.5">
-                <span className="text-[5px] md:text-[8px] font-black text-cyan-400 uppercase italic tracking-tighter">NODE_SYNC</span>
-                <span className="text-[5px] md:text-[9px] font-black text-white font-mono">N_{combat.killsInFloor.toString().padStart(2, '0')}/10</span>
-              </div>
-              <div className="flex gap-0.5 md:gap-1 h-1 md:h-2">
-                {[...Array(10)].map((_, i) => (
-                  <div key={i} className={`flex-1 rounded-full border border-black/50 transition-all duration-500 ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[0_0_8px_#06b6d4]' : 'bg-slate-900'}`} />
-                ))}
-              </div>
-            </div>
-          )}
-
         </div>
 
         {/* 2.5 MISSION ASSETS (MANIFEST) */}
@@ -276,8 +277,54 @@ export const CombatView = React.memo(() => {
                     <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-2 border-black px-1.5 md:px-4 py-1 rounded hover:bg-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)]">
                       <WandSparkles size={12} className="text-black" />
                       <div className="flex flex-col items-start leading-none">
-                        <span className="text-[4px] md:text-[7px] font-black uppercase text-black/70 italic">{scrollCountData.selected === 'auto_scroll' ? '1M' : 'MAX'}</span>
+                        <span className="text-[4px] md:text-[7px] font-black uppercase text-black/70 italic">
+                          {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                        </span>
                         <span className="text-[8px] md:text-sm font-black text-black italic">{scrollCountData.count}</span>
+                      </div>
+                    </button>
+                  </>
+                )
+              )}
+            </div>
+          )}
+
+          {/* Food Slot */}
+          {combat.battleMode !== 'GVG' && (
+            <div className="flex items-center gap-1">
+              <div className="w-[1px] h-6 bg-white/10 mx-0.5" />
+              {isFoodActive ? (
+                <div
+                  className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-2 py-1 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] animate-pulse"
+                  title={`Food buff active: ${foodTimeLeft}s remaining`}
+                >
+                  <span className="text-base leading-none">
+                    {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
+                  </span>
+                  <span className="text-[9px] md:text-sm font-black text-white italic">{foodTimeLeft}s</span>
+                </div>
+              ) : (
+                foodInventory.length > 0 && (
+                  <>
+                    {foodInventory.length > 1 && (
+                      <button
+                        onClick={cycleFoodSelection}
+                        className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]"
+                        title="Cycle food selection"
+                      >
+                        <RefreshCw size={10} className="md:w-4 md:h-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => selectedFood && eatFood(selectedFood)}
+                      disabled={!selectedFood}
+                      className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-1.5 md:px-3 py-1 rounded hover:bg-emerald-600 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30"
+                      title={selectedFood ? `${selectedFood.name}: ${selectedFood.effectLabel}` : 'No food'}
+                    >
+                      <span className="text-base leading-none">{selectedFood?.icon || '🍽️'}</span>
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="text-[4px] md:text-[7px] font-black uppercase text-white/70 italic">EAT</span>
+                        <span className="text-[8px] md:text-sm font-black text-white italic">{selectedFood?.count || 0}</span>
                       </div>
                     </button>
                   </>
@@ -516,7 +563,7 @@ export const CombatView = React.memo(() => {
           </div>
 
           {/* PLAYER STATUS */}
-          <div className="w-full flex flex-col items-center lg:items-start space-y-2 md:space-y-4">
+          <div className="w-full flex flex-col items-center lg:items-start space-y-2 md:space-y-4 relative">
               <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
                 <div className="bg-cyan-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col items-end transform rotate-1">
                   <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Assigned Hunter</span>
@@ -524,17 +571,40 @@ export const CombatView = React.memo(() => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
-                  <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'STR' ? 'text-yellow-400' : 'text-red-500'}`}>
+                  {/* STR STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'STR' ? 'text-yellow-400' : 'text-red-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
-                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'STR' ? 'animate-pulse' : ''}`}>{totalStats.str}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'STR' ? 'animate-pulse' : ''}`}>{totalStats.str}</span>
+                    {(player.activeFoodEffect?.stat === 'str' || player.activeFoodEffect?.stat2 === 'str') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-6 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🍛'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'str' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'POWER BUFF')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className={`flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 ${isMateBuffActive && activeMate?.type === 'AGI' ? 'text-yellow-400' : 'text-emerald-500'}`}>
+
+                  {/* AGI STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'AGI' ? 'text-yellow-400' : 'text-emerald-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
-                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'AGI' ? 'animate-pulse' : ''}`}>{totalStats.agi}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'AGI' ? 'animate-pulse' : ''}`}>{totalStats.agi}</span>
+                    {(player.activeFoodEffect?.stat === 'agi' || player.activeFoodEffect?.stat2 === 'agi') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-6 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🥗'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'agi' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'SPEED BUFF')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className={`flex flex-col items-center p-0.5 md:p-1 ${isMateBuffActive && activeMate?.type === 'DEX' ? 'text-yellow-400' : 'text-cyan-500'}`}>
+
+                  {/* DEX STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'DEX' ? 'text-yellow-400' : 'text-cyan-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
-                    <span className={`text-[10px] md:text-xs font-black italic ${isMateBuffActive && activeMate?.type === 'DEX' ? 'animate-pulse' : ''}`}>{totalStats.dex}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'DEX' ? 'animate-pulse' : ''}`}>{totalStats.dex}</span>
+                    {(player.activeFoodEffect?.stat === 'dex' || player.activeFoodEffect?.stat2 === 'dex') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-3 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🍵'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'dex' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'FOCUS BUFF')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -552,6 +622,25 @@ export const CombatView = React.memo(() => {
                   </div>
                 </div>
               </div>
+
+              {/* DEDICATED REALTIME COMBAT DROPS UI */}
+              {combat.showVictoryWindow && (
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none flex flex-col items-center justify-center z-50 animate-in slide-in-from-bottom flex-1 pb-[100px]">
+                  <div className="bg-black/80 backdrop-blur-sm border-[2px] border-cyan-500 rounded-xl p-3 shadow-[0_0_15px_rgba(6,182,212,0.5)] transform -rotate-1 flex flex-col items-center">
+                    <span className="text-cyan-400 font-black text-xs uppercase italic tracking-widest mb-1">Target Eliminated</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-amber-400 font-black text-sm italic">+{enemy?.loot || 0} GX</span>
+                      <span className="text-white font-black text-sm italic">+{enemy?.xp || 0} EXP</span>
+                    </div>
+                    {combat.lastLoot && (
+                       <div className="mt-2 bg-white/10 px-2 py-1 rounded flex items-center gap-2 border border-white/20">
+                         <span>{combat.lastLoot.icon}</span>
+                         <span className="text-[10px] text-white font-black uppercase">{combat.lastLoot.name}</span>
+                       </div>
+                    )}
+                  </div>
+                </div>
+              )}
           </div>
         </div>
       </div>
@@ -743,6 +832,57 @@ export const CombatView = React.memo(() => {
         confirmText="YES, PURIFY"
         cancelText="NO, STRIKE INSTEAD"
       />
+      {/* FOOTER PROGRESS TAPE (SCRAPBOOK STYLE) */}
+      {combat.battleMode !== 'GVG' && (
+        <div className="absolute bottom-0 left-0 right-0 z-50 px-3 md:px-12 pb-4 pointer-events-none">
+          <div className="relative bg-black border-[3px] md:border-4 border-white p-2 md:p-3 shadow-2xl transform rotate-1 flex flex-col gap-1 md:gap-2">
+             <div className="absolute -top-3 md:-top-4 left-6 bg-cyan-500 text-black text-[7px] md:text-[10px] font-[1000] px-3 py-0.5 border-2 border-black uppercase italic shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-3">
+                MISSION_PROGRESS: LN_{depth}F
+             </div>
+             
+             <div className="flex items-center gap-3 md:gap-6 mt-1">
+                <div className="flex flex-col shrink-0">
+                  <span className="text-[5px] md:text-[8px] font-black text-cyan-400 uppercase tracking-widest opacity-60">SYNC_STATUS</span>
+                  <span className="text-[10px] md:text-sm font-black text-white italic leading-none">{combat.killsInFloor}/10 NODES</span>
+                </div>
+
+                <div className="flex-1 h-3 md:h-5 bg-slate-900 border-2 border-black relative overflow-hidden group">
+                   {/* Main Progress Bar */}
+                   <div 
+                     className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-cyan-600 transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(34,211,238,0.4)]"
+                     style={{ width: `${(combat.killsInFloor / 10) * 100}%` }}
+                   />
+                   {/* Shimmer Effect */}
+                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                   {/* Grid Overlay */}
+                   <div className="absolute inset-0 bg-[rgba(0,0,0,0.1)]" style={{ backgroundImage: 'radial-gradient(circle, #000 0.5px, transparent 0.5px)', backgroundSize: '4px 4px' }} />
+                </div>
+
+                <div className="flex gap-1 shrink-0">
+                  {[...Array(10)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-sm border border-black transform ${i % 2 === 0 ? 'rotate-12' : '-rotate-12'} transition-all duration-500 ${i < combat.killsInFloor ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,1)] scale-110' : 'bg-slate-800 opacity-40'}`} 
+                    />
+                  ))}
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 20px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .animate-shimmer { animation: shimmer 2.5s linear infinite; }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 });

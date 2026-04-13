@@ -14,6 +14,7 @@ export const useGameLoop = ({
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
   const [dragonTimeLeft, setDragonTimeLeft] = useState(0);
   const [penaltyRemaining, setPenaltyRemaining] = useState(0);
+  const [foodTimeLeft, setFoodTimeLeft] = useState(0);
 
   const playerRef = useRef(null);
   const combatTimerRef = useRef(null);
@@ -33,7 +34,7 @@ export const useGameLoop = ({
   }, [combat]);
 
   // BUG-08 FIX: use refs for timer values inside interval to avoid constant teardown/recreation
-  const timersRef = useRef({ autoTimeLeft: 0, buffTimeLeft: 0, penaltyRemaining: 0, dragonTimeLeft: 0 });
+  const timersRef = useRef({ autoTimeLeft: 0, buffTimeLeft: 0, penaltyRemaining: 0, dragonTimeLeft: 0, foodTimeLeft: 0 });
 
   // --- Main Pulse (Stat Ticks & Debuffs) ---
   useEffect(() => {
@@ -55,11 +56,13 @@ export const useGameLoop = ({
       const newBuffTime = p.buffUntil && p.buffUntil > now ? Math.ceil((p.buffUntil - now) / 1000) : 0;
       const newPenaltyTime = p.penaltyUntil && p.penaltyUntil > now ? Math.ceil((p.penaltyUntil - now) / 1000) : 0;
       const newDragonTime = p.dragon?.summonUntil && p.dragon.summonUntil > now ? Math.ceil((p.dragon.summonUntil - now) / 1000) : 0;
+      const newFoodTime = p.activeFoodUntil && p.activeFoodUntil > now ? Math.ceil((p.activeFoodUntil - now) / 1000) : 0;
 
       if (newAutoTime !== timersRef.current.autoTimeLeft) { setAutoTimeLeft(newAutoTime); timersRef.current.autoTimeLeft = newAutoTime; }
       if (newBuffTime !== timersRef.current.buffTimeLeft) { setBuffTimeLeft(newBuffTime); timersRef.current.buffTimeLeft = newBuffTime; }
       if (newPenaltyTime !== timersRef.current.penaltyRemaining) { setPenaltyRemaining(newPenaltyTime); timersRef.current.penaltyRemaining = newPenaltyTime; }
       if (newDragonTime !== timersRef.current.dragonTimeLeft) { setDragonTimeLeft(newDragonTime); timersRef.current.dragonTimeLeft = newDragonTime; }
+      if (newFoodTime !== timersRef.current.foodTimeLeft) { setFoodTimeLeft(newFoodTime); timersRef.current.foodTimeLeft = newFoodTime; }
 
       // 3. COMBAT HEARTBEAT / SAFETY RESET (Bulletproof V3)
       if (c && c.combatState !== 'IDLE' && c.combatState !== 'DEFEATED' && c.combatState !== 'VICTORY') {
@@ -117,6 +120,7 @@ export const useGameLoop = ({
     autoTimeLeft,
     buffTimeLeft,
     dragonTimeLeft,
-    penaltyRemaining
+    penaltyRemaining,
+    foodTimeLeft
   };
 };

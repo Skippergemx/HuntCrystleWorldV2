@@ -13,6 +13,7 @@ export const MapView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [resumePromptMap, setResumePromptMap] = useState(null);
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_map_tutorial') === 'true';
@@ -57,22 +58,17 @@ export const MapView = () => {
     }
   };
 
-  const handleMapSelect = (map) => {
-    if (player.level < map.minLevel) return;
-    if (isPenalized) return;
-    
+  const executeMapEntry = (map) => {
     // --- STRATEGIC DEPTH SCORING V4 ---
-    // Update ranking immediately upon entry to Floor 1 if it's the hardest map reached
     const entryScore = (map.minLevel * 100000) + 1;
+    const updates = {};
     if (entryScore > (player.maxDepthScore || 0)) {
-        const entryUpdates = {
-            maxDepthScore: entryScore,
-            maxDepthMapName: map.name,
-            maxDepthMapMinLevel: map.minLevel || 1,
-            maxDepthFloor: 1,
-            maxDepth: 1
-        };
-        syncPlayer(entryUpdates);
+        updates.maxDepthScore = entryScore;
+        updates.maxDepthMapName = map.name;
+        updates.maxDepthMapMinLevel = map.minLevel || 1;
+        updates.maxDepthFloor = 1;
+        updates.maxDepth = 1;
+
         updateLeaderboard({
             level: player.level,
             maxDepthScore: entryScore,
@@ -80,10 +76,33 @@ export const MapView = () => {
         });
     }
 
+    // Always resume saved timer on entry — no manual skip allowed
+    if (player.autoTimeLeftSaved > 0) {
+        updates.autoUntil = Date.now() + player.autoTimeLeftSaved;
+        updates.autoTimeLeftSaved = 0;
+    }
+
+    if (Object.keys(updates).length > 0) {
+        syncPlayer(updates);
+    }
+
     setSelectedMap(map);
     setDepth(1);
-    spawnNewEnemy(1, map); // Pass the map directly to avoid stale state issues
+    spawnNewEnemy(1, map);
     setView('dungeon');
+    setResumePromptMap(null);
+  };
+
+  const handleMapSelect = (map) => {
+    if (player.level < map.minLevel) return;
+    if (isPenalized) return;
+    
+    if (player.autoTimeLeftSaved > 0) {
+        setResumePromptMap(map);
+        return;
+    }
+    
+    executeMapEntry(map);
   };
 
   return (
@@ -399,6 +418,54 @@ export const MapView = () => {
         </div>,
         document.body
       )}
+
+      {/* Auto Scroll Resume Prompt */}
+      {resumePromptMap && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
+           <div className="relative w-full max-w-sm flex flex-col justify-center">
+              <div className="relative bg-slate-900 border-[4px] border-black rounded-xl z-10 flex flex-col items-center overflow-hidden shadow-[8px_8px_0_rgba(6,182,212,0.3)]">
+                 <div className="w-full bg-cyan-600 py-3 border-b-[4px] border-black transform -rotate-1 relative z-10">
+                    <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic">ACTIVE TIMER FOUND</h2>
+                 </div>
+                 
+                 <div className="p-6 space-y-4 w-full">
+                    <div className="flex justify-center">
+                       <div className="bg-cyan-950 p-4 border-2 border-cyan-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(6,182,212,0.5)]">
+                          <Zap size={40} className="text-cyan-400" />
+                       </div>
+                    </div>
+                    
+                    <p className="text-sm font-bold text-center text-white/80">
+                       You have suspended Auto-Scroll time remaining: <br/>
+                       <span className="text-cyan-400 font-black text-lg block mt-1">
+                          {Math.floor((player.autoTimeLeftSaved || 0) / 60000)}m {Math.floor(((player.autoTimeLeftSaved || 0) % 60000) / 1000)}s
+                       </span>
+                    </p>
+                    
+                    <div className="flex flex-col gap-3 mt-4">
+                       <button
+                         onClick={() => executeMapEntry(resumePromptMap)}
+                         className="w-full bg-cyan-500 text-black py-3 rounded-lg font-black uppercase tracking-widest hover:bg-cyan-400 transition-all border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-sm md:text-base flex items-center justify-center gap-2"
+                       >
+                         CONFIRM AND RESUME
+                         <ChevronRight size={18} />
+                       </button>
+                       <button
+                         onClick={() => setResumePromptMap(null)}
+                         className="w-full mt-2 text-slate-500 font-bold uppercase tracking-widest hover:text-white transition-colors text-[10px]"
+                       >
+                         CANCEL DEPLOYMENT
+                       </button>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 };
+
+

@@ -130,6 +130,7 @@ export const ForgeView = React.memo(() => {
           // Check materials with robust matching (ID or Name-based fallback)
           const hasMaterials = materials.every(mat => {
             const countInInv = Object.values(player.inventory || {}).filter(i => {
+               if (!i) return false;
                const cleanId = i.id?.replace(/(_\d+)+$/, '');
                const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                return (cleanId === mat.id) || (master?.id === mat.id);
@@ -184,6 +185,7 @@ export const ForgeView = React.memo(() => {
                   {materials.map((mat, mIdx) => {
                     const loot = LOOTS.find(l => l.id === mat.id);
                     const countInInv = Object.values(player.inventory || {}).filter(i => {
+                      if (!i) return false;
                       const cleanId = i.id?.replace(/(_\d+)+$/, '');
                       const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                       return (cleanId === mat.id) || (master?.id === mat.id);
@@ -254,7 +256,7 @@ export const ForgeView = React.memo(() => {
               {/* NPC & Topic Visual Section */}
               <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
                 {/* NPC Avatar */}
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                <div className="w-16 h-28 md:w-20 md:h-36 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
                    <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
                    <div className="absolute inset-x-0 bottom-0 bg-orange-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">SYSTEM</div>
                 </div>

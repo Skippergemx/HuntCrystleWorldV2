@@ -1,6 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField } from 'firebase/firestore';
-import { calculateNagaStats } from '../utils/gameLogic';
+import { calculateNagaStats, getXpRequired, AP_PER_LEVEL } from '../utils/gameLogic';
 
 /**
  * usePlayerActions V2: Unified Action Engine
@@ -869,10 +869,128 @@ export const usePlayerActions = (
     }
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
+  const eatFood = useCallback((foodItem) => {
+    if (!foodItem || !foodItem.effect) return addLog('❌ Invalid food item.');
+    const now = Date.now();
+    const alreadyActive = (player?.activeFoodUntil || 0) > now;
+    if (alreadyActive) return addLog('❌ A food buff is already active. Wait for it to expire.');
+
+    const effect = foodItem.effect;
+    const expiry = now + effect.duration;
+    const updates = {
+      activeFoodUntil: expiry,
+      activeFoodEffect: {
+        stat: effect.stat,
+        amount: effect.amount,
+        stat2: effect.stat2 || null,
+        amount2: effect.amount2 || null,
+        name: foodItem.name,
+        icon: foodItem.icon
+      }
+    };
+
+    // Remove one instance of this food from inventory
+    const inventoryMatch = Object.entries(player.inventory || {}).find(
+      ([, v]) => v?.id?.startsWith(foodItem.id)
+    );
+    if (inventoryMatch) {
+      updates[`inventory.${inventoryMatch[0]}`] = null;
+    }
+
+    syncPlayer(updates);
+    addLog(`🍽️ ATE: ${foodItem.name} — ${foodItem.effectLabel || ''}`);
+    playSFX(SOUNDS.obtainLoot);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
+  const completeTownQuest = useCallback((quest, FOODS) => {
+    if (!quest || !player) return;
+    const inventory = player.inventory || {};
+
+    // Verify all required items are present
+    for (const req of quest.requires) {
+      const ownedCount = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
+      if (ownedCount < req.qty) {
+        return addLog(`❌ QUEST: Missing ${req.qty - ownedCount}x ${req.itemId}`);
+      }
+    }
+
+    const updates = {};
+
+    // Remove required items
+    for (const req of quest.requires) {
+      let removed = 0;
+      for (const [key, val] of Object.entries(inventory)) {
+        if (removed >= req.qty) break;
+        if (val?.id?.startsWith(req.itemId)) {
+          updates[`inventory.${key}`] = null;
+          removed++;
+        }
+      }
+    }
+
+    // Add food reward to inventory
+    const food = FOODS.find(f => f.id === quest.reward.foodId);
+    if (food) {
+      const rewardKey = `${food.id}_TOWN_${Date.now()}`;
+      updates[`inventory.${rewardKey}`] = { ...food, id: rewardKey };
+    }
+
+    // Mark quest slot as completed and rotate
+    const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== quest.id);
+    updates.townQuestSlots = currentSlots;
+    updates[`completedTownQuests.${quest.id}`] = Date.now();
+
+    syncPlayer(updates);
+    addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}!`);
+    playSFX(SOUNDS.obtainLoot);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
+  const completeQuiz = useCallback((quiz, isCorrect) => {
+    if (!quiz || !player) return;
+    
+    if (!isCorrect) {
+      addLog(`❌ QUIZ: Incorrect answer. Transmission severed.`);
+      playSFX(SOUNDS.hurt);
+      return;
+    }
+
+    let nextXp = (player.xp || 0) + quiz.xpReward, 
+        nextLvl = player.level || 1, 
+        nextMaxHp = player.maxHp || 1000,
+        apGained = 0;
+
+    while (nextXp >= getXpRequired(nextLvl)) {
+      nextXp -= getXpRequired(nextLvl);
+      nextLvl++;
+      nextMaxHp += 50;
+      apGained += AP_PER_LEVEL;
+      addLog(`🎓 LVL UP! +5 AP gained through knowledge syncing.`);
+    }
+
+    const updates = {
+      xp: nextXp,
+      level: nextLvl,
+      maxHp: nextMaxHp,
+      hp: Math.min(nextMaxHp, (player.hp || 0) + (apGained > 0 ? 50 : 0)),
+      [`completedQuizzes.${quiz.id}`]: Date.now()
+    };
+    if (apGained > 0) updates.abilityPoints = (player.abilityPoints || 0) + apGained;
+
+    // Filter out the completed quiz from active slots
+    if (player.quizSlots) {
+       updates.quizSlots = player.quizSlots.filter(id => id !== quiz.id);
+    }
+    
+    syncPlayer(updates);
+    addLog(`🎓 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
+    playSFX(SOUNDS.lvlUp);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
-    initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar
+    initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
+    eatFood, completeTownQuest, completeQuiz
   };
 };

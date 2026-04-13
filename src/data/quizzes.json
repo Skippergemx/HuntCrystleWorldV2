@@ -1,0 +1,272 @@
+[
+  {
+    "id": "quiz_001",
+    "topic": "Math",
+    "npcIndex": 5,
+    "question": "If a Hunter deals 45 damage per strike and hits a monster with 200 HP, how many strikes are needed to defeat it?",
+    "options": ["4 strikes", "5 strikes", "6 strikes", "10 strikes"],
+    "answer": 1,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_002",
+    "topic": "Web3",
+    "npcIndex": 12,
+    "question": "What is the primary currency used for transactions on the TON blockchain?",
+    "options": ["ETH", "SOL", "TON", "GX"],
+    "answer": 2,
+    "xpReward": 75
+  },
+  {
+    "id": "quiz_003",
+    "topic": "Science",
+    "npcIndex": 19,
+    "question": "Which crystal matches the primary color of the Hub's energy grid?",
+    "options": ["Quartz", "Crystle-Cyan", "Obsidian", "Coal"],
+    "answer": 1,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_004",
+    "topic": "Tech",
+    "npcIndex": 26,
+    "question": "In coding, what does 'IDE' stand for?",
+    "options": ["Integrated Design Engine", "Internal Data Entry", "Integrated Development Environment", "Iconic Digital Element"],
+    "answer": 2,
+    "xpReward": 100
+  },
+  {
+    "id": "quiz_005",
+    "topic": "Trivia",
+    "npcIndex": 1,
+    "question": "Who is the legendary Hunter known for first discovering Sector 7?",
+    "options": ["Commander Ash", "The Old Crag", "Skipper Gemx", "Zero-One"],
+    "answer": 2,
+    "xpReward": 150
+  },
+  {
+    "id": "quiz_006",
+    "topic": "Math",
+    "npcIndex": 8,
+    "question": "If your Critical Rate is 25%, on average, one out of how many hits is a Critical strike?",
+    "options": ["Once every 2 hits", "Once every 4 hits", "Once every 10 hits", "Every single hit"],
+    "answer": 1,
+    "xpReward": 80
+  },
+  {
+    "id": "quiz_007",
+    "topic": "Web3",
+    "npcIndex": 15,
+    "question": "What does a 'Seed Phrase' protect in your Digital Wallet?",
+    "options": ["Your username", "Your hardware device", "Your Private Keys", "Your profile picture"],
+    "answer": 2,
+    "xpReward": 90
+  },
+  {
+    "id": "quiz_008",
+    "topic": "Science",
+    "npcIndex": 22,
+    "question": "What process do Dragons use to generate their 'Ember Breath'?",
+    "options": ["Solar Absorption", "Crystle Fusion", "Chemical Combustion", "Magic"],
+    "answer": 1,
+    "xpReward": 110
+  },
+  {
+    "id": "quiz_009",
+    "topic": "Tech",
+    "npcIndex": 29,
+    "question": "Which protocol is used to transfer data securely across the web?",
+    "options": ["HTTP", "HTTPS", "FTP", "SMTP"],
+    "answer": 1,
+    "xpReward": 70
+  },
+  {
+    "id": "quiz_010",
+    "topic": "Trivia",
+    "npcIndex": 30,
+    "question": "What is the maximum floor reached by humans before the Great Resync?",
+    "options": ["Floor 100", "Floor 500", "Floor 999", "Infinite"],
+    "answer": 2,
+    "xpReward": 200
+  },
+  {
+    "id": "quiz_011",
+    "topic": "Math",
+    "npcIndex": 3,
+    "question": "Calculate: (15 x 4) - (30 / 2)",
+    "options": ["45", "75", "30", "60"],
+    "answer": 0,
+    "xpReward": 65
+  },
+  {
+    "id": "quiz_012",
+    "topic": "Web3",
+    "npcIndex": 7,
+    "question": "What does DAO stand for?",
+    "options": ["Digital Asset Office", "Decentralized Autonomous Organization", "Data Analysis Orbit", "Direct Access Option"],
+    "answer": 1,
+    "xpReward": 95
+  },
+  {
+    "id": "quiz_013",
+    "topic": "Science",
+    "npcIndex": 11,
+    "question": "Which element is the primary component of most meteorites in Sector 4?",
+    "options": ["Gold", "Silica", "Iron", "Carbon"],
+    "answer": 2,
+    "xpReward": 55
+  },
+  {
+    "id": "quiz_014",
+    "topic": "Tech",
+    "npcIndex": 16,
+    "question": "What is the main purpose of a 'Load Balancer' in system architecture?",
+    "options": ["Charge batteries", "Distribute traffic", "Clean databases", "Compress images"],
+    "answer": 1,
+    "xpReward": 120
+  },
+  {
+    "id": "quiz_015",
+    "topic": "Trivia",
+    "npcIndex": 21,
+    "question": "Which faction controls the 'Neon Slums' district?",
+    "options": ["The Syndicate", "The Free Hunters", "Global Cybercorp", "None"],
+    "answer": 0,
+    "xpReward": 85
+  },
+  {
+    "id": "quiz_016",
+    "topic": "Math",
+    "npcIndex": 24,
+    "question": "Solve for X: 2X + 10 = 30",
+    "options": ["5", "10", "15", "20"],
+    "answer": 1,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_017",
+    "topic": "Web3",
+    "npcIndex": 2,
+    "question": "Which standard is used for most NFTs on Ethereum?",
+    "options": ["ERC-20", "ERC-721", "ERC-1155", "Both 721 and 1155"],
+    "answer": 3,
+    "xpReward": 130
+  },
+  {
+    "id": "quiz_018",
+    "topic": "Science",
+    "npcIndex": 6,
+    "question": "The speed of light is roughly how many kilometers per second?",
+    "options": ["3,000", "30,000", "300,000", "3,000,000"],
+    "answer": 2,
+    "xpReward": 170
+  },
+  {
+    "id": "quiz_019",
+    "topic": "Tech",
+    "npcIndex": 10,
+    "question": "What does SQL stand for in database management?",
+    "options": ["Simple Query Logic", "Structured Query Language", "Sequential Queue List", "System Quality Level"],
+    "answer": 1,
+    "xpReward": 75
+  },
+  {
+    "id": "quiz_020",
+    "topic": "Trivia",
+    "npcIndex": 14,
+    "question": "Which monster is known as the 'Scourge of Rust Canyon'?",
+    "options": ["Iron Pet", "Scrap Bota", "Void Wraith", "Titan Golem"],
+    "answer": 3,
+    "xpReward": 180
+  },
+  {
+    "id": "quiz_021",
+    "topic": "Math",
+    "npcIndex": 18,
+    "question": "If you have 100 GX and interest is 10% per floor, how much do you have after 2 floors?",
+    "options": ["120 GX", "121 GX", "110 GX", "111 GX"],
+    "answer": 1,
+    "xpReward": 100
+  },
+  {
+    "id": "quiz_022",
+    "topic": "Web3",
+    "npcIndex": 23,
+    "question": "What is 'Gas' in blockchain terms?",
+    "options": ["Fuel for cars", "Transaction fee", "Wallet password", "Mining hardware"],
+    "answer": 1,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_023",
+    "topic": "Science",
+    "npcIndex": 27,
+    "question": "What is the boiling point of water at sea level?",
+    "options": ["90C", "100C", "110C", "212C"],
+    "answer": 1,
+    "xpReward": 30
+  },
+  {
+    "id": "quiz_024",
+    "topic": "Tech",
+    "npcIndex": 4,
+    "question": "Who created the Linux kernel?",
+    "options": ["Bill Gates", "Linus Torvalds", "Steve Jobs", "Mark Zuckerberg"],
+    "answer": 1,
+    "xpReward": 110
+  },
+  {
+    "id": "quiz_025",
+    "topic": "Trivia",
+    "npcIndex": 9,
+    "question": "The 'Crystle-Cyan' energy was first harnessed in which year?",
+    "options": ["2077", "2099", "2121", "2050"],
+    "answer": 2,
+    "xpReward": 140
+  },
+  {
+    "id": "quiz_026",
+    "topic": "Math",
+    "npcIndex": 13,
+    "question": "A circle's diameter is 10m. What is its radius?",
+    "options": ["20m", "5m", "3.14m", "10m"],
+    "answer": 1,
+    "xpReward": 45
+  },
+  {
+    "id": "quiz_027",
+    "topic": "Web3",
+    "npcIndex": 17,
+    "question": "What is a 'Cold Wallet'?",
+    "options": ["A wallet in the fridge", "An offline storage wallet", "A wallet with no money", "A hacked wallet"],
+    "answer": 1,
+    "xpReward": 90
+  },
+  {
+    "id": "quiz_028",
+    "topic": "Science",
+    "npcIndex": 25,
+    "question": "Which planet is known as the 'Red Planet'?",
+    "options": ["Venus", "Mars", "Jupiter", "Saturn"],
+    "answer": 1,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_029",
+    "topic": "Tech",
+    "npcIndex": 28,
+    "question": "In Git, which command is used to move changes from local to remote?",
+    "options": ["git pull", "git commit", "git push", "git add"],
+    "answer": 2,
+    "xpReward": 85
+  },
+  {
+    "id": "quiz_030",
+    "topic": "Trivia",
+    "npcIndex": 20,
+    "question": "What is the name of the final boss in Sector 0?",
+    "options": ["The Architect", "Omni-Crystle", "Null Prime", "The Void King"],
+    "answer": 0,
+    "xpReward": 250
+  }
+]

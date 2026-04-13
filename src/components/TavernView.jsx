@@ -162,9 +162,9 @@ export const TavernView = () => {
               {/* NPC & Topic Visual Section */}
               <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
                 {/* NPC Avatar */}
-                <div className="w-16 h-16 md:w-20 md:h-20 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
+                <div className="w-16 h-28 md:w-20 md:h-36 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
                    <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
-                   <div className="absolute inset-x-0 bottom-0 bg-amber-600 text-[6px] font-black text-white text-center py-0.5 uppercase italic">BARTENDER</div>
+                   <div className="absolute inset-x-0 bottom-0 bg-amber-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">MATE_LIAISON</div>
                 </div>
 
                 <div className="flex flex-col items-center gap-1">

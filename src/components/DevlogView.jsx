@@ -23,6 +23,26 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.8.0',
+    date: '2026-04-13',
+    title: 'THE iLEARN PROTOCOL & TOWN EXPANSION V2',
+    category: 'CONTENT & INFRASTRUCTURE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'Deployment of the "iLearn" Knowledge Terminal and a massive overhaul of the Crystle Town community hub. This update synchronizes educational quizzes with player progression and introduces the "Landscape Briefing" UI standard for enhanced character art visibility.',
+    changes: [
+      'New: iLearn Knowledge Terminal — 30 interactive quizzes (Math, Tech, Web3)',
+      'New: Dynamic Quiz Cycling — 6 active slots with automatic pool refill',
+      'UI: Redesigned Crystle Town & iLearn cards into "Landscape Briefing" format',
+      'UI: Split-screen "Command Console" modals for immersive NPC interactions',
+      'Balance: Extended Sector Depth — Maximum floor cap raised to 40',
+      'Optimization: Standardized 9:16 portrait ratios for all hub instructors',
+      'Cleanup: Deprecated lab testing protocols for stable production build'
+    ],
+    media: '/assets/monsters/Void Sector 7/Null Stalker.jpg'
+  },
+  {
     id: '1.7.0',
     date: '2026-04-11',
     title: 'PLASMA-TECH COMBAT & EFFECTS LAB DEPLOYMENT',

@@ -33,7 +33,7 @@ export const BossView = () => {
   const { view, setView, enemyFlinch } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
-  const { autoTimeLeft, dragonTimeLeft, buffTimeLeft } = gameLoop;
+  const { autoTimeLeft, dragonTimeLeft, buffTimeLeft, foodTimeLeft } = gameLoop;
   const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
 
   const [showTutorial, setShowTutorial] = useState(false);
@@ -86,6 +86,9 @@ export const BossView = () => {
   const isAutoActive = autoTimeLeft > 0;
   const isStunned = stunTimeLeft > 0;
   const isMissed = missTimeLeft > 0;
+  const isFoodActive = (foodTimeLeft || 0) > 0;
+  const isMateBuffActive = (buffTimeLeft || 0) > 0;
+  const activeMate = isMateBuffActive ? TAVERN_MATES.find(m => m.id === player.hiredMate) : null;
 
   const currentPotionCount = React.useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
@@ -379,17 +382,40 @@ export const BossView = () => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
-                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-red-500">
+                  {/* STR STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'STR' ? 'text-yellow-400' : 'text-red-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
-                    <span className="text-[10px] md:text-xs font-black italic">{totalStats.str}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'STR' ? 'animate-pulse' : ''}`}>{totalStats.str}</span>
+                    {(player.activeFoodEffect?.stat === 'str' || player.activeFoodEffect?.stat2 === 'str') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-6 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🍛'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'str' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'POWER BUFF')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-emerald-500">
+
+                  {/* AGI STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'AGI' ? 'text-yellow-400' : 'text-emerald-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
-                    <span className="text-[10px] md:text-xs font-black italic">{totalStats.agi}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'AGI' ? 'animate-pulse' : ''}`}>{totalStats.agi}</span>
+                    {(player.activeFoodEffect?.stat === 'agi' || player.activeFoodEffect?.stat2 === 'agi') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-6 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🥗'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'agi' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'SPEED BUFF')}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col items-center p-0.5 md:p-1 text-cyan-500">
+
+                  {/* DEX STAT */}
+                  <div className={`relative flex flex-col items-center p-0.5 md:p-1 transition-all duration-300 ${isMateBuffActive && activeMate?.type === 'DEX' ? 'text-yellow-400' : 'text-cyan-500'}`}>
                     <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
-                    <span className="text-[10px] md:text-xs font-black italic">{totalStats.dex}</span>
+                    <span className={`text-[10px] md:text-sm font-black italic ${isMateBuffActive && activeMate?.type === 'DEX' ? 'animate-pulse' : ''}`}>{totalStats.dex}</span>
+                    {(player.activeFoodEffect?.stat === 'dex' || player.activeFoodEffect?.stat2 === 'dex') && isFoodActive && (
+                      <div className="absolute -top-2 -right-2 bg-emerald-400 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-[1000] border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-3 z-50 whitespace-nowrap uppercase italic animate-in zoom-in duration-300 pointer-events-none flex items-center gap-1">
+                        <span>{player.activeFoodEffect.icon || FOODS?.find(f => f.name === player.activeFoodEffect.name)?.icon || '🍵'}</span>
+                        <span>+{player.activeFoodEffect.stat === 'dex' ? player.activeFoodEffect.amount : (player.activeFoodEffect.amount2 || player.activeFoodEffect.amount)} {(player.activeFoodEffect.name || 'FOCUS BUFF')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

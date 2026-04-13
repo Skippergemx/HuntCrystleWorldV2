@@ -38,8 +38,10 @@ import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
 import { PetsView } from './PetsView';
+import { ILearnView } from './ILearnView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
+import { CrystleTownView } from './CrystleTownView';
 // import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { UnifiedAuthBanner } from './UnifiedAuthBanner';
@@ -137,7 +139,7 @@ export const GameLayout = ({ onLogout }) => {
 
   const { 
     user, player, setPlayer, syncPlayer, logs, addLog,
-    currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
+    currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
     showBlockadeModal, setShowBlockadeModal, blockadeError, collisionProfile,
     sessionConflict,
     adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
@@ -276,9 +278,9 @@ export const GameLayout = ({ onLogout }) => {
         </div>
       )}
 
-      {showVictoryWindow && (
+      {showSuccessWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">
-          <div className="relative max-w-sm w-full">
+          <div className="relative max-w-sm md:max-w-lg w-full max-h-[95vh] flex flex-col">
             {/* The Comic Panel Shadow */}
             <div className="absolute inset-0 bg-cyan-800 rounded-3xl transform translate-x-2 translate-y-2"></div>
 
@@ -289,10 +291,10 @@ export const GameLayout = ({ onLogout }) => {
               {/* Header Banner */}
               <div className="w-full bg-cyan-500 py-6 border-b-[4px] border-black transform rotate-1 relative z-10 shadow-lg">
                 <h2 className="text-5xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[4px_4px_0_rgba(0,0,0,1)] animate-bounce-short">
-                  VICTORY!
+                  TREASURY REACHED!
                 </h2>
                 <div className="absolute -bottom-3 right-8 bg-black text-white px-3 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] transform -rotate-2 border-2 border-white">
-                  Sector Node Secured
+                  Mission Complete
                 </div>
               </div>
 
@@ -305,46 +307,80 @@ export const GameLayout = ({ onLogout }) => {
               </div>
 
               {/* Rewards Summary */}
-              <div className="px-8 pb-8 w-full space-y-4">
-                <div className="bg-black text-white p-4 rounded-2xl border-[3px] border-white relative transform -rotate-1 shadow-[6px_6px_0_rgba(255,255,255,0.1)]">
-                  <p className="text-[10px] font-black uppercase text-cyan-400 mb-2 italic tracking-widest">Raid Outcome Log</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-black uppercase text-slate-500">Total GX</span>
-                      <span className="text-xl font-black text-amber-400 italic">+{sessionRewards.tokens}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-black uppercase text-slate-500">Exp Won</span>
-                      <span className="text-xl font-black text-white italic">+{sessionRewards.xp}</span>
-                    </div>
-                  </div>
-                </div>
+              {(() => {
+                 const autoScrolls = sessionRewards.loots.filter(i => i?.id?.startsWith('auto_scroll'));
+                 const physicalDrops = sessionRewards.loots.filter(i => i?.id && !i.id.startsWith('auto_scroll'));
+                 return (
+                   <div className="px-5 md:px-8 pb-5 md:pb-8 w-full space-y-4 flex-1 overflow-y-auto custom-scrollbar">
+                     <div className="bg-black text-white p-4 rounded-2xl border-[3px] border-white relative transform -rotate-1 shadow-[6px_6px_0_rgba(255,255,255,0.1)] shrink-0">
+                       <p className="text-[10px] font-black uppercase text-cyan-400 mb-2 italic tracking-widest">Raid Outcome Log</p>
+                       <div className="grid grid-cols-2 gap-4">
+                         <div className="flex flex-col">
+                           <span className="text-[8px] font-black uppercase text-slate-500">Total GX</span>
+                           <span className="text-xl font-black text-amber-400 italic">+{sessionRewards.tokens}</span>
+                         </div>
+                         <div className="flex flex-col">
+                           <span className="text-[8px] font-black uppercase text-slate-500">Exp Won</span>
+                           <span className="text-xl font-black text-white italic">+{sessionRewards.xp}</span>
+                         </div>
+                       </div>
+                     </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ShoppingBag size={12} className="text-black" />
-                    <span className="text-[8px] font-black text-black uppercase tracking-widest">Loot Synchronized:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 min-h-[44px]">
-                    {sessionRewards.loots.length > 0 ? (
-                      sessionRewards.loots.map((item, i) => (
-                        <div key={i} className="w-10 h-10 bg-white border-2 border-black rounded-lg flex items-center justify-center text-xl shadow-[2px_2px_0_rgba(0,0,0,1)] animate-in slide-in-from-bottom duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                          {item.icon}
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-[8px] text-slate-400 font-bold uppercase italic tracking-widest">No Physical Drops Detected</span>
-                    )}
-                  </div>
-                </div>
+                     {autoScrolls.length > 0 && (
+                       <div className="space-y-2 shrink-0">
+                         <div className="flex items-center gap-2">
+                            <Zap size={14} className="text-cyan-600 animate-pulse" />
+                            <span className="text-[10px] font-black text-cyan-700 uppercase tracking-widest">Temporal Assets:</span>
+                         </div>
+                         <div className="flex flex-col gap-2">
+                           {autoScrolls.map((item, i) => (
+                             <div key={i} className="bg-slate-900 border-2 border-cyan-400 p-2 rounded-lg flex items-center gap-3 shadow-[0_0_15px_rgba(6,182,212,0.4)] relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-cyan-400/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                <div className="absolute inset-0 opacity-20 bg-cyan-400 animate-pulse pointer-events-none"></div>
+                                <div className="w-10 h-10 shrink-0 bg-black border-2 border-black rounded flex justify-center items-center text-xl shadow-[2px_2px_0_rgba(0,0,0,1)] z-10">{item.icon}</div>
+                                <div className="flex flex-col z-10 min-w-0">
+                                   <span className="text-xs md:text-sm font-black text-cyan-400 uppercase italic leading-none truncate">{item.name}</span>
+                                   <span className="text-[8px] md:text-[9px] font-bold text-white/70 uppercase truncate mt-0.5">{item.description || "Autonomous hunting time"}</span>
+                                </div>
+                             </div>
+                           ))}
+                         </div>
+                       </div>
+                     )}
 
-                <button
-                  onClick={() => { combat.setShowVictoryWindow(false); adventure.setView('map'); }}
-                  className="w-full bg-black text-white py-4 rounded-xl font-black uppercase tracking-tighter hover:bg-slate-800 transition-all border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-lg"
-                >
-                  CONFIRM & RETURN
-                </button>
-              </div>
+                     <div className="space-y-2 shrink-0">
+                       <div className="flex items-center gap-2">
+                         <ShoppingBag size={14} className="text-black" />
+                         <span className="text-[10px] font-black text-black uppercase tracking-widest">Physical Loot Manifest:</span>
+                       </div>
+                       <div className="flex flex-col gap-2 min-h-[44px] max-h-[160px] overflow-y-auto custom-scrollbar pr-2">
+                         {physicalDrops.length > 0 ? (
+                           physicalDrops.map((item, i) => (
+                             <div key={i} className="flex items-center gap-3 bg-white border-2 border-black p-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] animate-in slide-in-from-bottom duration-300" style={{ animationDelay: `${i * 50}ms` }}>
+                               <div className={`w-8 h-8 flex-shrink-0 border-2 border-black flex justify-center items-center text-lg ${item.rarity === 'Legendary' ? 'bg-amber-100' : item.rarity === 'Epic' ? 'bg-purple-100' : 'bg-slate-100'}`}>{item.icon}</div>
+                               <div className="flex flex-col min-w-0 flex-1">
+                                  <span className="text-xs font-black text-black uppercase italic truncate leading-tight">{item.name}</span>
+                                  <span className={`text-[8px] font-black uppercase tracking-widest ${item.rarity === 'Legendary' ? 'text-amber-500' : item.rarity === 'Epic' ? 'text-purple-500' : 'text-slate-500'}`}>{item.rarity || 'Common'} {item.type}</span>
+                               </div>
+                             </div>
+                           ))
+                         ) : (
+                           <div className="bg-white border-2 border-dashed border-slate-300 p-4 flex items-center justify-center">
+                              <span className="text-[10px] text-slate-400 font-bold uppercase italic tracking-widest">No Physical Drops Detected</span>
+                           </div>
+                         )}
+                       </div>
+                     </div>
+
+                     <button
+                       onClick={() => { setShowSuccessWindow(false); combat.handleCloseVictoryWindow(); }}
+                       className="w-full shrink-0 bg-black text-white py-4 mt-2 rounded-xl font-black uppercase tracking-tighter hover:bg-slate-800 transition-all border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-lg"
+                     >
+                       CONFIRM & RETURN
+                     </button>
+                   </div>
+                 );
+              })()}
             </div>
           </div>
         </div>
@@ -643,9 +679,36 @@ export const GameLayout = ({ onLogout }) => {
 
       <main className="max-w-4xl mx-auto p-3 space-y-4">
         <div className="grid grid-cols-3 gap-2">
-          <StatTile icon={<Sword size={14} />} label="STR" value={totalStats.str} color="text-red-400" desc="Attack Power" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'STR'} />
-          <StatTile icon={<Wind size={14} />} label="AGI" value={totalStats.agi} color="text-emerald-400" desc="Evasion/SPD" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'AGI'} />
-          <StatTile icon={<Target size={14} />} label="DEX" value={totalStats.dex} color="text-yellow-400" desc="Accuracy" isBuffed={buffTimeLeft > 0 && currentMate?.type === 'DEX'} />
+          <StatTile 
+            icon={<Sword size={14} />} 
+            label="STR" 
+            value={totalStats.str} 
+            color="text-red-400" 
+            desc="Attack Power" 
+            isBuffed={buffTimeLeft > 0 && currentMate?.type === 'STR'} 
+            activeFoodEffect={player.activeFoodEffect}
+            isFoodActive={(player.activeFoodUntil || 0) > Date.now()}
+          />
+          <StatTile 
+            icon={<Wind size={14} />} 
+            label="AGI" 
+            value={totalStats.agi} 
+            color="text-emerald-400" 
+            desc="Evasion/SPD" 
+            isBuffed={buffTimeLeft > 0 && currentMate?.type === 'AGI'} 
+            activeFoodEffect={player.activeFoodEffect}
+            isFoodActive={(player.activeFoodUntil || 0) > Date.now()}
+          />
+          <StatTile 
+            icon={<Target size={14} />} 
+            label="DEX" 
+            value={totalStats.dex} 
+            color="text-yellow-400" 
+            desc="Accuracy" 
+            isBuffed={buffTimeLeft > 0 && currentMate?.type === 'DEX'} 
+            activeFoodEffect={player.activeFoodEffect}
+            isFoodActive={(player.activeFoodUntil || 0) > Date.now()}
+          />
         </div>
 
         <div className="bg-slate-900/50 border border-slate-800 rounded-2xl min-h-[450px] md:min-h-[550px] flex flex-col overflow-hidden backdrop-blur-sm relative">
@@ -744,6 +807,14 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'devlog' && (
             <DevlogView />
+          )}
+
+          {view === 'crystle_town' && (
+            <CrystleTownView />
+          )}
+          
+          {view === 'ilearn' && (
+            <ILearnView />
           )}
 
           {/* {view === 'playground' && (
