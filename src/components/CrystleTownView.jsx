@@ -30,17 +30,34 @@ const useTypewriter = (text, speed = 28) => {
 
 // --- NPC Dialogue Modal ---
 const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
-  const { player, ITEMS, FOODS } = useGame();
+  const { player, ITEMS, FOODS, MAPS } = useGame();
   const displayedText = useTypewriter(quest.dialogue);
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
+  const [activeTooltip, setActiveTooltip] = useState(null);
 
   const inventory = player?.inventory || {};
   const rewardFood = FOODS?.find(f => f.id === quest.reward.foodId);
 
+  const getItemSource = (itId) => {
+    if (itId?.includes('apple') || itId?.includes('grapes') || itId?.includes('berry') || itId?.includes('cherry') || itId?.includes('peach') || itId?.includes('lemon') || itId?.includes('orange') || itId?.includes('pear')) {
+        return "Dragons Ground / Orchard";
+    }
+    const sources = MAPS?.filter(m => m.lootTable?.includes(itId)).map(m => m.name);
+    if (sources && sources.length > 0) return sources.join(", ");
+    return "Unknown / Rare Drop";
+  };
+
   const requirementStatus = quest.requires.map(req => {
     const owned = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
     const item = Object.values(ITEMS || []).find(i => i.id === req.itemId);
-    return { ...req, owned, itemName: item?.name || req.itemId, itemIcon: item?.icon || '📦', met: owned >= req.qty };
+    return { 
+        ...req, 
+        owned, 
+        itemName: item?.name || req.itemId, 
+        itemIcon: item?.icon || '📦', 
+        met: owned >= req.qty,
+        sources: getItemSource(req.itemId)
+    };
   });
 
   const allMet = requirementStatus.every(r => r.met);
@@ -100,11 +117,17 @@ const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
                    </p>
                    <div className="grid grid-cols-1 gap-2">
                       {requirementStatus.map((req, i) => (
-                        <div key={i} className={`flex items-center gap-3 px-3 py-2 border-[3px] rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all ${req.met ? 'border-green-500 bg-green-50' : 'border-black bg-white'}`}>
+                         <div 
+                           key={i} 
+                           onMouseEnter={() => setActiveTooltip(req.itemId)}
+                           onMouseLeave={() => setActiveTooltip(null)}
+                           onClick={() => setActiveTooltip(activeTooltip === req.itemId ? null : req.itemId)}
+                           className={`group/req relative flex items-center gap-3 px-3 py-2 border-[3px] rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all cursor-help ${req.met ? 'border-green-500 bg-green-50' : 'border-black bg-white'}`}
+                         >
                           <span className="text-2xl leading-none">{req.itemIcon}</span>
                           <div className="flex-1">
                             <p className="text-[11px] font-black uppercase text-black leading-none">{req.itemName}</p>
-                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Materials needed for sector expansion.</p>
+                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{activeTooltip === req.itemId ? `DROPS IN: ${req.sources}` : "Materials needed for sector expansion."}</p>
                           </div>
                           <div className={`text-[11px] font-black px-3 py-1 rounded-full border-[2px] ${req.met ? 'bg-green-500 border-green-600 text-white' : 'bg-slate-100 border-black text-black'}`}>
                             {req.owned}/{req.qty}

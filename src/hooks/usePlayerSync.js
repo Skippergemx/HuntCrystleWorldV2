@@ -76,6 +76,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
   // Sync timeout ref for batching/throttling Firestore writes
   const syncTimeoutRef = useRef(null);
   const pendingUpdatesRef = useRef({});
+  const syncFailureCount = useRef(0);
 
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
@@ -404,10 +405,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
       const performSync = async () => {
+        if (sessionConflict) return; // Hard gate for multi-device sync collisions
+        if (isSyncing) return; // Prevent concurrent requests during network lag
+        
+        // Before starting payload execution, snapshot the queue
+        const payload = { ...pendingUpdatesRef.current };
+        if (Object.keys(payload).length === 0) return;
+        
         try {
           const docRef = doc(db, 'players', activeDocId);
-          
-          const payload = { ...pendingUpdatesRef.current };
           pendingUpdatesRef.current = {};
 
           // Auto-mirror TON address to primary walletAddress if inside TMA
@@ -418,8 +424,8 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           console.log(`System V4: Pushing Batch Update to Firestore [${activeDocId}]:`, Object.keys(payload));
           setIsSyncing(true);
           await updateDoc(docRef, payload);
-          setIsSyncing(false);
           setLastSyncFailed(false);
+          syncFailureCount.current = 0; // Reset failure counter
           console.log("System V4: Remote Sector Synchronized.", activeDocId);
 
           // --- LEADERBOARD PUBLIC ECHO PUSH ---
@@ -443,10 +449,22 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
           } catch(e) { console.error("Echo Error:", e); }
         } catch (e) {
           console.error("Sync Error - Retrying in next batch:", e);
+          syncFailureCount.current += 1;
+          
+          if (syncFailureCount.current >= 3) {
+            console.error("CRITICAL_SYNC_COLLAPSE: Enforcing Rollback Policy.");
+            // Optional: Provide UI feedback that network is down
+          }
+          
           // Failsafe: Restore unsynced data to the queue
           pendingUpdatesRef.current = { ...payload, ...pendingUpdatesRef.current };
           setLastSyncFailed(true);
+        } finally {
           setIsSyncing(false);
+          // If new updates accumulated while this sync was in progress, process them now.
+          if (Object.keys(pendingUpdatesRef.current).length > 0) {
+            syncTimeoutRef.current = setTimeout(performSync, 1000);
+          }
         }
       };
 

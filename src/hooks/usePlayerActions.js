@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { calculateNagaStats, getXpRequired, AP_PER_LEVEL } from '../utils/gameLogic';
 
 /**
@@ -204,20 +204,53 @@ export const usePlayerActions = (
     syncPlayer({ [`baseStats.${statName}`]: newStat, abilityPoints: newAP });
   };
 
-  const buyItem = (item) => {
-    if (player.tokens < item.cost) return addLog("Out of GX!");
-    if (player.level < (item.reqLvl || 1)) return addLog(`Requires Level ${item.reqLvl}!`);
+  const buyItem = async (item, qty = 1) => {
+    if (player.level < (item.reqLvl || 1)) {
+      addLog(`Requires Level ${item.reqLvl}!`);
+      return false;
+    }
+    if (qty < 1 || !Number.isInteger(qty)) {
+      addLog('🚨 ERROR: Invalid quantity.');
+      return false;
+    }
+    
+    const totalCost = item.cost * qty;
 
-    if (item.id === 'hp_potion') {
-      syncPlayer({ tokens: player.tokens - item.cost, potions: (player.potions || 0) + 1 });
-    } else if (item.id === 'auto_scroll') {
-      syncPlayer({ tokens: player.tokens - item.cost, autoScrolls: (player.autoScrolls || 0) + 1 });
-    } else {
-      const purchaseItem = { ...item, id: `${item.id}_${Date.now()}` };
-      const updates = { tokens: player.tokens - item.cost };
-      updates[`inventory.${purchaseItem.id}`] = purchaseItem;
-      syncPlayer(updates);
-      addLog(`Acquired ${item.name}! Check your Storage Bag.`);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const playerRef = doc(db, 'players', player.uid);
+        const playerSnap = await transaction.get(playerRef);
+        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
+        
+        const data = playerSnap.data();
+        if ((data.tokens || 0) < totalCost) throw new Error("INSUFFICIENT_GX");
+
+        const updates = { tokens: (data.tokens || 0) - totalCost };
+        
+        if (item.id === 'hp_potion') {
+          updates.potions = (data.potions || 0) + qty;
+        } else if (item.id === 'auto_scroll') {
+          updates.autoScrolls = (data.autoScrolls || 0) + qty;
+        } else {
+          // For equipment, generate multiple unique IDs if buying bulk
+          for (let i = 0; i < qty; i++) {
+            const suffix = Math.random().toString(36).slice(2, 6);
+            const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
+            updates[`inventory.${purchaseItem.id}`] = purchaseItem;
+          }
+        }
+        
+        transaction.update(playerRef, updates);
+      });
+
+      addLog(`Acquired ${qty > 1 ? qty + 'x ' : ''}${item.name}! Check your Storage Bag.`);
+      playSFX(SOUNDS.obtainLoot);
+      return true;
+    } catch (e) {
+      console.error(e);
+      if (e.message === "INSUFFICIENT_GX") addLog("🚨 ERROR: Insufficient GX for this transaction.");
+      else addLog("🚨 UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
+      return false;
     }
   };
 
@@ -264,50 +297,63 @@ export const usePlayerActions = (
     addLog(`LOCK-ON ACTIVATED! (${spec.label})`);
   };
 
-  const mixLaboratoryItem = (recipe) => {
+  const mixLaboratoryItem = async (recipe) => {
     const masterData = ITEMS.find(i => i.id === recipe.id);
     if (!masterData) return addLog("❌ MIX ERROR: Unknown formula.");
-    if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
+    
+    try {
+      addLog(`🧪 MIXING: Initiating molecular fusion for ${masterData.name || recipe.id}...`);
 
-    // BUG-01 FIX: Use Object.values() — inventory is a keyed map, not an array
-    const inventoryArr = Object.values(player.inventory || {});
-    const hasMaterials = recipe.materials.every(mat => {
-      const count = inventoryArr.filter(i => {
-         const cleanId = i.id?.replace(/(_\d+)+$/, '');
-         const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-         return (cleanId === mat.id) || (master?.id === mat.id);
-      }).length;
-      return count >= mat.count;
-    });
+      await runTransaction(db, async (transaction) => {
+        const playerRef = doc(db, 'players', player.uid);
+        const playerSnap = await transaction.get(playerRef);
+        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
 
-    if (!hasMaterials) return addLog("Insufficient experimental materials!");
+        const data = playerSnap.data();
+        if ((data.tokens || 0) < (recipe.cost || 0)) throw new Error("INSUFFICIENT_GX");
 
-    // Build dot-notation updates — never overwrite full inventory
-    const updates = { tokens: player.tokens - (recipe.cost || 0) };
-    const remaining = [...inventoryArr];
+        const inventory = Object.entries(data.inventory || {});
+        const itemsToConsume = [];
 
-    recipe.materials.forEach(mat => {
-      for (let i = 0; i < mat.count; i++) {
-        const idx = remaining.findIndex(item => {
-           const cleanId = item.id?.replace(/(_\d+)+$/, '');
-           const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
-           return (cleanId === mat.id) || (master?.id === mat.id);
+        recipe.materials.forEach(mat => {
+          let found = 0;
+          inventory.forEach(([key, invItem]) => {
+            const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
+            const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+            if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+               if (!itemsToConsume.find(c => c.key === key)) {
+                 itemsToConsume.push({ key, ...invItem });
+                 found++;
+               }
+            }
+          });
+          if (found < mat.count) throw new Error(`MISSING_MAT:${mat.id}`);
         });
-        if (idx !== -1) {
-          updates[`inventory.${remaining[idx].id}`] = deleteField(); // dot-notation delete
-          remaining.splice(idx, 1);
-        }
-      }
-    });
 
-    const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}` };
-    updates[`inventory.${mixedItem.id}`] = mixedItem; // dot-notation add
+        // 🛡️ Atomic Execution
+        const updates = { tokens: (data.tokens || 0) - (recipe.cost || 0) };
+        itemsToConsume.forEach(loot => {
+          updates[`inventory.${loot.key}`] = deleteField();
+        });
 
-    syncPlayer(updates);
-    addLog(`🧪 SUCCESS: Synthesized ${masterData.name}!`);
-    playSFX(SOUNDS.obtainLoot);
-    setForgeResult({ success: true, item: mixedItem });
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
+        updates[`inventory.${mixedItem.id}`] = mixedItem;
+
+        transaction.update(playerRef, updates);
+      });
+
+      addLog(`✅ SUCCESS: Created ${masterData.name}!`);
+      playSFX(SOUNDS.obtainLoot);
+    } catch (e) {
+      console.error(e);
+      if (e.message.startsWith("MISSING_MAT")) addLog(`🚨 LAB ERROR: Experimental materials shifted.`);
+      else if (e.message === "INSUFFICIENT_GX") addLog(`🚨 LAB ERROR: Insufficient GX for fusion.`);
+      else addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
+    }
   };
+
+
   
   const handlePurify = async (monster, tamingItemId) => {
     if (!monster || !tamingItemId) return;
@@ -375,60 +421,66 @@ export const usePlayerActions = (
     syncPlayer(updates);
   };
 
-  const forgeCrystle = (recipe) => {
+  const forgeCrystle = async (recipe) => {
     const masterData = ITEMS.find(i => i.id === recipe.id);
     const itemName = masterData?.name || recipe.name || "Unknown Tech";
-    if (player.tokens < (recipe.cost || 0)) return addLog("Out of GX!");
-
-    // BUG-02 FIX: Use Object.values() — inventory is a keyed map, not an array
-    const inventoryArr = Object.values(player.inventory || {});
     
-    const hasMaterials = recipe.materials.every(mat => {
-      const count = inventoryArr.filter(i => {
-         const cleanId = i.id?.replace(/(_\d+)+$/, '');
-         const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-         return (cleanId === mat.id) || (master?.id === mat.id);
-      }).length;
-      return count >= mat.count;
-    });
+    try {
+      addLog(`⚒️ FORGING: Initiating atomic assembly for ${itemName}...`);
+      
+      await runTransaction(db, async (transaction) => {
+        const playerRef = doc(db, 'players', player.uid);
+        const playerSnap = await transaction.get(playerRef);
+        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
+        
+        const data = playerSnap.data();
+        if ((data.tokens || 0) < (recipe.cost || 0)) throw new Error("INSUFFICIENT_GX");
 
-    if (!hasMaterials) return addLog("Insufficient Materials!");
-
-    const currentDex = totalStats?.dex || 10;
-    const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
-    const roll = Math.random() * 100;
-    const isSuccess = roll < successRate;
-
-    // Build dot-notation updates — never overwrite full inventory
-    const updates = { tokens: player.tokens - (recipe.cost || 0) };
-    const remaining = [...inventoryArr];
-
-    recipe.materials.forEach(mat => {
-      for (let i = 0; i < mat.count; i++) {
-        const idx = remaining.findIndex(item => {
-           const cleanId = item.id?.replace(/(_\d+)+$/, '');
-           const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
-           return (cleanId === mat.id) || (master?.id === mat.id);
+        const inventory = Object.entries(data.inventory || {});
+        const itemsToConsume = [];
+        
+        recipe.materials.forEach(mat => {
+          let found = 0;
+          inventory.forEach(([key, invItem]) => {
+            const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
+            const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+            if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+               if (!itemsToConsume.find(c => c.key === key)) {
+                 itemsToConsume.push({ key, ...invItem });
+                 found++;
+               }
+            }
+          });
+          if (found < mat.count) throw new Error(`MISSING_MAT:${mat.id}`);
         });
-        if (idx !== -1) {
-          updates[`inventory.${remaining[idx].id}`] = deleteField(); // dot-notation delete
-          remaining.splice(idx, 1);
-        }
-      }
-    });
 
-    if (isSuccess) {
-      const forgedItem = { ...masterData, ...recipe, id: `${recipe.id}_${Date.now()}` };
-      updates[`inventory.${forgedItem.id}`] = forgedItem; // dot-notation add
-      syncPlayer(updates);
-      addLog(`✅ SUCCESS: Forged ${itemName}!`);
-      playSFX(SOUNDS.obtainLoot);
-      setForgeResult({ success: true, item: forgedItem });
-    } else {
-      syncPlayer(updates); // Materials consumed even on failure
-      addLog(`❌ FAILURE: The forging of ${itemName} failed!`);
-      playSFX(SOUNDS.monsterAttack);
-      setForgeResult({ success: false, item: masterData || recipe });
+        // 🛡️ Logic Check: All materials found and GX sufficient.
+        const currentDex = (data.baseStats?.dex || 10); // Simplified stat check
+        const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
+        const roll = Math.random() * 100;
+        const isSuccess = roll < successRate;
+
+        const updates = { tokens: (data.tokens || 0) - (recipe.cost || 0) };
+        itemsToConsume.forEach(loot => {
+          updates[`inventory.${loot.key}`] = deleteField();
+        });
+
+        if (isSuccess) {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          const forgedItem = { ...masterData, ...recipe, id: `${recipe.id}_${Date.now()}_${suffix}` };
+          updates[`inventory.${forgedItem.id}`] = forgedItem;
+          transaction.update(playerRef, updates);
+          setForgeResult({ success: true, item: forgedItem });
+        } else {
+          transaction.update(playerRef, updates);
+          setForgeResult({ success: false, item: null });
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      if (e.message.startsWith("MISSING_MAT")) addLog(`🚨 FORGE ERROR: Materials have shifted. Assembly aborted.`);
+      else if (e.message === "INSUFFICIENT_GX") addLog(`🚨 FORGE ERROR: Insufficient GX for assembly.`);
+      else addLog(`🚨 UPLINK ERROR: Forging failed during neural handshake.`);
     }
   };
 
@@ -831,7 +883,7 @@ export const usePlayerActions = (
     // Pick random reward from same tier
     const pool = ITEMS.filter(i => i.rarity === nextRarity && (i.category === "Loot" || i.category === "Equipment"));
     const rewardBase = pool[Math.floor(Math.random() * pool.length)];
-    const reward = { ...rewardBase, id: `${rewardBase.id}_${Date.now()}` };
+    const reward = { ...rewardBase, id: `${rewardBase.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
     
     updates[`inventory.${reward.id}`] = reward;
     syncPlayer(updates);
@@ -894,7 +946,7 @@ export const usePlayerActions = (
       ([, v]) => v?.id?.startsWith(foodItem.id)
     );
     if (inventoryMatch) {
-      updates[`inventory.${inventoryMatch[0]}`] = null;
+      updates[`inventory.${inventoryMatch[0]}`] = deleteField();
     }
 
     syncPlayer(updates);
@@ -922,7 +974,7 @@ export const usePlayerActions = (
       for (const [key, val] of Object.entries(inventory)) {
         if (removed >= req.qty) break;
         if (val?.id?.startsWith(req.itemId)) {
-          updates[`inventory.${key}`] = null;
+          updates[`inventory.${key}`] = deleteField();
           removed++;
         }
       }
@@ -931,7 +983,7 @@ export const usePlayerActions = (
     // Add food reward to inventory
     const food = FOODS.find(f => f.id === quest.reward.foodId);
     if (food) {
-      const rewardKey = `${food.id}_TOWN_${Date.now()}`;
+      const rewardKey = `${food.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       updates[`inventory.${rewardKey}`] = { ...food, id: rewardKey };
     }
 

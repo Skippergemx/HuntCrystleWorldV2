@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs, limit, runTransaction } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs, limit, runTransaction, deleteField } from 'firebase/firestore';
 
 /**
  * useMarketplace V2: Global P2P Exchange
@@ -91,9 +91,10 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       const returnedItems = [];
       const timestamp = Date.now();
       for (let i = 0; i < qty; i++) {
+        const suffix = Math.random().toString(36).slice(2, 6);
         returnedItems.push({ 
           ...listing.item, 
-          id: `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${i}` 
+          id: `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${suffix}_${i}` 
         });
       }
 
@@ -103,6 +104,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
       addLog(`🤝 DEAL SECURED: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);
       playSFX(SOUNDS.obtainLoot);
+      return true;
     } catch (e) {
       console.error(e);
       if (e.message === "ITEM_SOLD") {
@@ -112,6 +114,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       } else {
          addLog("🚨 TRANSACTION FAILED: Signal lost.");
       }
+      return false;
     }
   }, [player, user?.uid, syncPlayer, addLog, db, playSFX, SOUNDS]);
 
@@ -121,68 +124,91 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
     try {
       const baseId = item.id?.replace(/(_\d+)+$/, '');
-      const inventory = Object.values(player.inventory || {});
-      const itemsToConsume = [];
-      let found = 0;
-      
-      const updates = {};
-      inventory.forEach(invItem => {
-         if (invItem.id?.replace(/(_\d+)+$/, '') === baseId && found < quantity) {
-            itemsToConsume.push(invItem);
-            found++;
-            // Delete field using dot notation logic handled in usePlayerSync updates
-            updates[`inventory.${invItem.id}`] = null; // Sync engine will delete keys set to null
-         }
+
+      await runTransaction(db, async (transaction) => {
+        const playerRef = doc(db, 'players', user.uid);
+        const playerSnap = await transaction.get(playerRef);
+        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
+        
+        const playerData = playerSnap.data();
+        const inventory = Object.entries(playerData.inventory || {});
+        
+        const itemsToConsume = [];
+        inventory.forEach(([key, invItem]) => {
+          if (invItem.id?.replace(/(_\d+)+$/, '') === baseId && itemsToConsume.length < quantity) {
+            itemsToConsume.push({ key, ...invItem });
+          }
+        });
+
+        if (itemsToConsume.length < quantity) throw new Error("INSUFFICIENT_STOCK");
+
+        // Delete from player inventory
+        const updates = {};
+        itemsToConsume.forEach(loot => {
+          updates[`inventory.${loot.key}`] = deleteField();
+        });
+        transaction.update(playerRef, updates);
+
+        // Add to global marketplace
+        const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
+        const listRef = doc(collection(db, 'marketplace'));
+        transaction.set(listRef, {
+          sellerUid: user.uid,
+          sellerName: player.name,
+          item: itemsToConsume[0], 
+          quantity: quantity,
+          price: pricePerUnit,
+          createdAt: Date.now()
+        });
+
+        // Trigger local update via log
+        console.log(`📡 TRANSACTION_LISTING: Atomic broadcast for ${quantity}x ${item.name} successful.`);
       });
 
-      if (found < quantity) return addLog("🚨 ERROR: Insufficient storage units.");
-
-      await syncPlayer(updates);
-
-      const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
-      const listRef = doc(collection(db, 'marketplace'));
-      await setDoc(listRef, {
-        sellerUid: user.uid,
-        sellerName: player.name,
-        item: itemsToConsume[0], 
-        quantity: quantity,
-        price: pricePerUnit,
-        createdAt: Date.now()
-      });
-
-      addLog(`📡 BROADCAST: ${quantity}x ${itemsToConsume[0].name} listed for ${totalPrice} GX.`);
+      addLog(`📡 BROADCAST: ${quantity}x ${item.name} listed for ${totalPrice} GX.`);
       playSFX(SOUNDS.useHeal);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK FAILED: Could not broadcast listing.");
+      if (e.message === "INSUFFICIENT_STOCK") addLog("🚨 ERROR: Stashed units have shifted or vanished.");
+      else addLog("🚨 UPLINK FAILED: Market transaction aborted.");
     }
-  }, [user, player, syncPlayer, addLog, db, playSFX, SOUNDS]);
+  }, [user, player, addLog, db, playSFX, SOUNDS]);
 
   // 5. Cancellation Logic
   const cancelMarketListing = useCallback(async (listingId) => {
-    if (!player || !db) return;
+    if (!player || !user?.uid || !db) return;
     try {
-      const listing = marketplace.find(l => l.id === listingId);
-      if (!listing) return;
+      await runTransaction(db, async (transaction) => {
+        const listingRef = doc(db, 'marketplace', listingId);
+        const listingSnap = await transaction.get(listingRef);
+        if (!listingSnap.exists()) throw new Error("LISTING_GHOSTED");
+        
+        const listing = listingSnap.data();
+        if (listing.sellerUid !== user.uid) throw new Error("FORBIDDEN");
 
-      await deleteDoc(doc(db, 'marketplace', listingId));
+        transaction.delete(listingRef);
 
-      const returnedItems = [];
-      const qty = listing.quantity || 1;
-      const timestamp = Date.now();
-      for (let i = 0; i < qty; i++) {
-        returnedItems.push({ 
-          ...listing.item, 
-          id: `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${i}` 
-        });
-      }
+        const qty = listing.quantity || 1;
+        const timestamp = Date.now();
+        const playerRef = doc(db, 'players', user.uid);
+        const updates = {};
 
-      const updates = {};
-      returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
-      await syncPlayer(updates);
-      addLog(`🚫 SIGNAL ABORTED: ${returnedItems.length}x ${listing.item.name} recovered.`);
-    } catch (e) { console.error("Market cancel error:", e); }
-  }, [player, marketplace, syncPlayer, addLog, db]);
+        for (let i = 0; i < qty; i++) {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          const newId = `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${suffix}_${i}`;
+          updates[`inventory.${newId}`] = { ...listing.item, id: newId };
+        }
+        
+        transaction.update(playerRef, updates);
+      });
+
+      addLog(`🚫 SIGNAL ABORTED: Market listing recovered.`);
+    } catch (e) { 
+      console.error("Market cancel error:", e);
+      if (e.message === "LISTING_GHOSTED") addLog("🚨 ERROR: Listing no longer exists (potentially sold).");
+      else addLog("🚨 ABORT FAILED: Could not recover stashed items.");
+    }
+  }, [player, user?.uid, addLog, db]);
 
   return {
     marketplace,

@@ -12,6 +12,18 @@ export const ForgeView = React.memo(() => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState(null);
+
+  const { MAPS } = useGame();
+
+  const getItemSource = (itId) => {
+    if (itId?.includes('apple') || itId?.includes('grapes') || itId?.includes('berry') || itId?.includes('cherry') || itId?.includes('peach') || itId?.includes('lemon') || itId?.includes('orange') || itId?.includes('pear')) {
+        return "Dragons Ground / Orchard";
+    }
+    const sources = MAPS?.filter(m => m.lootTable?.includes(itId)).map(m => m.name);
+    if (sources && sources.length > 0) return sources.join(", ");
+    return "Unknown / Rare Drop";
+  };
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_forge_tutorial') === 'true';
@@ -192,13 +204,21 @@ export const ForgeView = React.memo(() => {
                     }).length || 0;
                     const isMet = countInInv >= mat.count;
                     return (
-                      <div key={mat.id} className={`group/mat relative p-2 border-2 shadow-[3px_3px_0_rgba(0,0,0,1)] transition-all ${mIdx % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${isMet ? 'bg-white border-black' : 'bg-red-50 border-red-500/40 opacity-70'}`}>
+                      <div 
+                        key={mat.id} 
+                        onMouseEnter={() => setActiveTooltip(mat.id)}
+                        onMouseLeave={() => setActiveTooltip(null)}
+                        onClick={() => setActiveTooltip(activeTooltip === mat.id ? null : mat.id)}
+                        className={`group/mat relative p-2 border-2 shadow-[3px_3px_0_rgba(0,0,0,1)] transition-all cursor-help ${mIdx % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${isMet ? 'bg-white border-black' : 'bg-red-50 border-red-500/40 opacity-70'}`}
+                      >
                         <div className="flex items-center gap-2">
                           <div className={`w-8 h-8 rounded-sm bg-black/5 flex items-center justify-center border-b-2 border-black/10`}>
                             <span className="text-xl filter drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">{loot?.icon}</span>
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[7px] font-black uppercase text-slate-400 truncate leading-none mb-1">{loot?.name}</span>
+                            <span className="text-[7px] font-black uppercase text-slate-400 truncate leading-none mb-1">
+                              {activeTooltip === mat.id ? <span className="text-cyan-600 animate-pulse">SOURCE: {getItemSource(mat.id)}</span> : (loot?.name || mat.id)}
+                            </span>
                             <div className="flex items-baseline gap-1">
                               <span className={`text-[12px] font-black italic tracking-tighter ${isMet ? 'text-black' : 'text-red-600 animate-pulse'}`}>{countInInv}</span>
                               <span className="text-[8px] font-black text-slate-300">/ {mat.count}</span>

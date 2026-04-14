@@ -2,25 +2,40 @@ import React from 'react';
 import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp }) => (
-  <div className="flex justify-between items-center mb-4 md:mb-6 w-full relative z-20">
-    <div className="bg-white text-black px-3 md:px-4 py-0.5 md:py-1 border-[3px] md:border-[4px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1 max-w-[75%] md:max-w-[70%]">
-      <h2 className="text-xs md:text-xl font-black uppercase tracking-tighter italic truncate">{title}</h2>
+  <div className="flex justify-between items-start mb-6 md:mb-10 w-full relative z-40 px-1 pt-2">
+    {/* Folder Tab Title Block */}
+    <div className="relative group max-w-[75%] md:max-w-[70%]">
+      {/* Tape Holding the Tab */}
+      <div className="absolute -top-4 -left-2 w-10 md:w-16 h-6 bg-slate-400/30 border-x-2 border-black/5 rotate-[-15deg] z-10" />
+      
+      <div className="bg-white border-[3px] md:border-[4px] border-black px-4 md:px-6 py-1.5 md:py-2 shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[10px_10px_0_rgba(0,0,0,1)] transform -rotate-2 relative z-20">
+        <h2 className="text-sm md:text-2xl font-black text-black uppercase tracking-tighter italic truncate drop-shadow-sm">
+          {title}
+        </h2>
+        
+        {/* Technical Sub-Tag */}
+        <div className="absolute -bottom-2 -right-2 bg-black text-white text-[6px] md:text-[8px] font-black px-1.5 py-0.5 border-2 border-white transform rotate-3">
+          MISSION_PROTOCOL: ACTIVE
+        </div>
+      </div>
     </div>
-    <div className="flex gap-2 shrink-0">
+
+    {/* Tactical Controls */}
+    <div className="flex gap-3 shrink-0 relative z-30 pt-1">
       {onHelp && (
         <button 
           onClick={onHelp} 
-          className="p-1.5 md:p-2 bg-cyan-600 border-[2px] md:border-[3px] border-black text-black hover:bg-cyan-400 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+          className="p-2 md:p-3 bg-cyan-500 border-[3px] border-black text-black hover:bg-cyan-300 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transform rotate-3"
           title="Open Guide"
         >
-          <HelpCircle size={16} md:size={20} strokeWidth={3} />
+          <HelpCircle size={20} md:size={28} strokeWidth={4} />
         </button>
       )}
       <button 
         onClick={onClose} 
-        className="p-1.5 md:p-2 bg-black border-[2px] md:border-[3px] border-black text-white hover:text-red-500 transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+        className="p-2 md:p-3 bg-red-650 border-[3px] border-black text-black hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-3"
       >
-        <X size={16} md:size={20} strokeWidth={3} />
+        <X size={20} md:size={28} strokeWidth={4} className="text-white" />
       </button>
     </div>
   </div>
@@ -94,41 +109,66 @@ export const GuideModal = React.memo(({ isOpen, onClose, title, content = [] }) 
   );
 });
 
-export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop }) => (
-  <button 
-    onClick={onClick} 
-    disabled={disabled} 
-    className={`flex flex-col items-center justify-center p-3 md:p-6 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] ${disabled ? 'bg-slate-900 cursor-not-allowed translate-x-1 translate-y-1 shadow-none' : 'bg-slate-900 hover:border-cyan-500 hover:bg-slate-800 hover:-translate-x-1 hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)]'} transition-all duration-200`}
-  >
-    {disabled && (
-      <div className="absolute inset-0 bg-slate-950/80 z-10 pointer-events-none" />
-    )}
+export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, backdrop, idx = 0 }) => {
+  const rotation = idx % 2 === 0 ? 'rotate-1' : '-rotate-1';
+  
+  return (
+    <button 
+      onClick={onClick} 
+      disabled={disabled} 
+      className={`flex flex-col items-center justify-center p-3 md:p-7 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-visible shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] ${rotation} ${disabled ? 'bg-slate-200 cursor-not-allowed' : 'bg-[#faf6f0] hover:border-black hover:-translate-y-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)]'} transition-all duration-300`}
+    >
+      {/* Physical Tape Accent */}
+      {!disabled && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-12 md:w-20 h-5 bg-slate-400/30 border-x-[2px] border-black/5 rotate-2 z-50 backdrop-blur-sm pointer-events-none" style={{ maskImage: 'linear-gradient(to right, transparent, black, transparent)' }} />
+      )}
 
-    {backdrop && (
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <img 
-          src={backdrop} 
-          className="w-full h-full object-cover grayscale-[0.4] contrast-150 opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700" 
-          alt=""
-          onError={(e) => { 
-            e.target.onerror = null; 
-            e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + title; 
-          }}
-        />
-        <div className="absolute inset-0 bg-black/20" />
+      {disabled && (
+        <div className="absolute inset-0 bg-slate-900/40 z-10 pointer-events-none rounded-xl md:rounded-2xl flex items-center justify-center">
+           <div className="bg-black text-white text-[8px] font-black px-2 py-1 rotate-12 border-2 border-white shadow-xl opacity-100">LOCKED_SYNC</div>
+        </div>
+      )}
+
+      {backdrop && (
+        <div className="absolute inset-2 z-0 pointer-events-none rounded-lg border-[3px] border-black overflow-hidden bg-slate-900 shadow-inner group-hover:scale-[1.02] transition-transform duration-700">
+          <img 
+            src={backdrop} 
+            className="w-full h-full object-cover grayscale-[0.2] contrast-125 opacity-40 group-hover:opacity-70 transition-all" 
+            alt=""
+            onError={(e) => { 
+              e.target.onerror = null; 
+              e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + title; 
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        </div>
+      )}
+
+      {/* Decorative Corner Tabs */}
+      {!disabled && (
+        <div className={`absolute top-2 right-2 w-3 h-3 border-r-2 border-t-2 border-black/20 group-hover:border-black transition-colors ${color.replace('bg-', 'text-')}`} />
+      )}
+
+      <div className={`relative z-20 p-2 md:p-4 ${color} rounded-xl md:rounded-2xl mb-2 md:mb-4 shadow-[3px_3px_0_rgba(0,0,0,1)] border-[3px] border-black group-hover:scale-110 group-hover:rotate-6 transition-all ${disabled ? 'grayscale opacity-50' : ''}`}>
+        {React.cloneElement(icon, { size: 18, className: 'md:w-7 md:h-7 h-5 w-5 text-white' })}
       </div>
-    )}
+      
+      <div className="relative z-30 text-center w-full mt-auto">
+        <div className={`bg-white/95 border-[2px] md:border-[3px] border-black py-1.5 md:py-3 px-1 md:px-2 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform ${disabled ? 'opacity-50' : ''}`}>
+          <h3 className={`font-black text-[10px] md:text-xs lg:text-sm uppercase tracking-tighter italic leading-none transition-colors ${disabled ? 'text-slate-500' : 'text-black'}`}>
+            {title}
+          </h3>
+          <div className={`text-[6px] md:text-[8px] font-black uppercase mt-1 md:mt-1.5 tracking-widest italic leading-none transition-colors ${disabled ? 'text-slate-400' : 'text-black/50'}`}>
+            {sub}
+          </div>
+        </div>
+      </div>
 
-    <div className={`relative z-20 p-2 md:p-4 ${color} rounded-xl md:rounded-2xl mb-1.5 md:mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] group-hover:scale-110 group-hover:-rotate-3 transition-transform text-white border-[2px] md:border-[3px] border-black flex items-center justify-center shrink-0 ${disabled ? 'grayscale' : ''}`}>
-      {React.cloneElement(icon, { size: 18, className: 'md:w-6 md:h-6 h-4 w-4' })}
-    </div>
-    
-    <div className="relative z-30 text-center">
-      <h3 className="font-black text-[9px] md:text-xs uppercase tracking-widest text-white italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] leading-none">{title}</h3>
-      <div className="text-[6px] md:text-[8px] font-black text-slate-400 uppercase mt-0.5 md:mt-1 tracking-tighter italic leading-none opacity-100">{sub}</div>
-    </div>
-  </button>
-));
+      {/* Subtle halftone texture overlay on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '6px 6px' }} />
+    </button>
+  );
+});
 
 export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed, activeFoodEffect, isFoodActive }) => (
   <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all h-full transform md:-rotate-1 relative overflow-visible ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>

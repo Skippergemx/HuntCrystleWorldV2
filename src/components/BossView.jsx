@@ -102,8 +102,8 @@ export const BossView = () => {
     return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
   }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
 
-  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
+  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
   return (
     <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}>

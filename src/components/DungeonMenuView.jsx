@@ -45,7 +45,7 @@ export const DungeonMenuView = React.memo(() => {
       npc: 11,
       visualType: 'combat',
       text: "Raiding Dungeons earns you resources, while the Boss Room offers legendary wealth. PvP and Guild Vs Guild are for those seeking total dominance.",
-      hint: "Strategy: Use standard dungeons to gear up for the Boss Room."
+      hint: "Strategy: Start with the standard Raid for reliable growth."
     },
     {
       title: "Neural Penalty",
@@ -81,86 +81,92 @@ export const DungeonMenuView = React.memo(() => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-6 flex flex-col relative overflow-y-auto custom-scrollbar bg-slate-950">
-      <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none" />
+    <div className="flex-1 p-4 md:p-6 flex flex-col relative overflow-y-auto custom-scrollbar bg-[#e2d7c5]">
+      {/* Pin-board texture overlay */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       
       <Header title="BATTLE_HUB: ACCESS NODES" onClose={() => setView('menu')} onHelp={() => setShowTutorial(true)} />
 
-      <div className="grid grid-cols-2 gap-4 md:gap-6 relative z-10">
+      <div className="grid grid-cols-2 gap-4 md:gap-8 relative z-10 p-2">
         <NavBtn 
           onClick={startDungeon} 
+          idx={0}
           icon={isPenalized ? <Skull className="animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.5)]" /> : <MapIcon />} 
           title="Dungeons" 
           sub={isPenalized ? (
-            <div className="flex flex-col items-center gap-2 mt-2 animate-in fade-in duration-500">
+            <div className="flex flex-col items-center gap-2 mt-2">
                <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-lg border-2 border-white shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                   <Clock size={12} className="text-white animate-spin-slow" />
                   <span className="text-xs font-black text-white tabular-nums tracking-tighter">{penaltyRemaining}S</span>
                </div>
-               <div className="bg-white px-2 py-0.5 rounded border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                  <p className="text-[7px] font-black text-black uppercase leading-none text-center italic">NEURAL_SHOCK: SYSTEM_COOLING</p>
-               </div>
+               <p className="text-[7px] font-black text-black uppercase leading-none text-center italic">SYSTEM_COOLING</p>
             </div>
           ) : "Standard Raid"} 
-          color={isPenalized ? "bg-red-950 border-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.3)]" : "bg-cyan-600"} 
+          color={isPenalized ? "bg-red-800" : "bg-cyan-600"} 
           disabled={isPenalized} 
           backdrop="/assets/monsters/Rust Canyon/Rust Cat 0-0.jpg"
         />
 
         <NavBtn 
           onClick={startBoss} 
+          idx={1}
           icon={isPenalized ? <AlertCircle className="text-red-500 animate-pulse" /> : <AlertCircle />} 
           title="Boss Room" 
           sub={isPenalized ? (
-            <div className="flex flex-col items-center gap-2 mt-2 animate-in fade-in duration-500">
+            <div className="flex flex-col items-center gap-2 mt-2">
                <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-lg border-2 border-white shadow-[0_0_15px_rgba(239,68,68,0.5)]">
                   <Clock size={12} className="text-white animate-spin-slow" />
                   <span className="text-xs font-black text-white tabular-nums tracking-tighter">{penaltyRemaining}S</span>
                </div>
-               <div className="bg-white px-2 py-0.5 rounded border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                  <p className="text-[7px] font-black text-black uppercase leading-none text-center italic">RESYNCING: CRITICAL_DAMPENING</p>
-               </div>
+               <p className="text-[7px] font-black text-black uppercase leading-none text-center italic">CRITICAL_DAMPENING</p>
             </div>
           ) : "Boss Conquest"} 
-          color={isPenalized ? "bg-red-950 border-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.3)]" : "bg-red-700"} 
+          color={isPenalized ? "bg-red-800" : "bg-red-700"} 
           disabled={isPenalized} 
           backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
         />
 
         <NavBtn 
           onClick={() => setView('pvp')} 
+          idx={2}
           icon={<Swords />} 
           title="PvP Room" 
           sub="Holo-Grid Combat" 
-          color="bg-red-900 border-red-500/50" 
+          color="bg-red-900" 
           backdrop="/assets/monsters/Gale Empire/Vortex Vanguard.jpg"
         />
 
         <NavBtn 
           onClick={() => setView('syndicate')} 
+          idx={3}
           icon={<Shield />} 
           title="Guild Vs Guild" 
           sub="Alliance Conquest" 
-          color="bg-red-900 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]" 
+          color="bg-emerald-900" 
           backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
         />
       </div>
 
-      <div className={`mt-8 border-2 p-4 rounded-2xl relative overflow-hidden transition-all duration-500 ${isPenalized ? 'bg-red-950/20 border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : 'bg-black/40 border-white/5'}`}>
-        <div className={`absolute top-0 right-0 p-1 text-white text-[8px] font-black uppercase italic ${isPenalized ? 'bg-red-600' : 'bg-slate-800'}`}>
-          {isPenalized ? "NEURAL_LINK_LOCKDOWN" : "SYSTEM_STATUS"}
+      <div className={`mt-8 bg-[#faf6f0] border-[3px] border-black p-4 rounded-2xl relative overflow-visible shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all duration-500 -rotate-1 transform`}>
+        {/* Tape Accents */}
+        <div className="absolute -top-3 left-10 w-12 h-6 bg-slate-400/20 border-x-2 border-black/5 rotate-12 z-20" />
+        <div className="absolute -bottom-2 right-10 w-10 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-6 z-20" />
+
+        <div className={`absolute top-0 right-10 p-1 text-white text-[8px] font-black uppercase italic border-x-2 border-b-2 border-black shadow-md ${isPenalized ? 'bg-red-600' : 'bg-slate-800'}`}>
+          {isPenalized ? 'LOCKDOWN_STATUS' : 'DEPLOYMENT_READY'}
         </div>
-        <div className="flex items-center gap-4 relative z-10">
-          <div className={`p-3 rounded-xl border-2 transition-all duration-500 ${isPenalized ? 'bg-red-500/10 border-red-500/50' : 'bg-emerald-500/20 border-emerald-500'} text-white`}>
-            {isPenalized ? <Skull size={24} /> : <AlertCircle size={24} className="rotate-180" />}
+        
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full border-[3px] border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0_rgba(0,0,0,1)] ${isPenalized ? 'bg-red-100' : 'bg-emerald-100'}`}>
+            {isPenalized ? <Skull className="text-red-600 animate-pulse" /> : <Shield className="text-emerald-600" />}
           </div>
-          <div>
-            <h3 className={`text-sm font-black italic uppercase tracking-tighter ${isPenalized ? 'text-red-500' : 'text-white'}`}>
-              {isPenalized ? "NEURAL_SHOCK_PROTECTION" : "ALL_SYSTEMS_OPTIMAL"}
-            </h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">
-              {isPenalized ? "Safety protocol engaged. Combat modules cooling down." : "Neural link stable. Combat modules ready for deployment."}
-            </p>
+          <div className="flex-1">
+             <p className={`text-[10px] font-black uppercase tracking-widest leading-none mb-1 ${isPenalized ? 'text-red-700' : 'text-slate-500'}`}>
+               {isPenalized ? 'Neural Recalibration Required' : 'Sector Node: Idle'}
+             </p>
+             <p className="text-xs font-black text-black uppercase italic leading-none">
+               {isPenalized ? `System cooling in progress. Sync restricted for ${penaltyRemaining} seconds.` : 'All deployment vectors cleared. Neural link high-fidelity.'}
+             </p>
           </div>
         </div>
       </div>
@@ -209,7 +215,7 @@ export const DungeonMenuView = React.memo(() => {
                   <button onClick={() => setDontShowAgain(!dontShowAgain)} className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-red-600' : 'bg-slate-800'}`}>
                     {dontShowAgain && <Check size={10} className="text-white" />}
                   </button>
-                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show this briefing again</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show this briefing briefing again</span>
                 </div>
                 <div className="flex gap-2 pb-1">
                   {tutorialStep > 0 && (

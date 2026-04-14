@@ -12,6 +12,68 @@ export const ShopView = React.memo(() => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [quantities, setQuantities] = useState({});
+
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [purchaseQty, setPurchaseQty] = useState(1);
+  const [txStatus, setTxStatus] = useState('idle');
+  const [txCountdown, setTxCountdown] = useState(30);
+
+  const getOwnedQty = (item) => {
+    if (!item) return 0;
+    if (item.id === 'hp_potion') return player.potions || 0;
+    if (item.id === 'auto_scroll') return player.autoScrolls || 0;
+    return Object.values(player.inventory || {}).filter(i => {
+       if (!i) return false;
+       const cleanId = i.id?.replace(/(_\d+)+$/, '');
+       return cleanId === item.id;
+    }).length;
+  };
+
+  const handleBuyClick = (item) => {
+    setSelectedItem(item);
+    setPurchaseQty(1);
+    setTxStatus('idle');
+  };
+
+  const confirmPurchase = async () => {
+    setTxStatus('submitting');
+    let timeLeft = 30;
+    setTxCountdown(timeLeft);
+    
+    const interval = setInterval(() => {
+      timeLeft -= 1;
+      setTxCountdown(timeLeft);
+    }, 1000);
+
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => resolve('TIMEOUT'), 30000)
+    );
+
+    try {
+      const result = await Promise.race([
+        buyItem(selectedItem, purchaseQty),
+        timeoutPromise
+      ]);
+
+      clearInterval(interval);
+
+      if (result === 'TIMEOUT') {
+        setTxStatus('failed');
+      } else if (result) {
+        setTxStatus('success');
+        setTimeout(() => {
+          setSelectedItem(null);
+          setTxStatus('idle');
+        }, 1500);
+      } else {
+        setTxStatus('failed');
+      }
+    } catch (e) {
+      clearInterval(interval);
+      setTxStatus('failed');
+    }
+  };
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_shop_tutorial') === 'true';
@@ -123,7 +185,7 @@ export const ShopView = React.memo(() => {
                    {!isEquipped && !isLocked && <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[6px] font-black px-1 border border-black transform -rotate-12">NEW!</div>}
                 </div>
                 <button 
-                  onClick={() => buyItem(item)} 
+                  onClick={() => handleBuyClick(item)} 
                   disabled={isLocked}
                   className={`px-6 md:px-8 py-2 md:py-3 border-[3px] border-black font-black text-[10px] md:text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${isLocked ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-cyan-400 text-black hover:bg-cyan-300 hover:scale-105 active:scale-95 italic'}`}
                 >
@@ -134,6 +196,92 @@ export const ShopView = React.memo(() => {
           );
         })}
       </div>
+
+      {selectedItem && createPortal(
+        <div className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+           <div className="relative w-full max-w-sm bg-slate-900 border-[4px] border-black shadow-[12px_12px_0_rgba(0,0,0,1)] p-6 z-10 flex flex-col gap-4">
+              <div className="absolute -top-4 -right-4 bg-amber-400 text-black px-4 py-1 text-sm font-black border-4 border-black transform rotate-6 drop-shadow-md italic uppercase">
+                TRADE UPLINK
+              </div>
+              
+              <div className="flex items-center gap-4 border-b-[3px] border-slate-700 pb-4">
+                 <div className="w-16 h-16 bg-white border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] transform -rotate-2">
+                    <span className="text-4xl drop-shadow-sm flex items-center justify-center">
+                        {selectedItem.icon || (
+                            selectedItem.type === 'Weapon' ? <Sword size={32} className="text-slate-200" /> : 
+                            selectedItem.type === 'Armor' ? <Shield size={32} className="text-slate-200" /> : 
+                            selectedItem.type === 'Headgear' ? <HardHat size={32} className="text-slate-200" /> : 
+                            selectedItem.type === 'Footwear' ? <Footprints size={32} className="text-slate-200" /> : 
+                            <Package size={32} className="text-slate-200" />
+                        )}
+                    </span>
+                 </div>
+                 <div className="flex-1">
+                    <h3 className="text-xl font-black text-white italic uppercase tracking-tighter leading-none">{selectedItem.name}</h3>
+                    <p className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest">Available: <span className="text-white">{player.tokens || 0} GX</span></p>
+                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mt-0.5">Owned: <span className="text-white">{getOwnedQty(selectedItem)} Units</span></p>
+                 </div>
+              </div>
+
+              {txStatus === 'idle' && (
+                <>
+                  <div className="bg-slate-800 p-4 border-[3px] border-black rounded-xl">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 text-center">Requisition Amount</p>
+                     <div className="flex items-center justify-center gap-4">
+                        <button onClick={() => setPurchaseQty(p => Math.max(1, p - 1))} className="w-10 h-10 flex items-center justify-center bg-red-500 text-white font-black text-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-red-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all">-</button>
+                        <input type="number" readOnly value={purchaseQty} className="w-16 text-center text-xl font-black bg-white border-[3px] border-black py-1 shadow-inner focus:outline-none" />
+                        <button onClick={() => setPurchaseQty(p => p + 1)} className="w-10 h-10 flex items-center justify-center bg-emerald-500 text-white font-black text-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-emerald-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all">+</button>
+                     </div>
+                  </div>
+
+                  <div className="flex justify-between items-center bg-amber-50 p-2 border-2 text-black border-amber-500 shadow-inner">
+                     <span className="text-xs font-black uppercase tracking-widest italic">Total Cost:</span>
+                     <span className="text-lg font-black italic text-red-600">{selectedItem.cost * purchaseQty} GX</span>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                     <button onClick={() => setSelectedItem(null)} className="flex-1 py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-200 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all italic">CANCEL</button>
+                     <button 
+                       onClick={confirmPurchase} 
+                       disabled={selectedItem.cost * purchaseQty > (player.tokens || 0)}
+                       className={`flex-[2] py-3 font-black text-[10px] uppercase tracking-widest border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all italic ${selectedItem.cost * purchaseQty > (player.tokens || 0) ? 'bg-slate-400 text-slate-600 grayscale cursor-not-allowed' : 'bg-cyan-400 text-black hover:bg-cyan-300'}`}
+                     >
+                       {selectedItem.cost * purchaseQty > (player.tokens || 0) ? 'INSUFFICIENT FUNDS' : 'CONFIRM ORDER'}
+                     </button>
+                  </div>
+                </>
+              )}
+
+              {txStatus === 'submitting' && (
+                <div className="py-8 flex flex-col items-center justify-center gap-4">
+                   <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+                   <div className="text-center">
+                     <h4 className="text-sm font-black text-white italic uppercase tracking-widest animate-pulse">Processing Block...</h4>
+                     <p className="text-[10px] text-cyan-400 font-bold uppercase mt-1 px-4 text-center">Timeout in {txCountdown}s</p>
+                   </div>
+                </div>
+              )}
+
+              {txStatus === 'success' && (
+                <div className="py-8 flex flex-col items-center justify-center gap-4 bg-emerald-900/50 border-[3px] border-emerald-500 transform rotate-1">
+                   <div className="w-12 h-12 bg-emerald-500 rounded-full border-4 border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                     <Check size={24} className="text-white" />
+                   </div>
+                   <h4 className="text-sm font-black text-emerald-400 italic uppercase tracking-widest">Purchase Secure!</h4>
+                </div>
+              )}
+
+              {txStatus === 'failed' && (
+                 <div className="py-6 flex flex-col items-center justify-center gap-4 bg-red-900/50 border-[3px] border-red-500 transform -rotate-1">
+                   <h4 className="text-sm font-black text-red-400 italic uppercase tracking-widest text-center px-4">Transaction Failed or Timed Out</h4>
+                   <p className="text-[10px] text-slate-300 font-bold text-center px-4">Verify connection or try again.</p>
+                   <button onClick={() => setTxStatus('idle')} className="px-6 py-2 bg-red-600 text-white border-[3px] border-black font-black uppercase tracking-widest shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-red-500 transition-all text-xs active:translate-x-1 active:translate-y-1 active:shadow-none italic mt-2">CLOSE</button>
+                 </div>
+              )}
+           </div>
+        </div>,
+        document.body
+      )}
 
       {showTutorial && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">

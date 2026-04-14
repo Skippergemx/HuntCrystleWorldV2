@@ -144,7 +144,7 @@ export const CombatView = React.memo(() => {
   }, [enemy, cosmicMonsters]);
 
   const requiredTool = useMemo(() => tamingTools[currentEnemyElement], [tamingTools, currentEnemyElement]);
-  const hasRequiredTool = useMemo(() => requiredTool && Object.values(player.inventory || {}).some(i => i.id?.startsWith(requiredTool)), [player.inventory, requiredTool]);
+  const hasRequiredTool = useMemo(() => requiredTool && Object.values(player.inventory || {}).some(i => i?.id?.startsWith(requiredTool)), [player.inventory, requiredTool]);
   const toolDetails = useMemo(() => requiredTool ? LOOTS.find(l => l.id === requiredTool) : null, [requiredTool, LOOTS]);
 
   useEffect(() => {
@@ -346,7 +346,7 @@ export const CombatView = React.memo(() => {
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}
-      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col relative z-40 px-2 md:px-12 py-2">
+      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col relative z-40 px-2 md:px-12 py-2 pb-32 md:pb-44">
         
         {/* VS CENTRAL BADGE */}
         <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">

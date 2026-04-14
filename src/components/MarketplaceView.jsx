@@ -34,9 +34,26 @@ export const MarketplaceView = React.memo(() => {
   const [sellCount, setSellCount] = useState(1);
   const [buyCount, setBuyCount] = useState(1);
 
+  const [txStatus, setTxStatus] = useState('idle');
+  const [txCountdown, setTxCountdown] = useState(30);
+
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const getOwnedQty = (item) => {
+    if (!item) return 0;
+    if (item.id === 'hp_potion') return player.potions || 0;
+    if (item.id === 'auto_scroll') return player.autoScrolls || 0;
+    const master = getMasterData(item);
+    const id = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
+    return Object.values(player.inventory || {}).filter(i => {
+       if (!i) return false;
+       const iMaster = getMasterData(i);
+       const cleanId = iMaster?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
+       return cleanId === id;
+    }).length;
+  };
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_market_tutorial') === 'true';
@@ -153,7 +170,48 @@ export const MarketplaceView = React.memo(() => {
   const handleOpenPurchaseModal = (listing) => {
     setSelectedToBuy(listing);
     setBuyCount(1);
+    setTxStatus('idle');
     setIsPurchaseModalOpen(true);
+  };
+
+  const confirmPurchase = async () => {
+    setTxStatus('submitting');
+    let timeLeft = 30;
+    setTxCountdown(timeLeft);
+    
+    const interval = setInterval(() => {
+      timeLeft -= 1;
+      setTxCountdown(timeLeft);
+    }, 1000);
+
+    const timeoutPromise = new Promise((resolve) => 
+      setTimeout(() => resolve('TIMEOUT'), 30000)
+    );
+
+    try {
+      const result = await Promise.race([
+        purchaseItem(selectedToBuy, buyCount),
+        timeoutPromise
+      ]);
+
+      clearInterval(interval);
+
+      if (result === 'TIMEOUT') {
+        setTxStatus('failed');
+      } else if (result) {
+        setTxStatus('success');
+        setTimeout(() => {
+          setSelectedToBuy(null);
+          setIsPurchaseModalOpen(false);
+          setTxStatus('idle');
+        }, 1500);
+      } else {
+        setTxStatus('failed');
+      }
+    } catch (e) {
+      clearInterval(interval);
+      setTxStatus('failed');
+    }
   };
 
   return (
@@ -224,7 +282,7 @@ export const MarketplaceView = React.memo(() => {
                             {l.quantity > 1 && <span className="text-[9px] md:text-[10px] font-black text-amber-500 italic bg-black/5 px-1.5 border border-black/10">x{l.quantity}</span>}
                             <span className={`text-[6px] md:text-[7px] font-black px-1 border border-black uppercase ${rarity === 'Legendary' ? 'bg-amber-400 text-black' : 'bg-slate-100 text-slate-400'}`}>{rarity}</span>
                          </div>
-                         <p className="text-[7px] md:text-[8px] font-bold text-slate-400 uppercase mt-0.5">SDR: {l.sellerName?.substring(0, 10) || 'ANON'}</p>
+                         <p className="text-[7px] md:text-[8px] font-bold text-slate-400 uppercase mt-0.5">SELLER: {l.sellerName?.substring(0, 10) || 'ANON'}</p>
                          <p className="text-[7px] font-bold text-slate-500 uppercase mt-0.5 leading-none italic line-clamp-1">{master?.description || "Signal source detected."}</p>
                       </div>
                    </div>
@@ -460,8 +518,11 @@ export const MarketplaceView = React.memo(() => {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                     
                     <button 
-                      onClick={() => setIsPurchaseModalOpen(false)}
-                      className="absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full z-50"
+                      onClick={() => {
+                        if (txStatus === 'submitting') return;
+                        setIsPurchaseModalOpen(false);
+                      }}
+                      className={`absolute top-4 right-4 w-10 h-10 bg-white/5 text-white/40 hover:text-white flex items-center justify-center hover:bg-white/10 transition-colors rounded-full z-50 ${txStatus === 'submitting' ? 'opacity-50 cursor-not-allowed hidden' : ''}`}
                     >
                       <X size={20} />
                     </button>
@@ -471,49 +532,101 @@ export const MarketplaceView = React.memo(() => {
                           {selectedToBuy.item.icon}
                        </div>
                        <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{selectedToBuy.item.name}</h2>
-                       <p className="text-[10px] font-black text-cyan-500 uppercase mt-2 tracking-widest">Initiating Asset Acquisition</p>
+                       <p className="text-xs text-slate-400 font-bold uppercase mt-2 italic tracking-widest">SELLER: <span className="text-white">{selectedToBuy.sellerName || 'ANON'}</span></p>
+                       <div className="flex justify-center gap-4 mt-3 mb-2">
+                          <p className="text-[10px] text-cyan-400 font-bold uppercase tracking-widest">Available: <span className="text-white">{player.tokens || 0} GX</span></p>
+                          <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">Owned: <span className="text-white">{getOwnedQty(selectedToBuy.item)} Units</span></p>
+                       </div>
                     </div>
 
                     <div className="space-y-6 relative pb-4">
-                        <div>
-                           <label className="text-[10px] font-black text-slate-400 uppercase italic block mb-2 text-center">Target Quantity</label>
-                           <div className="flex gap-2">
-                              <div className="flex-1 relative">
-                                 <input 
-                                   type="number" 
-                                   value={buyCount}
-                                   min="1"
-                                   max={selectedToBuy.quantity}
-                                   onChange={(e) => setBuyCount(Math.max(1, Math.min(selectedToBuy.quantity, parseInt(e.target.value) || 1)))}
-                                   className="w-full bg-black border-2 border-white/10 p-4 font-black text-white text-xl italic focus:outline-none focus:border-cyan-500 transition-colors pl-12 rounded-2xl"
-                                 />
-                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700 font-black italic">Qty:</div>
+                        {txStatus === 'idle' && (
+                          <>
+                            <div>
+                               <label className="text-[10px] font-black text-slate-400 uppercase italic block mb-2 text-center">Target Quantity</label>
+                               <div className="flex gap-2 h-14">
+                                  <button onClick={() => setBuyCount(p => Math.max(1, p - 1))} className="w-14 shrink-0 flex items-center justify-center bg-cyan-500/10 text-cyan-500 font-black text-2xl border-2 border-cyan-500/20 rounded-2xl hover:bg-cyan-500/20 transition-all">-</button>
+                                  <div className="flex-1 relative">
+                                     <input 
+                                       type="number" 
+                                       value={buyCount}
+                                       min="1"
+                                       max={selectedToBuy.quantity}
+                                       onChange={(e) => setBuyCount(Math.max(1, Math.min(selectedToBuy.quantity, parseInt(e.target.value) || 1)))}
+                                       className="w-full h-full bg-black border-2 border-white/10 text-center font-black text-white text-xl italic focus:outline-none focus:border-cyan-500 transition-colors rounded-2xl"
+                                     />
+                                  </div>
+                                  <button onClick={() => setBuyCount(p => Math.min(selectedToBuy.quantity, p + 1))} className="w-14 shrink-0 flex items-center justify-center bg-cyan-500/10 text-cyan-500 font-black text-2xl border-2 border-cyan-500/20 rounded-2xl hover:bg-cyan-500/20 transition-all">+</button>
+                                  <button onClick={() => setBuyCount(selectedToBuy.quantity)} className="px-4 bg-cyan-500/10 text-cyan-500 text-[10px] font-black border-2 border-cyan-500/20 rounded-2xl hover:bg-cyan-500/20 font-bold transition-all">MAX</button>
+                               </div>
+                            </div>
+
+                           <div className="bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20 text-cyan-500">
+                              <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
+                                 <span>Signal Strength: {buyCount} Unit(s) @ {selectedToBuy.price} GX</span>
+                                 <span>{totalCost.toLocaleString()} GX</span>
                               </div>
-                              <button onClick={() => setBuyCount(selectedToBuy.quantity)} className="px-4 bg-cyan-500/10 text-cyan-500 text-[10px] font-black border border-cyan-500/20 rounded-2xl">MAX</button>
+                              <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-cyan-500/20">
+                                 <span>Total Credits Required</span>
+                                 <span className="text-white">{totalCost.toLocaleString()} GX</span>
+                              </div>
                            </div>
-                        </div>
+                          </>
+                        )}
 
-                       <div className="bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20 text-cyan-500">
-                          <div className="flex justify-between items-center text-[9px] font-black uppercase mb-1 opacity-60">
-                             <span>Signal Strength: {buyCount} Unit(s) @ {selectedToBuy.price} GX</span>
-                             <span>{totalCost.toLocaleString()} GX</span>
+                        {txStatus === 'submitting' && (
+                          <div className="bg-amber-500/10 border-2 border-amber-500 py-12 px-6 flex flex-col items-center justify-center rounded-2xl">
+                             <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(245,158,11,0.5)]"></div>
+                             <h4 className="text-amber-500 font-black text-lg uppercase tracking-widest italic animate-pulse">PROCESSING TRANSFER</h4>
+                             <p className="text-xs text-amber-500/70 font-bold uppercase mt-2">Awaiting network confirmation...</p>
+                             <div className="mt-4 px-4 py-1 bg-amber-500/20 rounded-full font-black text-amber-500 text-[10px] tracking-widest uppercase">
+                               Timeout in: <span className="text-white">{txCountdown}s</span>
+                             </div>
+                             {txCountdown < 10 && (
+                                <p className="text-[10px] text-amber-500 font-black uppercase mt-2 animate-bounce">Slow network detected. Please wait...</p>
+                             )}
                           </div>
-                          <div className="flex justify-between items-center text-sm font-black uppercase pt-1 border-t border-cyan-500/20">
-                             <span>Total Credits Required</span>
-                             <span className="text-white">{totalCost.toLocaleString()} GX</span>
-                          </div>
-                       </div>
+                        )}
 
-                       <button
-                         onClick={() => {
-                           purchaseItem(selectedToBuy, buyCount);
-                           setIsPurchaseModalOpen(false);
-                         }}
-                         disabled={player.tokens < totalCost}
-                         className={`w-full py-5 rounded-2xl font-black uppercase italic text-lg transition-all outline-none ${player.tokens >= totalCost ? 'bg-cyan-400 text-black shadow-[0_10px_30px_rgba(34,211,238,0.2)] hover:scale-[1.02] active:scale-95' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed'}`}
-                       >
-                         {player.tokens >= totalCost ? 'AUTHORIZE TRANSFER' : 'INSUFFICIENT CREDITS'}
-                       </button>
+                        {txStatus === 'success' && (
+                          <div className="bg-cyan-500/10 border-2 border-cyan-500 py-12 px-6 flex flex-col items-center justify-center rounded-2xl animate-in fade-in zoom-in">
+                             <div className="w-16 h-16 bg-cyan-500 text-black flex items-center justify-center rounded-full mb-4 shadow-[0_0_20px_rgba(34,211,238,0.5)] transform -rotate-6">
+                               <Check size={32} />
+                             </div>
+                             <h4 className="text-cyan-400 font-black text-xl uppercase tracking-widest italic">TRANSFER COMPLETE</h4>
+                             <p className="text-xs text-cyan-400/80 font-bold uppercase mt-2 text-center">Your funds have been deposited.</p>
+                             <div className="flex items-center gap-1 text-emerald-400 mt-2">
+                                <Sparkles size={12} />
+                                <span className="text-[9px] font-black uppercase tracking-widest">Inventory Updated</span>
+                             </div>
+                          </div>
+                        )}
+
+                        {txStatus === 'failed' && (
+                          <div className="bg-red-500/10 border-2 border-red-500 py-12 px-6 flex flex-col items-center justify-center rounded-2xl">
+                             <div className="w-16 h-16 bg-red-500 text-white flex items-center justify-center rounded-full mb-4 shadow-[0_0_20px_rgba(239,68,68,0.5)] transform -rotate-6">
+                               <X size={32} />
+                             </div>
+                             <h4 className="text-red-400 font-black text-xl uppercase tracking-widest italic">TRANSFER FAILED</h4>
+                             <p className="text-xs text-red-400/80 font-bold uppercase mt-2 text-center">The signal was lost or timed out.</p>
+                             <button 
+                               onClick={() => setTxStatus('idle')}
+                               className="mt-6 px-6 py-2 bg-red-500 text-white font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all rounded-xl"
+                             >
+                               TRY AGAIN
+                             </button>
+                          </div>
+                        )}
+
+                       {txStatus === 'idle' && (
+                         <button
+                           onClick={confirmPurchase}
+                           disabled={player.tokens < totalCost}
+                           className={`w-full py-5 rounded-2xl font-black uppercase italic text-lg transition-all outline-none ${player.tokens >= totalCost ? 'bg-cyan-400 text-black shadow-[0_10px_30px_rgba(34,211,238,0.2)] hover:scale-[1.02] active:scale-95' : 'bg-slate-800 text-slate-600 grayscale cursor-not-allowed'}`}
+                         >
+                           {player.tokens >= totalCost ? 'AUTHORIZE TRANSFER' : 'INSUFFICIENT CREDITS'}
+                         </button>
+                       )}
                     </div>
                   </div>
                </div>

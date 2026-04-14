@@ -143,25 +143,19 @@ export const DragonsGroundView = React.memo(() => {
       return;
     }
 
-    const newInventory = [...Object.values(player.inventory || {})];
-    const index = newInventory.findIndex(i => i === dragonFruit);
-    if (index !== -1) {
-      newInventory.splice(index, 1);
-
-      let newFruitsFed = dragonStats.fruitsFed + (dragonFruit.exp || 1);
-      let newLevel = dragonStats.level;
-
-      if (newFruitsFed >= dragonNextLevelRequirement) {
-        newLevel += 1;
-        newFruitsFed = 0;
-        setMessage({ type: 'success', text: `Dragon reached Level ${newLevel}!` });
-        addLog(`🐉 DRAGON EVOLUTION: Reached Level ${newLevel}!`);
-      } else {
-        setMessage({ type: 'info', text: `Dragon enjoyed the ${dragonFruit.name}.` });
+      const fruitKey = Object.keys(player.inventory || {}).find(key => player.inventory[key] === dragonFruit);
+      
+      const updates = { 
+        dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } 
+      };
+      
+      if (fruitKey) {
+        // Use deleteField() for Firestore and ensure it's removed from local state
+        const { deleteField } = require('firebase/firestore');
+        updates[`inventory.${fruitKey}`] = deleteField();
       }
 
-      syncPlayer({ inventory: newInventory, dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } });
-    }
+      syncPlayer(updates);
   };
 
   // Spawn and Move logic (Dependency-free interval for smooth roaming)
@@ -212,12 +206,15 @@ export const DragonsGroundView = React.memo(() => {
               });
 
               const randomFruit = pool[Math.floor(Math.random() * pool.length)];
-              setFruits(f => [...f, {
-                id: 'fruit_' + Date.now() + Math.random(),
-                data: randomFruit,
-                x: m.x,
-                y: m.y
-              }]);
+              setFruits(f => {
+                if (f.length >= 30) return f; // Maximum cap of 30 uncollected fruits
+                return [...f, {
+                  id: 'fruit_' + Date.now() + Math.random(),
+                  data: randomFruit,
+                  x: m.x,
+                  y: m.y
+                }];
+              });
             }
             // New target (roaming)
             return {

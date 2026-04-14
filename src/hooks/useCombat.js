@@ -459,30 +459,28 @@ export const useCombat = (
     // 2. ECONOMY FIX: Hard Cap the exponential drop chance
     const milestoneMult = Math.pow(2, Math.floor(newTotal / 1000000));
     const currentDropChance = Math.min(0.12, BOSS.baseDropRate * milestoneMult); // Capped at 12% max
-
     if (Math.random() < currentDropChance) {
       const relics = EQUIPMENT.filter(e => e.type === 'Relic');
       if (relics.length > 0) {
         const drop = relics[Math.floor(Math.random() * relics.length)];
-        const dropId = `${drop.id}_${Date.now()}`;
+        const dropId = `${drop.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         updates[`inventory.${dropId}`] = { ...drop, id: dropId };
         addLog(`💎 BOSS RELIC DROP: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
     }
 
-    // BUG-05 FIX: Schematic drop gated to 5% in deep floors only (was unconditional 30%)
+    // Schematic drop gated to 5% in deep floors only
     if (depth >= 5 && Math.random() < 0.05) {
       const schematics = LOOTS.filter(l => l.type === 'Schematic');
       if (schematics.length > 0) {
         const drop = schematics[Math.floor(Math.random() * schematics.length)];
-        const dropId = `${drop.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+        const dropId = `${drop.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         updates[`inventory.${dropId}`] = { ...drop, id: dropId };
         addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
         playSFX(SOUNDS.obtainLoot);
       }
     }
-
     syncPlayer(updates);
     enemyTurn(BOSS, true);
   }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS]);

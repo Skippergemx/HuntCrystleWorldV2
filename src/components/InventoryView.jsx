@@ -21,8 +21,6 @@ export const InventoryView = React.memo(() => {
   
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const [isSalvageMode, setIsSalvageMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState([]);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -41,22 +39,15 @@ export const InventoryView = React.memo(() => {
       title: "Storage Core",
       npc: 2,
       visualType: 'assets',
-      text: "This is your Storage Core. All Weapons, Armor, Relics, and crafting materials you loot in the Dungeons are mathematically stored here.",
+      text: "This is your Storage Core. All Weapons, Armor, Relics, and crafting materials you loot in the Dungeons are stored here.",
       hint: "Tip: Keep an eye out for Legendary drops!"
     },
     {
       title: "Asset Liquidation",
       npc: 6,
       visualType: 'economy',
-      text: "Need more GX Tokens? You can seamlessly sell your unused assets directly from the Storage network. Use the filters to find unwanted junk quickly.",
-      hint: "Strategy: Sell low-tier tech for immediate GX."
-    },
-    {
-      title: "Recycling Protocol",
-      npc: 5,
-      visualType: 'recycle',
-      text: "Hold on! Don't sell everything. Entering 'Recycle Mode' lets you salvage multiple common items to synthesize higher-tier crafting materials.",
-      hint: "Warning: Salvaged items are permanently destroyed."
+      text: "Need more GX Tokens? Sell unused assets directly from Storage. Use the filters to quickly find what you want to liquidate.",
+      hint: "Strategy: Sell low-tier loot for immediate GX."
     }
   ];
 
@@ -104,7 +95,12 @@ export const InventoryView = React.memo(() => {
      let fullList = [...inv, ...equipped];
 
      if (filter !== 'All') {
-        fullList = fullList.filter(i => i.type === filter || (filter === 'Loot' && (i.type === 'Material' || i.type === 'Component' || i.type === 'Energy')));
+        fullList = fullList.filter(i => {
+          if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact'].includes(i.type);
+          if (filter === 'Fruit') return i.type === 'Fruit' || i.category === 'Fruit';
+          if (filter === 'Consumable') return i.type === 'Consumable' || i.category === 'Consumable';
+          return i.type === filter;
+        });
      }
 
      if (search) {
@@ -114,9 +110,23 @@ export const InventoryView = React.memo(() => {
      return fullList;
   }, [player.inventory, player.equipped, filter, search]);
 
+  const labPotions = useMemo(() => {
+    return Object.values(player.inventory || {}).filter(i => {
+      const cleanId = i?.id?.replace(/(_\d+)+$/, '');
+      return cleanId === 'mega_hp_potion' || cleanId === 'ultra_hp_potion';
+    }).length;
+  }, [player.inventory]);
+
+  const labScrolls = useMemo(() => {
+    return Object.values(player.inventory || {}).filter(i => {
+      const cleanId = i?.id?.replace(/(_\d+)+$/, '');
+      return ['auto_scroll_3m', 'auto_scroll_6m', 'auto_scroll_9m', 'auto_scroll_12m'].includes(cleanId);
+    }).length;
+  }, [player.inventory]);
+
   const stats = [
-    { label: 'POTIONS', val: player.potions, icon: '🧪', color: 'bg-red-500' },
-    { label: 'AUTO SCROLLS', val: player.autoScrolls, icon: '🪄', color: 'bg-cyan-500' },
+    { label: 'POTIONS', val: `${player.potions || 0}${labPotions > 0 ? ` +${labPotions} LAB` : ''}`, icon: '🧪', color: 'bg-red-500' },
+    { label: 'AUTO SCROLLS', val: `${player.autoScrolls || 0}${labScrolls > 0 ? ` +${labScrolls} LAB` : ''}`, icon: '🪄', color: 'bg-cyan-500' },
     { label: 'GX TOKENS', val: player.tokens?.toLocaleString(), icon: '🪙', color: 'bg-amber-400' }
   ];
 
@@ -161,7 +171,7 @@ export const InventoryView = React.memo(() => {
                 />
              </div>
              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                {['All', 'Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic', 'Loot'].map(cat => (
+                {['All', 'Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic', 'Loot', 'Fruit', 'Consumable'].map(cat => (
                   <button 
                     key={cat}
                     onClick={() => setFilter(cat)}
@@ -171,12 +181,6 @@ export const InventoryView = React.memo(() => {
                   </button>
                 ))}
              </div>
-             <button 
-                onClick={() => { setIsSalvageMode(!isSalvageMode); setSelectedIds([]); }}
-                className={`ml-auto px-4 py-1.5 text-[8px] font-black uppercase tracking-widest border-2 transition-all ${isSalvageMode ? 'bg-emerald-600 text-white border-black animate-pulse' : 'bg-slate-100 text-slate-600 border-slate-200'}`}
-              >
-                {isSalvageMode ? 'CANCEL RECYCLE' : 'RECYCLE MODE'}
-              </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
@@ -220,16 +224,11 @@ export const InventoryView = React.memo(() => {
                     return (
                       <div 
                          key={`${item.id}-${idx}`} 
-                         onClick={() => {
-                           if (!isSalvageMode || item.isEquipped) return;
-                           setSelectedIds(prev => prev.includes(item.id) ? prev.filter(id => id !== item.id) : [...prev, item.id]);
-                         }}
                          className={`group flex flex-col md:flex-row items-stretch md:items-center gap-4 p-3 border-2 transition-all ${
-                           selectedIds.includes(item.id) ? 'bg-emerald-100 border-emerald-500 scale-[1.02] z-10' :
                            item.type === 'Schematic' ? 'bg-[#0b1b2b] border-cyan-500/50 shadow-[4px_4px_0_rgba(6,182,212,0.1)]' : 
                            item.isEquipped ? 'bg-cyan-50 border-cyan-500/40 shadow-[4px_4px_0_rgba(34,211,238,0.1)]' : 
                            'bg-slate-50 border-slate-100 hover:border-black/20 hover:bg-white hover:translate-x-1'
-                         } ${isSalvageMode && !item.isEquipped ? 'cursor-pointer' : ''}`}
+                         }`}
                        >
                         <div className="flex items-center gap-3">
                            <div className="relative shrink-0">
@@ -286,24 +285,22 @@ export const InventoryView = React.memo(() => {
                                    className="px-3 py-1.5 bg-cyan-500 text-black hover:bg-cyan-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
                                  >Learn</button>
                                )}
-                               {!isSalvageMode && (
-                                  <>
-                                    <button onClick={() => {
-                                         if (item.isEquipped) {
-                                            const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
-                                            if (slot) unequipItem(slot);
-                                         }
-                                         sellItem(item.id, 1);
-                                      }}
-                                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                                    >Sell 1</button>
-                                    {!item.isEquipped && item.count > 1 && (
-                                      <button onClick={() => sellItem(item.id, item.count)}
-                                        className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                                      >Sell All</button>
-                                    )}
-                                  </>
-                                )}
+                               <>
+                                  <button onClick={() => {
+                                       if (item.isEquipped) {
+                                          const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
+                                          if (slot) unequipItem(slot);
+                                       }
+                                       sellItem(item.id, 1);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                  >Sell 1</button>
+                                  {!item.isEquipped && item.count > 1 && (
+                                    <button onClick={() => sellItem(item.id, item.count)}
+                                      className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                    >Sell All</button>
+                                  )}
+                                </>
                             </div>
                         </div>
                       </div>
@@ -328,24 +325,7 @@ export const InventoryView = React.memo(() => {
              </div>
           </div>
           
-          {isSalvageMode && (
-             <div className="p-4 bg-emerald-600 border-t-4 border-black flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-black uppercase italic">Targeting {selectedIds.length} Assets</span>
-                  <p className="text-[8px] font-bold text-black/60 uppercase">10 Common = 1 Uncommon | 5 Uncommon = 1 Rare</p>
-                </div>
-                <button 
-                  onClick={async () => {
-                    await actions.salvageItems(selectedIds);
-                    setSelectedIds([]);
-                  }}
-                  disabled={selectedIds.length === 0}
-                  className="px-8 py-3 bg-black text-white hover:bg-slate-800 disabled:opacity-30 rounded-xl border-2 border-white/20 font-black text-xs uppercase italic transition-all shadow-lg"
-                >
-                  EXECUTE RECYCLING PROTOCOL
-                </button>
-             </div>
-           )}
+
        </div>
 
        <div className="mt-4 flex items-center justify-between opacity-30">

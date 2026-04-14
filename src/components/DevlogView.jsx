@@ -23,6 +23,26 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.9.0',
+    date: '2026-04-14',
+    title: 'SYSTEM HARDENING: DATA INTEGRITY V5',
+    category: 'SECURITY & PERFORMANCE',
+    type: 'fix',
+    tag: 'CRITICAL',
+    color: 'red',
+    description: 'A major structural overhaul of the game\'s data persistence layer. We have successfully phased out dangerous full-inventory overwrites in favor of Atomic Dot-Notation updates and Cloud Transactions, ensuring your hard-earned loots and GX are 100% protected against network failures and concurrency conflicts.',
+    changes: [
+      'Security: Deployed "Atomic Transaction Mode" for Buying, Forging, and Laboratory Mixing',
+      'Integrity: Standardized "Cryptographic Entropy Suffixes" for all item IDs (prevents collisions)',
+      'Concurrency: Implemented "1-Device Active" enforcement — older sessions are now force-kicked',
+      'Rollback: Integrated "Neural Link Fail-Safe" — automatic browser refresh on failed synchronizations',
+      'Hardening: Replaced "Null Assignment" with Firestore deleteField() to prevent UI crashes',
+      'Inventory: Global "Hydration Sanitizer" now auto-repairs legacy data corruption on load',
+      'Layout: Increased CombatView vertical clearance to resolve health UI & mission tape collisions'
+    ],
+    media: '/assets/monsters/Void Sector 7/Abyssal Crawler.jpg'
+  },
+  {
     id: '1.8.0',
     date: '2026-04-13',
     title: 'THE iLEARN PROTOCOL & TOWN EXPANSION V2',

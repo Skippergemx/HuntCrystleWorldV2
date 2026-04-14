@@ -139,57 +139,55 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
   const cleanDisplayMsg = displayedMsg.replace(/^(H:|P:)\s*/, "");
 
   return (
-    <div className="col-span-full flex items-center gap-4 bg-slate-900/40 p-4 border-2 border-slate-800 rounded-2xl mb-2 relative overflow-hidden group cursor-pointer" onClick={pickMessage}>
-      <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none" />
+    <div className="col-span-full flex items-center gap-4 bg-[#faf6f0] p-4 border-[3px] border-black rounded-2xl mb-4 relative overflow-visible group shadow-[8px_8px_0_rgba(0,0,0,1)] -rotate-1 transform transition-transform hover:rotate-0" onClick={pickMessage}>
+      {/* Tape Accents */}
+      <div className="absolute -top-3 left-1/4 w-12 h-6 bg-slate-400/20 border-x-2 border-black/5 rotate-12 z-20" />
+      <div className="absolute -bottom-2 right-1/4 w-10 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-6 z-20" />
       
-      {/* Duo Avatars */}
-      <div className="relative flex -space-x-4">
+      {/* Duo Avatars - Polaroid Style */}
+      <div className="relative flex -space-x-4 shrink-0">
         {/* Main Avatar */}
-        <div className={`w-20 h-24 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-800 ring-2 ring-cyan-500/20 relative z-10 transition-all ${isHunterTalking ? 'scale-105 ring-cyan-400' : 'opacity-80 scale-95'}`}>
+        <div className={`w-20 h-24 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900 relative z-10 transition-all ${isHunterTalking ? 'scale-105 opacity-100' : 'opacity-80 scale-95'}`}>
           {player.avatar ? (
             <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top" />
           ) : (
             <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name}`} className="w-full h-full object-cover" />
           )}
-          <div className="absolute -bottom-1 -right-1 bg-cyan-500 text-black text-[8px] font-black px-1 border-2 border-black uppercase italic z-20">
-            L{player.level}
+          <div className="absolute -bottom-1 -right-1 bg-black text-white text-[8px] font-black px-1 border-2 border-white uppercase italic z-20">
+            LVL {player.level}
           </div>
         </div>
 
         {/* Pet Avatar (If equipped) */}
         {currentPet && (
-          <div className={`w-14 h-18 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-amber-500 ring-2 ring-amber-500/20 relative z-20 mt-auto transition-all ${isPetTalking ? 'scale-110 ring-amber-400 -translate-y-2' : 'opacity-80'}`}>
+          <div className={`w-14 h-18 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900 relative z-20 mt-auto transition-all ${isPetTalking ? 'scale-110 opacity-100 -translate-y-2' : 'opacity-70'}`}>
             <img 
               src={`/assets/pets/genesis-pets/Genesis Pets (${currentPet.id}).jpg`}
               className="w-full h-full object-cover"
               onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + currentPet.name; }}
             />
-            <div className="absolute -top-1 -left-1 bg-emerald-500 text-white text-[6px] font-black px-1 border border-black uppercase">
-              BUDDY
-            </div>
           </div>
         )}
       </div>
 
-      {/* Speech Bubble */}
+      {/* Speech Bubble / Mission Command */}
       <div className="flex-1 relative">
-        <div className={`bg-white border-[3px] border-black p-3 shadow-[6px_6px_0_rgba(0,0,0,1)] relative transform min-h-[70px] flex items-center transition-all ${isPetTalking ? 'rotate-1' : '-rotate-1'}`}>
-          <div className="absolute left-[-12px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black transform rotate-45" />
+        <div className={`bg-white border-[3px] border-black p-3 shadow-[6px_6px_0_rgba(0,0,0,0.5)] relative transform min-h-[70px] flex items-center transition-all ${isPetTalking ? 'rotate-1' : '-rotate-1'}`}>
+          <div className="absolute left-[-11px] top-6 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black transform rotate-45" />
           
           <p className="text-[11px] font-black text-black uppercase italic leading-tight tracking-tight">
-            <span className={isPetTalking ? 'text-amber-500' : 'text-cyan-600'}>
+            <span className={isPetTalking ? 'text-amber-600' : 'text-cyan-600'}>
               {isPetTalking ? '◢BUDDY: ' : isHunterTalking ? '◢HUNTER: ' : '◢'}
             </span>
             {cleanDisplayMsg}
-            <span className="w-1.5 h-3 bg-cyan-500 inline-block ml-1 animate-pulse" />
+            <span className="w-1.5 h-3 bg-black inline-block ml-1 animate-pulse" />
           </p>
         </div>
-        <div className="mt-2 flex gap-3 opacity-40">
-           <div className="flex items-center gap-1">
-             <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-             <span className="text-[7px] font-black text-white uppercase italic tracking-widest">Neural Link: {isPetTalking ? 'Pet Priority' : 'Synced'}</span>
+        <div className="mt-2 flex gap-3">
+           <div className="flex items-center gap-1 opacity-40">
+              <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
+              <span className="text-[7px] font-black text-black uppercase italic tracking-widest">HUB_SYNC_ACTIVE</span>
            </div>
-           {currentPet && <span className="text-[7px] font-black text-amber-500 uppercase italic tracking-widest leading-none bg-amber-500/10 px-1">{currentPet.name} Linked</span>}
         </div>
       </div>
     </div>
@@ -254,67 +252,44 @@ export const MenuView = React.memo(() => {
     setView('dungeon_menu');
   };
 
+  const NAV_ITEMS = [
+    { onClick: startDungeon, icon: isPenalized ? <Clock className="animate-pulse" /> : <Swords />, title: "Battle Hub", sub: isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Void Wraith.jpg", disabled: false },
+    { onClick: () => setView('tavern'), icon: <Beer />, title: "Tavern", sub: "Hire Mates", color: "bg-amber-700", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" },
+    { onClick: () => setView('attributes'), icon: <Activity />, title: "Attributes", sub: "Stats", color: "bg-orange-600", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" },
+    { onClick: () => setView('gear'), icon: <Zap />, title: "Gear", sub: "Tactical", color: "bg-cyan-700", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg" },
+    { onClick: () => setView('inventory'), icon: <Package />, title: "Bag", sub: "Inventory", color: "bg-emerald-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 1.jpg" },
+    { onClick: () => setView('shop'), icon: <ShoppingBag />, title: "Shop", sub: "Items", color: "bg-slate-700", backdrop: "/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg" },
+    { onClick: () => setView('market'), icon: <Tag />, title: "Market", sub: "P2P Trade", color: "bg-amber-600", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg" },
+    { onClick: () => setView('forge'), icon: <Hammer />, title: "Forge", sub: "Relics", color: "bg-amber-500", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" },
+    { onClick: () => setView('database'), icon: <Book />, title: "Archives", sub: "Database", color: "bg-blue-600", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" },
+    { onClick: () => setView('leaderboard'), icon: <Globe />, title: "Ranking", sub: "Global", color: "bg-purple-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" },
+    { onClick: () => setView('dragons_ground'), icon: <Trees />, title: "Dragons Ground", sub: "Sacred Ground", color: "bg-emerald-700", backdrop: "/assets/monsters/Tectonic Ridge/Quake Golem.jpg" },
+    { onClick: () => setView('crystle_town'), icon: <span className="text-lg">🏙️</span>, title: "Crystle Town" , sub: "Mini Quests", color: "bg-amber-800", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" },
+    { onClick: () => setView('ilearn'), icon: <Brain />, title: "iLearn", sub: "Knowledge", color: "bg-blue-800", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg" },
+    { onClick: () => setView('laboratory'), icon: <FlaskConical />, title: "Xenon Lab", sub: "Consumables", color: "bg-emerald-900", backdrop: "/assets/monsters/Inferno Crater/Lava Lurker.jpg" },
+    { onClick: () => setView('pets'), icon: <Sparkles />, title: "Crystle Pets", sub: "Web3", color: "bg-cyan-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg" },
+    { onClick: () => setView('manual'), icon: <BookOpen />, title: "Manual", sub: "How to Play", color: "bg-cyan-600", backdrop: "/assets/monsters/Void Sector 7/Rift Lurker.jpg" },
+    { onClick: () => setView('devlog'), icon: <div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>, title: "DEVLOG", sub: "Dev Updates", color: "bg-purple-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg" },
+  ];
+
+  if (isAdmin) {
+    NAV_ITEMS.push({ onClick: () => setView('admin'), icon: <ShieldAlert />, title: "Admin Panel", sub: "Crystle Access", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg" });
+  }
+
   return (
-    <div className="flex-1 p-4 md:p-6 grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 relative overflow-y-auto custom-scrollbar bg-slate-950">
-      <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none" />
+    <div className="flex-1 p-4 md:p-6 grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-10 relative overflow-y-auto custom-scrollbar bg-[#e2d7c5]">
+      {/* Pin-board texture overlay */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       
       <CharacterDash player={player} penaltyRemaining={penaltyRemaining} petsMeta={PETS_METADATA} lowPerfMode={lowPerfMode} />
 
-      <NavBtn 
-        onClick={startDungeon} 
-        icon={isPenalized ? <Clock className="animate-pulse" /> : <Swords />} 
-        title="Battle Hub" 
-        sub={isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon"} 
-        color={isPenalized ? "bg-slate-800 grayscale" : "bg-red-600"} 
-        backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
-      />
-      <NavBtn onClick={() => setView('tavern')} icon={<Beer />} title="Tavern" sub="Hire Mates" color="bg-amber-700" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" />
-      <NavBtn onClick={() => setView('attributes')} icon={<Activity />} title="Attributes" sub="Stats" color="bg-orange-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" />
-      <NavBtn onClick={() => setView('gear')} icon={<Zap />} title="Gear" sub="Tactical" color="bg-cyan-700" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg" />
-      <NavBtn onClick={() => setView('inventory')} icon={<Package />} title="Bag" sub="Inventory" color="bg-emerald-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 1.jpg" />
-      <NavBtn onClick={() => setView('shop')} icon={<ShoppingBag />} title="Shop" sub="Items" color="bg-slate-700" backdrop="/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg" />
-      <NavBtn onClick={() => setView('market')} icon={<Tag />} title="Market" sub="P2P Trade" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg" />
-      <NavBtn onClick={() => setView('forge')} icon={<Hammer />} title="Forge" sub="Relics" color="bg-amber-600" backdrop="/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" />
-      <NavBtn onClick={() => setView('database')} icon={<Book />} title="Archives" sub="Database" color="bg-blue-600" backdrop="/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" />
-      <NavBtn onClick={() => setView('leaderboard')} icon={<Globe />} title="Ranking" sub="Global" color="bg-purple-600" backdrop="/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" />
-      <NavBtn onClick={() => setView('dragons_ground')} icon={<Trees />} title="Dragons Ground" sub="Sacred Ground" color="bg-emerald-700" backdrop="/assets/monsters/Tectonic Ridge/Quake Golem.jpg" />
-      <NavBtn onClick={() => setView('crystle_town')} icon={<span className="text-lg">🏙️</span>} title="Crystle Town" sub="Mini Quests" color="bg-amber-800" backdrop="/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" />
-      <NavBtn onClick={() => setView('ilearn')} icon={<Brain />} title="iLearn" sub="Knowledge" color="bg-blue-800" backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg" />
-      <NavBtn onClick={() => setView('laboratory')} icon={<FlaskConical />} title="Xenon Lab" sub="Consumables" color="bg-emerald-900" backdrop="/assets/monsters/Inferno Crater/Lava Lurker.jpg" />
-      <NavBtn 
-        onClick={() => setView('pets')} 
-        icon={<Sparkles />} 
-        title="Crystle Pets" 
-        sub="Web3" 
-        color="bg-cyan-900 border-cyan-400/30" 
-        backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
-      />
-      <NavBtn 
-        onClick={() => setView('manual')} 
-        icon={<BookOpen />} 
-        title="Manual" 
-        sub="How to Play" 
-        color="bg-cyan-600 border-cyan-400/50" 
-        backdrop="/assets/monsters/Void Sector 7/Rift Lurker.jpg"
-      />
-      <NavBtn 
-        onClick={() => setView('devlog')} 
-        icon={<div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>} 
-        title="DEVLOG" 
-        sub="Dev Updates" 
-        color="bg-purple-900 border-purple-500/50" 
-        backdrop="/assets/monsters/Neon Slums/Ember Drake.jpg"
-      />
-      {isAdmin && (
+      {NAV_ITEMS.map((item, idx) => (
         <NavBtn 
-          onClick={() => setView('admin')} 
-          icon={<ShieldAlert />} 
-          title="Admin Panel" 
-          sub="Crystle Access" 
-          color="bg-red-600 border-red-500" 
-          backdrop="/assets/monsters/Void Sector 7/Null Stalker.jpg"
+          key={item.title} 
+          {...item}
+          idx={idx}
         />
-      )}
+      ))}
 
       {showTutorial && createPortal(
         <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
