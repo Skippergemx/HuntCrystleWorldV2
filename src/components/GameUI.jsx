@@ -27,7 +27,7 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
       </div>
 
       {/* Children Slot for custom tools (Potions, etc) */}
-      <div className="flex-1 hidden lg:flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center">
         {children}
       </div>
     </div>
