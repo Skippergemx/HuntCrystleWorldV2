@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TrendingUp, X, Skull, Shield, Swords, Target, Crosshair, Zap, Rocket, Flame, MoveUp, Check, Sparkles } from 'lucide-react';
 import { ImpactSplash } from './CombatEffects';
-import { ConfirmationModal } from './GameUI';
+import { ConfirmationModal, Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { useNagaCombat } from '../hooks/useNagaCombat';
 

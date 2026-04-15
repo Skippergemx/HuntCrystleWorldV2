@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown, Globe, Map as MapIcon, Target, TrendingUp, Check, Sparkles } from 'lucide-react';
+import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown, Globe, Map as MapIcon, Target, TrendingUp, Check, Sparkles, Book } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';

@@ -4,16 +4,6 @@ import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, children }) => (
   <div className="w-full z-[100] px-4 md:px-0 pt-2 flex flex-row items-center justify-between gap-4 relative">
     <div className="flex items-center gap-4 flex-1">
-      {/* NEW: Large NPC Avatar in Header - "Mission Commander" Mode */}
-      {npcNum && (
-        <div className="absolute -left-12 -top-6 w-32 h-44 hidden lg:block z-0 opacity-20 hover:opacity-100 transition-opacity pointer-events-none -rotate-6">
-          <div className="relative w-full h-full">
-            <AvatarMedia num={npcNum} animated={true} className="w-full h-full object-cover object-top grayscale hover:grayscale-0 transition-all filter drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
-          </div>
-        </div>
-      )}
-
       {/* Standard Header Badge */}
       <div className="bg-black border-[3px] border-white/20 rounded-xl p-3 md:p-4 shadow-[4px_4px_0_rgba(255,255,255,0.05)] transform -skew-x-2 flex items-center gap-3 md:gap-4 flex-shrink-0 relative z-10 group hover:border-cyan-500/50 transition-all">
         {npcNum ? (

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swords, Target, Gem, Gift, Star, HelpCircle, RotateCw, Search, List, ChevronRight, RefreshCw, FlaskConical, WandSparkles, Sparkles } from 'lucide-react';
 import { ImpactSplash, BattleParticles } from './CombatEffects';
-import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
+import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const CombatView = React.memo(() => {
