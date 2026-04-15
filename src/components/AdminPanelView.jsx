@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2 } from 'lucide-react';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
+import { Header } from './GameUI';
 
 export const AdminPanelView = React.memo(() => {
   const { db, appId, user, adventure, farcasterContext } = useGame();
@@ -473,34 +474,7 @@ export const AdminPanelView = React.memo(() => {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-4 border-red-600 pb-6">
-        <div>
-          <h1 className="text-4xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
-            <ShieldAlert className="text-red-600" size={36} />
-            Genesis Admin
-          </h1>
-          <p className="text-red-500 font-black text-[10px] uppercase tracking-widest mt-1">
-             Authority: {farcasterContext?.user?.username ? `@${farcasterContext.user.username}` : userEmail}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={fetchStats}
-            disabled={loading}
-            className={`p-2 rounded-lg border transition-all ${loading ? 'opacity-50' : 'bg-slate-800 border-slate-700 text-cyan-400 hover:bg-cyan-600 hover:text-white'}`}
-            title="Refresh Discovery"
-          >
-            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <button 
-            onClick={() => adventure.goBack()}
-            className="px-6 py-2 bg-slate-800 text-white font-black uppercase italic border-2 border-white/20 hover:bg-white hover:text-black transition-all"
-          >
-            Exit Terminal
-          </button>
-        </div>
-      </div>
+      <Header title="GENESIS ADMIN TERMINAL" onClose={adventure.goBack} npcNum={10} onHelp={() => setActiveTab('system')} />
 
       {message && (
         <div className={`p-4 border-2 flex items-center gap-3 font-black uppercase italic text-xs animate-in fade-in zoom-in-95 ${

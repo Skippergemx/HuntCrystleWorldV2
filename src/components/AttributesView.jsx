@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { TrendingUp, Shield, Crosshair, Plus, Zap, Info, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 import { AP_PER_LEVEL } from '../utils/gameLogic';
 
@@ -162,10 +163,32 @@ export const AttributesView = React.memo(() => {
       <div className="absolute inset-0 bg-cyber-grid opacity-20 pointer-events-none" />
       <div className="scanline-move" />
       
-      <Header title="IDENTITY CORE: STATS" onClose={adventure.goBack} onHelp={() => {
+      <Header title="IDENTITY CORE: STATS" onClose={adventure.goBack} npcNum={1} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} />
+
+      <NPCCard
+        citizenNum={15}
+        name="STAT COACH"
+        accentColor="bg-indigo-500"
+        textColor="text-indigo-600"
+        glowColor="bg-indigo-500"
+        statusTag="CORE_STATS_SYNCED"
+        statusTag2="IDENTITY_STABLE"
+        prefix="◢COACH: "
+        dialogues={[
+          "Every attribute point defines who you are as a hunter. Choose carefully.",
+          "Strength increases raw damage output. Perfect for aggressive dungeon rushers.",
+          "Dexterity boosts forge success rates — great if you craft high-tier relics.",
+          "Vitality directly extends your survivability in deep sector runs.",
+          "Intelligence amplifies your elemental ability damage significantly.",
+          "Once points are allocated, they cannot be freely refunded. Plan ahead!",
+          "A balanced build handles all sectors. A focused build dominates one.",
+          "Check the tooltip on each stat to see exactly how it scales."
+        ]}
+      />
+
 
       {/* ── AP Counter ── */}
       <div className="w-full max-w-sm relative z-10">

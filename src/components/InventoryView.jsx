@@ -12,10 +12,11 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const InventoryView = React.memo(() => {
-  const { player, actions, adventure, openGuide, ITEMS, CRYSTLE_RECIPES } = useGame();
+  const { player, actions, adventure, openGuide, ITEMS, CRYSTLE_RECIPES, FOODS } = useGame();
   const { setView } = adventure;
   const { sellItem, unequipItem, learnRecipe } = actions;
   
@@ -75,9 +76,15 @@ export const InventoryView = React.memo(() => {
     const fromRecipe = CRYSTLE_RECIPES.find(r => r.id === cleanId);
     if (fromRecipe) return fromRecipe;
 
-    // 3. Last Resort: Name Match
+    // 3. Check FOODS List
+    const fromFood = FOODS?.find(r => r.id === cleanId);
+    if (fromFood) return { ...fromFood, type: 'Food', category: 'Food' };
+
+    // 4. Last Resort: Name Match
     const byName = ITEMS.find(i => i.name?.toLowerCase() === item.name?.toLowerCase());
     if (byName) return byName;
+    const byFoodName = FOODS?.find(i => i.name?.toLowerCase() === item.name?.toLowerCase());
+    if (byFoodName) return { ...byFoodName, type: 'Food', category: 'Food' };
 
     return item;
   };
@@ -92,14 +99,26 @@ export const InventoryView = React.memo(() => {
      const inv = Object.values(player.inventory || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: false }));
      const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: true }));
      
+     // Synthesize base root items into physical objects for the main grid
+     if (player.autoScrolls > 0) {
+        for (let i = 0; i < player.autoScrolls; i++) inv.push({ id: `auto_scroll_99999${i}`, type: 'Consumable', category: 'Consumable', isEquipped: false });
+     }
+     if (player.potions > 0) {
+        for (let i = 0; i < player.potions; i++) inv.push({ id: `hp_potion_99999${i}`, type: 'Consumable', category: 'Consumable', isEquipped: false });
+     }
+
      let fullList = [...inv, ...equipped];
 
      if (filter !== 'All') {
         fullList = fullList.filter(i => {
-          if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact'].includes(i.type);
-          if (filter === 'Fruit') return i.type === 'Fruit' || i.category === 'Fruit';
-          if (filter === 'Consumable') return i.type === 'Consumable' || i.category === 'Consumable';
-          return i.type === filter;
+          const master = getMasterData(i);
+          const iType = i.type || master?.type;
+          const iCat = i.category || master?.category;
+          if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact'].includes(iType);
+          if (filter === 'Fruit') return iType === 'Fruit' || iCat === 'Fruit';
+          if (filter === 'Food') return iType === 'Food' || iCat === 'Food';
+          if (filter === 'Consumable') return iType === 'Consumable' || iCat === 'Consumable';
+          return iType === filter;
         });
      }
 
@@ -108,27 +127,26 @@ export const InventoryView = React.memo(() => {
      }
 
      return fullList;
-  }, [player.inventory, player.equipped, filter, search]);
+  }, [player.inventory, player.equipped, filter, search, player.autoScrolls, player.potions]);
 
-  const labPotions = useMemo(() => {
-    return Object.values(player.inventory || {}).filter(i => {
-      const cleanId = i?.id?.replace(/(_\d+)+$/, '');
-      return cleanId === 'mega_hp_potion' || cleanId === 'ultra_hp_potion';
-    }).length;
-  }, [player.inventory]);
+  const counts = useMemo(() => {
+    const c = {};
+    Object.values(player.inventory || {}).forEach(i => {
+      if (!i) return;
+      const master = getMasterData(i);
+      const cleanId = master?.id || i.id?.replace(/(_\d+)+$/, '');
+      c[cleanId] = (c[cleanId] || 0) + 1;
+    });
+    return c;
+  }, [player.inventory, ITEMS, CRYSTLE_RECIPES, FOODS]);
 
-  const labScrolls = useMemo(() => {
-    return Object.values(player.inventory || {}).filter(i => {
-      const cleanId = i?.id?.replace(/(_\d+)+$/, '');
-      return ['auto_scroll_3m', 'auto_scroll_6m', 'auto_scroll_9m', 'auto_scroll_12m'].includes(cleanId);
-    }).length;
-  }, [player.inventory]);
-
-  const stats = [
-    { label: 'POTIONS', val: `${player.potions || 0}${labPotions > 0 ? ` +${labPotions} LAB` : ''}`, icon: '🧪', color: 'bg-red-500' },
-    { label: 'AUTO SCROLLS', val: `${player.autoScrolls || 0}${labScrolls > 0 ? ` +${labScrolls} LAB` : ''}`, icon: '🪄', color: 'bg-cyan-500' },
-    { label: 'GX TOKENS', val: player.tokens?.toLocaleString(), icon: '🪙', color: 'bg-amber-400' }
-  ];
+  const renderResource = (icon, label, count) => (
+    <div className={`flex flex-col items-center justify-center p-1 border-2 border-black transition-all ${count === 0 ? 'grayscale opacity-60 bg-slate-300 shadow-none' : 'bg-white shadow-[2px_2px_0_rgba(0,0,0,1)]'}`}>
+        <span className="text-lg md:text-xl drop-shadow-sm leading-none">{icon}</span>
+        <span className="text-[5px] md:text-[6px] font-black text-slate-500 uppercase text-center mt-1 pt-1 border-t border-black/10 w-full">{label}</span>
+        <span className={`text-[9px] md:text-[10px] font-black uppercase italic leading-none mt-0.5 ${count === 0 ? 'text-slate-400' : 'text-black'}`}>{count > 0 ? `x${count}` : 0}</span>
+    </div>
+  );
 
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 bg-slate-950 relative overflow-hidden custom-scrollbar">
@@ -137,26 +155,70 @@ export const InventoryView = React.memo(() => {
        <div className="scanline-move opacity-5" />
        <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.5)] pointer-events-none" />
        
-       <Header title="STORAGE CORE: ASSET BAG" onClose={adventure.goBack} onHelp={() => {
+       <Header title="STORAGE CORE: ASSET BAG" onClose={adventure.goBack} npcNum={9} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
        }} icon={<Package className="text-emerald-400 animate-pulse" />} />
 
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 relative z-10">
-          {stats.map(s => (
-            <div key={s.label} className="bg-white border-2 border-black p-3 flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,1)] group hover:scale-[1.02] transition-transform">
-               <div className="flex items-center gap-3">
-                  <div className={`${s.color} w-10 h-10 border-2 border-black flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)]`}>
-                     <span className="text-xl">{s.icon}</span>
-                  </div>
-                  <div className="flex flex-col">
-                     <span className="text-[8px] font-black text-slate-400 uppercase leading-none">{s.label}</span>
-                     <span className="text-lg font-black italic text-black leading-none">{s.val}</span>
-                  </div>
-               </div>
-               <TrendingUp size={16} className="text-slate-100 group-hover:text-slate-200 transition-colors" />
+       <NPCCard
+        citizenNum={9}
+        name="QUARTERMASTER"
+        accentColor="bg-teal-500"
+        textColor="text-teal-600"
+        glowColor="bg-teal-500"
+        statusTag="STORAGE_CORE_ONLINE"
+        statusTag2="INVENTORY_SYNCED"
+        prefix="◢QM: "
+        dialogues={[
+          "Your Asset Bag holds every piece of loot you've scavenged from the sectors.",
+          "Items with duplicate IDs are stacked automatically. Check the count badge.",
+          "Craft with raw materials from here — or sell them on the Open Grid.",
+          "Reorganize your bag before a deep run. Know what you're carrying.",
+          "Equipment must be equipped from the Tactical Loadout, not from here.",
+          "GX Tokens shown here are your liquid war chest. Spend them wisely.",
+          "Never go into Sector 5 without at least 3 HP Potions in storage.",
+          "A clean bag is a hunter's competitive edge. Know your inventory."
+        ]}
+      />
+
+       <div className="flex flex-col gap-3 mb-6 relative z-10 w-full">
+         <div className="bg-amber-400 border-2 border-black p-3 flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)] flex items-center justify-center text-xl">🪙</div>
+                <div className="flex flex-col">
+                   <span className="text-[8px] font-black text-black/70 uppercase leading-none">GX TOKENS (LIQUID ASSETS)</span>
+                   <span className="text-xl font-black italic text-black leading-none drop-shadow-sm">{player.tokens?.toLocaleString() || 0}</span>
+                </div>
             </div>
-          ))}
+         </div>
+         
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+           <div className="bg-slate-900 border-[3px] border-black p-2.5 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+             <div className="flex justify-between items-end mb-2 border-b-2 border-red-500 pb-1">
+               <span className="text-[8px] md:text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-[1px_1px_0_rgba(239,68,68,1)]">MEDICAL SUPPLIES</span>
+               <Activity size={12} className="text-red-500 animate-pulse" />
+             </div>
+             <div className="grid grid-cols-3 gap-2">
+                 {renderResource('🧪', 'Standard', player.potions || 0)}
+                 {renderResource('🧪', 'Mega (+250)', counts['mega_hp_potion'] || 0)}
+                 {renderResource('🧬', 'Ultra (+MAX)', counts['ultra_hp_potion'] || 0)}
+             </div>
+           </div>
+
+           <div className="bg-slate-900 border-[3px] border-black p-2.5 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+             <div className="flex justify-between items-end mb-2 border-b-2 border-cyan-500 pb-1">
+               <span className="text-[8px] md:text-[10px] font-black text-white uppercase italic tracking-widest drop-shadow-[1px_1px_0_rgba(6,182,212,1)]">AUTO-HUNT SCROLLS</span>
+               <TrendingUp size={12} className="text-cyan-500 animate-bounce" />
+             </div>
+             <div className="grid grid-cols-5 gap-1.5 md:gap-2">
+                 {renderResource('🪄', '1 Min', player.autoScrolls || 0)}
+                 {renderResource('📜', '3 Min', counts['auto_scroll_3m'] || 0)}
+                 {renderResource('📜', '6 Min', counts['auto_scroll_6m'] || 0)}
+                 {renderResource('📜', '9 Min', counts['auto_scroll_9m'] || 0)}
+                 {renderResource('📜', '12 Min', counts['auto_scroll_12m'] || 0)}
+             </div>
+           </div>
+         </div>
        </div>
 
        <div className="flex-1 bg-white border-2 border-black shadow-[6px_6px_0_rgba(0,0,0,1)] flex flex-col min-h-0 relative z-10 text-black">
@@ -171,7 +233,7 @@ export const InventoryView = React.memo(() => {
                 />
              </div>
              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
-                {['All', 'Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic', 'Loot', 'Fruit', 'Consumable'].map(cat => (
+                {['All', 'Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic', 'Loot', 'Fruit', 'Food', 'Consumable'].map(cat => (
                   <button 
                     key={cat}
                     onClick={() => setFilter(cat)}
@@ -249,7 +311,7 @@ export const InventoryView = React.memo(() => {
                               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                                  {item.isEquipped && <div className="bg-black text-white px-1 py-0.5 text-[6px] font-black uppercase flex items-center gap-1 rounded-sm"><ShieldCheck size={8} /> ACTIVE</div>}
                                  {item.type === 'Schematic' && <div className="bg-cyan-500 text-black px-1 py-0.5 text-[6px] font-black uppercase flex items-center gap-1 rounded-sm">UNPRINTED BLUEPRINT</div>}
-                                 <h4 className={`text-sm font-black uppercase italic tracking-tighter leading-none ${item.type === 'Schematic' ? 'text-cyan-100' : 'text-black'}`}>{item.name || 'Unknown Item'}</h4>
+                                 <h4 className={`text-sm font-black uppercase italic tracking-tighter leading-none ${item.type === 'Schematic' ? 'text-cyan-100' : 'text-black'}`}>{master?.name || item.name || 'Unknown Item'}</h4>
                                  <div className="flex gap-1">
                                     <span className={`text-[7px] font-black px-1 border border-black/10 uppercase ${item.type === 'Schematic' ? 'bg-cyan-950 text-cyan-500' : 'bg-slate-100 text-slate-400'}`}>[{item.type || master.type || 'TECH'}]</span>
                                     <span className={`text-[7px] font-black px-1 border border-black/10 uppercase ${item.type === 'Schematic' ? 'bg-cyan-400 text-black' : rarity === 'Legendary' ? 'bg-amber-400 text-black' : rarity === 'Epic' ? 'bg-purple-600 text-white' : 'bg-slate-200 text-black'}`}>{rarity}</span>
@@ -285,22 +347,24 @@ export const InventoryView = React.memo(() => {
                                    className="px-3 py-1.5 bg-cyan-500 text-black hover:bg-cyan-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
                                  >Learn</button>
                                )}
-                               <>
-                                  <button onClick={() => {
-                                       if (item.isEquipped) {
-                                          const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
-                                          if (slot) unequipItem(slot);
-                                       }
-                                       sellItem(item.id, 1);
-                                    }}
-                                    className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                                  >Sell 1</button>
-                                  {!item.isEquipped && item.count > 1 && (
-                                    <button onClick={() => sellItem(item.id, item.count)}
-                                      className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
-                                    >Sell All</button>
-                                  )}
-                                </>
+                               {!item.id?.includes('_99999') && (
+                                 <>
+                                    <button onClick={() => {
+                                         if (item.isEquipped) {
+                                            const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
+                                            if (slot) unequipItem(slot);
+                                         }
+                                         sellItem(item.id, 1);
+                                      }}
+                                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-black text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                    >Sell 1</button>
+                                    {!item.isEquipped && item.count > 1 && (
+                                      <button onClick={() => sellItem(item.id, item.count)}
+                                        className="px-3 py-1.5 bg-amber-500 text-black hover:bg-amber-400 text-[9px] font-black uppercase italic border-2 border-black transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] active:shadow-none active:translate-y-0.5"
+                                      >Sell All</button>
+                                    )}
+                                  </>
+                               )}
                             </div>
                         </div>
                       </div>

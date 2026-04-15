@@ -84,5 +84,42 @@
       { "id": "dark_matter", "count": 50 }
     ],
     "cost": 50000
-  }
+  },
+
+  { "id": "scrap_saber", "isDefault": true, "cost": 2500, "materials": [{ "id": "slum_scrap", "count": 15 }, { "id": "mutant_tooth", "count": 5 }] },
+  { "id": "riveted_plate", "isDefault": true, "cost": 3000, "materials": [{ "id": "slum_scrap", "count": 25 }, { "id": "copper_piping", "count": 10 }] },
+  { "id": "welder_mask", "isDefault": true, "cost": 1500, "materials": [{ "id": "slum_scrap", "count": 10 }, { "id": "rusty_wire", "count": 15 }] },
+  { "id": "heavy_clogs", "isDefault": true, "cost": 1500, "materials": [{ "id": "slum_scrap", "count": 12 }, { "id": "rubber_hose", "count": 8 }] },
+
+  { "id": "scrap_spear", "isDefault": true, "cost": 3500, "materials": [{ "id": "canyon_iron", "count": 12 }, { "id": "slum_rat_tail", "count": 25 }] },
+  { "id": "sand_cloak", "isDefault": true, "cost": 4000, "materials": [{ "id": "beast_hide", "count": 20 }, { "id": "sand_glass", "count": 15 }] },
+  { "id": "dust_hood", "isDefault": true, "cost": 2000, "materials": [{ "id": "beast_hide", "count": 10 }, { "id": "hazard_tape", "count": 15 }] },
+  { "id": "dune_wraps", "isDefault": true, "cost": 2000, "materials": [{ "id": "beast_hide", "count": 8 }, { "id": "sand_glass", "count": 12 }] },
+
+  { "id": "sludge_slicer", "isDefault": true, "cost": 6000, "materials": [{ "id": "toxic_sludge", "count": 30 }, { "id": "mutant_tooth", "count": 20 }] },
+  { "id": "hazmat_vest", "isDefault": true, "cost": 7500, "materials": [{ "id": "bio_vial", "count": 8 }, { "id": "toxic_sludge", "count": 20 }, { "id": "hazard_tape", "count": 30 }] },
+  { "id": "filter_helm", "isDefault": true, "cost": 4500, "materials": [{ "id": "bio_vial", "count": 3 }, { "id": "broken_sensor", "count": 5 }, { "id": "toxic_sludge", "count": 15 }] },
+  { "id": "rubber_treaders", "isDefault": true, "cost": 4500, "materials": [{ "id": "rubber_hose", "count": 25 }, { "id": "toxic_sludge", "count": 10 }] },
+
+  { "id": "pulse_blade", "isDefault": true, "cost": 12000, "materials": [{ "id": "power_cell", "count": 10 }, { "id": "neon_dust", "count": 30 }, { "id": "cypher_chip", "count": 5 }] },
+  { "id": "data_mesh", "isDefault": true, "cost": 15000, "materials": [{ "id": "neon_filament", "count": 5 }, { "id": "cypher_chip", "count": 8 }, { "id": "neon_dust", "count": 40 }] },
+  { "id": "hud_goggles", "isDefault": true, "cost": 9000, "materials": [{ "id": "broken_sensor", "count": 15 }, { "id": "cypher_chip", "count": 3 }, { "id": "neon_dust", "count": 20 }] },
+  { "id": "static_runners", "isDefault": true, "cost": 9000, "materials": [{ "id": "power_cell", "count": 5 }, { "id": "neon_dust", "count": 25 }, { "id": "magnetic_coil", "count": 5 }] },
+
+  { "id": "flux_core_r", "isDefault": true, "cost": 20000, "materials": [{ "id": "crystle_shard", "count": 50 }, { "id": "void_shard", "count": 10 }] },
+  { "id": "signal_jammer", "isDefault": true, "cost": 22000, "materials": [{ "id": "cypher_chip", "count": 15 }, { "id": "broken_sensor", "count": 10 }, { "id": "power_cell", "count": 8 }] },
+  { "id": "capacitor_cuff", "isDefault": true, "cost": 18000, "materials": [{ "id": "power_cell", "count": 12 }, { "id": "copper_piping", "count": 30 }] },
+  { "id": "neural_link", "isDefault": true, "cost": 30000, "materials": [{ "id": "bio_vial", "count": 15 }, { "id": "cypher_chip", "count": 20 }, { "id": "core_pulse", "count": 1 }] },
+
+  { "id": "titan_impact", "isDefault": true, "cost": 45000, "materials": [{ "id": "canyon_iron", "count": 60 }, { "id": "engine_bolt", "count": 40 }, { "id": "turbo_charger", "count": 3 }] },
+  { "id": "void_plating", "isDefault": true, "cost": 50000, "materials": [{ "id": "void_shard", "count": 80 }, { "id": "dark_matter", "count": 30 }, { "id": "void_membrane", "count": 50 }] },
+  { "id": "chrono_helm", "isDefault": true, "cost": 35000, "materials": [{ "id": "time_drift", "count": 1 }, { "id": "broken_sensor", "count": 40 }, { "id": "cypher_chip", "count": 25 }] },
+  { "id": "warp_boots", "isDefault": true, "cost": 35000, "materials": [{ "id": "void_essence", "count": 25 }, { "id": "void_shard", "count": 40 }, { "id": "cloud_silk", "count": 20 }] },
+
+  { "id": "bio_saber", "isDefault": true, "cost": 28000, "materials": [{ "id": "toxic_sludge", "count": 50 }, { "id": "beast_hide", "count": 40 }, { "id": "bio_vial", "count": 10 }] },
+  { "id": "recycled_core", "isDefault": true, "cost": 60000, "materials": [{ "id": "slum_scrap", "count": 100 }, { "id": "crystle_shard", "count": 100 }, { "id": "core_pulse", "count": 2 }] },
+  { "id": "scrap_cannon", "isDefault": true, "cost": 40000, "materials": [{ "id": "oil_drum", "count": 10 }, { "id": "cracked_piston", "count": 20 }, { "id": "engine_bolt", "count": 50 }] },
+  { "id": "neon_shield", "isDefault": true, "cost": 30000, "materials": [{ "id": "neon_filament", "count": 20 }, { "id": "neon_dust", "count": 100 }, { "id": "cypher_chip", "count": 10 }] },
+  { "id": "hazmat_claws", "isDefault": true, "cost": 25000, "materials": [{ "id": "mutant_tooth", "count": 100 }, { "id": "toxic_sludge", "count": 40 }] },
+  { "id": "void_wraps", "isDefault": true, "cost": 25000, "materials": [{ "id": "void_membrane", "count": 60 }, { "id": "dark_matter", "count": 20 }] }
 ]

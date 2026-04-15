@@ -8,7 +8,9 @@ export const useGameLoop = ({
   combat,
   actions,
   totalStats,
-  showDefeatedWindow
+  showDefeatedWindow,
+  isNetworkOffline,
+  isNetworkSlow
 }) => {
   const [autoTimeLeft, setAutoTimeLeft] = useState(0);
   const [buffTimeLeft, setBuffTimeLeft] = useState(0);
@@ -86,7 +88,7 @@ export const useGameLoop = ({
   // --- Auto-Pilot Loop ---
   const isCombatActive = autoTimeLeft > 0 || combat.battleMode === 'GVG';
   useEffect(() => {
-    if (!isCombatActive || showDefeatedWindow) return;
+    if (!isCombatActive || showDefeatedWindow || isNetworkOffline || isNetworkSlow) return;
     if (view !== 'dungeon' && view !== 'boss') return;
 
     const loop = setInterval(() => {
@@ -114,7 +116,7 @@ export const useGameLoop = ({
     }, 800); // Comfortable cadence — mutex keeps it from queuing
 
     return () => clearInterval(loop);
-  }, [view, isCombatActive, showDefeatedWindow]);
+  }, [view, isCombatActive, showDefeatedWindow, isNetworkOffline, isNetworkSlow]);
 
   return {
     autoTimeLeft,

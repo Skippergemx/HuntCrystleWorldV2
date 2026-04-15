@@ -147,5 +147,43 @@
   { "id": "schema_neon_plate", "name": "Schematic: Neon Chestplate", "rarity": "Uncommon", "icon": "📜", "sellValue": 500, "type": "Schematic", "category": "Loot", "recipeId": "neon_plate", "description": "Detailed blueprints for an advanced neon-infused chestplate." },
   { "id": "schema_tech_visor", "name": "Schematic: Tech Visor", "rarity": "Common", "icon": "📜", "sellValue": 300, "type": "Schematic", "category": "Loot", "recipeId": "tech_visor", "description": "Optical engineering data for a high-tech visor." },
   { "id": "schema_kinetic_boots", "name": "Schematic: Kinetic Boots", "rarity": "Uncommon", "icon": "📜", "sellValue": 450, "type": "Schematic", "category": "Loot", "recipeId": "kinetic_boots", "description": "Conceptual designs for energy-recycling footwear." },
-  { "id": "schema_void_edge", "name": "Schematic: Void Edge", "rarity": "Epic", "icon": "📜", "sellValue": 2500, "type": "Schematic", "category": "Loot", "recipeId": "void_edge", "description": "Forbidden geometry required to forge a blade that cuts space." }
+  { "id": "schema_void_edge", "name": "Schematic: Void Edge", "rarity": "Epic", "icon": "📜", "sellValue": 2500, "type": "Schematic", "category": "Loot", "recipeId": "void_edge", "description": "Forbidden geometry required to forge a blade that cuts space." },
+  
+  { "id": "scrap_saber", "name": "Scrap Saber", "sellValue": 150, "reqLvl": 10, "icon": "🔪", "stats": { "str": 30, "dex": 10, "agi": 5 }, "type": "Weapon", "category": "Equipment", "description": "Lethal edge made from recycled slum metal." },
+  { "id": "riveted_plate", "name": "Riveted Plate", "sellValue": 200, "reqLvl": 10, "icon": "🛡️", "stats": { "str": 5, "dex": 5, "agi": 40 }, "type": "Armor", "category": "Equipment", "description": "Industrial-grade plating bolted together." },
+  { "id": "welder_mask", "name": "Welder Mask", "sellValue": 120, "reqLvl": 10, "icon": "🥽", "stats": { "str": 10, "dex": 5, "agi": 10 }, "type": "Headgear", "category": "Equipment", "description": "Protects against sparks and strikes." },
+  { "id": "heavy_clogs", "name": "Heavy Clogs", "sellValue": 120, "reqLvl": 10, "icon": "👞", "stats": { "str": 5, "dex": 5, "agi": 15 }, "type": "Footwear", "category": "Equipment", "description": "Nonslip industrial utility boots." },
+
+  { "id": "sludge_slicer", "name": "Sludge Slicer", "sellValue": 350, "reqLvl": 15, "icon": "🗡️", "stats": { "str": 50, "dex": 20, "agi": 10 }, "type": "Weapon", "category": "Equipment", "description": "Coated in corrosive mutant waste." },
+  { "id": "hazmat_vest", "name": "Hazmat Vest", "sellValue": 400, "reqLvl": 15, "icon": "🦺", "stats": { "str": 10, "dex": 30, "agi": 60 }, "type": "Armor", "category": "Equipment", "description": "Filtered protection for lethal zones." },
+  { "id": "filter_helm", "name": "Filter Helm", "sellValue": 280, "reqLvl": 15, "icon": "🎭", "stats": { "str": 10, "dex": 10, "agi": 20 }, "type": "Headgear", "category": "Equipment", "description": "Recycles air in toxic environments." },
+  { "id": "rubber_treaders", "name": "Rubber Treaders", "sellValue": 280, "reqLvl": 15, "icon": "👢", "stats": { "str": 5, "dex": 5, "agi": 35 }, "type": "Footwear", "category": "Equipment", "description": "Insulated against acidic spills." },
+
+  { "id": "pulse_blade", "name": "Pulse Blade", "sellValue": 800, "reqLvl": 20, "icon": "⚔️", "stats": { "str": 80, "dex": 40, "agi": 20 }, "type": "Weapon", "category": "Equipment", "description": "Energy-charged blade with high output." },
+  { "id": "data_mesh", "name": "Data Mesh", "sellValue": 900, "reqLvl": 20, "icon": "👕", "stats": { "str": 20, "dex": 50, "agi": 80 }, "type": "Armor", "category": "Equipment", "description": "Woven fiber that deflects laser fire." },
+  { "id": "hud_goggles", "name": "HUD Goggles", "sellValue": 650, "reqLvl": 20, "icon": "🥽", "stats": { "str": 10, "dex": 40, "agi": 10 }, "type": "Headgear", "category": "Equipment", "description": "Real-time combat telemetry display." },
+  { "id": "static_runners", "name": "Static Runners", "sellValue": 650, "reqLvl": 20, "icon": "👟", "stats": { "str": 10, "dex": 40, "agi": 40 }, "type": "Footwear", "category": "Equipment", "description": "Enhanced with magnetic repulsion." },
+
+  { "id": "scrap_spear", "name": "Scrap Spear", "sellValue": 180, "reqLvl": 12, "icon": "🔱", "stats": { "str": 40, "dex": 20, "agi": 5 }, "type": "Weapon", "category": "Equipment", "description": "Long-reach tool for canyon hunters." },
+  { "id": "sand_cloak", "name": "Sand Cloak", "sellValue": 220, "reqLvl": 12, "icon": "🧥", "stats": { "str": 5, "dex": 10, "agi": 45 }, "type": "Armor", "category": "Equipment", "description": "Camouflage for the Rust Canyon." },
+  { "id": "dust_hood", "name": "Dust Hood", "sellValue": 150, "reqLvl": 12, "icon": "👳", "stats": { "str": 5, "dex": 15, "agi": 10 }, "type": "Headgear", "category": "Equipment", "description": "Keeps the grit out of your eyes." },
+  { "id": "dune_wraps", "name": "Dune Wraps", "sellValue": 150, "reqLvl": 12, "icon": "🦶", "stats": { "str": 2, "dex": 10, "agi": 20 }, "type": "Footwear", "category": "Equipment", "description": "Lightweight wraps for hot sands." },
+
+  { "id": "flux_core_r", "name": "Flux Core", "sellValue": 1200, "reqLvl": 22, "icon": "🧿", "stats": { "str": 25, "dex": 25, "agi": 25 }, "type": "Relic", "category": "Equipment", "rarity": "Uncommon", "description": "Stabilizes energy flows." },
+  { "id": "signal_jammer", "name": "Signal Jammer", "sellValue": 1250, "reqLvl": 22, "icon": "📡", "stats": { "str": 10, "dex": 50, "agi": 10 }, "type": "Relic", "category": "Equipment", "rarity": "Uncommon", "description": "Disrupts enemy focus." },
+  { "id": "capacitor_cuff", "name": "Capacitor Cuff", "sellValue": 1100, "reqLvl": 22, "icon": "💍", "stats": { "str": 15, "dex": 15, "agi": 50 }, "type": "Relic", "category": "Equipment", "rarity": "Uncommon", "description": "Stores kinetic charge." },
+  { "id": "neural_link", "name": "Neural Link", "sellValue": 1500, "reqLvl": 22, "icon": "🧠", "stats": { "str": 30, "dex": 40, "agi": 30 }, "type": "Relic", "category": "Equipment", "rarity": "Rare", "description": "Direct brain-to-gear interface." },
+
+  { "id": "titan_impact", "name": "Titan Impact", "sellValue": 1800, "reqLvl": 28, "icon": "🔨", "stats": { "str": 120, "dex": 20, "agi": 0 }, "type": "Weapon", "category": "Equipment", "rarity": "Rare", "description": "Massive kinetic force." },
+  { "id": "void_plating", "name": "Void Plating", "sellValue": 2000, "reqLvl": 28, "icon": "🛡️", "stats": { "str": 30, "dex": 30, "agi": 120 }, "type": "Armor", "category": "Equipment", "rarity": "Rare", "description": "Made from solidified shadows." },
+  { "id": "chrono_helm", "name": "Chrono Helm", "sellValue": 1600, "reqLvl": 28, "icon": "⏰", "stats": { "str": 20, "dex": 60, "agi": 20 }, "type": "Headgear", "category": "Equipment", "rarity": "Rare", "description": "Slightly shifts time perception." },
+  { "id": "warp_boots", "name": "Phase Treaders", "sellValue": 1600, "reqLvl": 28, "icon": "🌌", "stats": { "str": 10, "dex": 40, "agi": 80 }, "type": "Footwear", "category": "Equipment", "rarity": "Rare", "description": "Glides through the rift." },
+  
+  { "id": "bio_saber", "name": "Bio-Organic Saber", "sellValue": 900, "reqLvl": 24, "icon": "🌿", "stats": { "str": 90, "dex": 30, "agi": 10 }, "type": "Weapon", "category": "Equipment", "rarity": "Rare", "description": "Fungal-growth living blade." },
+  { "id": "recycled_core", "name": "Recycled Core", "sellValue": 2500, "reqLvl": 30, "icon": "♻️", "stats": { "str": 40, "dex": 40, "agi": 40 }, "type": "Relic", "category": "Equipment", "rarity": "Epic", "description": "Masterwork of salvaged parts." },
+  { "id": "scrap_cannon", "name": "Scrap Cannon", "sellValue": 1400, "reqLvl": 26, "icon": "💣", "stats": { "str": 110, "dex": 20, "agi": 5 }, "type": "Weapon", "category": "Equipment", "description": "Heavy industrial artillery made from oil drums." },
+  { "id": "neon_shield", "name": "Neon Shield", "sellValue": 1200, "reqLvl": 22, "icon": "🛡️", "stats": { "str": 15, "dex": 15, "agi": 70 }, "type": "Armor", "category": "Equipment", "description": "Solid light projection that dampens impacts." },
+  { "id": "hazmat_claws", "name": "Hazmat Claws", "sellValue": 1300, "reqLvl": 24, "icon": "🧤", "stats": { "str": 85, "dex": 25, "agi": 10 }, "type": "Weapon", "category": "Equipment", "description": "Corrosive-resistant gripping tools." },
+  { "id": "void_wraps", "isDefault": true, "name": "Void Wraps", "sellValue": 1350, "reqLvl": 25, "icon": "🧤", "stats": { "str": 10, "dex": 30, "agi": 60 }, "type": "Footwear", "category": "Equipment", "description": "Boots made of dimensionally-shifting fabric." },
+  { "id": "magnetic_coil", "name": "Magnetic Coil", "rarity": "Uncommon", "icon": "🧲", "description": "Used in static-energy gear.", "type": "Material", "category": "Loot", "sellValue": 85 }
 ]

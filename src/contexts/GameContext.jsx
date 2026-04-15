@@ -27,6 +27,7 @@ import { usePlayerActions } from '../hooks/usePlayerActions';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useWallet } from '../hooks/useWallet';
 import { useTelegram } from '../hooks/useTelegram';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { LoadingScreen } from '../components/LoadingScreen';
 
 export const GameContext = createContext(null);
@@ -67,6 +68,9 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
 
   // Telegram SDK
   const telegram = useTelegram();
+
+  // Network Connectivity Monitor
+  const network = useNetworkStatus();
 
   // Sync Timer for UI Clock
   useEffect(() => {
@@ -128,7 +132,9 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     combat,
     actions,
     totalStats,
-    showDefeatedWindow: combat.showDefeatedWindow
+    showDefeatedWindow: combat.showDefeatedWindow,
+    isNetworkOffline: network.isOffline,
+    isNetworkSlow: network.isSlow
   });
 
   const dynamicStats = useMemo(() => {
@@ -279,6 +285,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     linkWallet, migrateProfile,
     farcasterContext,
     telegram,
+    network,
     gvgContext, setGvgContext,
     battleMode, setBattleMode,
     leaderboard: leaderboardObj.leaderboard,

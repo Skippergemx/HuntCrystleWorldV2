@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { deleteField } from 'firebase/firestore';
 import { createPortal } from 'react-dom';
 import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair, Check } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 import { calculateNagaStats } from '../utils/gameLogic';
 
@@ -143,19 +145,30 @@ export const DragonsGroundView = React.memo(() => {
       return;
     }
 
-      const fruitKey = Object.keys(player.inventory || {}).find(key => player.inventory[key] === dragonFruit);
-      
-      const updates = { 
-        dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } 
-      };
-      
-      if (fruitKey) {
-        // Use deleteField() for Firestore and ensure it's removed from local state
-        const { deleteField } = require('firebase/firestore');
-        updates[`inventory.${fruitKey}`] = deleteField();
-      }
+    const fruitKey = Object.keys(player.inventory || {}).find(key => player.inventory[key] === dragonFruit);
+    
+    let newFruitsFed = dragonStats.fruitsFed + 1;
+    let newLevel = dragonStats.level;
 
-      syncPlayer(updates);
+    if (newFruitsFed >= dragonNextLevelRequirement) {
+      newLevel += 1;
+      newFruitsFed = 0;
+      setMessage({ type: 'success', text: `Dragon reached Level ${newLevel}!` });
+      addLog(`🐉 DRAGON ASCENSION: Reached Level ${newLevel}!`);
+    } else {
+      setMessage({ type: 'info', text: 'Dragon devoured the fruit!' });
+    }
+
+    const updates = { 
+      dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } 
+    };
+    
+    if (fruitKey) {
+      // Use deleteField() for Firestore and ensure it's removed from local state
+      updates[`inventory.${fruitKey}`] = deleteField();
+    }
+
+    syncPlayer(updates, true);
   };
 
   // Spawn and Move logic (Dependency-free interval for smooth roaming)
@@ -281,11 +294,34 @@ export const DragonsGroundView = React.memo(() => {
         <Header 
           title="Dragons Ground" 
           onClose={adventure.goBack} 
+          npcNum={14}
           onHelp={() => {
             setTutorialStep(0);
             setShowTutorial(true);
           }}
         />
+
+        <NPCCard
+          citizenNum={14}
+          name="DRAGON WARDEN"
+          accentColor="bg-red-600"
+          textColor="text-red-600"
+          glowColor="bg-red-600"
+          statusTag="GROUND_SECTOR_ACTIVE"
+          statusTag2="DRAGON_SIGNAL_LIVE"
+          prefix="◢WARDEN: "
+          dialogues={[
+            "Dragons Ground — where the bravest (and most reckless) hunters come to grind.",
+            "Iron Pets discovered here can be tamed to boost your XP permanently.",
+            "The Orchard drop zone yields fruits for Crystle Town requests. Farm it!",
+            "Dragon Crystle Shards are your currency here. Collect them every run.",
+            "Harder floors drop better loot. Push your depth as far as your build allows.",
+            "Watch your HP in the deep floors. A retreat preserves your Tavern contract.",
+            "Iron Pet 2-2 is a beast — worth the grind to tame it if you haven't yet.",
+            "The Ground never stops spawning. Stay active and the shards will accumulate."
+          ]}
+        />
+
         <div className="flex items-center gap-2 mt-2">
           <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
             <Gem size={14} className="text-cyan-400" />

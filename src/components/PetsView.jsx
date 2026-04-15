@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Sparkles, ShieldCheck, AlertCircle, Wallet, ArrowRight, Heart, Zap, Star, Lock, Check, HelpCircle } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
+import { NPCCard } from './NPCCard';
 
 export const PetsView = () => {
   const { player, syncPlayer, adventure, addLog, PETS_METADATA } = useGame();
@@ -142,10 +143,31 @@ export const PetsView = () => {
         <div className="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-cyan-950/40 to-transparent"></div>
       </div>
 
-      <Header title="PET SANCTUARY" onClose={adventure.goBack} onHelp={() => {
+      <Header title="PET SANCTUARY" onClose={adventure.goBack} npcNum={30} onHelp={() => {
          setTutorialStep(0);
          setShowTutorial(true);
        }} />
+
+      <NPCCard
+        citizenNum={30}
+        name="PET KEEPER"
+        accentColor="bg-pink-500"
+        textColor="text-pink-600"
+        glowColor="bg-pink-500"
+        statusTag="SANCTUARY_ONLINE"
+        statusTag2="SOULS_DETECTED"
+        prefix="◢KEEPER: "
+        dialogues={[
+          "Welcome to the Crystle Sanctuary! These companions are no ordinary creatures.",
+          "Each Crystle Pet boosts your XP gain and extends your HP Core. Pair wisely!",
+          "Rare Crystles are locked — you must purify corrupted anomalies to access them.",
+          "Your active Crystle will accompany you inside every dungeon sector.",
+          "Only one companion can be active at a time. Choose based on your build.",
+          "Genesis Pets have fixed elemental attributes — Fire, Water, Wind, and Earth.",
+          "A higher-ranked Crystle can be the difference between surviving Sector 7 or not.",
+          "I've cared for all 30 souls here. Each one has a unique spirit."
+        ]}
+      />
       
       <div className="flex-1 flex flex-col gap-4 md:gap-8 overflow-hidden z-10 relative">
         {/* CRYSTLE WELCOME BANNER (COMICAL STYLE) */}

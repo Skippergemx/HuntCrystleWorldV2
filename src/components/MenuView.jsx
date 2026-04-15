@@ -253,27 +253,27 @@ export const MenuView = React.memo(() => {
   };
 
   const NAV_ITEMS = [
-    { onClick: startDungeon, icon: isPenalized ? <Clock className="animate-pulse" /> : <Swords />, title: "Battle Hub", sub: isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Void Wraith.jpg", disabled: false },
-    { onClick: () => setView('tavern'), icon: <Beer />, title: "Tavern", sub: "Hire Mates", color: "bg-amber-700", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" },
-    { onClick: () => setView('attributes'), icon: <Activity />, title: "Attributes", sub: "Stats", color: "bg-orange-600", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg" },
-    { onClick: () => setView('gear'), icon: <Zap />, title: "Gear", sub: "Tactical", color: "bg-cyan-700", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg" },
-    { onClick: () => setView('inventory'), icon: <Package />, title: "Bag", sub: "Inventory", color: "bg-emerald-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 1.jpg" },
-    { onClick: () => setView('shop'), icon: <ShoppingBag />, title: "Shop", sub: "Items", color: "bg-slate-700", backdrop: "/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg" },
-    { onClick: () => setView('market'), icon: <Tag />, title: "Market", sub: "P2P Trade", color: "bg-amber-600", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg" },
-    { onClick: () => setView('forge'), icon: <Hammer />, title: "Forge", sub: "Relics", color: "bg-amber-500", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg" },
-    { onClick: () => setView('database'), icon: <Book />, title: "Archives", sub: "Database", color: "bg-blue-600", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg" },
-    { onClick: () => setView('leaderboard'), icon: <Globe />, title: "Ranking", sub: "Global", color: "bg-purple-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 2.jpg" },
-    { onClick: () => setView('dragons_ground'), icon: <Trees />, title: "Dragons Ground", sub: "Sacred Ground", color: "bg-emerald-700", backdrop: "/assets/monsters/Tectonic Ridge/Quake Golem.jpg" },
-    { onClick: () => setView('crystle_town'), icon: <span className="text-lg">🏙️</span>, title: "Crystle Town" , sub: "Mini Quests", color: "bg-amber-800", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg" },
-    { onClick: () => setView('ilearn'), icon: <Brain />, title: "iLearn", sub: "Knowledge", color: "bg-blue-800", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg" },
-    { onClick: () => setView('laboratory'), icon: <FlaskConical />, title: "Xenon Lab", sub: "Consumables", color: "bg-emerald-900", backdrop: "/assets/monsters/Inferno Crater/Lava Lurker.jpg" },
-    { onClick: () => setView('pets'), icon: <Sparkles />, title: "Crystle Pets", sub: "Web3", color: "bg-cyan-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg" },
-    { onClick: () => setView('manual'), icon: <BookOpen />, title: "Manual", sub: "How to Play", color: "bg-cyan-600", backdrop: "/assets/monsters/Void Sector 7/Rift Lurker.jpg" },
-    { onClick: () => setView('devlog'), icon: <div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>, title: "DEVLOG", sub: "Dev Updates", color: "bg-purple-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg" },
+    { onClick: startDungeon, icon: isPenalized ? <Clock className="animate-pulse" /> : <Swords />, title: "Battle Hub", sub: isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Void Wraith.jpg", disabled: false, npcNum: 13 },
+    { onClick: () => setView('tavern'), icon: <Beer />, title: "Tavern", sub: "Hire Mates", color: "bg-amber-700", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg", npcNum: 11 },
+    { onClick: () => setView('attributes'), icon: <Activity />, title: "Attributes", sub: "Stats", color: "bg-orange-600", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg", npcNum: 1 },
+    { onClick: () => setView('gear'), icon: <Zap />, title: "Gear", sub: "Tactical", color: "bg-cyan-700", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg", npcNum: 20 },
+    { onClick: () => setView('inventory'), icon: <Package />, title: "Bag", sub: "Inventory", color: "bg-emerald-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 1.jpg", npcNum: 9 },
+    { onClick: () => setView('shop'), icon: <ShoppingBag />, title: "Shop", sub: "Items", color: "bg-slate-700", backdrop: "/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg", npcNum: 17 },
+    { onClick: () => setView('market'), icon: <Tag />, title: "Market", sub: "P2P Trade", color: "bg-amber-600", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg", npcNum: 25 },
+    { onClick: () => setView('forge'), icon: <Hammer />, title: "Forge", sub: "Relics", color: "bg-amber-500", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg", npcNum: 7 },
+    { onClick: () => setView('database'), icon: <Book />, title: "Archives", sub: "Database", color: "bg-blue-600", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg", npcNum: 3 },
+    { onClick: () => setView('leaderboard'), icon: <Globe />, title: "Ranking", sub: "Global", color: "bg-purple-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 2.jpg", npcNum: 28 },
+    { onClick: () => setView('dragons_ground'), icon: <Trees />, title: "Dragons Ground", sub: "Sacred Ground", color: "bg-emerald-700", backdrop: "/assets/monsters/Tectonic Ridge/Quake Golem.jpg", npcNum: 14 },
+    { onClick: () => setView('crystle_town'), icon: <span className="text-lg">🏙️</span>, title: "Crystle Town" , sub: "Mini Quests", color: "bg-amber-800", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg", npcNum: 18 },
+    { onClick: () => setView('ilearn'), icon: <Brain />, title: "iLearn", sub: "Knowledge", color: "bg-blue-800", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg", npcNum: 22 },
+    { onClick: () => setView('laboratory'), icon: <FlaskConical />, title: "Xenon Lab", sub: "Consumables", color: "bg-emerald-900", backdrop: "/assets/monsters/Inferno Crater/Lava Lurker.jpg", npcNum: 12 },
+    { onClick: () => setView('pets'), icon: <Sparkles />, title: "Crystle Pets", sub: "Web3", color: "bg-cyan-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg", npcNum: 30 },
+    { onClick: () => setView('manual'), icon: <BookOpen />, title: "Manual", sub: "How to Play", color: "bg-cyan-600", backdrop: "/assets/monsters/Void Sector 7/Rift Lurker.jpg", npcNum: 2 },
+    { onClick: () => setView('devlog'), icon: <div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>, title: "DEVLOG", sub: "Dev Updates", color: "bg-purple-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg", npcNum: 24 },
   ];
 
   if (isAdmin) {
-    NAV_ITEMS.push({ onClick: () => setView('admin'), icon: <ShieldAlert />, title: "Admin Panel", sub: "Crystle Access", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg" });
+    NAV_ITEMS.push({ onClick: () => setView('admin'), icon: <ShieldAlert />, title: "Admin Panel", sub: "Crystle Access", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg", npcNum: 10 });
   }
 
   return (

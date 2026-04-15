@@ -85,7 +85,7 @@ export const DungeonMenuView = React.memo(() => {
       {/* Pin-board texture overlay */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
       
-      <Header title="BATTLE_HUB: ACCESS NODES" onClose={() => setView('menu')} onHelp={() => setShowTutorial(true)} />
+      <Header title="BATTLE_HUB: ACCESS NODES" onClose={() => setView('menu')} npcNum={13} onHelp={() => setShowTutorial(true)} />
 
       <div className="grid grid-cols-2 gap-4 md:gap-8 relative z-10 p-2">
         <NavBtn 
@@ -105,6 +105,7 @@ export const DungeonMenuView = React.memo(() => {
           color={isPenalized ? "bg-red-800" : "bg-cyan-600"} 
           disabled={isPenalized} 
           backdrop="/assets/monsters/Rust Canyon/Rust Cat 0-0.jpg"
+          npcNum={8}
         />
 
         <NavBtn 
@@ -124,6 +125,7 @@ export const DungeonMenuView = React.memo(() => {
           color={isPenalized ? "bg-red-800" : "bg-red-700"} 
           disabled={isPenalized} 
           backdrop="/assets/monsters/Void Sector 7/Void Wraith.jpg"
+          npcNum={15}
         />
 
         <NavBtn 
@@ -134,6 +136,7 @@ export const DungeonMenuView = React.memo(() => {
           sub="Holo-Grid Combat" 
           color="bg-red-900" 
           backdrop="/assets/monsters/Gale Empire/Vortex Vanguard.jpg"
+          npcNum={16}
         />
 
         <NavBtn 
@@ -144,6 +147,7 @@ export const DungeonMenuView = React.memo(() => {
           sub="Alliance Conquest" 
           color="bg-emerald-900" 
           backdrop="/assets/monsters/Abyssal Trench/Benthic Behemoth.jpg" 
+          npcNum={10}
         />
       </div>
 

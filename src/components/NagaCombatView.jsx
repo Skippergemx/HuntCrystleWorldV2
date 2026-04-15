@@ -90,45 +90,28 @@ export const NagaCombatView = React.memo(() => {
       </div>
 
       {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
-      <div className="w-full z-50 px-2 md:px-6 pt-2 md:pt-4 flex flex-row items-center justify-between gap-2 md:gap-4 overflow-x-auto no-scrollbar pb-2">
-        
-        {/* 1. MISSION BRIEFING (LEFT ALIGNED) */}
-        <button
-          onClick={() => {
-            setTutorialStep(0);
-            setShowTutorial(true);
-          }}
-          className="p-1.5 md:p-3 bg-black border-[2px] border-cyan-500 text-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
-        >
-          <HelpCircle size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
-
-        {/* 2. CONSOLIDATED SYNC & MOMENTUM PROGRESS */}
-        <div className="flex items-center gap-3 md:gap-6 px-3 md:px-6 py-2 md:py-3 bg-black border-2 border-cyan-500/50 shadow-xl backdrop-blur-md transform -skew-x-12 flex-1 max-w-lg">
+      <Header 
+        title="PRIMAL RESONANCE: NAGA RAID" 
+        onClose={() => setShowRetreatConfirm(true)} 
+        npcNum={14} 
+        onHelp={() => {
+           setTutorialStep(0);
+           setShowTutorial(true);
+        }}
+      >
+        <div className="flex items-center gap-3 md:gap-6 px-3 md:px-6 py-2 md:py-3 bg-black/60 border-2 border-cyan-500/50 shadow-xl backdrop-blur-md transform -skew-x-12 scale-75 md:scale-100">
           <div className="flex items-center gap-2 shrink-0 border-r border-cyan-500/30 pr-3 md:pr-6">
             <Activity size={10} className="text-cyan-400 animate-pulse" />
             <span className="text-[7px] md:text-[10px] font-black text-cyan-400 uppercase tracking-widest italic whitespace-nowrap">Link_Sync</span>
           </div>
           
-          <div className="flex-1 flex flex-col gap-1">
-            <div className="flex justify-between items-center px-0.5">
-              <span className="text-[6px] md:text-[8px] font-black text-white/50 uppercase tracking-widest leading-none">Momentum</span>
-              <span className="text-[8px] md:text-xs font-black text-cyan-400 italic font-mono leading-none">{momentum}%</span>
-            </div>
+          <div className="flex-1 flex flex-col gap-1 min-w-[80px] md:min-w-[150px]">
             <div className="h-1.5 md:h-2.5 w-full bg-slate-900 border border-black p-[1px]">
                <div className={`h-full transition-all duration-1000 ${momentum >= 100 ? 'bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)] animate-pulse' : 'bg-cyan-600'}`} style={{ width: `${Math.min(100, momentum)}%` }}></div>
             </div>
           </div>
         </div>
-
-        {/* 3. EXTRACTION ACTION (RIGHT ALIGNED) */}
-        <button
-          onClick={() => setShowRetreatConfirm(true)}
-          className="p-1.5 md:p-3 bg-red-600 border-[2px] border-black text-white shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
-        >
-          <X size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
-      </div>
+      </Header>
 
 
       {/* --- BATTLE ARENA: HORIZONTAL SYMMETRY --- */}

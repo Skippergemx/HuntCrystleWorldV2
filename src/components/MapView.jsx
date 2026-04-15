@@ -112,6 +112,7 @@ export const MapView = () => {
       <Header 
         title="World Sectors" 
         onClose={adventure.goBack} 
+        npcNum={13}
         onHelp={() => {
            setTutorialStep(0);
            setShowTutorial(true);

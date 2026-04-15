@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Lock, Check, Hammer, Package, Activity, Sparkles } from 'lucide-react';
-import { Header, AvatarMedia } from './GameUI';
+import { Header, AvatarMedia, CitizenMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const ForgeView = React.memo(() => {
@@ -70,17 +71,64 @@ export const ForgeView = React.memo(() => {
 
   const getMasterData = (id) => ITEMS.find(i => i.id === id);
 
+  const [activeTab, setActiveTab] = useState('Standard');
+  const standardRecs = CRYSTLE_RECIPES.filter(r => r.isDefault);
+  const prototypeRecs = CRYSTLE_RECIPES.filter(r => !r.isDefault);
+  const activeRecipes = activeTab === 'Standard' ? standardRecs : prototypeRecs;
+
   return (
-    <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[1000px] relative custom-scrollbar bg-slate-950">
+    <div className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto max-h-[1000px] relative custom-scrollbar bg-slate-950">
       {/* Visual Character: Plasma Smelter Atmosphere */}
       <div className="absolute inset-0 bg-heat-gradient opacity-30 animate-pulse pointer-events-none" />
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 2px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <div className="scanline-move opacity-20" style={{ backgroundColor: 'rgba(245, 158, 11, 0.4)', boxShadow: '0 0 15px rgba(245, 158, 11, 0.6)' }} />
       
-      <Header title="IDENTITY LAB: FORGE" onClose={adventure.goBack} onHelp={() => {
+      <Header title="IDENTITY LAB: FORGE" onClose={adventure.goBack} npcNum={7} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} />
+
+      <NPCCard
+        citizenNum={7}
+        name="MASTER FORGER"
+        accentColor="bg-orange-600"
+        textColor="text-orange-600"
+        glowColor="bg-orange-500"
+        statusTag="FORGE_HOT"
+        statusTag2="ANVIL_READY"
+        prefix="◢FORGER: "
+        dialogues={[
+          "Welcome to the Identity Forge! Every great hunter needs a great weapon.",
+          "Dexterity is key—higher DEX means fewer failed forges. Invest wisely.",
+          "Missing materials? Check which dungeon zone drops what by hovering ingredients.",
+          "Prototype Schematics are rare. Look for them in deep Sector 5+ dungeons.",
+          "A forged Relic can multiply your stats by orders of magnitude. Worth the grind!",
+          "The anvil doesn't lie. Bring the right materials and it will reward you.",
+          "I've seen hunters waste Tier 3 materials on impulse. Plan your forge path first!",
+          "Blueprint scrolls drop from elite mobs. Patience, hunter."
+        ]}
+      />
+
+      {/* TIER TABS - High Contrast Comic Style */}
+      <div className="flex gap-2 relative z-20">
+        {['Standard', 'Prototypes'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-3 px-4 border-[3px] border-black text-sm font-black uppercase tracking-tighter skew-x-[-10deg] transition-all relative overflow-hidden ${
+              activeTab === tab 
+                ? 'bg-orange-500 text-black shadow-[4px_4px_0_rgba(0,0,0,1)] -translate-y-1' 
+                : 'bg-slate-900 text-slate-500 border-slate-800'
+            }`}
+          >
+            <span className="skew-x-[10deg] inline-block">
+              {tab === 'Standard' ? '🛠️ Industrial Assemblies' : '📜 System Prototypes'}
+            </span>
+            {activeTab === tab && (
+              <div className="absolute top-0 right-0 w-2 h-2 bg-white animate-ping" />
+            )}
+          </button>
+        ))}
+      </div>
       
       {/* Forge Result Modal (Comic Aesthetic) */}
       {forgeResult && (
@@ -89,12 +137,10 @@ export const ForgeView = React.memo(() => {
               <div className="absolute -top-6 -left-6 bg-white border-4 border-black px-4 py-1 transform -rotate-12 shadow-[4px_4px_0_rgba(0,0,0,1)]">
                 <span className="text-xl font-black italic uppercase text-black tracking-tighter">{forgeResult.success ? 'BAM!' : 'KRAK!'}</span>
               </div>
-
               <div className="text-center space-y-4">
                 <div className="w-24 h-24 mx-auto bg-black flex items-center justify-center border-4 border-white shadow-[6px_6px_0_rgba(0,0,0,0.5)] transform rotate-3">
                   <span className="text-5xl">{forgeResult.item?.icon || (forgeResult.success ? '⚔️' : '💥')}</span>
                 </div>
-                
                 <div className="space-y-1">
                   <h2 className="text-2xl font-black text-white italic uppercase leading-none tracking-tighter">
                     {forgeResult.success ? 'FORGE SUCCESS!' : 'FORGE FAILED!'}
@@ -103,43 +149,24 @@ export const ForgeView = React.memo(() => {
                     {forgeResult.success ? `Masterfully Crafted: ${forgeResult.item?.name}` : 'Critical structural failure detected.'}
                   </p>
                 </div>
-
-                <button 
-                  onClick={() => setForgeResult(null)}
-                  className="w-full py-3 bg-black text-white font-black uppercase italic border-2 border-white/20 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none mt-4"
-                >
-                  Confirm & Continue
-                </button>
+                <button onClick={() => setForgeResult(null)} className="w-full py-3 bg-black text-white font-black uppercase italic border-2 border-white/20 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none mt-4">Confirm & Continue</button>
               </div>
            </div>
         </div>
       )}
 
-      <div className="bg-amber-100 border-2 border-amber-900/20 p-3 rounded-lg flex items-center gap-3 relative z-10">
-        <div className="w-10 h-10 bg-amber-500 border-2 border-black flex items-center justify-center shadow-[2px_2px_0_rgba(0,0,0,1)]">
-          <span className="text-xl">🛠️</span>
-        </div>
-        <div>
-          <p className="text-[10px] font-black uppercase text-amber-900/60 leading-none">Global Forge Bonus</p>
-          <p className="text-sm font-black text-amber-900 uppercase italic">Dexterity increases success rate!</p>
-        </div>
-      </div>
-
-      <div className="grid gap-6 relative z-10 pb-20">
-        {CRYSTLE_RECIPES.map((recipe, index) => {
-          const hasRecipe = player.recipes?.includes(recipe.id);
+      {/* GRID LAYOUT - 2 Columns on larger screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 relative z-10 pb-20">
+        {activeRecipes.map((recipe, index) => {
+          const hasRecipe = recipe.isDefault || player.recipes?.includes(recipe.id);
           const materials = recipe.materials || [];
           const master = getMasterData(recipe.id);
           const type = master?.type || 'Weapon';
-          // Fix owned check for unique IDs
           const equippedBaseId = player.equipped?.[type]?.id?.replace(/(_\d+)+$/, '');
           const isOwned = equippedBaseId === recipe.id;
-          
-          // Use totalStats from context
           const currentDex = totalStats?.dex || 10;
           const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
           
-          // Check materials with robust matching (ID or Name-based fallback)
           const hasMaterials = materials.every(mat => {
             const countInInv = Object.values(player.inventory || {}).filter(i => {
                if (!i) return false;
@@ -153,100 +180,105 @@ export const ForgeView = React.memo(() => {
           return (
             <div 
               key={recipe.id} 
-              className={`p-5 bg-white border-[4px] border-black shadow-[8px_8px_0_rgba(0,0,0,1)] flex flex-col gap-4 group transition-transform hover:-translate-y-1 ${index % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${!hasRecipe ? 'opacity-40 grayscale' : ''}`}
+              className={`p-4 bg-white border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] flex flex-col gap-3 transition-all ${!hasRecipe ? 'pointer-events-none grayscale' : 'hover:scale-[1.01] z-30'}`}
             >
-              <div className="flex justify-between items-start">
-                <div className="flex gap-4 items-center">
-                  <div className={`w-14 h-14 border-[3px] border-black flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] bg-amber-500 transform -rotate-3`}>
-                    {hasRecipe ? <span className="text-3xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{master?.icon || recipe.icon}</span> : <Lock size={24} className="text-black/40" />}
-                  </div>
-                  <div className="space-y-1 text-left">
-                    <h4 className="font-black text-xl text-black uppercase tracking-tighter italic leading-none">
-                      {hasRecipe ? (master?.name || recipe.name) : 'Unknown Schematic'}
-                    </h4>
-                    <div className="flex flex-col gap-1">
-                      <div className="bg-amber-100/50 px-2 py-0.5 border border-black/10 inline-block self-start">
-                        <div className="flex gap-2 text-[9px] font-black uppercase text-amber-900/60 italic">
-                          {Object.entries(master?.stats || recipe.stats || {}).map(([k, v]) => <span key={k}>{k}+{v}</span>)}
-                        </div>
-                      </div>
-                      {hasRecipe && master?.effect && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] animate-pulse">⚡</span>
-                            <span className="text-[9px] font-black uppercase text-amber-600 bg-amber-50 px-1 border border-amber-200">
-                              Effect: {master.effect.type} {master.effect.mult ? `(x${master.effect.mult})` : ''}
-                            </span>
-                          </div>
-                      )}
-                    </div>
-                  </div>
+              <div className={`flex flex-col gap-3 h-full ${!hasRecipe ? 'opacity-40' : ''}`}>
+              <div className="flex gap-4 items-start">
+                <div className={`w-20 h-20 border-[4px] border-black flex items-center justify-center shrink-0 shadow-[4px_4px_0_rgba(0,0,0,1)] bg-amber-500 transform -rotate-1`}>
+                  {hasRecipe ? <span className="text-5xl filter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{master?.icon || recipe.icon}</span> : <Lock size={32} className="text-black/40" />}
                 </div>
-
-                {hasRecipe && (
-                  <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Success Rate</p>
-                    <p className={`text-lg font-black italic ${successRate > 80 ? 'text-emerald-500' : successRate > 60 ? 'text-amber-500' : 'text-red-500'}`}>{successRate}%</p>
+                <div className="flex-1 space-y-1 text-left min-w-0">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-black text-xl text-black uppercase tracking-tighter italic leading-none truncate">
+                      {hasRecipe ? (master?.name || recipe.name) : 'Locked Schematic'}
+                    </h4>
+                    {!recipe.isDefault && <div className="bg-black text-white text-[7px] font-black px-1 py-0.5 rounded ml-2">SCHEMATIC</div>}
                   </div>
-                )}
+                  
+                  {/* HIGH VISIBILITY STATS - Large Bold Black */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {Object.entries(master?.stats || recipe.stats || {}).map(([k, v]) => (
+                      <div key={k} className="flex items-center bg-slate-100 px-2 py-1 border-2 border-black/10">
+                        <span className="text-[10px] font-black uppercase text-slate-500 mr-1">{k}:</span>
+                        <span className="text-base font-black text-black">+{v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {hasRecipe && master?.effect && (
+                    <div className="flex items-center gap-1 mt-1 bg-amber-50 border border-amber-200 px-2 py-0.5 self-start">
+                       <Sparkles size={10} className="text-amber-500 animate-pulse" />
+                       <span className="text-[9px] font-black uppercase text-amber-700">
+                         {master.effect.type}: {master.effect.mult ? `x${master.effect.mult}` : `${(master.effect.chance * 100).toFixed(0)}% Proc`}
+                       </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Material Requirements (Comic Panel Style) */}
-              {hasRecipe && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-100/50 p-4 border-2 border-dashed border-black/10 rounded-lg relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-1 opacity-10 font-black italic text-[8px] uppercase tracking-[0.2em] -rotate-90 origin-top-right">Material Scan Complete</div>
-                  {materials.map((mat, mIdx) => {
-                    const loot = LOOTS.find(l => l.id === mat.id);
-                    const countInInv = Object.values(player.inventory || {}).filter(i => {
-                      if (!i) return false;
-                      const cleanId = i.id?.replace(/(_\d+)+$/, '');
-                      const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-                      return (cleanId === mat.id) || (master?.id === mat.id);
-                    }).length || 0;
-                    const isMet = countInInv >= mat.count;
-                    return (
-                      <div 
-                        key={mat.id} 
-                        onMouseEnter={() => setActiveTooltip(mat.id)}
-                        onMouseLeave={() => setActiveTooltip(null)}
-                        onClick={() => setActiveTooltip(activeTooltip === mat.id ? null : mat.id)}
-                        className={`group/mat relative p-2 border-2 shadow-[3px_3px_0_rgba(0,0,0,1)] transition-all cursor-help ${mIdx % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${isMet ? 'bg-white border-black' : 'bg-red-50 border-red-500/40 opacity-70'}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-sm bg-black/5 flex items-center justify-center border-b-2 border-black/10`}>
-                            <span className="text-xl filter drop-shadow-[1px_1px_0_rgba(0,0,0,0.1)]">{loot?.icon}</span>
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[7px] font-black uppercase text-slate-400 truncate leading-none mb-1">
-                              {activeTooltip === mat.id ? <span className="text-cyan-600 animate-pulse">SOURCE: {getItemSource(mat.id)}</span> : (loot?.name || mat.id)}
-                            </span>
-                            <div className="flex items-baseline gap-1">
-                              <span className={`text-[12px] font-black italic tracking-tighter ${isMet ? 'text-black' : 'text-red-600 animate-pulse'}`}>{countInInv}</span>
-                              <span className="text-[8px] font-black text-slate-300">/ {mat.count}</span>
-                            </div>
-                          </div>
+              {/* Materials Visualization */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2 border-2 border-black/5 rounded">
+                {materials.map((mat, mIdx) => {
+                  const masterLoot = LOOTS.find(l => l.id === mat.id);
+                  const countInInv = Object.values(player.inventory || {}).filter(i => {
+                    if (!i) return false;
+                    const cleanId = i.id?.replace(/(_\d+)+$/, '');
+                    const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
+                    return (cleanId === mat.id) || (master?.id === mat.id);
+                  }).length || 0;
+                  const isMet = countInInv >= mat.count;
+                  const tooltipKey = `${recipe.id}-${mat.id}-${mIdx}`;
+                  return (
+                    <div 
+                      key={tooltipKey} 
+                      onMouseEnter={() => setActiveTooltip(tooltipKey)}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                      onClick={() => setActiveTooltip(prev => prev === tooltipKey ? null : tooltipKey)}
+                      className={`p-1.5 border-2 relative cursor-help transition-all transform hover:-translate-y-1 ${isMet ? 'bg-white border-black shadow-[2px_2px_0_rgba(0,0,0,1)]' : 'bg-red-50 border-red-200'}`}
+                    >
+                      {activeTooltip === tooltipKey && (
+                        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-52 bg-white border-[3px] border-black p-2 z-[999] shadow-[8px_8px_0_rgba(0,0,0,1)] transform -rotate-1 pointer-events-none">
+                           <div className="flex items-center gap-1.5 mb-1.5 border-b-2 border-black pb-1">
+                              <Sparkles size={12} className="text-orange-600" />
+                              <span className="text-[9px] font-[1000] text-black uppercase tracking-tighter italic">{masterLoot?.name || 'MATERIAL'}</span>
+                           </div>
+                           <div className="text-[9px] font-black text-black leading-tight uppercase bg-orange-400 px-2 py-1 border-2 border-black -skew-x-12">{getItemSource(mat.id)}</div>
+                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-b-[3px] border-r-[3px] border-black rotate-45"></div>
                         </div>
-                        {isMet && (
-                          <div className="absolute -top-1 -right-1 bg-emerald-500 text-white p-0.5 rounded-full border-2 border-white shadow-sm ring-1 ring-black/10 animate-bounce-subtle">
-                             <Check size={8} strokeWidth={4} />
-                          </div>
-                        )}
+                      )}
+                      <div className={`flex flex-col items-center gap-0.5 ${!isMet ? 'opacity-60' : ''}`}>
+                        <span className="text-lg">{masterLoot?.icon || '📦'}</span>
+                        <div className="flex items-center gap-1 font-black text-[10px] leading-none">
+                          <span className={isMet ? 'text-black' : 'text-red-500'}>{countInInv}</span>
+                          <span className="text-slate-300">/</span>
+                          <span className="text-slate-400">{mat.count}</span>
+                        </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                      {isMet && <div className="absolute -top-1 -right-1 bg-emerald-500 text-white rounded-full p-0.5"><Check size={6} strokeWidth={5} /></div>}
+                    </div>
+                  )
+                })}
+              </div>
               
-              <div className="flex justify-between items-center border-t-[3px] border-black pt-3 mt-2">
-                <div className={`bg-slate-900 text-white px-3 py-1 border-2 border-black transform rotate-3 relative shadow-sm ${!hasRecipe || isOwned ? 'opacity-30' : ''}`}>
-                  <span className="text-xs font-black italic">{recipe.cost} GX</span>
+              <div className="flex gap-2 items-center mt-auto">
+                <div className="flex-1 bg-slate-900 text-white px-3 py-2 border-[3px] border-black flex justify-between items-center group">
+                   <div className="flex flex-col">
+                     <span className="text-[8px] font-black text-slate-500 uppercase leading-none">Price</span>
+                     <span className="text-xs font-black italic">{recipe.cost} GX</span>
+                   </div>
+                   <div className="text-right">
+                     <span className="text-[8px] font-black text-slate-500 uppercase leading-none">Success</span>
+                     <span className={`text-xs font-black italic ${successRate > 80 ? 'text-emerald-400' : 'text-amber-400'}`}>{successRate}%</span>
+                   </div>
                 </div>
                 <button 
                   onClick={() => forgeCrystle(recipe)} 
                   disabled={!hasRecipe || !hasMaterials || isOwned} 
-                  className={`px-6 py-2 border-[3px] border-black font-black text-xs uppercase tracking-widest transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${!hasRecipe || !hasMaterials ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : isOwned ? 'bg-emerald-500 text-white border-black' : 'bg-amber-500 text-black hover:bg-amber-400'}`}
+                  className={`px-4 py-2 border-[3px] border-black font-black text-[11px] uppercase tracking-tighter transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${!hasRecipe || !hasMaterials ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : isOwned ? 'bg-emerald-500 text-white border-black' : 'bg-orange-500 text-black hover:bg-orange-400'}`}
                 >
-                  {!hasRecipe ? 'LOCKED' : !hasMaterials ? 'INSUFFICIENT MATERIALS' : isOwned ? 'ACTIVE' : 'FORGE'}
+                  {isOwned ? 'EQUIPPED' : hasMaterials ? 'SYNTHESIZE' : 'MISSING MATS'}
                 </button>
+              </div>
               </div>
             </div>
           );
@@ -277,7 +309,7 @@ export const ForgeView = React.memo(() => {
               <div className="py-3 md:py-4 relative flex justify-center items-center gap-3 w-full z-10">
                 {/* NPC Avatar */}
                 <div className="w-16 h-28 md:w-20 md:h-36 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0 flex items-center justify-center">
-                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
+                   <CitizenMedia num={tutorialSteps[tutorialStep].npc} className="w-full h-full object-cover object-top" />
                    <div className="absolute inset-x-0 bottom-0 bg-orange-600 text-[6px] font-black text-black text-center py-0.5 uppercase italic">SYSTEM</div>
                 </div>
 

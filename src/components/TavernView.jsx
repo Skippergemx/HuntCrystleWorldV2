@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { User, Sparkles, Check } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const TavernView = () => {
@@ -63,11 +64,32 @@ export const TavernView = () => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f59e0b 2px, transparent 1px)', backgroundSize: '16px 16px' }} />
       <div className="absolute inset-0 shadow-[inset_0_0_150px_rgba(0,0,0,0.8)] pointer-events-none" />
       
-      <Header title="HERO FOR HIRE: TAVERN" onClose={adventure.goBack} onHelp={() => {
+      <Header title="HERO FOR HIRE: TAVERN" onClose={adventure.goBack} npcNum={11} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} />
-      
+
+      <NPCCard
+        citizenNum={5}
+        name="BARTENDER"
+        accentColor="bg-amber-500"
+        textColor="text-amber-600"
+        glowColor="bg-amber-500"
+        statusTag="TAVERN_DOORS_OPEN"
+        statusTag2="MATES_AVAILABLE"
+        prefix="◢BARKEEP: "
+        dialogues={[
+          "Welcome to the Tavern! Every great hunter needs a reliable companion.",
+          "Legendary Mates are rare but their buffs in combat are unrivalled.",
+          "Safe retreats keep your contract intact — a dead hunter is a broke hunter.",
+          "Your Mate's stat focus can make or break your dungeon strategy. Choose wisely.",
+          "Need a teammate boost? Check the rarity color on each Mate card.",
+          "A broken contract means you lose your Mate. Don't get defeated in there!",
+          "Mates with Agility buffs are great for clearing Sector 5 and beyond.",
+          "The Tavern never closes. Your companions are always ready."
+        ]}
+      />
+
       {player.hiredMate && (
         <div className="bg-purple-950 border-2 border-purple-500 p-2 mb-2 flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
           <div className="flex items-center gap-2">

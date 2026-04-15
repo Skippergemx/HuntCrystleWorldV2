@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Database, Skull, Gem, Shield, Swords, Info, Zap, Footprints, Crown, Globe, Map as MapIcon, Target, TrendingUp, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const DatabaseView = React.memo(() => {
@@ -83,10 +84,32 @@ export const DatabaseView = React.memo(() => {
   return (
     <div className="flex-1 p-6 space-y-4 relative overflow-hidden flex flex-col max-h-screen">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-      <Header title="DATABASE: ARCHIVE INFONET" onClose={adventure.goBack} onHelp={() => {
+      <Header title="XENON ARCHIVES" onClose={adventure.goBack} npcNum={3} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
-      }} />
+      }} icon={<Book className="text-blue-400" />} />
+
+      <NPCCard
+        citizenNum={17}
+        name="ARCHIVIST"
+        accentColor="bg-purple-500"
+        textColor="text-purple-600"
+        glowColor="bg-purple-500"
+        statusTag="INFONET_SYNCED"
+        statusTag2="DATA_INTACT"
+        prefix="◢ARCHIVIST: "
+        dialogues={[
+          "The Archives hold the complete codex of all known items in the Crystle World.",
+          "Cross-reference loot drops with dungeon zones to plan your grind efficiently.",
+          "Rare items are color-coded. Gold border — Legendary. Purple — Epic.",
+          "Every Schematic Blueprint has a unique drop zone. Study the Archive!",
+          "The Database never lies. If it's here, it exists. If not, it's undiscovered.",
+          "Use the search filter to quickly locate specific gear stats.",
+          "Knowledge is power. Hunters who study the Archive clear Sector 7 faster.",
+          "I've catalogued over 300 items. The collection grows with each update."
+        ]}
+      />
+
       
       {/* Search & Tabs */}
       <div className="z-10 space-y-4">

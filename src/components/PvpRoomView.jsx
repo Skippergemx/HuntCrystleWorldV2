@@ -363,10 +363,15 @@ export const PvpRoomView = React.memo(() => {
 
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic h-full min-h-[500px]">
-       <Header title="NEON ARENA: PVP GRID" onClose={adventure.goBack} onHelp={() => {
+       <Header title="NEON ARENA: PVP GRID" npcNum={13} onClose={adventure.goBack} onHelp={() => {
          setTutorialStep(0);
          setShowTutorial(true);
-       }} />
+       }}>
+          <div className="hidden md:flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-black/60 rounded-full border border-green-500/30 backdrop-blur-md">
+            <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-green-500 rounded-full animate-ping"></span>
+            <span className="text-[8px] md:text-[10px] font-black text-white italic uppercase">Signal Secured: {gridId}</span>
+          </div>
+       </Header>
 
        {/* Arena Status Header */}
        <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">

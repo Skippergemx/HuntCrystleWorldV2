@@ -267,6 +267,548 @@
     "question": "What is the name of the final boss in Sector 0?",
     "options": ["The Architect", "Omni-Crystle", "Null Prime", "The Void King"],
     "answer": 0,
-    "xpReward": 250
+    "xpReward": 250,
+    "itemRewardId": "ultra_hp_potion",
+    "itemRewardQty": 1
+  },
+  {
+    "id": "quiz_031",
+    "topic": "Math",
+    "npcIndex": 2,
+    "question": "What is the square root of 144?",
+    "options": ["10", "11", "12", "14"],
+    "answer": 2,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_032",
+    "topic": "Science",
+    "npcIndex": 5,
+    "question": "Which gas do plants primarily absorb during photosynthesis?",
+    "options": ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+    "answer": 1,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_033",
+    "topic": "Tech",
+    "npcIndex": 8,
+    "question": "What does RAM stand for?",
+    "options": ["Read Access Memory", "Random Analysis Module", "Random Access Memory", "Reliable Asset Manager"],
+    "answer": 2,
+    "xpReward": 70
+  },
+  {
+    "id": "quiz_034",
+    "topic": "Web3",
+    "npcIndex": 11,
+    "question": "In blockchain, what is a 'Genesis Block'?",
+    "options": ["The last block", "The first block", "A block with errors", "A hidden block"],
+    "answer": 1,
+    "xpReward": 100
+  },
+  {
+    "id": "quiz_035",
+    "topic": "Trivia",
+    "npcIndex": 14,
+    "question": "Which planet is the largest in our solar system?",
+    "options": ["Earth", "Mars", "Jupiter", "Saturn"],
+    "answer": 2,
+    "xpReward": 55
+  },
+  {
+    "id": "quiz_036",
+    "topic": "Math",
+    "npcIndex": 17,
+    "question": "What is 7 multiplied by 8?",
+    "options": ["48", "54", "56", "62"],
+    "answer": 2,
+    "xpReward": 45
+  },
+  {
+    "id": "quiz_037",
+    "topic": "Science",
+    "npcIndex": 20,
+    "question": "What is the chemical symbol for Gold?",
+    "options": ["Ag", "Fe", "Au", "Gd"],
+    "answer": 2,
+    "xpReward": 65
+  },
+  {
+    "id": "quiz_038",
+    "topic": "Tech",
+    "npcIndex": 23,
+    "question": "Who is considered the first computer programmer?",
+    "options": ["Alan Turing", "Ada Lovelace", "Charles Babbage", "Bill Gates"],
+    "answer": 1,
+    "xpReward": 120
+  },
+  {
+    "id": "quiz_039",
+    "topic": "Web3",
+    "npcIndex": 26,
+    "question": "What does NFT stand for?",
+    "options": ["New Financial Tech", "Non-Fungible Token", "Node Fusion Terminal", "Network File Transfer"],
+    "answer": 1,
+    "xpReward": 90
+  },
+  {
+    "id": "quiz_040",
+    "topic": "Trivia",
+    "npcIndex": 29,
+    "question": "Which ocean is the largest on Earth?",
+    "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+    "answer": 3,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_041",
+    "topic": "Math",
+    "npcIndex": 3,
+    "question": "How many degrees are in a right angle?",
+    "options": ["45", "90", "180", "360"],
+    "answer": 1,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_042",
+    "topic": "Science",
+    "npcIndex": 6,
+    "question": "What is the most abundant gas in Earth's atmosphere?",
+    "options": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Argon"],
+    "answer": 1,
+    "xpReward": 70
+  },
+  {
+    "id": "quiz_043",
+    "topic": "Tech",
+    "npcIndex": 9,
+    "question": "What does HTTP stand for?",
+    "options": ["HyperText Transfer Protocol", "High Tech Terminal Process", "Hyperlink Text Trading Parts", "Home Tool Transfer Point"],
+    "answer": 0,
+    "xpReward": 80
+  },
+  {
+    "id": "quiz_044",
+    "topic": "Web3",
+    "npcIndex": 12,
+    "question": "Which crypto is known for its smart contract capabilities?",
+    "options": ["Bitcoin", "Litecoin", "Ethereum", "Dogecoin"],
+    "answer": 2,
+    "xpReward": 110
+  },
+  {
+    "id": "quiz_045",
+    "topic": "Trivia",
+    "npcIndex": 15,
+    "question": "What is the capital of Japan?",
+    "options": ["Kyoto", "Osaka", "Tokyo", "Nara"],
+    "answer": 2,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_046",
+    "topic": "Math",
+    "npcIndex": 18,
+    "question": "If you flip a coin, what is the probability of it landing on heads?",
+    "options": ["1/4", "1/2", "3/4", "1"],
+    "answer": 1,
+    "xpReward": 35
+  },
+  {
+    "id": "quiz_047",
+    "topic": "Science",
+    "npcIndex": 21,
+    "question": "What is the power house of the cell?",
+    "options": ["Nucleus", "Ribosome", "Mitochondria", "Cytoplasm"],
+    "answer": 2,
+    "xpReward": 85
+  },
+  {
+    "id": "quiz_048",
+    "topic": "Tech",
+    "npcIndex": 24,
+    "question": "What is the primary language used for Android development?",
+    "options": ["Python", "C#", "Kotlin", "Swift"],
+    "answer": 2,
+    "xpReward": 105
+  },
+  {
+    "id": "quiz_049",
+    "topic": "Web3",
+    "npcIndex": 27,
+    "question": "What is 'Staking' in crypto?",
+    "options": ["Selling assets", "Locking assets to support a network", "Mining with GPUs", "Buying NFTs"],
+    "answer": 1,
+    "xpReward": 95
+  },
+  {
+    "id": "quiz_050",
+    "topic": "Trivia",
+    "npcIndex": 30,
+    "question": "Who wrote 'Romeo and Juliet'?",
+    "options": ["Charles Dickens", "William Shakespeare", "Mark Twain", "Leo Tolstoy"],
+    "answer": 1,
+    "xpReward": 75
+  },
+  {
+    "id": "quiz_051",
+    "topic": "Math",
+    "npcIndex": 4,
+    "question": "What is the value of Pi (rounded to two decimal places)?",
+    "options": ["3.12", "3.14", "3.16", "3.18"],
+    "answer": 1,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_052",
+    "topic": "Science",
+    "npcIndex": 7,
+    "question": "What is the hardest natural substance on Earth?",
+    "options": ["Iron", "Quartz", "Diamond", "Gold"],
+    "answer": 2,
+    "xpReward": 90
+  },
+  {
+    "id": "quiz_053",
+    "topic": "Tech",
+    "npcIndex": 10,
+    "question": "What does CSS stand for?",
+    "options": ["Computer Style Sheets", "Creative System Styles", "Cascading Style Sheets", "Colored Sheet Setup"],
+    "answer": 2,
+    "xpReward": 70
+  },
+  {
+    "id": "quiz_054",
+    "topic": "Web3",
+    "npcIndex": 13,
+    "question": "What is a 'Layer 2' solution in blockchain?",
+    "options": ["A second wallet", "Scaling solution built on top of Layer 1", "A backup database", "A private network"],
+    "answer": 1,
+    "xpReward": 115
+  },
+  {
+    "id": "quiz_055",
+    "topic": "Trivia",
+    "npcIndex": 16,
+    "question": "Which country is famous for the Eiffel Tower?",
+    "options": ["Italy", "Spain", "Germany", "France"],
+    "answer": 3,
+    "xpReward": 45
+  },
+  {
+    "id": "quiz_056",
+    "topic": "Math",
+    "npcIndex": 19,
+    "question": "How many centimeters are in a meter?",
+    "options": ["10", "100", "500", "1000"],
+    "answer": 1,
+    "xpReward": 30
+  },
+  {
+    "id": "quiz_057",
+    "topic": "Science",
+    "npcIndex": 22,
+    "question": "Which planet is known as the 'Blue Planet'?",
+    "options": ["Mars", "Venus", "Earth", "Neptune"],
+    "answer": 2,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_058",
+    "topic": "Tech",
+    "npcIndex": 25,
+    "question": "Which company developed the Python programming language?",
+    "options": ["Microsoft", "Google", "Facebook", "Guido van Rossum (Individual)"],
+    "answer": 3,
+    "xpReward": 100
+  },
+  {
+    "id": "quiz_059",
+    "topic": "Web3",
+    "npcIndex": 28,
+    "question": "What is a 'Whitepaper'?",
+    "options": ["A blank document", "A detailed project proposal/blueprint", "A marketing flyer", "A privacy policy"],
+    "answer": 1,
+    "xpReward": 85
+  },
+  {
+    "id": "quiz_060",
+    "topic": "Trivia",
+    "npcIndex": 1,
+    "question": "Which element do we breathe to stay alive?",
+    "options": ["Nitrogen", "Oxygen", "Helium", "Argon"],
+    "answer": 1,
+    "xpReward": 25
+  },
+  {
+    "id": "quiz_061",
+    "topic": "Math",
+    "npcIndex": 5,
+    "question": "What is 15% of 200?",
+    "options": ["20", "25", "30", "35"],
+    "answer": 2,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_062",
+    "topic": "Science",
+    "npcIndex": 8,
+    "question": "At what temperature does water freeze (Celsius)?",
+    "options": ["-10C", "0C", "10C", "32C"],
+    "answer": 1,
+    "xpReward": 45
+  },
+  {
+    "id": "quiz_063",
+    "topic": "Tech",
+    "npcIndex": 11,
+    "question": "What does OS stand for?",
+    "options": ["Online Storage", "Operating System", "Optical Sensor", "Open Source"],
+    "answer": 1,
+    "xpReward": 55
+  },
+  {
+    "id": "quiz_064",
+    "topic": "Web3",
+    "npcIndex": 14,
+    "question": "Who is the pseudonymous creator of Bitcoin?",
+    "options": ["Vitalik Buterin", "Satoshi Nakamoto", "Charlie Lee", "Brian Armstrong"],
+    "answer": 1,
+    "xpReward": 200
+  },
+  {
+    "id": "quiz_065",
+    "topic": "Trivia",
+    "npcIndex": 17,
+    "question": "Which animal is known as the 'King of the Jungle'?",
+    "options": ["Tiger", "Elephant", "Lion", "Giraffe"],
+    "answer": 2,
+    "xpReward": 35
+  },
+  {
+    "id": "quiz_066",
+    "topic": "Math",
+    "npcIndex": 20,
+    "question": "If a triangle has sides 3, 4, 5, is it a right triangle?",
+    "options": ["Yes", "No", "Maybe", "Impossible to tell"],
+    "answer": 0,
+    "xpReward": 75
+  },
+  {
+    "id": "quiz_067",
+    "topic": "Science",
+    "npcIndex": 23,
+    "question": "What is the speed of sound roughly?",
+    "options": ["343 m/s", "1000 m/s", "300,000 km/s", "50 m/s"],
+    "answer": 0,
+    "xpReward": 95
+  },
+  {
+    "id": "quiz_068",
+    "topic": "Tech",
+    "npcIndex": 26,
+    "question": "Which tag is used for links in HTML?",
+    "options": ["<link>", "<a>", "<url>", "<href>"],
+    "answer": 1,
+    "xpReward": 65
+  },
+  {
+    "id": "quiz_069",
+    "topic": "Web3",
+    "npcIndex": 29,
+    "question": "What is a 'Hash' in cryptography?",
+    "options": ["A type of coin", "A fixed-length unique digital fingerprint", "A private key", "A block index"],
+    "answer": 1,
+    "xpReward": 110
+  },
+  {
+    "id": "quiz_070",
+    "topic": "Trivia",
+    "npcIndex": 2,
+    "question": "In which continent is the Sahara Desert located?",
+    "options": ["Asia", "South America", "Africa", "Australia"],
+    "answer": 2,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_071",
+    "topic": "Math",
+    "npcIndex": 6,
+    "question": "What is the next prime number after 7?",
+    "options": ["8", "9", "11", "13"],
+    "answer": 2,
+    "xpReward": 55
+  },
+  {
+    "id": "quiz_072",
+    "topic": "Science",
+    "npcIndex": 9,
+    "question": "Which blood type is known as the universal donor?",
+    "options": ["A+", "B-", "AB+", "O-"],
+    "answer": 3,
+    "xpReward": 120
+  },
+  {
+    "id": "quiz_073",
+    "topic": "Tech",
+    "npcIndex": 12,
+    "question": "What is the main language used for iOS development?",
+    "options": ["Java", "Swift", "C++", "Ruby"],
+    "answer": 1,
+    "xpReward": 105
+  },
+  {
+    "id": "quiz_074",
+    "topic": "Web3",
+    "npcIndex": 15,
+    "question": "What is a 'DApp'?",
+    "options": ["Digital Application", "Decentralized Application", "Direct Application", "Data Application"],
+    "answer": 1,
+    "xpReward": 80
+  },
+  {
+    "id": "quiz_075",
+    "topic": "Trivia",
+    "npcIndex": 18,
+    "question": "Which instrument has 88 keys?",
+    "options": ["Guitar", "Violin", "Piano", "Flute"],
+    "answer": 2,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_076",
+    "topic": "Math",
+    "npcIndex": 21,
+    "question": "Calculate: 100 / (5 + 5) * 2",
+    "options": ["20", "2", "10", "40"],
+    "answer": 0,
+    "xpReward": 60
+  },
+  {
+    "id": "quiz_077",
+    "topic": "Science",
+    "npcIndex": 24,
+    "question": "Which gas makes up 78% of the air?",
+    "options": ["Oxygen", "Nitrogen", "Argon", "Helium"],
+    "answer": 1,
+    "xpReward": 70
+  },
+  {
+    "id": "quiz_078",
+    "topic": "Tech",
+    "npcIndex": 27,
+    "question": "What does URL stand for?",
+    "options": ["Universal Resource Link", "Uniform Resource Locator", "Unit Resource List", "Users Remote Locator"],
+    "answer": 1,
+    "xpReward": 75
+  },
+  {
+    "id": "quiz_079",
+    "topic": "Web3",
+    "npcIndex": 30,
+    "question": "What is 'Mining' in blockchain?",
+    "options": ["Digging for gold", "Validating transactions to earn rewards", "Stealing coins", "Buying low"],
+    "answer": 1,
+    "xpReward": 130
+  },
+  {
+    "id": "quiz_080",
+    "topic": "Trivia",
+    "npcIndex": 4,
+    "question": "In what year did the Titanic sink?",
+    "options": ["1905", "1912", "1920", "1935"],
+    "answer": 1,
+    "xpReward": 85
+  },
+  {
+    "id": "quiz_081",
+    "topic": "Math",
+    "npcIndex": 7,
+    "question": "What is the area of a square with side 6?",
+    "options": ["12", "24", "36", "48"],
+    "answer": 2,
+    "xpReward": 40
+  },
+  {
+    "id": "quiz_082",
+    "topic": "Science",
+    "npcIndex": 10,
+    "question": "How many bones are in the adult human body?",
+    "options": ["150", "206", "250", "300"],
+    "answer": 1,
+    "xpReward": 100
+  },
+  {
+    "id": "quiz_083",
+    "topic": "Tech",
+    "npcIndex": 13,
+    "question": "Which company created the Java programming language?",
+    "options": ["Sun Microsystems", "Oracle", "IBM", "Apple"],
+    "answer": 0,
+    "xpReward": 90
+  },
+  {
+    "id": "quiz_084",
+    "topic": "Web3",
+    "npcIndex": 16,
+    "question": "What is an 'Oracle' in blockchain?",
+    "options": ["A person who predicts prices", "A service that brings off-chain data on-chain", "A bug in the code", "A high-speed node"],
+    "answer": 1,
+    "xpReward": 125
+  },
+  {
+    "id": "quiz_085",
+    "topic": "Trivia",
+    "npcIndex": 19,
+    "question": "Who painted the Mona Lisa?",
+    "options": ["Van Gogh", "Picasso", "Leonardo da Vinci", "Claude Monet"],
+    "answer": 2,
+    "xpReward": 110
+  },
+  {
+    "id": "quiz_086",
+    "topic": "Math",
+    "npcIndex": 22,
+    "question": "What is 2 to the power of 10?",
+    "options": ["512", "1024", "2048", "1000"],
+    "answer": 1,
+    "xpReward": 80
+  },
+  {
+    "id": "quiz_087",
+    "topic": "Science",
+    "npcIndex": 25,
+    "question": "Which planet has the famous rings?",
+    "options": ["Mars", "Jupiter", "Saturn", "Uranus"],
+    "answer": 2,
+    "xpReward": 50
+  },
+  {
+    "id": "quiz_088",
+    "topic": "Tech",
+    "npcIndex": 28,
+    "question": "What was the first domain name ever registered?",
+    "options": ["google.com", "symbolics.com", "apple.com", "ibm.com"],
+    "answer": 1,
+    "xpReward": 150
+  },
+  {
+    "id": "quiz_089",
+    "topic": "Web3",
+    "npcIndex": 1,
+    "question": "What is 'FOMO'?",
+    "options": ["Fear of Making Orders", "Fear of Missing Out", "Fact of Market Overview", "Filter on Mixed Options"],
+    "answer": 1,
+    "xpReward": 45
+  },
+  {
+    "id": "quiz_090",
+    "topic": "Trivia",
+    "npcIndex": 5,
+    "question": "What is the longest river in the world?",
+    "options": ["Amazon", "Nile", "Yangtze", "Mississippi"],
+    "answer": 1,
+    "xpReward": 70
   }
 ]

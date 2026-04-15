@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { Trophy, Skull, Star, ChevronUp, Swords, Medal, Coins, Check, Sparkles } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import React from 'react';
@@ -85,10 +86,31 @@ export const LeaderboardView = React.memo(() => {
       <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
       <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none"></div>
 
-      <Header title="ELITE HALL OF FAME" onClose={adventure.goBack} onHelp={() => {
+      <Header title="ELITE HALL OF FAME" onClose={adventure.goBack} npcNum={28} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} icon={<Trophy className="text-amber-400" />} />
+
+      <NPCCard
+        citizenNum={28}
+        name="HERALD"
+        accentColor="bg-rose-500"
+        textColor="text-rose-600"
+        glowColor="bg-rose-500"
+        statusTag="RANKINGS_LIVE"
+        statusTag2="BROADCAST_ON"
+        prefix="◢HERALD: "
+        dialogues={[
+          "The Hall of Fame! Only the strongest hunters stand here for all to see.",
+          "Rankings update in real-time as hunters complete dungeon runs and earn GX.",
+          "Can you break into the Top 10? The gap tightens with every level.",
+          "Elite rankings carry prestige. Other hunters will know your name.",
+          "Consistent dungeon activity pushes your rank higher every session.",
+          "The leaderboard is global. Every player you see is a real rival.",
+          "Syndicates with top-ranked members get bonus visibility in the server.",
+          "First place today doesn't mean first place tomorrow. Stay sharp!"
+        ]}
+      />
 
       {/* Your Rank Pin (V2 Design) */}
       {selfRank && (

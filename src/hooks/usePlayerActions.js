@@ -215,41 +215,34 @@ export const usePlayerActions = (
     }
     
     const totalCost = item.cost * qty;
+    if ((player.tokens || 0) < totalCost) {
+      addLog("🚨 ERROR: Insufficient GX for this transaction.");
+      return false;
+    }
+
+    const updates = { tokens: (player.tokens || 0) - totalCost };
+    
+    if (item.id === 'hp_potion') {
+      updates.potions = (player.potions || 0) + qty;
+    } else if (item.id === 'auto_scroll') {
+      updates.autoScrolls = (player.autoScrolls || 0) + qty;
+    } else {
+      // For equipment, generate multiple unique IDs if buying bulk
+      for (let i = 0; i < qty; i++) {
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
+        updates[`inventory.${purchaseItem.id}`] = purchaseItem;
+      }
+    }
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const playerRef = doc(db, 'players', player.uid);
-        const playerSnap = await transaction.get(playerRef);
-        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
-        
-        const data = playerSnap.data();
-        if ((data.tokens || 0) < totalCost) throw new Error("INSUFFICIENT_GX");
-
-        const updates = { tokens: (data.tokens || 0) - totalCost };
-        
-        if (item.id === 'hp_potion') {
-          updates.potions = (data.potions || 0) + qty;
-        } else if (item.id === 'auto_scroll') {
-          updates.autoScrolls = (data.autoScrolls || 0) + qty;
-        } else {
-          // For equipment, generate multiple unique IDs if buying bulk
-          for (let i = 0; i < qty; i++) {
-            const suffix = Math.random().toString(36).slice(2, 6);
-            const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
-            updates[`inventory.${purchaseItem.id}`] = purchaseItem;
-          }
-        }
-        
-        transaction.update(playerRef, updates);
-      });
-
+      syncPlayer(updates, true);
       addLog(`Acquired ${qty > 1 ? qty + 'x ' : ''}${item.name}! Check your Storage Bag.`);
       playSFX(SOUNDS.obtainLoot);
       return true;
     } catch (e) {
       console.error(e);
-      if (e.message === "INSUFFICIENT_GX") addLog("🚨 ERROR: Insufficient GX for this transaction.");
-      else addLog("🚨 UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
+      addLog("🚨 UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
       return false;
     }
   };
@@ -301,55 +294,53 @@ export const usePlayerActions = (
     const masterData = ITEMS.find(i => i.id === recipe.id);
     if (!masterData) return addLog("❌ MIX ERROR: Unknown formula.");
     
+    if ((player.tokens || 0) < (recipe.cost || 0)) {
+      return addLog(`🚨 LAB ERROR: Insufficient GX for fusion.`);
+    }
+
     try {
       addLog(`🧪 MIXING: Initiating molecular fusion for ${masterData.name || recipe.id}...`);
 
-      await runTransaction(db, async (transaction) => {
-        const playerRef = doc(db, 'players', player.uid);
-        const playerSnap = await transaction.get(playerRef);
-        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
+      const inventory = Object.entries(player.inventory || {});
+      const itemsToConsume = [];
+      let missingMat = null;
 
-        const data = playerSnap.data();
-        if ((data.tokens || 0) < (recipe.cost || 0)) throw new Error("INSUFFICIENT_GX");
-
-        const inventory = Object.entries(data.inventory || {});
-        const itemsToConsume = [];
-
-        recipe.materials.forEach(mat => {
-          let found = 0;
-          inventory.forEach(([key, invItem]) => {
-            const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
-            const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
-            if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
-               if (!itemsToConsume.find(c => c.key === key)) {
-                 itemsToConsume.push({ key, ...invItem });
-                 found++;
-               }
-            }
-          });
-          if (found < mat.count) throw new Error(`MISSING_MAT:${mat.id}`);
+      recipe.materials.forEach(mat => {
+        let found = 0;
+        inventory.forEach(([key, invItem]) => {
+          const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
+          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+          if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+             if (!itemsToConsume.find(c => c.key === key)) {
+               itemsToConsume.push({ key, ...invItem });
+               found++;
+             }
+          }
         });
-
-        // 🛡️ Atomic Execution
-        const updates = { tokens: (data.tokens || 0) - (recipe.cost || 0) };
-        itemsToConsume.forEach(loot => {
-          updates[`inventory.${loot.key}`] = deleteField();
-        });
-
-        const suffix = Math.random().toString(36).slice(2, 6);
-        const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
-        updates[`inventory.${mixedItem.id}`] = mixedItem;
-
-        transaction.update(playerRef, updates);
+        if (found < mat.count) missingMat = mat.id;
       });
+
+      if (missingMat) {
+        return addLog(`🚨 LAB ERROR: Experimental materials shifted. Missing ${missingMat}.`);
+      }
+
+      // 🛡️ Atomic Execution Context Setup
+      const updates = { tokens: (player.tokens || 0) - (recipe.cost || 0) };
+      itemsToConsume.forEach(loot => {
+        updates[`inventory.${loot.key}`] = deleteField();
+      });
+
+      const suffix = Math.random().toString(36).slice(2, 6);
+      const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
+      updates[`inventory.${mixedItem.id}`] = mixedItem;
+
+      syncPlayer(updates, true);
 
       addLog(`✅ SUCCESS: Created ${masterData.name}!`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
-      if (e.message.startsWith("MISSING_MAT")) addLog(`🚨 LAB ERROR: Experimental materials shifted.`);
-      else if (e.message === "INSUFFICIENT_GX") addLog(`🚨 LAB ERROR: Insufficient GX for fusion.`);
-      else addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
+      addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
     }
   };
 
@@ -425,62 +416,60 @@ export const usePlayerActions = (
     const masterData = ITEMS.find(i => i.id === recipe.id);
     const itemName = masterData?.name || recipe.name || "Unknown Tech";
     
+    if ((player.tokens || 0) < (recipe.cost || 0)) {
+      return addLog(`🚨 FORGE ERROR: Insufficient GX for assembly.`);
+    }
+
     try {
       addLog(`⚒️ FORGING: Initiating atomic assembly for ${itemName}...`);
       
-      await runTransaction(db, async (transaction) => {
-        const playerRef = doc(db, 'players', player.uid);
-        const playerSnap = await transaction.get(playerRef);
-        if (!playerSnap.exists()) throw new Error("UNAUTHORIZED");
-        
-        const data = playerSnap.data();
-        if ((data.tokens || 0) < (recipe.cost || 0)) throw new Error("INSUFFICIENT_GX");
-
-        const inventory = Object.entries(data.inventory || {});
-        const itemsToConsume = [];
-        
-        recipe.materials.forEach(mat => {
-          let found = 0;
-          inventory.forEach(([key, invItem]) => {
-            const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
-            const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
-            if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
-               if (!itemsToConsume.find(c => c.key === key)) {
-                 itemsToConsume.push({ key, ...invItem });
-                 found++;
-               }
-            }
-          });
-          if (found < mat.count) throw new Error(`MISSING_MAT:${mat.id}`);
+      const inventory = Object.entries(player.inventory || {});
+      const itemsToConsume = [];
+      let missingMat = null;
+      
+      recipe.materials.forEach(mat => {
+        let found = 0;
+        inventory.forEach(([key, invItem]) => {
+          const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
+          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+          if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+             if (!itemsToConsume.find(c => c.key === key)) {
+               itemsToConsume.push({ key, ...invItem });
+               found++;
+             }
+          }
         });
-
-        // 🛡️ Logic Check: All materials found and GX sufficient.
-        const currentDex = (data.baseStats?.dex || 10); // Simplified stat check
-        const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
-        const roll = Math.random() * 100;
-        const isSuccess = roll < successRate;
-
-        const updates = { tokens: (data.tokens || 0) - (recipe.cost || 0) };
-        itemsToConsume.forEach(loot => {
-          updates[`inventory.${loot.key}`] = deleteField();
-        });
-
-        if (isSuccess) {
-          const suffix = Math.random().toString(36).slice(2, 6);
-          const forgedItem = { ...masterData, ...recipe, id: `${recipe.id}_${Date.now()}_${suffix}` };
-          updates[`inventory.${forgedItem.id}`] = forgedItem;
-          transaction.update(playerRef, updates);
-          setForgeResult({ success: true, item: forgedItem });
-        } else {
-          transaction.update(playerRef, updates);
-          setForgeResult({ success: false, item: null });
-        }
+        if (found < mat.count) missingMat = mat.id;
       });
+
+      if (missingMat) {
+        return addLog(`🚨 FORGE ERROR: Materials have shifted. Assembly aborted.`);
+      }
+
+      // 🛡️ Logic Check: All materials found and GX sufficient.
+      const currentDex = (player.baseStats?.dex || 10); // Simplified stat check
+      const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
+      const roll = Math.random() * 100;
+      const isSuccess = roll < successRate;
+
+      const updates = { tokens: (player.tokens || 0) - (recipe.cost || 0) };
+      itemsToConsume.forEach(loot => {
+        updates[`inventory.${loot.key}`] = deleteField();
+      });
+
+      if (isSuccess) {
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const forgedItem = { ...masterData, ...recipe, id: `${recipe.id}_${Date.now()}_${suffix}` };
+        updates[`inventory.${forgedItem.id}`] = forgedItem;
+        syncPlayer(updates, true);
+        setForgeResult({ success: true, item: forgedItem });
+      } else {
+        syncPlayer(updates, true);
+        setForgeResult({ success: false, item: null });
+      }
     } catch (e) {
       console.error(e);
-      if (e.message.startsWith("MISSING_MAT")) addLog(`🚨 FORGE ERROR: Materials have shifted. Assembly aborted.`);
-      else if (e.message === "INSUFFICIENT_GX") addLog(`🚨 FORGE ERROR: Insufficient GX for assembly.`);
-      else addLog(`🚨 UPLINK ERROR: Forging failed during neural handshake.`);
+      addLog(`🚨 UPLINK ERROR: Forging failed during neural handshake.`);
     }
   };
 
@@ -997,11 +986,11 @@ export const usePlayerActions = (
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
-  const completeQuiz = useCallback((quiz, isCorrect) => {
+  const completeQuiz = useCallback((quiz, isCorrect, ITEMS, FOODS, CRYSTLE_RECIPES) => {
     if (!quiz || !player) return;
     
     if (!isCorrect) {
-      addLog(`❌ QUIZ: Incorrect answer. Transmission severed.`);
+      addLog(`🎒 O QUIZ: Incorrect answer. Transmission severed.`);
       playSFX(SOUNDS.hurt);
       return;
     }
@@ -1016,7 +1005,7 @@ export const usePlayerActions = (
       nextLvl++;
       nextMaxHp += 50;
       apGained += AP_PER_LEVEL;
-      addLog(`🎓 LVL UP! +5 AP gained through knowledge syncing.`);
+      addLog(`🛡️ LVL UP! +5 AP gained through knowledge syncing.`);
     }
 
     const updates = {
@@ -1026,6 +1015,41 @@ export const usePlayerActions = (
       hp: Math.min(nextMaxHp, (player.hp || 0) + (apGained > 0 ? 50 : 0)),
       [`completedQuizzes.${quiz.id}`]: Date.now()
     };
+    
+    // --- Randomized iLearn Reward Engine ---
+    const roll = Math.random();
+    let rId = null;
+    let rQty = 1;
+
+    // 60% Chance to drop a Potion reward (Only Mega or Ultra)
+    if (roll < 0.60) {
+       const rarityRoll = Math.random();
+       if (rarityRoll < 0.85) { rId = 'mega_hp_potion'; rQty = 1; } // 85% Mega
+       else { rId = 'ultra_hp_potion'; rQty = 1; }                  // 15% Ultra
+    } 
+    // Fallback to static quiz-defined reward if random roll failed but static exists. 
+    // We already cleaned quizzes.json so this will only trigger for non-hp_potion rewards.
+    else if (quiz.itemRewardId && quiz.itemRewardId !== 'hp_potion') {
+       rId = quiz.itemRewardId;
+       rQty = quiz.itemRewardQty || 1;
+    }
+
+    let dropData = null;
+    if (rId) {
+      const masterDrop = ITEMS?.find(i => i.id === rId) || 
+                         FOODS?.find(i => i.id === rId) ||
+                         CRYSTLE_RECIPES?.find(i => i.id === rId);
+      
+      if (masterDrop) {
+        dropData = { ...masterDrop, qty: rQty };
+        for (let i = 0; i < rQty; i++) {
+           const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+           updates[`inventory.${dropKey}`] = { ...masterDrop, id: dropKey };
+        }
+        addLog(`🎁 KNOWLEDGE REWARD: Acquired ${rQty}x ${masterDrop.name}!`);
+      }
+    }
+
     if (apGained > 0) updates.abilityPoints = (player.abilityPoints || 0) + apGained;
 
     // Filter out the completed quiz from active slots
@@ -1034,8 +1058,9 @@ export const usePlayerActions = (
     }
     
     syncPlayer(updates);
-    addLog(`🎓 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
+    addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
     playSFX(SOUNDS.lvlUp);
+    return { xp: quiz.xpReward, item: dropData };
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
   return {

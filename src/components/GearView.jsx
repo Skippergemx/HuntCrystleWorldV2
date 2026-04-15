@@ -20,6 +20,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const GearView = React.memo(() => {
@@ -161,10 +162,31 @@ export const GearView = React.memo(() => {
   return (
     <div className="flex-1 flex flex-col p-4 md:p-6 relative overflow-hidden bg-slate-950">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-      <Header title="TACTICAL LOADOUT" onClose={adventure.goBack} onHelp={() => {
+      <Header title="TACTICAL LOADOUT" onClose={adventure.goBack} npcNum={20} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} icon={<Zap className="text-cyan-400" />} />
+
+      <NPCCard
+        citizenNum={20}
+        name="ARMORER"
+        accentColor="bg-cyan-500"
+        textColor="text-cyan-600"
+        glowColor="bg-cyan-500"
+        statusTag="LOADOUT_SYNCED"
+        statusTag2="SLOT_ONLINE"
+        prefix="◢ARMORER: "
+        dialogues={[
+          "Welcome to the Tactical Loadout. Your gear defines your battlefield presence.",
+          "Each slot has a dedicated purpose — don't leave any empty if you can help it.",
+          "Relics with proc effects can chain with Dexterity for devastating results.",
+          "Equipping higher rarity gear stacks your stat multipliers significantly.",
+          "Unequip before you venture in. Wrong loadout costs lives in Sector 7.",
+          "The Stat panel on the right shows your combined power output, live.",
+          "Footwear with Agility scaling is often underrated. Try it in fast sectors.",
+          "I've outfitted hunters since Sector 1. Always gear up before a deep run."
+        ]}
+      />
 
       <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6">
         

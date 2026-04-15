@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Sword, Shield, HardHat, Footprints, Package, Lock, Check, Sparkles, TrendingUp } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const ShopView = React.memo(() => {
@@ -122,10 +123,32 @@ export const ShopView = React.memo(() => {
     <div className="flex-1 p-6 space-y-6 overflow-y-auto max-h-[500px] relative">
       <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '12px 12px' }}></div>
       
-      <Header title="GX Exchange: Shop" onClose={adventure.goBack} onHelp={() => {
+      <Header title="TERMINAL SHOP" onClose={adventure.goBack} npcNum={17} onHelp={() => {
         setTutorialStep(0);
         setShowTutorial(true);
       }} />
+
+      <NPCCard
+        citizenNum={2}
+        name="SHOPKEEPER"
+        accentColor="bg-yellow-400"
+        textColor="text-yellow-600"
+        glowColor="bg-yellow-400"
+        statusTag="SHOP_ONLINE"
+        statusTag2="GX_ACCEPTED"
+        prefix="◢VENDOR: "
+        dialogues={[
+          "Welcome to the GX Exchange! Spend your hard-earned Gems on powerful gear.",
+          "Consumable items are stackable. Keep a healthy supply before dungeon runs.",
+          "Check the item descriptions — some shop items have hidden combat effects.",
+          "GX is earned from dungeon loot, battles, and daily quests. Stay active!",
+          "Limited stock rotates periodically. Grab essentials before they're gone.",
+          "Premium bundles offer the best value per GX. Think long-term, hunter.",
+          "Selling duplicate gear in the Market offsets your shopping costs well.",
+          "I once traded a common dropstone for a Legendary relic. Luck is real."
+        ]}
+      />
+
       
       <div className="grid gap-6 relative z-10">
         {SHOP_ITEMS.map((item, index) => {

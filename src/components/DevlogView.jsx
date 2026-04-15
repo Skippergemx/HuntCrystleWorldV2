@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.10.0',
+    date: '2026-04-15',
+    title: 'CHARACTER-LED COMMAND HUB & MISSION AVATARS',
+    category: 'UI/UX & CHARACTER NARRATIVE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'Today\'s update marks a major shift towards an NPC-centric mission experience. We have successfully deployed the "Mission Commander" protocol across the entire grid, ensuring that every deployment zone, the Battle Hub, and all tactical modules are now overseen by consistent character representatives. This update standardizes the visual narrative, making the metaverse feel alive with character presence from the initial hub preview to the heat of the Abyssal Breach.',
+    changes: [
+      'UI: Integrated NPC #13 (Sector Warden) as the primary commander for Battle Hub and PvP',
+      'UI: Assigned NPC #15 (Abyssal Guide) and NPC #14 (Naga Guardian) to Raid theaters',
+      'Aesthetic: Unified character-led Header across Manual, Devlog, and Admin terminals',
+      'Assets: Fixed Professor Neon asset bridge in the Xenon Laboratory via elite AvatarMedia',
+      'Tactical: Standardized Potion/Scroll/Food drawers as tactical subordinates in the main Header'
+    ],
+    media: '/assets/monsters/Rust Canyon/Rust Cat 0-0.jpg'
+  },
+  {
     id: '1.9.0',
     date: '2026-04-14',
     title: 'SYSTEM HARDENING: DATA INTEGRITY V5',
@@ -279,7 +297,7 @@ export const DevlogView = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
       </div>
 
-      <Header title="DEVLOG INTERFACE" onClose={adventure.goBack} />
+      <Header title="DEVLOG INTERFACE" onClose={adventure.goBack} npcNum={24} />
 
       {/* Main Terminal Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 relative z-10 pr-2">

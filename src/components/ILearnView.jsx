@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 import QUIZZES from '../data/quizzes.json';
 
@@ -209,7 +210,7 @@ const Star = ({ size, className, fill }) => (
 );
 
 export const ILearnView = React.memo(() => {
-  const { player, syncPlayer, adventure, actions, audio, SOUNDS } = useGame();
+  const { player, syncPlayer, adventure, actions, audio, SOUNDS, ITEMS, FOODS, CRYSTLE_RECIPES } = useGame();
   const { setView } = adventure;
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [sessionReward, setSessionReward] = useState(null);
@@ -241,16 +242,16 @@ export const ILearnView = React.memo(() => {
     
     // Initial setup if slots are empty
     if (quizSlots.length === 0) {
-      const initial = QUIZZES.filter(q => !completedQuizzes[q.id]).slice(0, 6).map(q => q.id);
+      const initial = QUIZZES.filter(q => !completedQuizzes[q.id]).slice(0, 10).map(q => q.id);
       if (initial.length > 0) syncPlayer({ quizSlots: initial });
       return;
     }
 
-    // Refill logic: if under 6 slots, pick new ones not completed and not already in slots
-    if (quizSlots.length < 6) {
+    // Refill logic: if under 10 slots, pick new ones not completed and not already in slots
+    if (quizSlots.length < 10) {
       const available = QUIZZES.filter(q => !completedQuizzes[q.id] && !quizSlots.includes(q.id));
       if (available.length > 0) {
-        const needed = 6 - quizSlots.length;
+        const needed = 10 - quizSlots.length;
         const picks = [...available].sort(() => Math.random() - 0.5).slice(0, needed).map(q => q.id);
         syncPlayer({ quizSlots: [...quizSlots, ...picks] });
       }
@@ -259,10 +260,10 @@ export const ILearnView = React.memo(() => {
 
   const handleComplete = (quiz, isCorrect) => {
     if (isCorrect) {
-      actions.completeQuiz(quiz, true);
-      setSessionReward(quiz.xpReward);
+      const result = actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
+      setSessionReward(result);
       setActiveQuiz(null);
-      setTimeout(() => setSessionReward(null), 3000);
+      setTimeout(() => setSessionReward(null), 4000);
     }
   };
 
@@ -274,6 +275,28 @@ export const ILearnView = React.memo(() => {
       <Header 
         title="iLEARN Terminal" 
         onClose={() => setView('menu')} 
+        npcNum={22}
+      />
+
+      <NPCCard
+        citizenNum={22}
+        name="INSTRUCTOR"
+        accentColor="bg-cyan-500"
+        textColor="text-cyan-500"
+        glowColor="bg-cyan-400"
+        statusTag="NEURAL_LINK_ACTIVE"
+        statusTag2="QUIZ_READY"
+        prefix="◢INSTRUCTOR: "
+        dialogues={[
+          "Welcome to iLEARN! Train your mind and earn powerful rewards for correct answers.",
+          "Each quiz you complete cycles in a fresh training module. Keep learning!",
+          "Perfect answers unlock rare crafting materials and consumable drops.",
+          "Knowledge is your most scalable stat. An educated hunter never stays broke.",
+          "Quiz topics span Math, Science, Tech, Web3, and Trivia. All XP matters.",
+          "Completed modules are removed from your active queue automatically.",
+          "Failed answers still advance your understanding. Try again on the next cycle.",
+          "The fastest hunters I know are also the most curious. Feed your mind."
+        ]}
       />
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 relative z-10">
@@ -295,14 +318,30 @@ export const ILearnView = React.memo(() => {
         {/* Reward Feedback Toast */}
         {sessionReward && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-top-4 fade-in duration-500">
-             <div className="bg-emerald-500 border-[3px] border-black px-6 py-2 rounded-full shadow-[6px_6px_0_rgba(0,0,0,1)] flex items-center gap-3">
-                < Award className="text-black" size={24} />
-                <div className="flex flex-col">
-                   <span className="text-xs font-black text-black uppercase leading-none italic">XP SYNCHRONIZED</span>
-                   <span className="text-lg font-black text-black tabular-nums">+{sessionReward} EXP</span>
+             <div className="bg-emerald-500 border-[4px] border-black px-4 py-3 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,1)] flex items-center gap-4 min-w-[280px]">
+                <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shrink-0">
+                    <Award className="text-emerald-400" size={28} />
                 </div>
-                <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                   <Sparkles className="text-emerald-400 animate-spin-slow" size={16} />
+                
+                <div className="flex-1 flex flex-col justify-center border-l-2 border-black/20 pl-4">
+                   <div className="flex items-baseline gap-2">
+                       <span className="text-lg font-black text-black tabular-nums">+{sessionReward.xp}</span>
+                       <span className="text-[10px] font-black text-black/60 uppercase italic">EXP</span>
+                   </div>
+                   
+                   {sessionReward.item && (
+                      <div className="flex items-center gap-2 mt-1 pt-1 border-t border-black/10">
+                         <span className="text-lg leading-none">{sessionReward.item.icon || '📦'}</span>
+                         <span className="text-[9px] font-black text-black uppercase truncate max-w-[120px]">
+                            {sessionReward.item.name}
+                         </span>
+                         <span className="bg-black text-white text-[8px] font-black px-1 rounded">x{sessionReward.item.qty}</span>
+                      </div>
+                   )}
+                </div>
+
+                <div className="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center bg-white/20">
+                   <Sparkles className="text-black animate-spin-slow" size={20} />
                 </div>
              </div>
           </div>

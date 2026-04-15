@@ -125,7 +125,7 @@ export const ManualView = () => {
 
   return (
     <div className="flex-1 p-4 md:p-6 flex flex-col relative overflow-hidden bg-slate-900/40">
-      <Header title="Hunter manual v2.0" onClose={adventure.goBack} />
+      <Header title="Hunter manual v2.0" onClose={adventure.goBack} npcNum={2} />
 
       {/* Hero Banner */}
       <div className="relative mb-6 group cursor-default">

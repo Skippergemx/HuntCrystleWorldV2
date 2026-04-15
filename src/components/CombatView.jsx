@@ -208,42 +208,24 @@ export const CombatView = React.memo(() => {
       <div className="absolute inset-0 opacity-10 pointer-events-none z-20 comic-halftone" style={{ color: arenaTheme.dot }}></div>
 
       {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
-      <div className="w-full z-50 px-2 md:px-6 pt-2 md:pt-4 flex flex-row items-center justify-between gap-1 md:gap-4 overflow-x-auto no-scrollbar pb-2">
-        
-        {/* 1. TACTICAL GUIDE (LEFT ALIGNED) */}
-        <button
-          onClick={() => openGuide('dungeon')}
-          className={`p-1.5 md:p-3 ${arenaTheme.banner} border-[2px] md:border-[4px] border-black text-black shadow-[2px_2px_0_rgba(0,0,0,1)] hover:brightness-110 transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0`}
-          title="Tactical Guide"
-        >
-          <HelpCircle size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
+      <Header 
+        title={`${combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')} - Floor ${depth}`} 
+        onClose={() => setShowRetreatConfirm(true)} 
+        npcNum={13} 
+        onHelp={() => openGuide('dungeon')}
+      >
+        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-75 md:scale-100">
+           {/* Manifest Button */}
+           <button
+             onClick={() => setIsPossibleDropsModalOpen(true)}
+             className="group flex flex-col items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-slate-900 border border-cyan-500/50 rounded hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
+             title="Sector Drop Manifest"
+           >
+             <Search size={14} className="text-cyan-500 group-hover:text-black transition-colors" />
+           </button>
 
-        {/* 2. CONSOLIDATED MISSION BADGE */}
-        <div className={`flex items-center justify-center px-4 md:px-8 py-1.5 md:py-2.5 bg-black border-[2px] md:border-[4px] ${combat.battleMode === 'GVG' ? 'border-red-600 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : arenaTheme.hud} rounded shadow-[3px_3px_0_rgba(0,0,0,1)] flex-1 min-w-[120px] max-w-[320px] transform -rotate-1`}>
-          <div className="flex flex-col items-center leading-none">
-            <span className="text-[5px] md:text-[9px] font-black uppercase opacity-70 whitespace-nowrap text-white tracking-widest">
-              {combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')}
-            </span>
-            <span className="text-[10px] md:text-xl font-black tracking-[0.2em] italic uppercase whitespace-nowrap text-white">
-              {combat.battleMode === 'GVG' ? 'SYN_RAID' : `Floor ${depth}`}
-            </span>
-          </div>
-        </div>
+           <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
 
-        {/* 2.5 MISSION ASSETS (MANIFEST) */}
-        <button
-          onClick={() => setIsPossibleDropsModalOpen(true)}
-          className="group flex flex-col items-center justify-center w-8 h-8 md:w-12 md:h-12 bg-slate-900 border-2 border-cyan-500 rounded md:rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
-          title="Sector Drop Manifest"
-        >
-          <Search size={14} className="text-cyan-500 group-hover:text-black transition-colors md:w-6 md:h-6" />
-          <span className="hidden md:block text-[6px] font-black text-cyan-500 group-hover:text-black uppercase mt-0.5 tracking-tighter">DROPS</span>
-        </button>
-
-
-        {/* 3. CONSOLIDATED BIOLOGICAL/RESONANCE TOOLS */}
-        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md">
           {/* Potion Slot */}
           <div className="flex items-center gap-1">
             <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
@@ -333,16 +315,7 @@ export const CombatView = React.memo(() => {
             </div>
           )}
         </div>
-
-        {/* 4. QUICK EXIT (RIGHT ALIGNED) */}
-        <button
-          onClick={() => setShowRetreatConfirm(true)}
-          className="p-1.5 md:p-3 bg-red-600 border-[2px] md:border-[4px] border-black text-white shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
-          title="Quick Exit"
-        >
-          <X size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
-      </div>
+      </Header>
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}

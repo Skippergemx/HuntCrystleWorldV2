@@ -221,7 +221,29 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                     hiredMate: data.hiredMate === 'dragon' ? 'hatchling_mate' : (data.hiredMate || null)
                 };
 
-                setPlayer(sanitized);
+                // --- LOCAL PROTECTION SENTRY ---
+                // Before committing the server data to the state, we MUST re-apply any 
+                // pending local updates that haven't hit the Firestore yet. This prevents
+                // the "Wipeout" bug where a stale reload overwrites optimistic local gains.
+                const pending = pendingUpdatesRef.current || {};
+                const fullySanitized = { ...sanitized };
+                
+                Object.entries(pending).forEach(([key, value]) => {
+                  if (key === 'updatedAt') return;
+                  if (key.includes('.')) {
+                    const parts = key.split('.');
+                    let cursor = fullySanitized;
+                    for (let i = 0; i < parts.length - 1; i++) {
+                       cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+                       cursor = cursor[parts[i]];
+                    }
+                    cursor[parts[parts.length - 1]] = value;
+                  } else {
+                    fullySanitized[key] = value;
+                  }
+                });
+
+                setPlayer(fullySanitized);
                 // Step 4: Register Local Session
                 await setDoc(docRef, { sessionId: localSessionId }, { merge: true });
                 setHasHydratedSession(true);
@@ -306,7 +328,7 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
     loadUnifiedProfile();
   // NOTE: isTelegram and tgUser are intentionally included so the effect
   // re-runs once the Telegram SDK has finished identity resolution.
-  }, [user, db, appId, farcasterContext, isTelegram, tgUser]);
+  }, [user?.uid, _tgUser?.id, db, appId, farcasterContext]); // Simplified to core IDs to prevent race-condition reloads
 
   // 2. LIVE SESSION MONITORING (Multi-Device Kick)
   useEffect(() => {

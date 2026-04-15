@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw, Check, Sparkles } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash } from './CombatEffects';
-import { AvatarMedia, SquadHUD, ConfirmationModal } from './GameUI';
+import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 
@@ -116,35 +116,18 @@ export const BossView = () => {
       <div className="absolute inset-0 opacity-20 pointer-events-none z-10 comic-halftone text-red-500"></div>
 
       {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
-      <div className="w-full z-50 px-2 md:px-6 pt-2 md:pt-4 flex flex-row items-center justify-between gap-1 md:gap-4 overflow-x-auto no-scrollbar pb-2">
-        
-        {/* 1. MISSION BRIEFING (LEFT ALIGNED) */}
-        <button
-          onClick={() => {
-            setTutorialStep(0);
-            setShowTutorial(true);
-          }}
-          className="p-1.5 md:p-3 bg-black border-[2px] md:border-[4px] border-red-600 text-red-600 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-white transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
-          title="Mission Briefing"
-        >
-          <HelpCircle size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
-
-        {/* 2. CONSOLIDATED SECTOR Ω PROTOCOL & THREAT STATUS */}
-        <div className="flex items-center gap-2 md:gap-4 px-2 md:px-5 py-2 md:py-3 bg-black border-[2px] md:border-[4px] border-red-600 rounded shadow-[3px_3px_0_rgba(0,0,0,1)] flex-1 min-w-[140px] max-w-[340px] transform -skew-x-2">
-          <div className="flex flex-col leading-none shrink-0">
-            <span className="text-[5px] md:text-[9px] font-black text-red-500 uppercase tracking-[0.2em] italic mb-0.5">Sector Ω Status</span>
-            <h1 className="text-[9px] md:text-base font-black text-white italic uppercase whitespace-nowrap">ABYSSAL_BREACH</h1>
-          </div>
-          <div className="w-[2px] h-6 bg-red-600/30"></div>
-          <div className="flex items-center gap-1.5 md:gap-2">
-            <Skull size={10} className="text-red-500 animate-pulse" />
-            <span className="text-[7px] md:text-[10px] font-black uppercase text-red-500 italic leading-none whitespace-nowrap">THREAT_LEVEL_X</span>
-          </div>
-        </div>
-
-        {/* 3. CONSOLIDATED BIOLOGICAL/RESONANCE TOOLS */}
-        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-red-950/20 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md">
+      {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
+      <Header 
+        title="ABYSSAL BREACH: SECTOR Ω" 
+        onClose={() => setShowRetreatConfirm(true)} 
+        npcNum={15} 
+        onHelp={() => {
+           setTutorialStep(0);
+           setShowTutorial(true);
+        }}
+      >
+        {/* CONSOLIDATED BIOLOGICAL/RESONANCE TOOLS */}
+        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-red-950/20 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-75 md:scale-100">
           {/* Potion Slot */}
           <div className="flex items-center gap-1">
             <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
@@ -186,16 +169,7 @@ export const BossView = () => {
             )}
           </div>
         </div>
-
-        {/* 4. EXTRACTION ACTION (RIGHT ALIGNED) */}
-        <button
-          onClick={() => setShowRetreatConfirm(true)}
-          className="p-1.5 md:p-3 bg-red-600 border-[2px] md:border-[4px] border-black text-white shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-black transition-all active:translate-x-1 active:translate-y-1 active:shadow-none shrink-0"
-          title="Quick Exit"
-        >
-          <X size={14} className="md:w-6 md:h-6" strokeWidth={4} />
-        </button>
-      </div>
+      </Header>
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}

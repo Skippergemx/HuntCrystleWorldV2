@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
+import { NPCCard as AmbientNPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 const PERSONALITY_STYLES = {
@@ -390,10 +391,32 @@ export const CrystleTownView = () => {
         <Header 
           title="Crystle Town" 
           onClose={() => setView('menu')} 
+          npcNum={18}
           onHelp={() => openGuide('crystle_town')}
         />
-      </div>
 
+        <AmbientNPCCard
+          citizenNum={18}
+          name="TOWN ELDER"
+          accentColor="bg-emerald-600"
+          textColor="text-emerald-600"
+          glowColor="bg-emerald-500"
+          statusTag="TOWN_RESTORED"
+          statusTag2="QUESTS_ACTIVE"
+          prefix="◢ELDER: "
+          dialogues={[
+            "Welcome back, hunter. The citizens are eager for your help today.",
+            "Complete citizen requests to earn rare food buffs for your dungeon runs.",
+            "Every request fulfilled brings a new citizen to the town — 30 in total!",
+            "Food buffs persist through one dungeon run. Eat smart, fight hard.",
+            "Fruits from the Dragons Ground Orchard are the most requested supplies.",
+            "The town remembers every hunter who helped rebuild it. You are remembered.",
+            "New citizen stories unlock as you complete more requests. Keep going!",
+            "Crystle Town was built by hunters like you. Every contribution matters."
+          ]}
+        />
+
+      </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
         {/* Intro Banner */}
         <div className="bg-[#faf6f0] border-[3px] border-black p-3 mb-4 shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-1 transform relative">
