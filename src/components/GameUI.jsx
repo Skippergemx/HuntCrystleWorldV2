@@ -2,12 +2,12 @@ import React from 'react';
 import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, children }) => (
-  <div className="w-full z-[100] px-2 md:px-0 pt-1 md:pt-2 flex flex-row items-center justify-between gap-1 md:gap-4 relative">
-    <div className="flex items-center gap-1 md:gap-4 flex-1 min-w-0">
-      {/* Standard Header Badge */}
-      <div className="bg-black border-[2px] md:border-[3px] border-white/20 rounded-lg md:rounded-xl p-1.5 md:p-4 shadow-[2px_2px_0_rgba(255,255,255,0.05)] transform -skew-x-1 md:-skew-x-2 flex items-center gap-2 md:gap-4 flex-shrink-0 relative z-10 group hover:border-cyan-500/50 transition-all max-w-[140px] md:max-w-none">
+  <div className="w-full z-[100] px-2 md:px-0 pt-1 md:pt-2 flex flex-row items-center relative gap-1 md:gap-4">
+    {/* 1. Left: NPC Badge */}
+    <div className="flex-shrink-0 relative z-10 group max-w-[120px] md:max-w-none">
+      <div className="bg-black border-[2px] md:border-[3px] border-white/20 rounded-lg md:rounded-xl p-1 md:p-4 shadow-[2px_2px_0_rgba(255,255,255,0.05)] transform -skew-x-1 md:-skew-x-2 flex items-center gap-1.5 md:gap-4 transition-all">
         {npcNum ? (
-          <div className="w-7 h-7 md:w-12 md:h-12 bg-white/10 rounded border border-white/20 overflow-hidden relative shadow-[1px_1px_0_rgba(255,255,255,0.1)] shrink-0">
+          <div className="w-7 h-7 md:w-12 md:h-12 bg-white/10 rounded border border-white/20 overflow-hidden relative shrink-0">
              <AvatarMedia num={npcNum} animated={true} className="w-full h-full object-cover object-top" />
           </div>
         ) : icon ? (
@@ -16,29 +16,25 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
           </div>
         ) : null}
         <div className="flex flex-col min-w-0">
-          <span className="text-[4px] md:text-[8px] font-black text-white/50 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-0.5 leading-none italic truncate">{npcNum ? 'REP_SYNC' : 'SYS_SIG'}</span>
-          <h1 className="text-[10px] md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors truncate">{title || 'COMMAND'}</h1>
-        </div>
-        
-        {/* Technical Sub-Tag */}
-        <div className="absolute -bottom-2 -right-2 bg-black text-white text-[6px] md:text-[8px] font-black px-1.5 py-0.5 border-2 border-white transform rotate-3">
-          LOGID: {npcNum ? `AUTH_${npcNum}` : 'SYS_GRID_0'}
+          <span className="text-[4px] md:text-[8px] font-black text-white/50 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-0.5 leading-none italic truncate">{npcNum ? 'REPRESENTATIVE' : 'SIGNAL'}</span>
+          <h1 className="text-[9px] md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors truncate">{title || 'COMMAND'}</h1>
         </div>
       </div>
+    </div>
 
-      {/* Children Slot for custom tools (Potions, etc) */}
-      <div className="flex-1 flex items-center justify-center">
+    {/* 2. Middle: Mission Tools Slot */}
+    <div className="flex-1 flex items-center justify-center min-w-0 overflow-visible relative z-0">
+      <div className="transform scale-[0.85] md:scale-100 flex items-center justify-center w-full overflow-visible">
         {children}
       </div>
     </div>
 
-    {/* Tactical Controls */}
-    <div className="flex gap-1 md:gap-3 shrink-0 relative z-30">
+    {/* 3. Right: System Controls */}
+    <div className="flex-shrink-0 flex gap-1 md:gap-3 relative z-20 pr-1">
       {onHelp && (
         <button 
           onClick={onHelp} 
           className="p-1.5 md:p-3 bg-cyan-500 border-2 md:border-[3px] border-black text-black hover:bg-cyan-300 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transform rotate-3"
-          title="Open Guide"
         >
           <HelpCircle size={14} className="md:w-7 md:h-7" strokeWidth={4} />
         </button>

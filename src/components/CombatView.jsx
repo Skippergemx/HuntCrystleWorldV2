@@ -213,109 +213,7 @@ export const CombatView = React.memo(() => {
         onClose={() => setShowRetreatConfirm(true)} 
         npcNum={13} 
         onHelp={() => openGuide('dungeon')}
-      >
-        <div className="flex items-center gap-0.5 md:gap-2 p-0.5 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-[0.85] md:scale-100 origin-center">
-           {/* Manifest Button */}
-           <button
-             onClick={() => setIsPossibleDropsModalOpen(true)}
-             className="group flex flex-col items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-slate-900 border border-cyan-500/50 rounded hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
-             title="Sector Drop Manifest"
-           >
-             <Search size={14} className="text-cyan-500 group-hover:text-black transition-colors" />
-           </button>
-
-           <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
-
-          {/* Potion Slot */}
-          <div className="flex items-center gap-1">
-            <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
-              <RefreshCw size={10} className="md:w-4 md:h-4" />
-            </button>
-            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-2 border-black px-1.5 md:px-3 py-1 rounded hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 group">
-              <span className="text-[10px] md:text-lg">🧪</span>
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[4px] md:text-[7px] font-black uppercase text-white/70 italic">{potionCountData.selected === 'hp_potion' ? 'SM' : 'MAX'}</span>
-                <span className="text-[8px] md:text-sm font-black text-white italic">{potionCountData.count}</span>
-              </div>
-            </button>
-          </div>
-
-          <div className="w-[1px] h-6 bg-white/10 mx-1"></div>
-
-          {/* Scroll Slot */}
-          {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1">
-              {isAutoActive ? (
-                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-2 md:px-4 py-1 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] animate-pulse">
-                  <WandSparkles size={12} className="text-black animate-spin-slow" />
-                  <span className="text-[9px] md:text-base font-black text-black italic">{autoTimeLeft}s</span>
-                </div>
-              ) : (
-                hasAnyScrolls && (
-                  <>
-                    <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
-                      <RefreshCw size={10} className="md:w-4 md:h-4" />
-                    </button>
-                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-2 border-black px-1.5 md:px-4 py-1 rounded hover:bg-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                      <WandSparkles size={12} className="text-black" />
-                      <div className="flex flex-col items-start leading-none">
-                        <span className="text-[4px] md:text-[7px] font-black uppercase text-black/70 italic">
-                          {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
-                        </span>
-                        <span className="text-[8px] md:text-sm font-black text-black italic">{scrollCountData.count}</span>
-                      </div>
-                    </button>
-                  </>
-                )
-              )}
-            </div>
-          )}
-
-          {/* Food Slot */}
-          {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1">
-              <div className="w-[1px] h-6 bg-white/10 mx-0.5" />
-              {isFoodActive ? (
-                <div
-                  className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-2 py-1 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] animate-pulse"
-                  title={`Food buff active: ${foodTimeLeft}s remaining`}
-                >
-                  <span className="text-base leading-none">
-                    {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
-                  </span>
-                  <span className="text-[9px] md:text-sm font-black text-white italic">{foodTimeLeft}s</span>
-                </div>
-              ) : (
-                foodInventory.length > 0 && (
-                  <>
-                    {foodInventory.length > 1 && (
-                      <button
-                        onClick={cycleFoodSelection}
-                        className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]"
-                        title="Cycle food selection"
-                      >
-                        <RefreshCw size={10} className="md:w-4 md:h-4" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => selectedFood && eatFood(selectedFood)}
-                      disabled={!selectedFood}
-                      className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-1.5 md:px-3 py-1 rounded hover:bg-emerald-600 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30"
-                      title={selectedFood ? `${selectedFood.name}: ${selectedFood.effectLabel}` : 'No food'}
-                    >
-                      <span className="text-base leading-none">{selectedFood?.icon || '🍽️'}</span>
-                      <div className="flex flex-col items-start leading-none">
-                        <span className="text-[4px] md:text-[7px] font-black uppercase text-white/70 italic">EAT</span>
-                        <span className="text-[8px] md:text-sm font-black text-white italic">{selectedFood?.count || 0}</span>
-                      </div>
-                    </button>
-                  </>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      </Header>
+      />
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}
@@ -805,7 +703,110 @@ export const CombatView = React.memo(() => {
         confirmText="YES, PURIFY"
         cancelText="NO, STRIKE INSTEAD"
       />
-      {/* FOOTER PROGRESS TAPE (SCRAPBOOK STYLE) */}
+      {/* --- TACTICAL UTILITY BELT: CENTERED ABOVE PROGRESS --- */}
+      <div className="absolute bottom-[80px] md:bottom-[110px] left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+        <div className="flex items-center gap-1 md:gap-3 p-1.5 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
+           {/* Manifest Button */}
+           <button
+             onClick={() => setIsPossibleDropsModalOpen(true)}
+             className="group flex items-center justify-center w-8 h-8 md:w-12 md:h-12 bg-slate-950 border-2 border-cyan-500/50 rounded-lg hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
+             title="Sector Drop Manifest"
+           >
+             <Search size={14} className="text-cyan-400 group-hover:text-black transition-colors md:w-6 md:h-6" />
+           </button>
+
+           <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+          {/* Potion Slot */}
+          <div className="flex items-center gap-1">
+            <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
+              <RefreshCw size={10} className="md:w-5 md:h-5" />
+            </button>
+            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1.5 bg-red-600 border-2 border-black px-2 md:px-4 py-1.5 rounded-lg hover:bg-red-500 shadow-[3px_3px_0_rgba(0,0,0,1)] disabled:opacity-30 group">
+              <span className="text-xs md:text-2xl">🧪</span>
+              <div className="flex flex-col items-start leading-none">
+                <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-white/70 italic">{potionCountData.selected === 'hp_potion' ? 'SM' : 'MAX'}</span>
+                <span className="text-xs md:text-lg font-black text-white italic">{potionCountData.count}</span>
+              </div>
+            </button>
+          </div>
+
+          <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+          {/* Scroll Slot */}
+          {combat.battleMode !== 'GVG' && (
+            <div className="flex items-center gap-1">
+              {isAutoActive ? (
+                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-3 md:px-5 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse">
+                  <WandSparkles size={14} className="text-black animate-spin-slow md:w-6 md:h-6" />
+                  <span className="text-xs md:text-xl font-black text-black italic">{autoTimeLeft}s</span>
+                </div>
+              ) : (
+                hasAnyScrolls && (
+                  <>
+                    <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                      <RefreshCw size={10} className="md:w-5 md:h-5" />
+                    </button>
+                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1.5 bg-cyan-600 border-2 border-black px-2 md:px-5 py-1.5 rounded-lg hover:bg-cyan-400 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                      <WandSparkles size={14} className="text-black md:w-6 md:h-6" />
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-black/70 italic">
+                          {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                        </span>
+                        <span className="text-xs md:text-lg font-black text-black italic">{scrollCountData.count}</span>
+                      </div>
+                    </button>
+                  </>
+                )
+              )}
+            </div>
+          )}
+
+          {/* Food Slot */}
+          {combat.battleMode !== 'GVG' && (
+            <div className="flex items-center gap-1">
+              <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1" />
+              {isFoodActive ? (
+                <div
+                  className="flex items-center gap-1.5 bg-emerald-700 border-2 border-black px-3 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse"
+                  title={`Food buff active: ${foodTimeLeft}s remaining`}
+                >
+                  <span className="text-lg md:text-2xl leading-none">
+                    {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
+                  </span>
+                  <span className="text-xs md:text-lg font-black text-white italic">{foodTimeLeft}s</span>
+                </div>
+              ) : (
+                foodInventory.length > 0 && (
+                  <>
+                    {foodInventory.length > 1 && (
+                      <button
+                        onClick={cycleFoodSelection}
+                        className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]"
+                        title="Cycle food selection"
+                      >
+                        <RefreshCw size={10} className="md:w-5 md:h-5" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => selectedFood && eatFood(selectedFood)}
+                      disabled={!selectedFood}
+                      className="flex items-center gap-1.5 bg-emerald-700 border-2 border-black px-2 md:px-4 py-1.5 rounded-lg hover:bg-emerald-600 shadow-[3px_3px_0_rgba(0,0,0,1)] disabled:opacity-30"
+                    >
+                      <span className="text-xs md:text-2xl leading-none">{selectedFood?.icon || '🍽️'}</span>
+                      <div className="flex flex-col items-start leading-none">
+                        <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-white/70 italic">EAT</span>
+                        <span className="text-xs md:text-lg font-black text-white italic">{selectedFood?.count || 0}</span>
+                      </div>
+                    </button>
+                  </>
+                )
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {combat.battleMode !== 'GVG' && (
         <div className="absolute bottom-0 left-0 right-0 z-50 px-3 md:px-12 pb-4 pointer-events-none">
           <div className="relative bg-black border-[3px] md:border-4 border-white p-2 md:p-3 shadow-2xl transform rotate-1 flex flex-col gap-1 md:gap-2">
