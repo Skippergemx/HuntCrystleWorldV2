@@ -163,12 +163,17 @@ export const BattleParticles = forwardRef(({ lowPerfMode }, ref) => {
         const ctx = canvasRef.current.getContext('2d');
         
         const render = () => {
-          if (activeCountRef.current === 0) {
-            ctx.clearRect(0, 0, canvasRef.current.width / (lowPerfMode ? 0.5 : 1), canvasRef.current.height / (lowPerfMode ? 0.5 : 1));
+          const canvas = canvasRef.current;
+          if (!canvas || activeCountRef.current === 0) {
+            if (canvas) {
+              const ctx = canvas.getContext('2d');
+              ctx.clearRect(0, 0, canvas.width / (lowPerfMode ? 0.5 : 1), canvas.height / (lowPerfMode ? 0.5 : 1));
+            }
             isRunningRef.current = false;
             return; 
           }
-          ctx.clearRect(0, 0, canvasRef.current.width / (lowPerfMode ? 0.5 : 1), canvasRef.current.height / (lowPerfMode ? 0.5 : 1));
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width / (lowPerfMode ? 0.5 : 1), canvas.height / (lowPerfMode ? 0.5 : 1));
           let stillActive = 0;
           for (const p of poolRef.current) {
             if (p.active) {

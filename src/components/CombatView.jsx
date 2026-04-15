@@ -214,7 +214,7 @@ export const CombatView = React.memo(() => {
         npcNum={13} 
         onHelp={() => openGuide('dungeon')}
       >
-        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-75 md:scale-100">
+        <div className="flex items-center gap-0.5 md:gap-2 p-0.5 md:p-2 bg-slate-900/80 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-[0.85] md:scale-100 origin-center">
            {/* Manifest Button */}
            <button
              onClick={() => setIsPossibleDropsModalOpen(true)}

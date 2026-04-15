@@ -367,9 +367,9 @@ export const PvpRoomView = React.memo(() => {
          setTutorialStep(0);
          setShowTutorial(true);
        }}>
-          <div className="hidden md:flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1 md:py-2 bg-black/60 rounded-full border border-green-500/30 backdrop-blur-md">
+          <div className="flex items-center gap-1 md:gap-2 px-1 md:px-4 py-0.5 md:py-2 bg-black/60 rounded-full border border-green-500/30 backdrop-blur-md scale-[0.7] md:scale-100">
             <span className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-green-500 rounded-full animate-ping"></span>
-            <span className="text-[8px] md:text-[10px] font-black text-white italic uppercase">Signal Secured: {gridId}</span>
+            <span className="text-[7px] md:text-[10px] font-black text-white italic uppercase truncate max-w-[80px] md:max-w-none">SIGNAL_LIVE: {gridId}</span>
           </div>
        </Header>
 

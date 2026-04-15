@@ -2,22 +2,22 @@ import React from 'react';
 import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, children }) => (
-  <div className="w-full z-[100] px-4 md:px-0 pt-2 flex flex-row items-center justify-between gap-4 relative">
-    <div className="flex items-center gap-4 flex-1">
+  <div className="w-full z-[100] px-2 md:px-0 pt-1 md:pt-2 flex flex-row items-center justify-between gap-1 md:gap-4 relative">
+    <div className="flex items-center gap-1 md:gap-4 flex-1 min-w-0">
       {/* Standard Header Badge */}
-      <div className="bg-black border-[3px] border-white/20 rounded-xl p-3 md:p-4 shadow-[4px_4px_0_rgba(255,255,255,0.05)] transform -skew-x-2 flex items-center gap-3 md:gap-4 flex-shrink-0 relative z-10 group hover:border-cyan-500/50 transition-all">
+      <div className="bg-black border-[2px] md:border-[3px] border-white/20 rounded-lg md:rounded-xl p-1.5 md:p-4 shadow-[2px_2px_0_rgba(255,255,255,0.05)] transform -skew-x-1 md:-skew-x-2 flex items-center gap-2 md:gap-4 flex-shrink-0 relative z-10 group hover:border-cyan-500/50 transition-all max-w-[140px] md:max-w-none">
         {npcNum ? (
-          <div className="w-10 h-10 md:w-12 md:h-12 bg-white/10 rounded-lg border-2 border-white/20 overflow-hidden relative shadow-[2px_2px_0_rgba(255,255,255,0.1)] shrink-0">
+          <div className="w-7 h-7 md:w-12 md:h-12 bg-white/10 rounded border border-white/20 overflow-hidden relative shadow-[1px_1px_0_rgba(255,255,255,0.1)] shrink-0">
              <AvatarMedia num={npcNum} animated={true} className="w-full h-full object-cover object-top" />
           </div>
         ) : icon ? (
-          <div className="p-2 md:p-3 bg-white/5 rounded-lg border-2 border-white/10 text-white shrink-0">
-            {icon}
+          <div className="p-1 md:p-3 bg-white/5 rounded border border-white/10 text-white shrink-0">
+             {icon}
           </div>
         ) : null}
-        <div className="flex flex-col">
-          <span className="text-[6px] md:text-[8px] font-black text-white/50 uppercase tracking-[0.4em] mb-0.5 leading-none italic">{npcNum ? 'REPRESENTATIVE_SYNC' : 'SYSTEM_SIGNAL'}</span>
-          <h1 className="text-sm md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors">{title || 'SYSTEM COMMAND'}</h1>
+        <div className="flex flex-col min-w-0">
+          <span className="text-[4px] md:text-[8px] font-black text-white/50 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-0.5 leading-none italic truncate">{npcNum ? 'REP_SYNC' : 'SYS_SIG'}</span>
+          <h1 className="text-[10px] md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors truncate">{title || 'COMMAND'}</h1>
         </div>
         
         {/* Technical Sub-Tag */}
@@ -33,21 +33,21 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
     </div>
 
     {/* Tactical Controls */}
-    <div className="flex gap-3 shrink-0 relative z-30 pt-1">
+    <div className="flex gap-1 md:gap-3 shrink-0 relative z-30">
       {onHelp && (
         <button 
           onClick={onHelp} 
-          className="p-2 md:p-3 bg-cyan-500 border-[3px] border-black text-black hover:bg-cyan-300 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transform rotate-3"
+          className="p-1.5 md:p-3 bg-cyan-500 border-2 md:border-[3px] border-black text-black hover:bg-cyan-300 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transform rotate-3"
           title="Open Guide"
         >
-          <HelpCircle size={20} className="md:w-7 md:h-7" strokeWidth={4} />
+          <HelpCircle size={14} className="md:w-7 md:h-7" strokeWidth={4} />
         </button>
       )}
       <button 
         onClick={onClose} 
-        className="p-2 md:p-3 bg-red-650 border-[3px] border-black text-black hover:bg-red-500 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transform -rotate-3"
+        className="p-1.5 md:p-3 bg-red-650 border-2 md:border-[3px] border-black text-black hover:bg-red-500 transition-all shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transform -rotate-3"
       >
-        <X size={20} className="md:w-7 md:h-7 text-white" strokeWidth={4} />
+        <X size={14} className="md:w-7 md:h-7 text-white" strokeWidth={4} />
       </button>
     </div>
   </div>
