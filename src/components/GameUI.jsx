@@ -8,7 +8,7 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
       <div className="bg-black border-[2px] md:border-[3px] border-white/20 rounded-lg md:rounded-xl p-1 md:p-4 shadow-[2px_2px_0_rgba(255,255,255,0.05)] transform -skew-x-1 md:-skew-x-2 flex items-center gap-1.5 md:gap-4 transition-all">
         {npcNum ? (
           <div className="w-7 h-7 md:w-12 md:h-12 bg-white/10 rounded border border-white/20 overflow-hidden relative shrink-0">
-             <AvatarMedia num={npcNum} animated={true} className="w-full h-full object-cover object-top" />
+             <CitizenMedia num={npcNum} className="w-full h-full object-cover object-top" />
           </div>
         ) : icon ? (
           <div className="p-1 md:p-3 bg-white/5 rounded border border-white/10 text-white shrink-0">
@@ -238,19 +238,7 @@ export const AttributeRow = React.memo(({ label, value, onAdd, color, disabled, 
 
 export const AvatarMedia = React.memo(({ num, animated, className }) => {
   const imgSrc = `/assets/playeravatar/CrystleHunterAvatar (${num}).jpg`;
-  if (animated) {
-    return (
-      <video
-        key={`vid-${num}`}
-        className={className}
-        autoPlay loop muted playsInline
-        poster={imgSrc}
-      >
-        <source src={`/assets/playeravatarvideo/CrystleHunterAvatar (${num}) video.mp4`} type="video/mp4" />
-      </video>
-    );
-  }
-return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + num; }} />;
+  return <img src={imgSrc} className={className} alt="Avatar" loading="lazy" onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + num; }} />;
 });
 
 export const CitizenMedia = React.memo(({ num, className }) => {

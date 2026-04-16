@@ -244,6 +244,15 @@ export const usePlayerSync = (user, db, appId, farcasterContext, telegram = {}) 
                 });
 
                 setPlayer(fullySanitized);
+                
+                // --- ARTIFACT CURE PROTOCOL ---
+                // If the backend inventory was somehow corrupted into an Array (e.g. from the legacy feedGem bug),
+                // we MUST overwrite the backend with the fixed Object map to prevent future silent write failures.
+                if (Array.isArray(data.inventory)) {
+                   await updateDoc(docRef, { inventory: fullySanitized.inventory });
+                   console.warn("System V4: Self-healed corrupted Array inventory format on Backend.");
+                }
+
                 // Step 4: Register Local Session
                 await setDoc(docRef, { sessionId: localSessionId }, { merge: true });
                 setHasHydratedSession(true);

@@ -23,9 +23,18 @@ import {
   ShieldAlert,
   Radio,
   Check,
-  Brain
+  Brain,
+  ShoppingCart,
+  Users
 } from 'lucide-react';
-import { NavBtn, AvatarMedia } from './GameUI';
+import { 
+  Header, 
+  NavBtn, 
+  StatTile, 
+  AttributeRow, 
+  AvatarMedia, 
+  CitizenMedia 
+} from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 const DIALOGUE_POOL = {
@@ -78,22 +87,18 @@ const DUO_DIALOGUE = [
   ["H: These crystal pets are smarter than they look.", "P: We're literally built from ancient logic-gems, boss."]
 ];
 
-const CharacterDash = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
+const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
   const [fullMsg, setFullMsg] = React.useState("");
   const [displayedMsg, setDisplayedMsg] = React.useState("");
   const [lineIdx, setLineIdx] = React.useState(0);
   const [activeDuo, setActiveDuo] = React.useState(null);
   const currentPet = player.petId ? petsMeta.find(p => p.id === player.petId) : null;
   
-  // Pick a message based on priority state
   const pickMessage = React.useCallback(() => {
     setActiveDuo(null);
     setLineIdx(0);
-
     let pool = DIALOGUE_POOL.idle;
     const isLowHp = player.hp < (player.maxHp * 0.4);
-    
-    // 30% chance for a Duo chat if pet exists
     if (currentPet && Math.random() < 0.3) {
       const duo = DUO_DIALOGUE[Math.floor(Math.random() * DUO_DIALOGUE.length)];
       setActiveDuo(duo);
@@ -102,23 +107,17 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
       if (penaltyRemaining > 0) pool = DIALOGUE_POOL.penalized;
       else if (isLowHp) pool = DIALOGUE_POOL.lowHp;
       else if (player.abilityPoints > 0) pool = DIALOGUE_POOL.hasAp;
-      else {
-        pool = Math.random() > 0.5 ? DIALOGUE_POOL.tips : DIALOGUE_POOL.idle;
-      }
+      else pool = Math.random() > 0.5 ? DIALOGUE_POOL.tips : DIALOGUE_POOL.idle;
       setFullMsg(pool[Math.floor(Math.random() * pool.length)]);
     }
     setDisplayedMsg(""); 
   }, [player.hp, player.abilityPoints, penaltyRemaining, currentPet]);
 
-  // Handle Typewriter and Duo Cycling
   React.useEffect(() => {
     if (displayedMsg.length < fullMsg.length) {
-      const timeout = setTimeout(() => {
-        setDisplayedMsg(fullMsg.slice(0, displayedMsg.length + 1));
-      }, 30);
+      const timeout = setTimeout(() => setDisplayedMsg(fullMsg.slice(0, displayedMsg.length + 1)), 30);
       return () => clearTimeout(timeout);
     } else if (activeDuo && lineIdx < activeDuo.length - 1) {
-      // If it's a duo chat, wait 2s after first line then show next
       const timeout = setTimeout(() => {
         setLineIdx(lineIdx + 1);
         setFullMsg(activeDuo[lineIdx + 1]);
@@ -135,61 +134,63 @@ const CharacterDash = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
   }, [pickMessage]);
 
   const isPetTalking = displayedMsg.startsWith("P:");
-  const isHunterTalking = displayedMsg.startsWith("H:");
   const cleanDisplayMsg = displayedMsg.replace(/^(H:|P:)\s*/, "");
 
   return (
-    <div className="col-span-full flex items-center gap-4 bg-[#faf6f0] p-4 border-[3px] border-black rounded-2xl mb-4 relative overflow-visible group shadow-[8px_8px_0_rgba(0,0,0,1)] -rotate-1 transform transition-transform hover:rotate-0" onClick={pickMessage}>
-      {/* Tape Accents */}
-      <div className="absolute -top-3 left-1/4 w-12 h-6 bg-slate-400/20 border-x-2 border-black/5 rotate-12 z-20" />
-      <div className="absolute -bottom-2 right-1/4 w-10 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-6 z-20" />
-      
-      {/* Duo Avatars - Polaroid Style */}
-      <div className="relative flex -space-x-4 shrink-0">
-        {/* Main Avatar */}
-        <div className={`w-20 h-24 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900 relative z-10 transition-all ${isHunterTalking ? 'scale-105 opacity-100' : 'opacity-80 scale-95'}`}>
-          {player.avatar ? (
-            <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top" />
-          ) : (
-            <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name}`} className="w-full h-full object-cover" />
-          )}
-          <div className="absolute -bottom-1 -right-1 bg-black text-white text-[8px] font-black px-1 border-2 border-white uppercase italic z-20">
-            LVL {player.level}
-          </div>
-        </div>
+    <div className="w-full flex items-center justify-center p-2 relative z-50">
+      {/* TACTICAL COMMAND BANNER - SLIM & WIDE */}
+      <div className="w-full max-w-4xl bg-[#faf6f0] border-[4px] border-black rounded-2xl p-2 px-4 flex items-center gap-4 md:gap-6 shadow-[8px_8px_0_rgba(0,0,0,1)] relative overflow-hidden transform rotate-0.5 transition-all hover:rotate-0 hover:-translate-y-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)] group cursor-pointer" onClick={pickMessage}>
+         {/* Top Hanging Tape */}
+         <div className="absolute -top-3 left-1/4 w-32 h-6 bg-slate-400/20 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+         
+         <div className="relative shrink-0 flex items-center">
+            {/* Slim Avatar Slot */}
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-black border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 group-hover:rotate-0 transition-transform">
+               <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top scale-110" />
+            </div>
+            {currentPet && (
+              <div className="absolute -bottom-1 -right-2 w-8 h-8 rounded-lg border-2 border-black overflow-hidden bg-slate-950 shadow-[2px_2px_0_rgba(0,0,0,1)] z-10 transform rotate-12 group-hover:rotate-0 transition-transform">
+                <img src={`/assets/pets/genesis-pets/Genesis Pets (${currentPet.id}).jpg`} className="w-full h-full object-cover contrast-125" />
+              </div>
+            )}
+         </div>
 
-        {/* Pet Avatar (If equipped) */}
-        {currentPet && (
-          <div className={`w-14 h-18 border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] bg-slate-900 relative z-20 mt-auto transition-all ${isPetTalking ? 'scale-110 opacity-100 -translate-y-2' : 'opacity-70'}`}>
-            <img 
-              src={`/assets/pets/genesis-pets/Genesis Pets (${currentPet.id}).jpg`}
-              className="w-full h-full object-cover"
-              onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + currentPet.name; }}
-            />
-          </div>
-        )}
+         <div className="flex-1 flex flex-col md:flex-row items-center gap-4 md:gap-8 min-w-0">
+            {/* Identity Segment */}
+            <div className="flex flex-col shrink-0 border-r-2 border-black/5 pr-4">
+               <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">REGISTRY_ID</span>
+               <div className="flex items-center gap-2">
+                  <span className="text-sm md:text-base font-[1000] text-black italic truncate leading-none uppercase tracking-tighter">{player.name}</span>
+                  <span className="text-[10px] font-black text-cyan-600 italic leading-none bg-cyan-50 px-1 border border-cyan-100 rounded">LVL_{player.level}</span>
+               </div>
+            </div>
+
+            {/* Horizontal Intelligence Stream */}
+            <div className="flex-1 h-12 overflow-hidden relative bg-black/5 rounded-lg border border-black/5 p-2 flex items-center">
+               <p className="text-[10px] md:text-xs font-black text-slate-700 uppercase leading-snug italic line-clamp-2">
+                 <span className={`${isPetTalking ? 'text-amber-600' : 'text-cyan-600'} drop-shadow-sm`}>{isPetTalking ? '[PET_LINK]:' : '[COMM_LINK]:'}</span> {cleanDisplayMsg}
+               </p>
+               {/* Pulse Cursor */}
+               <div className="w-1.5 h-3 bg-cyan-500 animate-pulse ml-1 shrink-0" />
+            </div>
+         </div>
+
+         {/* Right Status Dot */}
+         <div className="hidden md:flex flex-col items-end gap-1 shrink-0 pl-2">
+            <div className="flex items-center gap-1">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[6px] font-black text-slate-400 italic">LIVE_UPLLINK</span>
+            </div>
+            <div className="text-[8px] font-black text-black/20">#{player.id?.slice(-4)}</div>
+         </div>
       </div>
 
-      {/* Speech Bubble / Mission Command */}
-      <div className="flex-1 relative">
-        <div className={`bg-white border-[3px] border-black p-3 shadow-[6px_6px_0_rgba(0,0,0,0.5)] relative transform min-h-[70px] flex items-center transition-all ${isPetTalking ? 'rotate-1' : '-rotate-1'}`}>
-          <div className="absolute left-[-11px] top-6 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black transform rotate-45" />
-          
-          <p className="text-[11px] font-black text-black uppercase italic leading-tight tracking-tight">
-            <span className={isPetTalking ? 'text-amber-600' : 'text-cyan-600'}>
-              {isPetTalking ? '◢BUDDY: ' : isHunterTalking ? '◢HUNTER: ' : '◢'}
-            </span>
-            {cleanDisplayMsg}
-            <span className="w-1.5 h-3 bg-black inline-block ml-1 animate-pulse" />
-          </p>
-        </div>
-        <div className="mt-2 flex gap-3">
-           <div className="flex items-center gap-1 opacity-40">
-              <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
-              <span className="text-[7px] font-black text-black uppercase italic tracking-widest">HUB_SYNC_ACTIVE</span>
-           </div>
-        </div>
-      </div>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .clip-hex { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+      `}</style>
     </div>
   );
 };
@@ -215,104 +216,230 @@ export const MenuView = React.memo(() => {
 
   const tutorialSteps = [
     {
-      title: "Hunter Hub",
+      title: "Hunter Command",
       npc: 1,
       visualType: 'hub',
-      text: "This is your Hunter Hub — your command center. From here you can access every module in the Hunt Crystle world. Your character info is displayed at the top.",
-      hint: "Tip: Tap the character card to cycle through NPC dialogue."
+      text: "Welcome to the new Tactical HUD. We've prioritized your deployment protocols for maximum efficiency.",
+      hint: "Tip: Top-left for Stats, Top-right for Trade."
     },
     {
-      title: "Module Navigation",
+      title: "Tactical Hierarchy",
       npc: 11,
       visualType: 'nav',
-      text: "Each tile takes you to a different system — Battle Hub, Forge, Market, Tavern, PvP, and more. Explore them all to grow your Hunter efficiently.",
-      hint: "Strategy: Start with the Battle Hub to earn GX Tokens and XP!"
+      text: "The massive center core is your Battle Hub. Below it, you'll find tokens for Town, Relics, and Knowledge.",
+      hint: "Strategy: Watch the pulsing core for deployment readiness."
     },
     {
-      title: "Battle Hub Entry",
+      title: "Operation Startup",
       npc: 17,
       visualType: 'dungeon',
-      text: "Tap the Battle Hub tile to access your deployment zones. Select Dungeons, Boss Rooms, or PvP to begin your operations. Be careful — defeat results in a penalty!",
-      hint: "Warning: If defeated, you must wait out a penalty timer."
+      text: "Stay focused on the Primary Core. If it turns red, your neural link is overheated. Proceed when green.",
+      hint: "Warning: Defeat triggers a neural recalibration period."
     }
   ];
 
   const nextStep = () => {
-    if (tutorialStep < tutorialSteps.length - 1) {
-      setTutorialStep(tutorialStep + 1);
-    } else {
-      if (dontShowAgain) {
-        localStorage.setItem('hide_menu_tutorial', 'true');
-      }
+    if (tutorialStep < tutorialSteps.length - 1) setTutorialStep(tutorialStep + 1);
+    else {
+      if (dontShowAgain) localStorage.setItem('hide_menu_tutorial', 'true');
       setShowTutorial(false);
     }
   };
 
-  const startDungeon = () => {
-    setView('dungeon_menu');
-  };
+  const startDungeon = () => setView('dungeon_menu');
 
-  const NAV_ITEMS = [
-    { onClick: startDungeon, icon: isPenalized ? <Clock className="animate-pulse" /> : <Swords />, title: "Battle Hub", sub: isPenalized ? `Lockdown: ${penaltyRemaining}s` : "Enter Dungeon", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Void Wraith.jpg", disabled: false, npcNum: 13 },
-    { onClick: () => setView('tavern'), icon: <Beer />, title: "Tavern", sub: "Hire Mates", color: "bg-amber-700", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg", npcNum: 11 },
-    { onClick: () => setView('attributes'), icon: <Activity />, title: "Attributes", sub: "Stats", color: "bg-orange-600", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 2-2.jpg", npcNum: 1 },
-    { onClick: () => setView('gear'), icon: <Zap />, title: "Gear", sub: "Tactical", color: "bg-cyan-700", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 3-1.jpg", npcNum: 20 },
-    { onClick: () => setView('inventory'), icon: <Package />, title: "Bag", sub: "Inventory", color: "bg-emerald-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 1.jpg", npcNum: 9 },
-    { onClick: () => setView('shop'), icon: <ShoppingBag />, title: "Shop", sub: "Items", color: "bg-slate-700", backdrop: "/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg", npcNum: 17 },
-    { onClick: () => setView('market'), icon: <Tag />, title: "Market", sub: "P2P Trade", color: "bg-amber-600", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 2-3.jpg", npcNum: 25 },
-    { onClick: () => setView('forge'), icon: <Hammer />, title: "Forge", sub: "Relics", color: "bg-amber-500", backdrop: "/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg", npcNum: 7 },
-    { onClick: () => setView('database'), icon: <Book />, title: "Archives", sub: "Database", color: "bg-blue-600", backdrop: "/assets/monsters/Rust Canyon/Oil Swimmer 1-0.jpg", npcNum: 3 },
-    { onClick: () => setView('leaderboard'), icon: <Globe />, title: "Ranking", sub: "Global", color: "bg-purple-600", backdrop: "/assets/monsters/Rust Canyon/Scrap Bota 2.jpg", npcNum: 28 },
-    { onClick: () => setView('dragons_ground'), icon: <Trees />, title: "Dragons Ground", sub: "Sacred Ground", color: "bg-emerald-700", backdrop: "/assets/monsters/Tectonic Ridge/Quake Golem.jpg", npcNum: 14 },
-    { onClick: () => setView('crystle_town'), icon: <span className="text-lg">🏙️</span>, title: "Crystle Town" , sub: "Mini Quests", color: "bg-amber-800", backdrop: "/assets/monsters/Rust Canyon/Canyon Flyer 1-1.jpg", npcNum: 18 },
-    { onClick: () => setView('ilearn'), icon: <Brain />, title: "iLearn", sub: "Knowledge", color: "bg-blue-800", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg", npcNum: 22 },
-    { onClick: () => setView('laboratory'), icon: <FlaskConical />, title: "Xenon Lab", sub: "Consumables", color: "bg-emerald-900", backdrop: "/assets/monsters/Inferno Crater/Lava Lurker.jpg", npcNum: 12 },
-    { onClick: () => setView('pets'), icon: <Sparkles />, title: "Crystle Pets", sub: "Web3", color: "bg-cyan-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg", npcNum: 30 },
-    { onClick: () => setView('manual'), icon: <BookOpen />, title: "Manual", sub: "How to Play", color: "bg-cyan-600", backdrop: "/assets/monsters/Void Sector 7/Rift Lurker.jpg", npcNum: 2 },
-    { onClick: () => setView('devlog'), icon: <div className="relative"><Radio /><div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div></div>, title: "DEVLOG", sub: "Dev Updates", color: "bg-purple-900", backdrop: "/assets/monsters/Neon Slums/Ember Drake.jpg", npcNum: 24 },
+  const SECONDARY_TOKENS = [
+    { onClick: () => setView('crystle_town'), icon: <span className="text-2xl">🏙️</span>, title: "TOWN", color: "bg-amber-800", npcNum: 18 },
+    { onClick: () => setView('dragons_ground'), icon: <Trees size={28} />, title: "RELICS", color: "bg-emerald-700", npcNum: 14 },
+    { onClick: () => setView('ilearn'), icon: <Brain size={28} />, title: "LEARN", color: "bg-blue-800", npcNum: 22 },
+  ];
+  const UTILITY_LINKS = [
+    { id: 'database', icon: <Book size={16} />, label: 'ARCHIVES' },
+    { id: 'manual', icon: <BookOpen size={16} />, label: 'MANUAL' },
+    { id: 'devlog', icon: <Radio size={16} />, label: 'DEVLOG' },
   ];
 
-  if (isAdmin) {
-    NAV_ITEMS.push({ onClick: () => setView('admin'), icon: <ShieldAlert />, title: "Admin Panel", sub: "Crystle Access", color: "bg-red-600", backdrop: "/assets/monsters/Void Sector 7/Null Stalker.jpg", npcNum: 10 });
-  }
-
   return (
-    <div className="flex-1 p-4 md:p-6 grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-10 relative overflow-y-auto custom-scrollbar bg-[#e2d7c5]">
-      {/* Pin-board texture overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }} />
+    <div className="flex-1 flex flex-col relative overflow-hidden bg-[#e2d7c5]">
+      {/* BACKGROUND DECOR: Floating Citizen Intelligence Files */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Subtle Grid Base */}
+        <div className="absolute inset-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        
+        {/* Intelligence Cards */}
+        <div className="absolute top-10 -left-10 w-32 md:w-56 aspect-[9/16] bg-slate-900 border-[4px] border-black rounded-xl rotate-12 shadow-[12px_12px_0_rgba(0,0,0,0.2)] opacity-20">
+          <CitizenMedia num={5} className="w-full h-full object-cover grayscale-[0.5]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+        </div>
+        <div className="absolute bottom-20 -right-16 w-32 md:w-60 aspect-[9/16] bg-slate-900 border-[4px] border-black rounded-xl -rotate-12 shadow-[12px_12px_0_rgba(0,0,0,0.2)] opacity-30">
+          <CitizenMedia num={12} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+        </div>
+        <div className="absolute top-1/2 left-1/4 w-24 md:w-44 aspect-[9/16] bg-slate-900 border-[3px] border-black rounded-xl -rotate-6 shadow-[8px_8px_0_rgba(0,0,0,0.1)] opacity-20">
+          <CitizenMedia num={22} className="w-full h-full object-cover grayscale-[0.2]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+        </div>
+      </div>
       
-      <CharacterDash player={player} penaltyRemaining={penaltyRemaining} petsMeta={PETS_METADATA} lowPerfMode={lowPerfMode} />
-
-      {NAV_ITEMS.map((item, idx) => (
-        <NavBtn 
-          key={item.title} 
-          {...item}
-          idx={idx}
+      {/* TOP HUD ROW (Tier 3) */}
+      <div className="relative z-50 pt-2 px-2">
+        <CharacterBadge 
+          player={player} 
+          penaltyRemaining={penaltyRemaining} 
+          petsMeta={PETS_METADATA} 
+          lowPerfMode={lowPerfMode}
         />
-      ))}
+      </div>
+
+      {/* SCROLLABLE MAIN BODY */}
+      <div className="flex-1 flex flex-col items-center p-8 md:p-16 relative z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pb-40 pt-10">
+         
+         {/* THE CORE TRINITY (Responsive Flex) */}
+         <div className="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-6 lg:gap-8 w-full max-w-6xl mx-auto">
+            
+            {/* 1. RAID DUNGEON */}
+            <div className="relative group cursor-pointer animate-in zoom-in duration-500 flex flex-col items-center" onClick={startDungeon}>
+               <div className={`w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-1 group-hover:rotate-0 overflow-hidden relative`}>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-2 z-50 backdrop-blur-sm pointer-events-none" />
+                  
+                  {/* FULL ART PREVIEW */}
+                  <div className="absolute inset-0 z-0">
+                     <CitizenMedia num={1} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-red-950/90 via-red-950/30 to-transparent" />
+                  </div>
+
+                  {/* UI OVERLAY */}
+                  <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
+                     <div className={`p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-3 mb-1 group-hover:rotate-0 transition-all ${isPenalized ? 'bg-red-600' : 'bg-red-700'}`}>
+                        {isPenalized ? <Clock className="text-white animate-spin-slow" size={20} /> : <span className="text-xl drop-shadow-md">⚔️</span>}
+                     </div>
+                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap">{isPenalized ? 'LOCKDOWN' : 'RAID DUNGEON'}</h3>
+                     </div>
+                  </div>
+               </div>
+               {!isPenalized && <div className="absolute inset-x-0 bottom-4 flex justify-center"><div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-ping" /></div>}
+            </div>
+
+            {/* 2. CRYSTLE TOWN QUEST */}
+            <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('crystle_town')}>
+               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+                  
+                  {/* FULL ART PREVIEW */}
+                  <div className="absolute inset-0 z-0">
+                     <CitizenMedia num={18} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-amber-950/90 via-amber-950/30 to-transparent" />
+                  </div>
+   
+                  <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
+                     <div className="p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-3 mb-1 group-hover:rotate-0 transition-all bg-amber-600">
+                        <span className="text-xl drop-shadow-md">🏙️</span>
+                     </div>
+                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] rotate-1 transform group-hover:rotate-0 transition-transform w-full flex flex-col items-center">
+                        <h3 className="text-[8px] md:text-[9px] font-[1000] text-black uppercase italic tracking-tighter leading-none text-center">CRYSTLE TOWN QUEST</h3>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            {/* 3. iLEARN QUEST */}
+            <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('ilearn')}>
+               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+                  
+                  {/* FULL ART PREVIEW */}
+                  <div className="absolute inset-0 z-0">
+                     <CitizenMedia num={22} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-blue-950/90 via-blue-950/30 to-transparent" />
+                  </div>
+   
+                  <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
+                     <div className="p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-6 mb-1 group-hover:rotate-0 transition-all bg-blue-700">
+                        <span className="text-xl drop-shadow-md">🧠</span>
+                     </div>
+                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center">
+                        <h3 className="text-[10px] md:text-[11px] font-[1000] text-black uppercase italic tracking-tighter leading-none">ILEARN QUEST</h3>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         {/* LOGISTICS ROW (9:16 Gallery) */}
+         <div className="mt-16 md:mt-20 flex flex-col items-center gap-8 animate-in fade-in duration-1000">
+            <div className="flex items-center gap-2">
+                <div className="w-12 h-[2px] bg-black opacity-10" />
+                <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-800 italic">Operations & Logistics</span>
+                <div className="w-12 h-[2px] bg-black opacity-10" />
+            </div>
+            
+            <div className="flex items-center justify-center gap-4 md:gap-8">
+               {[
+                 { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS AND EQUIPS', sub: 'SYSTEM', color: 'bg-cyan-700', npc: 10, grad: 'from-cyan-950/90' },
+                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'TRADE', color: 'bg-amber-700', npc: 11, grad: 'from-amber-950/90' },
+                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: "DRAGON'S GROUND", sub: 'RELICS', color: 'bg-emerald-700', npc: 14, grad: 'from-emerald-950/90' }
+               ].map((token, i) => (
+                  <button
+                    key={token.id}
+                    onClick={() => setView(token.id)}
+                    className={`group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-slate-900 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] rounded-xl ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative overflow-hidden`}
+                  >
+                     {/* FULL ART PREVIEW */}
+                     <div className="absolute inset-0 z-0">
+                        <CitizenMedia num={token.npc} className="w-full h-full object-cover grayscale-[0.2] transition-transform group-hover:scale-110 duration-700" />
+                        <div className={`absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t ${token.grad} via-transparent to-transparent opacity-90`} />
+                     </div>
+
+                     <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
+                        <div className={`w-10 h-10 flex items-center justify-center ${token.color} border-[2px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rounded-lg transition-all group-hover:rotate-6`}>
+                           {token.icon}
+                        </div>
+                        <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
+                           <div className="text-[7px] md:text-[8px] font-black text-black uppercase italic leading-none text-center break-words">{token.label}</div>
+                        </div>
+                     </div>
+                  </button>
+               ))}
+            </div>
+         </div>
+      </div>
+
+      {/* SYSTEM UTILITY FOOTER */}
+      <div className="bg-black border-t-[4px] border-slate-900 p-3 md:p-4 flex items-center justify-center gap-3 md:gap-6 relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-slate-500 border-x-[3px] border-t-[3px] border-black px-4 py-0.5 rounded-t-xl text-[8px] font-black uppercase tracking-[0.3em] italic">Utility Uplink</div>
+         {UTILITY_LINKS.map(link => (
+            <button key={link.id} onClick={() => setView(link.id)} className="group flex flex-col items-center gap-1 text-slate-500 hover:text-cyan-400 transition-all active:scale-95">
+               <div className="p-2 md:p-3 bg-slate-900 border-2 border-slate-800 rounded-xl group-hover:border-cyan-500 transition-all">
+                 {link.icon}
+               </div>
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest">{link.label}</span>
+            </button>
+         ))}
+         {isAdmin && (
+           <button onClick={() => setView('admin')} className="group flex flex-col items-center gap-1 text-red-600 hover:text-red-400 transition-all active:scale-95">
+              <div className="p-2 md:p-3 bg-red-950/20 border-2 border-red-900/40 rounded-xl group-hover:border-red-500 transition-all">
+                <ShieldAlert size={16} />
+              </div>
+              <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest">ADMIN</span>
+           </button>
+         )}
+      </div>
 
       {showTutorial && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2">
           <div className="relative w-full max-w-sm flex flex-col justify-center">
             <div className="absolute inset-x-0 top-0 bottom-0 bg-emerald-900 rounded-3xl transform translate-x-1.5 translate-y-1.5 mt-1 mb-1 pointer-events-none"></div>
             <div className="relative bg-slate-900 border-[3px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
               <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
-
-              {/* Header Banner */}
-              <div className="w-full bg-emerald-500 py-2 border-b-[3px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+              <div className="w-full bg-emerald-500 py-2 border-b-[3px] border-black transform -rotate-1 relative z-10 shadow-lg">
                 <h2 className="text-xl font-black text-black text-center uppercase tracking-tighter italic">{tutorialSteps[tutorialStep].title}</h2>
                 <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">Step {tutorialStep + 1} / {tutorialSteps.length}</div>
               </div>
-
-              {/* NPC & Visual */}
               <div className="py-3 relative flex justify-center items-center gap-3 w-full z-10">
-                <div className="w-16 h-28 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800 shrink-0">
+                <div className="w-16 h-28 rounded-xl border-[3px] border-black overflow-hidden relative shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 bg-slate-800">
                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
                   <div className="absolute inset-x-0 bottom-0 bg-emerald-500 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-1 h-1 bg-emerald-400 rounded-full animate-ping" />
-                  <div className="w-[1px] h-3 bg-gradient-to-b from-emerald-400 to-transparent" />
                 </div>
                 <div className="w-16 h-16 rounded-xl border-[3px] border-black bg-slate-950 flex items-center justify-center shrink-0">
                   {tutorialSteps[tutorialStep].visualType === 'hub' && <Globe className="text-emerald-400 animate-pulse" size={36} />}
@@ -320,8 +447,6 @@ export const MenuView = React.memo(() => {
                   {tutorialSteps[tutorialStep].visualType === 'dungeon' && <Swords className="text-red-400 animate-pulse" size={36} />}
                 </div>
               </div>
-
-              {/* Dialogue */}
               <div className="px-4 pb-3 w-full relative z-10 flex flex-col">
                 <div className="bg-white text-black p-3 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)]">
                   <div className="absolute -top-3 -left-1 bg-emerald-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic">Incoming Transmission</div>
@@ -331,18 +456,16 @@ export const MenuView = React.memo(() => {
                 <div className="bg-black/60 p-1.5 rounded-lg border border-emerald-500/30 mb-3">
                   <p className="text-[8px] font-black text-emerald-400 uppercase italic tracking-widest text-center">⚡ {tutorialSteps[tutorialStep].hint}</p>
                 </div>
-                <div className="flex items-center justify-center gap-1.5 mb-3">
+                <div className="flex items-center justify-center gap-1.5 mb-3 text-white">
                   <button onClick={() => setDontShowAgain(!dontShowAgain)} className={`w-4 h-4 rounded border-2 border-black flex items-center justify-center transition-colors ${dontShowAgain ? 'bg-emerald-500' : 'bg-slate-800'}`}>
                     {dontShowAgain && <Check size={10} className="text-white" />}
                   </button>
-                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter cursor-pointer" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show this briefing again</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter" onClick={() => setDontShowAgain(!dontShowAgain)}>Don't show briefing again</span>
                 </div>
                 <div className="flex gap-2 pb-1">
-                  {tutorialStep > 0 && (
-                    <button onClick={() => setTutorialStep(prev => prev - 1)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-700 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] italic text-[9px]">BACK</button>
-                  )}
-                  <button onClick={nextStep} className="flex-[2] bg-emerald-500 text-black py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-emerald-400 transition-all border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] italic text-[10px] flex items-center justify-center gap-1.5">
-                    {tutorialStep === tutorialSteps.length - 1 ? 'ENTER THE HUB' : 'TRANSMIT MORE'}
+                  {tutorialStep > 0 && <button onClick={() => setTutorialStep(prev => prev - 1)} className="flex-1 bg-slate-800 text-white py-2.5 rounded-xl font-black uppercase tracking-widest border-[2px] border-black italic text-[9px]">BACK</button>}
+                  <button onClick={nextStep} className="flex-[2] bg-emerald-500 text-black py-2.5 rounded-xl font-black uppercase tracking-widest border-[3px] border-black italic text-[10px] flex items-center justify-center gap-1.5">
+                    {tutorialStep === tutorialSteps.length - 1 ? 'READY' : 'NEXT'}
                     <Sparkles size={12} />
                   </button>
                 </div>

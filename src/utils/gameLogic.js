@@ -117,7 +117,10 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   if (player.petId) {
     const activePet = PETS_METADATA.find(p => p.id === player.petId);
     if (activePet) {
-      stats.maxHp += (activePet.hpBonus || 50);
+      stats.maxHp += (activePet.hpBonus || 0);
+      stats.str += (activePet.strBonus || 0);
+      stats.agi += (activePet.agiBonus || 0);
+      stats.dex += (activePet.dexBonus || 0);
     }
   }
 

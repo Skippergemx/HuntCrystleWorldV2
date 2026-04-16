@@ -42,6 +42,9 @@ import { ILearnView } from './ILearnView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
 import { CrystleTownView } from './CrystleTownView';
+import { CrystleBazaarView } from './CrystleBazaarView';
+import { BiometricCoreView } from './BiometricCoreView';
+import { HunterRegistryView } from './HunterRegistryView';
 // import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { UnifiedAuthBanner } from './UnifiedAuthBanner';
@@ -815,6 +818,18 @@ export const GameLayout = ({ onLogout }) => {
           
           {view === 'ilearn' && (
             <ILearnView />
+          )}
+
+          {view === 'crystle_bazaar' && (
+            <CrystleBazaarView />
+          )}
+
+          {view === 'biometric_core' && (
+            <BiometricCoreView />
+          )}
+
+          {view === 'hunter_registry' && (
+            <HunterRegistryView />
           )}
 
           {/* {view === 'playground' && (

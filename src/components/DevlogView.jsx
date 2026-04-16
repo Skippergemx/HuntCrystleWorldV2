@@ -23,6 +23,25 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.11.0',
+    date: '2026-04-16',
+    title: 'HIGH-FIDELITY COMMAND GALLERY & BAZAAR OVERHAUL',
+    category: 'UI/UX & AESTHETIC CONSOLIDATION',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'Today\'s operations focused on a massive aesthetic consolidation, transforming the grid\'s primary hubs into a premium 9:16 character-led gallery. We\'ve streamlined technical terminology and unified the commercial and tactical interfaces into a cohesive, art-first experience.',
+    changes: [
+      'UI: Rebuilt Crystle Bazaar into a high-fidelity 9:16 Character Gallery',
+      'UI: Refactored Biometric Core (Stats & Equips) into a centered, full-screen Dossier deck',
+      'UI: Standardized Battle Hub (Raid Dungeon) with the "Bazaar" gallery template',
+      'Vernacular: Simplified menu names across all hubs (Bag, Gear, Ranking, Shop, Tavern)',
+      'Aesthetic: Optimized typography and tactile banners for zero-overflow readability',
+      'Stability: Patched combat engine ReferenceError and stabilized character ID framing'
+    ],
+    media: '/assets/monsters/Void Sector 7/Void Wraith.jpg'
+  },
+  {
     id: '1.10.0',
     date: '2026-04-15',
     title: 'CHARACTER-LED COMMAND HUB & MISSION AVATARS',

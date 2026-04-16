@@ -209,7 +209,7 @@ export const CombatView = React.memo(() => {
 
       {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
       <Header 
-        title={`${combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')} - Floor ${depth}`} 
+        title={`${combat.battleMode === 'GVG' ? `RAID: [${enemy.syndicateTag}]` : (selectedMap?.name || 'Sector Alpha')}`} 
         onClose={() => setShowRetreatConfirm(true)} 
         npcNum={13} 
         onHelp={() => openGuide('dungeon')}
@@ -334,6 +334,16 @@ export const CombatView = React.memo(() => {
                     <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-0"></div>
                     {player.avatar && (
                       <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top filter contrast-125" />
+                    )}
+
+                    {/* ELEMENTAL SYNC AURA (PET POWER) */}
+                    {activePet && (
+                      <div className={`absolute inset-0 z-[5] animate-pulse opacity-20 ${
+                        activePet.element === 'Pyro' ? 'bg-red-500' :
+                        activePet.element === 'Hydro' ? 'bg-blue-500' :
+                        activePet.element === 'Gale' ? 'bg-purple-500' :
+                        activePet.element === 'Earthen' ? 'bg-emerald-500' : 'bg-pink-500'
+                      }`}></div>
                     )}
 
                     {/* RECTANGULAR TAUNT OVERLAY (PLAYER) */}
@@ -706,6 +716,12 @@ export const CombatView = React.memo(() => {
       {/* --- TACTICAL UTILITY BELT: CENTERED ABOVE PROGRESS --- */}
       <div className="absolute bottom-[80px] md:bottom-[110px] left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
         <div className="flex items-center gap-1 md:gap-3 p-1.5 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
+           {/* Floor Descriptor Module */}
+           <div className="flex flex-col items-center justify-center bg-cyan-500 border-2 border-black rounded-lg px-2 py-1 min-w-[2.5rem] md:min-w-[3.5rem] shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-2 mr-1">
+             <span className="text-[5px] md:text-[7px] font-[1000] text-black uppercase italic tracking-tighter leading-none mb-0.5">FLOOR</span>
+             <span className="text-base md:text-2xl font-black text-black italic leading-none">{depth}</span>
+           </div>
+
            {/* Manifest Button */}
            <button
              onClick={() => setIsPossibleDropsModalOpen(true)}
@@ -718,28 +734,34 @@ export const CombatView = React.memo(() => {
            <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
 
           {/* Potion Slot */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
             <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
               <RefreshCw size={10} className="md:w-5 md:h-5" />
             </button>
-            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1.5 bg-red-600 border-2 border-black px-2 md:px-4 py-1.5 rounded-lg hover:bg-red-500 shadow-[3px_3px_0_rgba(0,0,0,1)] disabled:opacity-30 group">
-              <span className="text-xs md:text-2xl">🧪</span>
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-white/70 italic">{potionCountData.selected === 'hp_potion' ? 'SM' : 'MAX'}</span>
-                <span className="text-xs md:text-lg font-black text-white italic">{potionCountData.count}</span>
-              </div>
+            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 group min-w-[3rem] md:min-w-[4rem] justify-center">
+              <span className="text-xs md:text-xl relative top-0.5">🧪</span>
+              <span className="text-sm md:text-xl font-black text-white italic">{potionCountData.count}</span>
             </button>
+            <div className="bg-yellow-400 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-2 min-w-[4.5rem] md:min-w-[7rem]">
+               <span className="text-[9px] md:text-[13px] font-black text-black uppercase tracking-tight leading-none mb-0.5 whitespace-nowrap">
+                 {potionCountData.selected === 'hp_potion' ? 'HP POTION' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA DRIP' : 'ULTRA CORE'}
+               </span>
+               <span className="text-lg md:text-3xl font-black text-black leading-none italic">{potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}</span>
+            </div>
           </div>
 
           <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
 
           {/* Scroll Slot */}
           {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
               {isAutoActive ? (
-                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-3 md:px-5 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse">
+                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-3 md:px-4 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse">
                   <WandSparkles size={14} className="text-black animate-spin-slow md:w-6 md:h-6" />
-                  <span className="text-xs md:text-xl font-black text-black italic">{autoTimeLeft}s</span>
+                  <div className="flex items-center gap-1">
+                     <span className="text-sm md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
+                     <span className="text-[10px] md:text-xs font-black text-black italic">s</span>
+                  </div>
                 </div>
               ) : (
                 hasAnyScrolls && (
@@ -747,15 +769,18 @@ export const CombatView = React.memo(() => {
                     <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
                       <RefreshCw size={10} className="md:w-5 md:h-5" />
                     </button>
-                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1.5 bg-cyan-600 border-2 border-black px-2 md:px-5 py-1.5 rounded-lg hover:bg-cyan-400 shadow-[3px_3px_0_rgba(0,0,0,1)]">
-                      <WandSparkles size={14} className="text-black md:w-6 md:h-6" />
-                      <div className="flex flex-col items-start leading-none">
-                        <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-black/70 italic">
-                          {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
-                        </span>
-                        <span className="text-xs md:text-lg font-black text-black italic">{scrollCountData.count}</span>
-                      </div>
+                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)] group min-w-[3rem] md:min-w-[4rem] justify-center">
+                      <WandSparkles size={14} className="text-black md:w-5 md:h-5 relative top-0.5" />
+                      <span className="text-sm md:text-xl font-black text-black italic">{scrollCountData.count}</span>
                     </button>
+                    <div className="bg-cyan-400 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-2 min-w-[4.5rem] md:min-w-[7rem]">
+                       <span className="text-[9px] md:text-[13px] font-black text-black uppercase tracking-tight leading-none mb-0.5 whitespace-nowrap">
+                         {scrollCountData.selected === 'auto_scroll' ? '1M CHIP' : scrollCountData.selected === 'auto_scroll_3m' ? '3M DRIVE' : scrollCountData.selected === 'auto_scroll_6m' ? '6M LINK' : scrollCountData.selected === 'auto_scroll_9m' ? '9M FLOW' : '12M PRO'}
+                       </span>
+                       <span className="text-lg md:text-3xl font-black text-black leading-none italic">
+                           {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                       </span>
+                    </div>
                   </>
                 )
               )}
@@ -764,17 +789,19 @@ export const CombatView = React.memo(() => {
 
           {/* Food Slot */}
           {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1">
-              <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1" />
+            <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
               {isFoodActive ? (
                 <div
-                  className="flex items-center gap-1.5 bg-emerald-700 border-2 border-black px-3 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse"
+                  className="flex items-center gap-2 bg-emerald-700 border-2 border-black px-3 md:px-4 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse"
                   title={`Food buff active: ${foodTimeLeft}s remaining`}
                 >
                   <span className="text-lg md:text-2xl leading-none">
                     {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
                   </span>
-                  <span className="text-xs md:text-lg font-black text-white italic">{foodTimeLeft}s</span>
+                  <div className="flex items-center gap-1">
+                     <span className="text-sm md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
+                     <span className="text-[10px] md:text-xs font-black text-white/80 italic">s</span>
+                  </div>
                 </div>
               ) : (
                 foodInventory.length > 0 && (
@@ -791,14 +818,15 @@ export const CombatView = React.memo(() => {
                     <button
                       onClick={() => selectedFood && eatFood(selectedFood)}
                       disabled={!selectedFood}
-                      className="flex items-center gap-1.5 bg-emerald-700 border-2 border-black px-2 md:px-4 py-1.5 rounded-lg hover:bg-emerald-600 shadow-[3px_3px_0_rgba(0,0,0,1)] disabled:opacity-30"
+                      className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-emerald-600 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 min-w-[3rem] md:min-w-[4rem] justify-center"
                     >
-                      <span className="text-xs md:text-2xl leading-none">{selectedFood?.icon || '🍽️'}</span>
-                      <div className="flex flex-col items-start leading-none">
-                        <span className="text-[5px] md:text-[8px] font-[1000] uppercase text-white/70 italic">EAT</span>
-                        <span className="text-xs md:text-lg font-black text-white italic">{selectedFood?.count || 0}</span>
-                      </div>
+                      <span className="text-lg md:text-xl leading-none relative top-0.5">{selectedFood?.icon || '🍽️'}</span>
+                      <span className="text-sm md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
                     </button>
+                    <div className="bg-emerald-500 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-2 min-w-[2.5rem] md:min-w-[3.5rem]">
+                       <span className="text-[5px] md:text-[6px] font-[1000] text-black/70 uppercase tracking-tighter leading-none mb-0.5">EAT</span>
+                       <span className="text-sm md:text-xl font-black text-black leading-none italic">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
+                    </div>
                   </>
                 )
               )}

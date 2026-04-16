@@ -98,6 +98,9 @@ export const useCombat = (
     }
   }, [playerTaunt]);
 
+  // DERIVE PET METADATA FOR COMBAT BONUSES
+  const petMeta = (player?.activePet && PETS_METADATA) ? PETS_METADATA[player.activePet.id] : null;
+
   useEffect(() => {
     stunRef.current = stunTimeLeft;
     missRef.current = missTimeLeft;
@@ -307,10 +310,12 @@ export const useCombat = (
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
-    const petMeta = player?.petId ? PETS_METADATA.find(p => p.id === player.petId) : null;
     const earnedXp = Math.floor(e.xp * (petMeta?.xpMult || 1.0));
-    addLog(`Victory! Found ${e.loot} GX.`);
-    if (petMeta) addLog(`✨ ${petMeta.name.toUpperCase()} PULSE: +${Math.round((petMeta.xpMult - 1) * 100)}% XP Bonus!`);
+    const earnedLoot = Math.floor(e.loot * (petMeta?.lootMult || 1.0));
+    addLog(`Victory! Found ${earnedLoot} GX.`);
+    if (petMeta && (petMeta.xpMult > 1 || petMeta.lootMult > 1)) {
+        addLog(`✨ ${petMeta.name.toUpperCase()} PULSE: ${petMeta.xpMult > 1 ? `+${Math.round((petMeta.xpMult - 1) * 100)}% XP` : ''} ${petMeta.lootMult > 1 ? `+${Math.round((petMeta.lootMult - 1) * 100)}% GX` : ''} Bonus!`);
+    }
 
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000;
     let apGained = 0;
@@ -325,7 +330,7 @@ export const useCombat = (
     }
 
     const updates = {
-      tokens: (player?.tokens || 0) + e.loot,
+      tokens: (player?.tokens || 0) + earnedLoot,
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
@@ -377,13 +382,13 @@ export const useCombat = (
 
             // BUG-10 FIX: Track dropped item directly, no fragile key re-lookup
             setSessionRewards(prev => ({
-              tokens: prev.tokens + e.loot,
+              tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
               loots: [...prev.loots, itemWithId]
             }));
           } else {
             setSessionRewards(prev => ({
-              tokens: prev.tokens + e.loot,
+              tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
               loots: prev.loots
             }));

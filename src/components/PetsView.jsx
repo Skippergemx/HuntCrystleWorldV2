@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Sparkles, ShieldCheck, AlertCircle, Wallet, ArrowRight, Heart, Zap, Star, Lock, Check, HelpCircle } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
@@ -10,6 +10,15 @@ export const PetsView = () => {
   const { setView } = adventure;
   const [loading, setLoading] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
+
+  const collectionSync = useMemo(() => {
+    const counts = { 'Pyro': 0, 'Hydro': 0, 'Gale': 0, 'Earthen': 0, 'Cosmic': 0 };
+    player.unlockedPets?.forEach(id => {
+      const p = PETS_METADATA.find(pm => pm.id === id);
+      if (p) counts[p.element]++;
+    });
+    return counts;
+  }, [player.unlockedPets, PETS_METADATA]);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -113,8 +122,12 @@ export const PetsView = () => {
                       <div className="bg-slate-50 border-2 border-black p-2 text-left relative my-2">
                         <div className="absolute -top-3 left-3 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase">Active Specs</div>
                         <div className="flex flex-col gap-1">
-                          <div className="flex justify-between items-center"><span className="text-[9px] text-slate-500">EXPERIENCE</span><span className="text-xs font-black text-emerald-600">x{selectedPetMeta.xpMult?.toFixed(2)}</span></div>
-                          <div className="flex justify-between items-center"><span className="text-[9px] text-slate-500">VITALITY</span><span className="text-xs font-black text-cyan-600">+{selectedPetMeta.hpBonus} HP</span></div>
+                          {selectedPetMeta.xpMult > 1 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">EXPERIENCE</span><span className="text-xs font-black text-emerald-600">x{selectedPetMeta.xpMult?.toFixed(2)}</span></div>}
+                          {selectedPetMeta.lootMult > 1 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">GX GENERATION</span><span className="text-xs font-black text-amber-600">x{selectedPetMeta.lootMult?.toFixed(2)}</span></div>}
+                          {selectedPetMeta.hpBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">CORE VITALITY</span><span className="text-xs font-black text-cyan-600">+{selectedPetMeta.hpBonus} HP</span></div>}
+                          {selectedPetMeta.strBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">REVERB POWER</span><span className="text-xs font-black text-red-600">+{selectedPetMeta.strBonus} STR</span></div>}
+                          {selectedPetMeta.agiBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">REFLEX SYNC</span><span className="text-xs font-black text-emerald-500">+{selectedPetMeta.agiBonus} AGI</span></div>}
+                          {selectedPetMeta.dexBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">FOCUS OPTIC</span><span className="text-xs font-black text-blue-600">+{selectedPetMeta.dexBonus} DEX</span></div>}
                         </div>
                       </div>
 
@@ -181,14 +194,14 @@ export const PetsView = () => {
                   </div>
                   <h2 className="text-xl md:text-5xl font-black text-black italic uppercase drop-shadow-[2px_2px_0_#fff] md:drop-shadow-[3px_3px_0_#fff] tracking-tighter leading-none">Crystles</h2>
               </div>
-              <div className="flex gap-2 md:gap-6">
+               <div className="flex gap-2 md:gap-6">
                   <div className="bg-black/10 border-2 border-black/20 p-2 md:p-3 rounded-lg md:rounded-xl flex flex-col items-center min-w-[50px] md:min-w-[80px]">
-                    <div className="flex items-center gap-1"><Star size={8} className="text-black md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-black">10%</span></div>
-                    <span className="text-[5px] md:text-[8px] font-black text-black/50 uppercase">XP GAIN</span>
+                    <div className="flex items-center gap-1"><Star size={8} className="text-black md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-black">UNIQUE</span></div>
+                    <span className="text-[5px] md:text-[8px] font-black text-black/50 uppercase">BUFF PATHS</span>
                   </div>
                   <div className="bg-black text-white border-2 border-black p-2 md:p-3 rounded-lg md:rounded-xl flex flex-col items-center min-w-[50px] md:min-w-[80px] shadow-[4px_4px_0_rgba(0,0,0,0.3)]">
-                    <div className="flex items-center gap-1"><Zap size={8} className="text-cyan-400 md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-white">+50</span></div>
-                    <span className="text-[5px] md:text-[8px] font-black text-white/40 uppercase">HP CORE</span>
+                    <div className="flex items-center gap-1"><Zap size={8} className="text-cyan-400 md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-white">GENESIS</span></div>
+                    <span className="text-[5px] md:text-[8px] font-black text-white/40 uppercase">COLLECTION</span>
                   </div>
               </div>
             </div>
@@ -198,16 +211,40 @@ export const PetsView = () => {
         <div className="flex-1 bg-white border-[6px] border-black rounded-[30px] md:rounded-[50px] p-4 md:p-10 shadow-[10px_10px_0_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative transform -rotate-0.5">
            <div className="absolute inset-0 opacity-[0.03] comic-halftone pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 2px, transparent 2px)', backgroundSize: '10px 10px' }}></div>
            
-           <div className="mb-4 md:mb-8 flex justify-between items-center relative z-10 px-2">
+           <div className="mb-4 md:mb-8 flex justify-between items-center relative z-10 px-2 text-black">
              <div className="flex flex-col">
-               <h3 className="text-lg md:text-2xl font-black text-black uppercase italic leading-none tracking-tighter">Genesis Squad</h3>
-               <p className="text-[8px] md:text-[11px] font-black text-black/40 uppercase tracking-widest mt-1 italic">{PETS_METADATA.length} Unique Souls Scanned in Sector</p>
+               <h3 className="text-lg md:text-2xl font-black uppercase italic leading-none tracking-tighter">Genesis Squad</h3>
+               <p className="text-[8px] md:text-[11px] font-black opacity-40 uppercase tracking-widest mt-1 italic">{PETS_METADATA.length} Unique Souls Scanned in Sector</p>
              </div>
              {player.petId && (
                 <div className="bg-emerald-500 border-4 border-black px-4 py-2 rounded-xl text-black font-black uppercase text-[10px] md:text-xs shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-2 italic transform rotate-3">
                    <ShieldCheck size={14} /> ACTIVE COMPANION: {PETS_METADATA.find(p => p.id === player.petId)?.name || `#${player.petId}`}
                 </div>
              )}
+           </div>
+
+           {/* SYNERGY TRACKER */}
+           <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6 relative z-10 px-2">
+              {Object.entries(collectionSync).map(([el, count]) => (
+                <div key={el} className="flex flex-col gap-1">
+                   <div className="flex justify-between items-end px-1">
+                      <span className={`text-[6px] md:text-[8px] font-black uppercase italic ${
+                        el === 'Pyro' ? 'text-orange-600' : el === 'Hydro' ? 'text-blue-600' : el === 'Gale' ? 'text-purple-600' : el === 'Earthen' ? 'text-emerald-600' : 'text-slate-600'
+                      }`}>{el}</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-black italic">{count}/10</span>
+                   </div>
+                   <div className="h-2 md:h-3 bg-slate-200 border-2 border-black rounded-full overflow-hidden relative">
+                      <div 
+                        className={`h-full transition-all duration-1000 ${
+                           el === 'Pyro' ? 'bg-orange-500' : el === 'Hydro' ? 'bg-blue-500' : el === 'Gale' ? 'bg-purple-500' : el === 'Earthen' ? 'bg-emerald-500' : 'bg-pink-500'
+                        }`} 
+                        style={{ width: `${(count / 10) * 100}%` }} 
+                      />
+                      {count >= 3 && <div className="absolute left-[30%] top-0 bottom-0 w-[1.5px] bg-black/40" />}
+                      {count >= 6 && <div className="absolute left-[60%] top-0 bottom-0 w-[1.5px] bg-black/40" />}
+                   </div>
+                </div>
+              ))}
            </div>
 
            <div className="flex-1 overflow-y-auto px-2 md:px-4 custom-scrollbar pb-10 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8 content-start relative z-10">

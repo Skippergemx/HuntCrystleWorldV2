@@ -114,11 +114,8 @@ export const DragonsGroundView = React.memo(() => {
       return;
     }
 
-    const newInventory = [...Object.values(player.inventory || {})];
-    const index = newInventory.findIndex(i => i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard');
-    if (index !== -1) {
-      newInventory.splice(index, 1);
-
+    const crystalKey = Object.keys(player.inventory || {}).find(key => player.inventory[key]?.id?.replace(/(_\d+)+$/, '') === 'crystle_shard');
+    if (crystalKey) {
       let newCrystalsFed = gemx.crystalsFed + 1;
       let newLevel = gemx.level;
 
@@ -131,10 +128,13 @@ export const DragonsGroundView = React.memo(() => {
         setMessage({ type: 'info', text: 'GEMX absorbed the crystal energy.' });
       }
 
-      syncPlayer({ 
-        inventory: newInventory, 
+      const updates = { 
         gemx: { ...gemx, level: newLevel, crystalsFed: newCrystalsFed } 
-      });
+      };
+      
+      updates[`inventory.${crystalKey}`] = deleteField();
+      
+      syncPlayer(updates, true);
     }
   };
 
