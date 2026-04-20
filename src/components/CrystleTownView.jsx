@@ -17,7 +17,7 @@ const PERSONALITY_STYLES = {
 };
 
 // --- NPC Dialogue Modal ---
-const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete }) => {
+const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfirmAbandon }) => {
   const { player, ITEMS, FOODS, MAPS } = useGame();
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
   const [activeTooltip, setActiveTooltip] = useState(null);
@@ -127,15 +127,10 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete }) => {
             Postpone
           </button>
           <button
-            onClick={() => {
-              if (window.confirm(`Are you sure you want to dismiss ${quest.npcName}'s request?`)) {
-                onAbandon(quest.id);
-                onClose();
-              }
-            }}
-            className="flex-1 bg-red-550 border-[3px] border-black text-white py-3 font-black uppercase tracking-widest text-[10px] hover:bg-red-400 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+            onClick={() => setConfirmAbandon(quest.id)}
+            className="flex-1 bg-red-400 border-[3px] border-black text-black py-3 font-black uppercase tracking-widest text-[10px] hover:bg-red-300 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
           >
-            Trash Hub
+            Skip Request
           </button>
         </div>
 
@@ -218,6 +213,39 @@ const NPCCard = ({ quest, onOpen, idx }) => {
   );
 };
 
+// --- Confirm Modal ---
+const ConfirmModal = ({ isOpen, onConfirm, onCancel, title, message }) => {
+  if (!isOpen) return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[10001] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-[#faf6f0] border-[4px] border-black p-6 rounded-3xl shadow-[10px_10px_0_rgba(0,0,0,1)] max-w-sm w-full transform -rotate-1">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-red-500 rounded-xl border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+            <AlertCircle size={24} className="text-white" />
+          </div>
+          <h3 className="text-lg font-black text-black uppercase italic tracking-tighter">{title}</h3>
+        </div>
+        <p className="text-xs font-bold text-slate-700 uppercase leading-tight mb-6">{message}</p>
+        <div className="flex gap-3">
+          <button 
+            onClick={onCancel}
+            className="flex-1 bg-white border-[3px] border-black text-black py-3 font-black uppercase text-[10px] shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+          >
+            Go Back
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="flex-1 bg-red-500 border-[3px] border-black text-black py-3 font-black uppercase text-[10px] shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+          >
+            Confirm Skip
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 // --- Cooldown Card ---
 const CooldownCard = ({ expiration, id, onRush, idx }) => {
   const [timeLeft, setTimeLeft] = useState(Math.max(0, expiration - Date.now()));
@@ -258,6 +286,7 @@ export const CrystleTownView = () => {
   const { setView } = adventure;
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
+  const [confirmAbandon, setConfirmAbandon] = useState(null);
 
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
@@ -391,7 +420,39 @@ export const CrystleTownView = () => {
           onHelp={() => openGuide('crystle_town')}
         />
 
-        <div className="px-4 py-2">
+        <div className="px-4 py-2 space-y-4">
+          {/* Town Influence UI */}
+          <div className="bg-slate-900 border-[3px] border-black p-3 rounded-2xl shadow-[5px_5px_0_rgba(0,0,0,1)] relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-500 p-1.5 rounded-lg border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                  <CheckCircle size={16} className="text-black" />
+                </div>
+                <div>
+                   <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">District Standing</p>
+                   <p className="text-sm font-black text-white uppercase italic leading-none">LEVEL {player?.crystleTownLevel || 1} INFLUENCE</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">XP Surge</p>
+                <p className="text-xs font-black text-emerald-400 italic leading-none">{player?.crystleTownInfluenceXP || 0} / 25</p>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="w-full h-3 bg-black border-2 border-white/10 rounded-full overflow-hidden p-0.5">
+               <div 
+                 className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-1000"
+                 style={{ width: `${Math.min(100, ((player?.crystleTownInfluenceXP || 0) / 25) * 100)}%` }}
+               />
+            </div>
+            
+            <p className="text-[8px] font-bold text-white/50 uppercase mt-2 italic flex items-center gap-1">
+               <AlertCircle size={10} /> Complete requests to boost town renovation & earn higher tier rewards.
+            </p>
+          </div>
+
           <TalkingNPC
             npcIndex={18}
             name="TOWN ELDER"
@@ -462,6 +523,21 @@ export const CrystleTownView = () => {
           onComplete={handleComplete}
           onAbandon={actions.abandonTownQuest}
           canComplete={true}
+          setConfirmAbandon={setConfirmAbandon}
+        />
+      )}
+
+      {confirmAbandon && (
+        <ConfirmModal
+          isOpen={true}
+          title="Skip Request?"
+          message="Are you sure you want to dismiss this citizen's request? A new citizen will take their place after a 30-minute cooldown."
+          onConfirm={() => {
+            actions.abandonTownQuest(confirmAbandon);
+            setConfirmAbandon(null);
+            setActiveQuest(null);
+          }}
+          onCancel={() => setConfirmAbandon(null)}
         />
       )}
 

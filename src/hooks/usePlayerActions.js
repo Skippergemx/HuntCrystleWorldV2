@@ -1017,7 +1017,7 @@ export const usePlayerActions = (
     currentSlots.push(cooldownId);
     
     syncPlayer({ townQuestSlots: currentSlots });
-    addLog("🗑️ REQUEST TRASHED: Slot locked for 30 minutes.");
+    addLog("🗑️ REQUEST SKIPPED: Slot locked for 30 minutes.");
   }, [player, syncPlayer, addLog]);
 
   const rushTownQuestCooldown = useCallback((cooldownId) => {

@@ -213,7 +213,32 @@ export const CombatView = React.memo(() => {
         onClose={() => setShowRetreatConfirm(true)} 
         npcNum={13} 
         onHelp={() => openGuide('dungeon')}
-      />
+      >
+        {/* --- TACTICAL MISSION COMMAND MODULE (BALANCED) --- */}
+        <div className="flex items-center bg-slate-950/40 border-[2px] border-white/5 rounded-xl p-1 md:p-1.5 backdrop-blur-sm transform -skew-x-2 md:-skew-x-6 animate-in slide-in-from-top-4 duration-700">
+           {/* Section 1: Floor Telemetry */}
+           <div className="flex flex-col items-center justify-center bg-cyan-500 border-2 border-black rounded-lg px-3 md:px-6 py-1 shadow-[3px_3px_0_rgba(0,0,0,1)] transform skew-x-2 md:skew-x-6 mr-1 md:mr-2">
+              <span className="text-[6px] md:text-[8px] font-black text-black/60 uppercase tracking-[0.2em] leading-none mb-0.5">LN_COORD</span>
+              <span className="text-[11px] md:text-2xl font-black text-black italic leading-none">FLR_{depth}</span>
+           </div>
+
+           <div className="w-[1px] h-6 bg-white/10 mx-1 md:mx-2 skew-x-6"></div>
+           
+           {/* Section 2: Data Stream Manifest */}
+           <button
+             onClick={() => setIsPossibleDropsModalOpen(true)}
+             className="group flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-1.5 focus:outline-none transform skew-x-2 md:skew-x-6"
+           >
+             <div className="bg-slate-900 border-2 border-cyan-500/30 p-1 md:p-1.5 rounded-lg group-hover:bg-cyan-500 group-hover:border-black transition-all">
+                <Search size={14} className="text-cyan-400 group-hover:text-black transition-colors md:w-5 md:h-5" />
+             </div>
+             <div className="flex flex-col items-start leading-none">
+                <span className="text-[6px] md:text-[8px] font-black text-white/40 uppercase tracking-widest group-hover:text-black/50 transition-colors">BIT_STREAM</span>
+                <span className="text-[10px] md:text-base font-black text-white group-hover:text-cyan-400 uppercase italic transition-colors">MANIFEST</span>
+             </div>
+           </button>
+        </div>
+      </Header>
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}
@@ -713,40 +738,33 @@ export const CombatView = React.memo(() => {
         confirmText="YES, PURIFY"
         cancelText="NO, STRIKE INSTEAD"
       />
-      {/* --- TACTICAL UTILITY BELT: CENTERED ABOVE PROGRESS --- */}
-      <div className="absolute bottom-[80px] md:bottom-[110px] left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-        <div className="flex items-center gap-1 md:gap-3 p-1.5 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
-           {/* Floor Descriptor Module */}
-           <div className="flex flex-col items-center justify-center bg-cyan-500 border-2 border-black rounded-lg px-2 py-1 min-w-[2.5rem] md:min-w-[3.5rem] shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-2 mr-1">
-             <span className="text-[5px] md:text-[7px] font-[1000] text-black uppercase italic tracking-tighter leading-none mb-0.5">FLOOR</span>
-             <span className="text-base md:text-2xl font-black text-black italic leading-none">{depth}</span>
-           </div>
-
-           {/* Manifest Button */}
-           <button
-             onClick={() => setIsPossibleDropsModalOpen(true)}
-             className="group flex items-center justify-center w-8 h-8 md:w-12 md:h-12 bg-slate-950 border-2 border-cyan-500/50 rounded-lg hover:bg-cyan-500 transition-all active:scale-95 shrink-0"
-             title="Sector Drop Manifest"
-           >
-             <Search size={14} className="text-cyan-400 group-hover:text-black transition-colors md:w-6 md:h-6" />
-           </button>
-
-           <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+      {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
+      <div className="absolute bottom-[130px] md:bottom-[170px] left-0 right-0 z-[60] flex justify-center px-2 md:px-4 pointer-events-none">
+        <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
 
           {/* Potion Slot */}
-          <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
-            <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
-              <RefreshCw size={10} className="md:w-5 md:h-5" />
+          <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+            <button 
+              onClick={cyclePotion} 
+              className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            >
+              <RefreshCw size={12} className="md:w-5 md:h-5" />
             </button>
-            <button onClick={handleHeal} disabled={!potionCountData.hasSelected} className="flex items-center gap-1 bg-red-600 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 group min-w-[3rem] md:min-w-[4rem] justify-center">
-              <span className="text-xs md:text-xl relative top-0.5">🧪</span>
-              <span className="text-sm md:text-xl font-black text-white italic">{potionCountData.count}</span>
+            <button 
+              onClick={handleHeal} 
+              disabled={!potionCountData.hasSelected} 
+              className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+            >
+              <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
+              <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
             </button>
-            <div className="bg-yellow-400 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-2 min-w-[4.5rem] md:min-w-[7rem]">
-               <span className="text-[9px] md:text-[13px] font-black text-black uppercase tracking-tight leading-none mb-0.5 whitespace-nowrap">
-                 {potionCountData.selected === 'hp_potion' ? 'HP POTION' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA DRIP' : 'ULTRA CORE'}
+            <div className="w-12 md:w-24 h-8 md:h-12 bg-yellow-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+               <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                 {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
                </span>
-               <span className="text-lg md:text-3xl font-black text-black leading-none italic">{potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}</span>
+               <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+                 {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
+               </span>
             </div>
           </div>
 
@@ -754,53 +772,56 @@ export const CombatView = React.memo(() => {
 
           {/* Scroll Slot */}
           {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
+            <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
               {isAutoActive ? (
-                <div className="flex items-center gap-2 bg-cyan-600 border-2 border-black px-3 md:px-4 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse">
-                  <WandSparkles size={14} className="text-black animate-spin-slow md:w-6 md:h-6" />
-                  <div className="flex items-center gap-1">
-                     <span className="text-sm md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
-                     <span className="text-[10px] md:text-xs font-black text-black italic">s</span>
+                <div className="h-8 md:h-12 px-2 md:px-6 bg-cyan-600 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                  <WandSparkles size={12} className="text-black animate-spin-slow md:w-5 md:h-5" />
+                  <div className="flex items-baseline gap-0.5 md:gap-1">
+                     <span className="text-[10px] md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
+                     <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap">s</span>
                   </div>
                 </div>
               ) : (
-                hasAnyScrolls && (
-                  <>
-                    <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                      <RefreshCw size={10} className="md:w-5 md:h-5" />
-                    </button>
-                    <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-cyan-600 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-cyan-500 shadow-[2px_2px_0_rgba(0,0,0,1)] group min-w-[3rem] md:min-w-[4rem] justify-center">
-                      <WandSparkles size={14} className="text-black md:w-5 md:h-5 relative top-0.5" />
-                      <span className="text-sm md:text-xl font-black text-black italic">{scrollCountData.count}</span>
-                    </button>
-                    <div className="bg-cyan-400 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-2 min-w-[4.5rem] md:min-w-[7rem]">
-                       <span className="text-[9px] md:text-[13px] font-black text-black uppercase tracking-tight leading-none mb-0.5 whitespace-nowrap">
-                         {scrollCountData.selected === 'auto_scroll' ? '1M CHIP' : scrollCountData.selected === 'auto_scroll_3m' ? '3M DRIVE' : scrollCountData.selected === 'auto_scroll_6m' ? '6M LINK' : scrollCountData.selected === 'auto_scroll_9m' ? '9M FLOW' : '12M PRO'}
-                       </span>
-                       <span className="text-lg md:text-3xl font-black text-black leading-none italic">
-                           {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
-                       </span>
-                    </div>
-                  </>
-                )
+                <>
+                  <button 
+                    onClick={cycleScroll} 
+                    disabled={!hasAnyScrolls}
+                    className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
+                  >
+                    <RefreshCw size={12} className="md:w-5 md:h-5" />
+                  </button>
+                  <button 
+                    onClick={() => activateAutoScroll(view)} 
+                    disabled={!hasAnyScrolls}
+                    className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
+                  >
+                    <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
+                    <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>
+                  </button>
+                  <div className="w-12 md:w-24 h-8 md:h-12 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-1 shrink-0">
+                     <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                       {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected === 'auto_scroll_3m' ? '3M' : scrollCountData.selected === 'auto_scroll_6m' ? '6M' : scrollCountData.selected === 'auto_scroll_9m' ? '9M' : '12M'}
+                     </span>
+                     <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+                       {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                     </span>
+                  </div>
+                </>
               )}
             </div>
           )}
 
           {/* Food Slot */}
           {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-1 bg-slate-800/50 p-1 md:p-1.5 rounded-xl border-2 border-white/5">
+            <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
               {isFoodActive ? (
-                <div
-                  className="flex items-center gap-2 bg-emerald-700 border-2 border-black px-3 md:px-4 py-1.5 rounded-lg shadow-[3px_3px_0_rgba(0,0,0,1)] animate-pulse"
-                  title={`Food buff active: ${foodTimeLeft}s remaining`}
-                >
-                  <span className="text-lg md:text-2xl leading-none">
+                <div className="h-8 md:h-12 px-2 md:px-6 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                  <span className="text-sm md:text-2xl leading-none">
                     {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
                   </span>
-                  <div className="flex items-center gap-1">
-                     <span className="text-sm md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
-                     <span className="text-[10px] md:text-xs font-black text-white/80 italic">s</span>
+                  <div className="flex items-baseline gap-0.5 md:gap-1">
+                     <span className="text-[10px] md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
+                     <span className="text-[5px] md:text-xs font-black text-white/60 italic uppercase whitespace-nowrap">s</span>
                   </div>
                 </div>
               ) : (
@@ -809,23 +830,22 @@ export const CombatView = React.memo(() => {
                     {foodInventory.length > 1 && (
                       <button
                         onClick={cycleFoodSelection}
-                        className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-lg shadow-[2px_2px_0_rgba(0,0,0,1)]"
-                        title="Cycle food selection"
+                        className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
                       >
-                        <RefreshCw size={10} className="md:w-5 md:h-5" />
+                        <RefreshCw size={12} className="md:w-5 md:h-5" />
                       </button>
                     )}
                     <button
                       onClick={() => selectedFood && eatFood(selectedFood)}
                       disabled={!selectedFood}
-                      className="flex items-center gap-1 bg-emerald-700 border-2 border-black px-2 md:px-3 py-1.5 rounded-lg hover:bg-emerald-600 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30 min-w-[3rem] md:min-w-[4rem] justify-center"
+                      className="h-8 md:h-12 px-1.5 md:px-4 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
                     >
-                      <span className="text-lg md:text-xl leading-none relative top-0.5">{selectedFood?.icon || '🍽️'}</span>
-                      <span className="text-sm md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
+                      <span className="text-sm md:text-2xl leading-none group-hover:scale-125 transition-transform">{selectedFood?.icon || '🍽️'}</span>
+                      <span className="text-[10px] md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
                     </button>
-                    <div className="bg-emerald-500 border-2 border-black rounded-lg px-2 py-1 md:py-1.5 shadow-[2px_2px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-2 min-w-[2.5rem] md:min-w-[3.5rem]">
-                       <span className="text-[5px] md:text-[6px] font-[1000] text-black/70 uppercase tracking-tighter leading-none mb-0.5">EAT</span>
-                       <span className="text-sm md:text-xl font-black text-black leading-none italic">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
+                    <div className="w-12 md:w-24 h-8 md:h-12 bg-emerald-500 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+                       <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">EAT</span>
+                       <span className="text-[8px] md:text-xl font-black text-black italic leading-none">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
                     </div>
                   </>
                 )
@@ -835,40 +855,46 @@ export const CombatView = React.memo(() => {
         </div>
       </div>
 
+      {/* --- REFINED MISSION PROGRESS HUD --- */}
       {combat.battleMode !== 'GVG' && (
         <div className="absolute bottom-0 left-0 right-0 z-50 px-3 md:px-12 pb-4 pointer-events-none">
-          <div className="relative bg-black border-[3px] md:border-4 border-white p-2 md:p-3 shadow-2xl transform rotate-1 flex flex-col gap-1 md:gap-2">
-             <div className="absolute -top-3 md:-top-4 left-6 bg-cyan-500 text-black text-[7px] md:text-[10px] font-[1000] px-3 py-0.5 border-2 border-black uppercase italic shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-3">
-                MISSION_PROGRESS: LN_{depth}F
-             </div>
+          <div className="relative bg-black border-[3px] md:border-4 border-white p-2 md:p-3 shadow-2xl transform rotate-1 flex flex-col gap-2 md:gap-3 pointer-events-auto">
              
-             <div className="flex items-center gap-3 md:gap-6 mt-1">
-                <div className="flex flex-col shrink-0">
-                  <span className="text-[5px] md:text-[8px] font-black text-cyan-400 uppercase tracking-widest opacity-60">SYNC_STATUS</span>
-                  <span className="text-[10px] md:text-sm font-black text-white italic leading-none">{combat.killsInFloor}/10 NODES</span>
+             {/* GLOBAL SCALE: OBJECTIVE PENETRATION (Floor 1-40) */}
+             <div className="flex flex-col gap-0.5">
+                <div className="flex justify-between items-end mb-0.5">
+                   <div className="bg-cyan-500 text-black text-[6px] md:text-[9px] font-black px-1.5 py-0.5 border-2 border-black uppercase italic shadow-[1px_1px_0_rgba(0,0,0,1)] -rotate-1 leading-none">
+                      OBJ_TREASURE: SECTOR_40
+                   </div>
+                   <span className="text-[7px] md:text-sm font-black text-white italic tracking-tighter">GLOBAL_PENETRATION: {Math.floor((depth / 40) * 100)}%</span>
                 </div>
-
-                <div className="flex-1 h-3 md:h-5 bg-slate-900 border-2 border-black relative overflow-hidden group">
-                   {/* Main Progress Bar */}
+                <div className="h-2 md:h-5 bg-slate-900 border-2 border-black relative overflow-hidden group shadow-[inner_0_1px_2px_rgba(0,0,0,0.5)]">
                    <div 
                      className="absolute top-0 left-0 h-full bg-gradient-to-r from-cyan-600 via-cyan-400 to-cyan-600 transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-                     style={{ width: `${(combat.killsInFloor / 10) * 100}%` }}
+                     style={{ width: `${Math.min(100, (depth / 40) * 100)}%` }}
                    />
-                   {/* Shimmer Effect */}
-                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
-                   {/* Grid Overlay */}
-                   <div className="absolute inset-0 bg-[rgba(0,0,0,0.1)]" style={{ backgroundImage: 'radial-gradient(circle, #000 0.5px, transparent 0.5px)', backgroundSize: '4px 4px' }} />
+                </div>
+             </div>
+
+             {/* SECTOR SCALE: TACTICAL CLEARANCE (10 Nodes per Floor) */}
+             <div className="flex items-center gap-2 bg-slate-900/40 p-1 md:p-1.5 rounded-lg border border-white/5">
+                <div className="flex flex-col shrink-0">
+                  <span className="text-[5px] md:text-[7px] font-black text-white/40 uppercase tracking-widest leading-none">LN_{depth}F</span>
+                  <span className="text-[8px] md:text-xs font-black text-white italic leading-none truncate">CLR: {combat.killsInFloor}/10</span>
                 </div>
 
-                <div className="flex gap-1 shrink-0">
+                <div className="flex-1 flex gap-0.5 md:gap-1 justify-between">
                   {[...Array(10)].map((_, i) => (
                     <div 
                       key={i} 
-                      className={`w-1.5 h-1.5 md:w-2.5 md:h-2.5 rounded-sm border border-black transform ${i % 2 === 0 ? 'rotate-12' : '-rotate-12'} transition-all duration-500 ${i < combat.killsInFloor ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,1)] scale-110' : 'bg-slate-800 opacity-40'}`} 
-                    />
+                      className={`h-1.5 md:h-3 flex-1 border-2 border-black transition-all duration-500 relative overflow-hidden ${i < combat.killsInFloor ? 'bg-cyan-500 shadow-[1px_1px_0_rgba(0,0,0,1)]' : 'bg-slate-900 opacity-30 shadow-none'}`} 
+                    >
+                       {i < combat.killsInFloor && <div className="absolute inset-0 comic-halftone opacity-30 text-black"></div>}
+                    </div>
                   ))}
                 </div>
              </div>
+
           </div>
         </div>
       )}
