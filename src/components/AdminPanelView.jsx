@@ -5,7 +5,7 @@ import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 
 export const AdminPanelView = React.memo(() => {
-  const { db, appId, user, adventure, farcasterContext } = useGame();
+  const { db, appId, user, adventure } = useGame();
   const { setView } = adventure;
   const userEmail = user?.email || user?.uid;
 
@@ -28,10 +28,6 @@ export const AdminPanelView = React.memo(() => {
       return (p.name?.toLowerCase().includes(search)) ||
              (p.id?.toLowerCase().includes(search)) ||
              (p.email?.toLowerCase().includes(search)) ||
-             (p.telegramUsername?.toLowerCase().includes(search)) ||
-             (p.farcasterUsername?.toLowerCase().includes(search)) ||
-             (p.farcasterFID?.toString().includes(search)) ||
-             (p.tonWalletAddress?.toLowerCase().includes(search)) ||
              (p.walletAddress?.toLowerCase().includes(search));
     });
   }, [players, searchQuery]);
@@ -302,8 +298,6 @@ export const AdminPanelView = React.memo(() => {
       const resetData = {
           uid: id,
           email: editingPlayer.email || null,
-          farcasterFID: editingPlayer.farcasterFID || null,
-          farcasterUsername: editingPlayer.farcasterUsername || null,
           name: editingPlayer.name || `Hunter_${id.slice(0, 4)}`,
           level: 1, xp: 0, tokens: 100,
           hp: 150, maxHp: 150,
@@ -681,7 +675,7 @@ export const AdminPanelView = React.memo(() => {
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl grayscale group-hover:grayscale-0 transition-all shadow-[4px_4px_0_rgba(0,0,0,0.5)] overflow-hidden shrink-0">
                                 <img 
-                                  src={player.farcasterPfp || player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  src={player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
                                   className="w-full h-full object-cover" 
                                   alt="" 
                                 />
@@ -689,12 +683,6 @@ export const AdminPanelView = React.memo(() => {
                               <div className="flex flex-col gap-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-black text-white italic leading-none truncate max-w-[150px]">{player.name || 'Anonymous Hunter'}</p>
-                                  {player.farcasterUsername && (
-                                    <span className="text-[10px] text-purple-400 font-bold tracking-wider">@{player.farcasterUsername}</span>
-                                  )}
-                                  {player.farcasterFID && (
-                                    <span className="text-[8px] text-slate-500 font-black">FID: {player.farcasterFID}</span>
-                                  )}
                                 </div>
 
                                 <div className="flex flex-col gap-0.5">
@@ -710,20 +698,14 @@ export const AdminPanelView = React.memo(() => {
                                       <span className="text-[9px] text-blue-400/80 font-mono tracking-tighter truncate max-w-[120px]">{player.tonWalletAddress}</span>
                                     </div>
                                   )}
-                                  {player.email && !player.farcasterUsername && (
+                                  {player.email && (
                                     <span className="text-[9px] text-cyan-500/80 font-bold tracking-wider truncate">{player.email}</span>
                                   )}
                                 </div>
 
                                 <div className="flex items-center gap-2 mt-0.5">
                                    <span className="text-[7px] text-slate-600 font-bold uppercase tracking-tighter">ID: {player.id.substring(0, 10)}...</span>
-                                   {player.farcasterUsername ? (
-                                      <span className="px-1.5 py-0 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Farcaster</span>
-                                   ) : player.id.startsWith('TG_') ? (
-                                      <span className="px-1.5 py-0 bg-blue-900/20 text-blue-400 border border-blue-500/30 rounded-[2px] text-[6px] font-black italic uppercase">Telegram</span>
-                                   ) : (
-                                      <span className="px-1.5 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Google</span>
-                                   )}
+                                   <span className="px-1.5 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Google</span>
                                 </div>
                               </div>
                             </div>
@@ -864,7 +846,7 @@ export const AdminPanelView = React.memo(() => {
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-xl overflow-hidden rounded-md">
                                 <img 
-                                  src={player.farcasterPfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  src={player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
                                   className="w-full h-full object-cover" 
                                   alt="" 
                                 />
@@ -877,17 +859,10 @@ export const AdminPanelView = React.memo(() => {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-1.5">
-                               {player.id.startsWith('farcaster_') ? (
-                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-950/40 border border-indigo-500/30 rounded text-indigo-400">
-                                     <Globe size={10} />
-                                     <span className="text-[8px] font-black uppercase">Farcaster</span>
-                                  </div>
-                               ) : (
-                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-red-500">
-                                     <FileText size={10} />
-                                     <span className="text-[8px] font-black uppercase">Google</span>
-                                  </div>
-                               )}
+                               <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-red-500">
+                                  <FileText size={10} />
+                                  <span className="text-[8px] font-black uppercase">Google</span>
+                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-4">

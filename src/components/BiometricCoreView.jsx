@@ -104,7 +104,7 @@ export const BiometricCoreView = () => {
             </button>
           ))}
         </div>
-      </div>v>
+      </div>
       <style>{`
         @keyframes scanner {
           0% { top: 10%; }

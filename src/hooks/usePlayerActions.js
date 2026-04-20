@@ -981,8 +981,59 @@ export const usePlayerActions = (
     updates.townQuestSlots = currentSlots;
     updates[`completedTownQuests.${quest.id}`] = Date.now();
 
+    // --- Crystle Town Progression System ---
+    let nextXp = (player.crystleTownInfluenceXP || 0) + 5; // 5 XP per quest
+    let nextLvl = player.crystleTownLevel || 1;
+    let leveledUp = false;
+
+    // 25 XP required per Crystle Town Level
+    while (nextXp >= 25) {
+       nextXp -= 25;
+       nextLvl++;
+       leveledUp = true;
+       addLog(`🌟 TOWN RENOWN INCREASED! You are now Level ${nextLvl} in Crystle Town!`);
+    }
+
+    updates.crystleTownInfluenceXP = nextXp;
+    updates.crystleTownLevel = nextLvl;
+
     syncPlayer(updates);
-    addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}!`);
+    
+    if (leveledUp) {
+       playSFX(SOUNDS.lvlUp);
+    } else {
+       playSFX(SOUNDS.obtainLoot);
+    }
+    
+    addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
+  const abandonTownQuest = useCallback((questId) => {
+    if (!player) return;
+    const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== questId);
+    
+    // 30-minute cooldown
+    const cooldownId = `COOLDOWN_${Date.now() + 1800000}`;
+    currentSlots.push(cooldownId);
+    
+    syncPlayer({ townQuestSlots: currentSlots });
+    addLog("🗑️ REQUEST TRASHED: Slot locked for 30 minutes.");
+  }, [player, syncPlayer, addLog]);
+
+  const rushTownQuestCooldown = useCallback((cooldownId) => {
+    if (!player) return;
+    const fee = 2000;
+    if ((player.tokens || 0) < fee) {
+       return addLog(`🚨 INSUFFICIENT GX: Need ${fee} GX to bypass cooldown.`);
+    }
+    
+    const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== cooldownId);
+    syncPlayer({ 
+       townQuestSlots: currentSlots,
+       tokens: player.tokens - fee
+    }, true);
+    
+    addLog("⚡ FAST TRACK: Dispatched new prospect instantly!");
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
@@ -1068,6 +1119,6 @@ export const usePlayerActions = (
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
-    eatFood, completeTownQuest, completeQuiz
+    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz
   };
 };

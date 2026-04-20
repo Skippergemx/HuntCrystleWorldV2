@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
+import { ComicQuestCard, ComicQuestModal, TalkingNPC } from './SharedQuestUI';
 import { useGame } from '../contexts/GameContext';
 
 const PERSONALITY_STYLES = {
@@ -15,24 +16,9 @@ const PERSONALITY_STYLES = {
   Wanderer:  { tape: 'bg-rose-400',    border: 'border-rose-500',   badge: 'bg-rose-100 text-rose-800',    tag: 'bg-rose-500 text-white' },
 };
 
-// Typewriter hook
-const useTypewriter = (text, speed = 28) => {
-  const [displayed, setDisplayed] = useState('');
-  useEffect(() => {
-    setDisplayed('');
-  }, [text]);
-  useEffect(() => {
-    if (displayed.length >= text.length) return;
-    const t = setTimeout(() => setDisplayed(text.slice(0, displayed.length + 1)), speed);
-    return () => clearTimeout(t);
-  }, [displayed, text, speed]);
-  return displayed;
-};
-
 // --- NPC Dialogue Modal ---
-const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
+const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete }) => {
   const { player, ITEMS, FOODS, MAPS } = useGame();
-  const displayedText = useTypewriter(quest.dialogue);
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
   const [activeTooltip, setActiveTooltip] = useState(null);
 
@@ -48,6 +34,25 @@ const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
     return "Unknown / Rare Drop";
   };
 
+  const getSourceColor = (itId) => {
+    if (itId?.includes('apple') || itId?.includes('grapes') || itId?.includes('berry') || itId?.includes('cherry') || itId?.includes('peach') || itId?.includes('lemon') || itId?.includes('orange') || itId?.includes('pear')) {
+        return 'border-yellow-500 bg-yellow-50 text-yellow-800';
+    }
+    const matchedMap = MAPS?.find(m => m.lootTable?.includes(itId));
+    if (!matchedMap) return 'border-black bg-white';
+    
+    switch (matchedMap.id) {
+       case 'neon_slums':     return 'border-cyan-500 bg-cyan-50 text-cyan-800';
+       case 'rust_canyon':    return 'border-orange-500 bg-orange-50 text-orange-800';
+       case 'void_sector':    return 'border-purple-500 bg-purple-50 text-purple-800';
+       case 'inferno_crater': return 'border-red-500 bg-red-50 text-red-800';
+       case 'tectonic_ridge': return 'border-amber-700 bg-amber-50 text-amber-900';
+       case 'abyssal_trench': return 'border-blue-500 bg-blue-50 text-blue-800';
+       case 'gale_empire':    return 'border-emerald-500 bg-emerald-50 text-emerald-800';
+       default:               return 'border-black bg-white';
+    }
+  };
+
   const requirementStatus = quest.requires.map(req => {
     const owned = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
     const item = Object.values(ITEMS || []).find(i => i.id === req.itemId);
@@ -57,135 +62,100 @@ const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
         itemName: item?.name || req.itemId, 
         itemIcon: item?.icon || '📦', 
         met: owned >= req.qty,
-        sources: getItemSource(req.itemId)
+        sources: getItemSource(req.itemId),
+        color: getSourceColor(req.itemId)
     };
   });
 
   const allMet = requirementStatus.every(r => r.met);
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-2 md:p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border-[4px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] bg-[#faf6f0]">
-        
-        {/* Personality Header */}
-        <div className={`w-full ${style.tape} py-3 px-6 border-b-[4px] border-black flex items-center justify-between`}>
-           <div className="flex items-center gap-3">
-              <span className="text-xl leading-none">🏙️</span>
-              <h2 className="text-xl font-black text-black uppercase italic tracking-tighter">Mission: {quest.npcName}</h2>
-           </div>
-           <div className="bg-black text-white px-3 py-1 text-[10px] font-black uppercase italic border-2 border-white shadow-md">
-              {quest.personalityTag}
-           </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row h-full max-h-[85vh] md:max-h-none overflow-y-auto md:overflow-hidden">
-          {/* Left: Atmospheric NPC Artwork */}
-          <div className="w-full md:w-60 shrink-0 relative bg-slate-900 border-b-[4px] md:border-b-0 md:border-r-[4px] border-black overflow-hidden">
-             <img 
-                src={`/assets/CrystleTown/CrystleTownCitizen/CrystleTownCitizen (${quest.npcIndex}).jpg`} 
-                className="w-full h-full object-cover object-top"
-                alt={quest.npcName}
-             />
-             <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-md p-4 border-t-[3px] border-black/50">
-                <p className="text-[10px] font-black text-white text-center uppercase italic tracking-widest">{quest.personality}</p>
-             </div>
-             {/* half-tone texture overlay */}
-             <div className="absolute inset-0 opacity-[0.15] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '6px 6px' }} />
-          </div>
-
-          {/* Right: Tactical Console */}
-          <div className="flex-1 p-4 md:p-6 flex flex-col relative bg-[#fdfaf5]">
-             {/* Fine grid background */}
-             <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
-
-             <div className="mb-6 relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                   <div className={`w-2 h-2 rounded-full ${style.tape} animate-pulse`} />
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Citizen Request Identified...</span>
-                </div>
-                <div className="bg-white border-[3px] border-black p-4 rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] relative">
-                   <div className="absolute -left-2 top-6 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black rotate-45 hidden md:block" />
-                   <p className="text-[13px] font-bold text-black leading-snug italic italic">
-                      "{displayedText}<span className="inline-block w-1.5 h-4 bg-black ml-1 animate-pulse align-middle" />
-                   </p>
-                </div>
-             </div>
-
-             <div className="flex-1 space-y-4 mb-6 relative z-10">
-                <div>
-                   <p className="text-[10px] font-black uppercase text-black/50 mb-3 tracking-widest flex items-center gap-2">
-                      <span className="w-4 h-[2px] bg-black/20" /> REQUIRED LOGISTICS
-                   </p>
-                   <div className="grid grid-cols-1 gap-2">
-                      {requirementStatus.map((req, i) => (
-                         <div 
-                           key={i} 
-                           onMouseEnter={() => setActiveTooltip(req.itemId)}
-                           onMouseLeave={() => setActiveTooltip(null)}
-                           onClick={() => setActiveTooltip(activeTooltip === req.itemId ? null : req.itemId)}
-                           className={`group/req relative flex items-center gap-3 px-3 py-2 border-[3px] rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all cursor-help ${req.met ? 'border-green-500 bg-green-50' : 'border-black bg-white'}`}
-                         >
-                          <span className="text-2xl leading-none">{req.itemIcon}</span>
-                          <div className="flex-1">
-                            <p className="text-[11px] font-black uppercase text-black leading-none">{req.itemName}</p>
-                            <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">{activeTooltip === req.itemId ? `DROPS IN: ${req.sources}` : "Materials needed for sector expansion."}</p>
-                          </div>
-                          <div className={`text-[11px] font-black px-3 py-1 rounded-full border-[2px] ${req.met ? 'bg-green-500 border-green-600 text-white' : 'bg-slate-100 border-black text-black'}`}>
-                            {req.owned}/{req.qty}
-                          </div>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-
-                {rewardFood && (
-                  <div className="bg-slate-900 p-3 rounded-2xl border-[3px] border-black flex items-center gap-4 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                    <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/5">
-                       <span className="text-4xl leading-none">{rewardFood.icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black uppercase text-cyan-400 tracking-[0.2em] mb-1">CONTRACT_REWARD</p>
-                      <p className="text-xs font-black text-white uppercase italic truncate">Meta-Delicacy: {rewardFood.name}</p>
-                      <p className="text-[10px] text-white/50 font-bold italic truncate mt-0.5">{rewardFood.effectLabel}</p>
-                    </div>
+  return (
+    <ComicQuestModal
+      isOpen={true}
+      onClose={onClose}
+      npcIndex={quest.npcIndex}
+      npcName={quest.npcName}
+      dialogue={quest.dialogue}
+      title={`${quest.npcName}'S REQUEST`}
+      accentColor={style.tape}
+    >
+      <div className="space-y-4">
+        <div>
+           <p className="text-[10px] font-black uppercase text-black/50 mb-3 tracking-widest flex items-center gap-2">
+              <span className="w-4 h-[2px] bg-black/20" /> REQUIRED LOGISTICS
+           </p>
+           <div className="grid grid-cols-1 gap-2">
+              {requirementStatus.map((req, i) => (
+                 <div 
+                   key={i} 
+                   onMouseEnter={() => setActiveTooltip(req.itemId)}
+                   onMouseLeave={() => setActiveTooltip(null)}
+                   onClick={() => setActiveTooltip(activeTooltip === req.itemId ? null : req.itemId)}
+                   className={`group/req relative flex items-center gap-3 px-3 py-2 border-[3px] rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all cursor-help ${req.met ? 'border-green-500 bg-green-50' : req.color}`}
+                 >
+                  <span className="text-2xl leading-none">{req.itemIcon}</span>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-black uppercase text-black leading-none">{req.itemName}</p>
+                    <p className="text-[8px] font-bold opacity-60 mt-1 uppercase leading-tight italic">{activeTooltip === req.itemId ? `DROPS IN: ${req.sources}` : `Gather from ${req.sources.split(',')[0]}`}</p>
                   </div>
-                )}
-             </div>
-
-             {/* Action Console */}
-             <div className="flex gap-4 relative z-10">
-                <button
-                  onClick={onClose}
-                  className="flex-1 bg-white border-[3px] border-black text-black py-4 font-black uppercase tracking-widest text-xs hover:bg-slate-100 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
-                >
-                  Postpone
-                </button>
-                <button
-                  onClick={() => onComplete(quest)}
-                  disabled={!allMet}
-                  className={`flex-[2] py-4 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all ${allMet ? `${style.tape} text-black hover:opacity-90` : 'bg-slate-300 text-slate-500 cursor-not-allowed grayscale'}`}
-                >
-                  {allMet ? (
-                    <>
-                      EXECUTE SYNC <ChevronRight size={18} />
-                    </>
-                  ) : (
-                    <>
-                      INSUFFICIENT RESOURCES <AlertCircle size={16} />
-                    </>
-                  )}
-                </button>
-             </div>
-          </div>
+                  <div className={`text-[11px] font-black px-3 py-1 rounded-full border-[2px] ${req.met ? 'bg-green-500 border-green-600 text-white shadow-sm' : 'bg-black/5 border-black/10 text-black'}`}>
+                    {req.owned}/{req.qty}
+                  </div>
+                </div>
+              ))}
+           </div>
         </div>
 
-        {/* Global Close Button */}
-        <button onClick={onClose} className="absolute top-4 right-4 z-50 w-8 h-8 bg-black/50 hover:bg-black text-white rounded-full border-2 border-white/20 flex items-center justify-center transition-all">
-           <X size={16} />
+        {rewardFood && (
+          <div className="bg-slate-900 p-3 rounded-2xl border-[3px] border-black flex items-center gap-4 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/5">
+               <span className="text-4xl leading-none">{rewardFood.icon}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-black uppercase text-cyan-400 tracking-[0.2em] mb-1">CONTRACT_REWARD</p>
+              <p className="text-xs font-black text-white uppercase italic truncate">Meta-Delicacy: {rewardFood.name}</p>
+              <p className="text-[10px] text-white/50 font-bold italic truncate mt-0.5">{rewardFood.effectLabel}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-white border-[3px] border-black text-black py-3 font-black uppercase tracking-widest text-[10px] hover:bg-slate-100 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+          >
+            Postpone
+          </button>
+          <button
+            onClick={() => {
+              if (window.confirm(`Are you sure you want to dismiss ${quest.npcName}'s request?`)) {
+                onAbandon(quest.id);
+                onClose();
+              }
+            }}
+            className="flex-1 bg-red-550 border-[3px] border-black text-white py-3 font-black uppercase tracking-widest text-[10px] hover:bg-red-400 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+          >
+            Trash Hub
+          </button>
+        </div>
+
+        <button
+          onClick={() => onComplete(quest)}
+          disabled={!allMet}
+          className={`w-full py-4 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all ${allMet ? `${style.tape} text-black hover:opacity-90` : 'bg-slate-300 text-slate-500 cursor-not-allowed grayscale'}`}
+        >
+          {allMet ? (
+            <>
+              EXECUTE SYNC <ChevronRight size={18} />
+            </>
+          ) : (
+            <>
+              INSUFFICIENT RESOURCES <AlertCircle size={16} />
+            </>
+          )}
         </button>
       </div>
-    </div>,
-    document.body
+    </ComicQuestModal>
   );
 };
 
@@ -193,7 +163,6 @@ const NPCModal = ({ quest, onClose, onComplete, canComplete }) => {
 const NPCCard = ({ quest, onOpen, idx }) => {
   const { player, ITEMS } = useGame();
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
-  const rotate = idx % 2 === 0 ? '-rotate-1' : 'rotate-1';
   const inventory = player?.inventory || {};
 
   const rewardFoodEmoji = quest.reward?.foodId?.includes('steak') ? '🥩'
@@ -215,87 +184,77 @@ const NPCCard = ({ quest, onOpen, idx }) => {
   });
 
   return (
-    <div
+    <ComicQuestCard
+      npcIndex={quest.npcIndex}
+      title={quest.npcName}
+      subtitle={`"${quest.dialogue.slice(0, 80)}..."`}
+      badge={quest.personalityTag}
+      accentColor={style.tape}
       onClick={() => onOpen(quest)}
-      className={`relative group ${rotate} transform transition-all hover:-translate-y-1 cursor-pointer active:translate-y-0`}
+      isReady={allMet}
+      idx={idx}
+      footer={
+        <div className="flex items-center gap-1">
+          <span className="text-sm">{rewardFoodEmoji}</span>
+          <span className="text-[7px] font-black text-black/40 uppercase">REWARD: {quest.reward.foodId.replace(/_/g, ' ')}</span>
+        </div>
+      }
     >
-      {/* Background Tape Offset */}
-      <div className={`absolute inset-0 ${style.tape} rounded-2xl translate-x-1.5 translate-y-1.5 opacity-30 group-hover:opacity-50 transition-all`} />
-
-      <div className="relative bg-white border-[3px] border-black rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] flex h-44">
-        {/* Left: NPC Portrait Sidebar */}
-        <div className="w-24 md:w-28 shrink-0 relative bg-slate-900 border-r-[3px] border-black overflow-hidden group-hover:bg-slate-800 transition-colors">
-           <img 
-              src={`/assets/CrystleTown/CrystleTownCitizen/CrystleTownCitizen (${quest.npcIndex}).jpg`} 
-              className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
-              alt={quest.npcName}
-           />
-           <div className={`absolute inset-x-0 bottom-0 ${style.tape} text-[7px] font-black text-black text-center py-1 uppercase italic tracking-tighter border-t-[2px] border-black`}>
-              {quest.personalityTag}
-           </div>
-           {/* Half-tone texture */}
-           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
-        </div>
-
-        {/* Right: Mission Data */}
-        <div className="flex-1 p-3 flex flex-col bg-[#fdfaf5]">
-           <div className="flex items-center justify-between mb-1">
-              <h3 className="text-[11px] font-black uppercase text-black italic tracking-tighter truncate w-24">
-                 {quest.npcName}
-              </h3>
-              {allMet && (
-                <div className="bg-green-500 text-white text-[7px] font-black px-1.5 py-0.5 border border-black uppercase rotate-6 shadow animate-pulse">
-                   READY!
-                </div>
-              )}
-           </div>
-
-           <div className="flex-1 space-y-2 py-1">
-              {/* Needs List */}
-              <div>
-                 <p className="text-[7px] font-black uppercase text-black/40 mb-1 tracking-widest leading-none">Requirements:</p>
-                 <div className="flex flex-wrap gap-1">
-                   {quest.requires.slice(0, 4).map((req, i) => {
-                     const item = Object.values(ITEMS || []).find(it => it.id === req.itemId);
-                     const owned = Object.values(inventory).filter(iv => iv?.id?.startsWith(req.itemId)).length;
-                     const met = owned >= req.qty;
-                     return (
-                       <div key={i} className={`flex items-center gap-1 px-1 py-1 border-[2px] border-black shadow-[1.5px_1.5px_0_rgba(0,0,0,1)] text-[8px] font-black transition-colors ${met ? 'bg-green-400' : 'bg-white'}`}>
-                         <span>{item?.icon || '📦'}</span>
-                         <span className="text-black">{req.qty}</span>
-                       </div>
-                     );
-                   })}
-                 </div>
-              </div>
-
-              {/* Reward Hub */}
-              <div className="bg-black rounded-lg p-2 flex items-center gap-2 border border-slate-700 shadow-inner">
-                 <span className="text-2xl leading-none">{rewardFoodEmoji}</span>
-                 <div className="min-w-0 flex-1">
-                   <p className="text-[7px] font-black text-white/40 uppercase tracking-[0.1em] leading-none mb-0.5">CONTRACT REWARD</p>
-                   <p className="text-[8px] font-bold text-white uppercase leading-tight truncate italic">
-                      {quest.reward.foodId.replace(/_/g, ' ')}
-                   </p>
-                 </div>
-              </div>
-           </div>
-
-           <div className="flex items-center justify-end">
-              <div className="flex items-center gap-1 text-[8px] font-black text-slate-400 uppercase italic">
-                 <span>Review Mission</span>
-                 <ChevronRight size={10} className="group-hover:translate-x-1 transition-transform" />
-              </div>
-           </div>
-        </div>
+      <div className="flex flex-wrap gap-1 mt-1">
+        {quest.requires.slice(0, 3).map((req, i) => {
+          const item = Object.values(ITEMS || []).find(it => it.id === req.itemId);
+          const owned = Object.values(inventory).filter(iv => iv?.id?.startsWith(req.itemId)).length;
+          const met = owned >= req.qty;
+          return (
+            <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)] text-[7px] font-black transition-colors ${met ? 'bg-green-400' : 'bg-white'}`}>
+              <span>{item?.icon || '📦'}</span>
+              <span className="text-black">{req.qty}</span>
+            </div>
+          );
+        })}
+        {quest.requires.length > 3 && <span className="text-[8px] font-bold text-black/30">+{quest.requires.length - 3}</span>}
       </div>
+    </ComicQuestCard>
+  );
+};
+
+// --- Cooldown Card ---
+const CooldownCard = ({ expiration, id, onRush, idx }) => {
+  const [timeLeft, setTimeLeft] = useState(Math.max(0, expiration - Date.now()));
+  const rotate = idx % 2 === 0 ? '-rotate-1' : 'rotate-1';
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(Math.max(0, expiration - Date.now()));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiration]);
+
+  const mins = Math.floor(timeLeft / 60000);
+  const secs = Math.floor((timeLeft % 60000) / 1000);
+
+  return (
+    <div className={`relative ${rotate} transform transition-all h-44`}>
+       <div className={`absolute inset-0 bg-red-500 rounded-2xl translate-x-1.5 translate-y-1.5 opacity-20`} />
+       <div className="relative bg-[#fdfaf5] border-[3px] border-dashed border-red-500 rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col h-full items-center justify-center p-4">
+          <AlertCircle size={32} className="text-red-500 mb-2 opacity-50" />
+          <p className="text-[10px] font-black uppercase text-red-500 tracking-widest">Cooling Down...</p>
+          <div className="text-3xl font-black text-black italic my-1 font-mono tracking-tighter">
+             {mins}:{secs.toString().padStart(2, '0')}
+          </div>
+          
+          <button onClick={() => onRush(id)} className="mt-2 bg-yellow-400 hover:bg-yellow-300 border-[2px] border-black text-black text-[9px] font-black uppercase px-4 py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1.5">
+             ⚡ Skip (2,000 GX)
+          </button>
+       </div>
     </div>
   );
 };
 
 // --- Main View ---
 export const CrystleTownView = () => {
-  const { player, adventure, actions, TOWN_QUESTS, FOODS, ITEMS, syncPlayer, openGuide } = useGame();
+  const { player, adventure, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, openGuide } = useGame();
   const { setView } = adventure;
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
@@ -343,22 +302,59 @@ export const CrystleTownView = () => {
   const slotIds = player?.townQuestSlots || [];
 
   const activeQuests = useMemo(() => {
-    return slotIds
-      .map(id => TOWN_QUESTS?.find(q => q.id === id))
-      .filter(Boolean);
+    return slotIds.map(id => {
+       if (id.startsWith('COOLDOWN_')) {
+          const expiration = parseInt(id.split('_')[1], 10);
+          return { isCooldown: true, expiration, id };
+       }
+       return TOWN_QUESTS?.find(q => q.id === id);
+    }).filter(Boolean);
   }, [slotIds, TOWN_QUESTS]);
+
+  // Clean up expired cooldowns automatically
+  useEffect(() => {
+    const expiredCooldowns = slotIds.filter(id => id.startsWith('COOLDOWN_') && parseInt(id.split('_')[1], 10) <= Date.now());
+    if (expiredCooldowns.length > 0) {
+      const newSlots = slotIds.filter(id => !expiredCooldowns.includes(id));
+      syncPlayer({ townQuestSlots: newSlots });
+    }
+  }, [slotIds, syncPlayer]);
 
   // Refill slots to 10 if under
   useEffect(() => {
-    if (!player || !TOWN_QUESTS) return;
+    if (!player || !TOWN_QUESTS || !MAPS) return; // Ensure MAPS are loaded
     if (slotIds.length >= 10) return;
     const completed = player.completedTownQuests || {};
-    const available = TOWN_QUESTS.filter(q => !completed[q.id] && !slotIds.includes(q.id));
+    
+    // THE SMART FILTERING ENGINE (Level Gated & Infinite Recycling)
+    let available = TOWN_QUESTS.filter(q => {
+       if (slotIds.includes(q.id)) return false; // Never duplicate an active slot
+       
+       let highestReqLevel = 1;
+       for (const req of q.requires) {
+          const matchedMap = MAPS.find(m => m.lootTable?.includes(req.itemId));
+          if (matchedMap && matchedMap.minLevel > highestReqLevel) {
+            highestReqLevel = matchedMap.minLevel;
+          }
+       }
+       
+       return (player.level || 1) >= highestReqLevel;
+    });
+
     if (available.length === 0) return;
+
+    // Prioritize uncompleted quests. If both are completed/uncompleted, randomize.
+    available.sort((a, b) => {
+       const aComp = completed[a.id] ? 1 : 0;
+       const bComp = completed[b.id] ? 1 : 0;
+       if (aComp !== bComp) return aComp - bComp;
+       return Math.random() - 0.5; 
+    });
+
     const needed = 10 - slotIds.length;
-    const picks = [...available].sort(() => Math.random() - 0.5).slice(0, needed).map(q => q.id);
+    const picks = available.slice(0, needed).map(q => q.id);
     syncPlayer({ townQuestSlots: [...slotIds, ...picks] });
-  }, [slotIds.length]);
+  }, [slotIds.length, player?.level, MAPS]);
 
   // First-time tutorial trigger
   useEffect(() => {
@@ -395,27 +391,15 @@ export const CrystleTownView = () => {
           onHelp={() => openGuide('crystle_town')}
         />
 
-        <AmbientNPCCard
-          citizenNum={18}
-          name="TOWN ELDER"
-          accentColor="bg-emerald-600"
-          textColor="text-emerald-600"
-          glowColor="bg-emerald-500"
-          statusTag="TOWN_RESTORED"
-          statusTag2="QUESTS_ACTIVE"
-          prefix="◢ELDER: "
-          dialogues={[
-            "Welcome back, hunter. The citizens are eager for your help today.",
-            "Complete citizen requests to earn rare food buffs for your dungeon runs.",
-            "Every request fulfilled brings a new citizen to the town — 30 in total!",
-            "Food buffs persist through one dungeon run. Eat smart, fight hard.",
-            "Fruits from the Dragons Ground Orchard are the most requested supplies.",
-            "The town remembers every hunter who helped rebuild it. You are remembered.",
-            "New citizen stories unlock as you complete more requests. Keep going!",
-            "Crystle Town was built by hunters like you. Every contribution matters."
-          ]}
-        />
-
+        <div className="px-4 py-2">
+          <TalkingNPC
+            npcIndex={18}
+            name="TOWN ELDER"
+            accentColor="bg-emerald-500"
+            isTalking={true}
+            dialogue="Welcome back, hunter. Every request fulfilled brings a new citizen to the town. Crystle Town was built by hunters like you. Every contribution matters."
+          />
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
         {/* Intro Banner */}
@@ -445,14 +429,27 @@ export const CrystleTownView = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
-            {activeQuests.map((quest, idx) => (
-              <NPCCard
-                key={quest.id}
-                quest={quest}
-                idx={idx}
-                onOpen={setActiveQuest}
-              />
-            ))}
+            {activeQuests.map((quest, idx) => {
+              if (quest.isCooldown) {
+                 return (
+                   <CooldownCard
+                     key={quest.id}
+                     id={quest.id}
+                     expiration={quest.expiration}
+                     idx={idx}
+                     onRush={actions.rushTownQuestCooldown}
+                   />
+                 );
+              }
+              return (
+                <NPCCard
+                  key={quest.id}
+                  quest={quest}
+                  idx={idx}
+                  onOpen={setActiveQuest}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -463,6 +460,7 @@ export const CrystleTownView = () => {
           quest={activeQuest}
           onClose={() => setActiveQuest(null)}
           onComplete={handleComplete}
+          onAbandon={actions.abandonTownQuest}
           canComplete={true}
         />
       )}

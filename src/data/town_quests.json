@@ -1,422 +1,3382 @@
 [
   {
     "id": "quest_001",
-    "npcIndex": 1,
-    "npcName": "Viktor Kael",
-    "personality": "Merchant",
-    "personalityTag": "Smug Trader",
-    "dialogue": "You know what separates a thriving town from a forgotten one? Resources in the right hands. I'm building a new supply route that'll keep Crystle Town fed for years. What I'm asking for is a small contribution toward something much, much bigger. You in?",
-    "requires": [
-      { "itemId": "slum_scrap", "qty": 5 },
-      { "itemId": "rusty_wire", "qty": 3 },
-      { "itemId": "dragon_apple", "qty": 2 }
-    ],
-    "reward": { "foodId": "grilled_steak", "qty": 1 }
-  },
-  {
-    "id": "quest_002",
-    "npcIndex": 2,
-    "npcName": "Riz",
-    "personality": "Street Kid",
-    "personalityTag": "Slum Runner",
-    "dialogue": "Okay, okay — listen. I've got this PLAN. A rooftop garden for the east block. Fresh things growing where nothing did before. I just need materials to get started and you... you look like someone who actually gets what that means. Help me make it real?",
-    "requires": [
-      { "itemId": "broken_glasses", "qty": 4 },
-      { "itemId": "plastic_bottle", "qty": 3 },
-      { "itemId": "ember_grapes", "qty": 2 }
-    ],
-    "reward": { "foodId": "techno_ramen", "qty": 1 }
-  },
-  {
-    "id": "quest_003",
-    "npcIndex": 3,
-    "npcName": "Zephara",
-    "personality": "Mystic",
-    "personalityTag": "Veil Seer",
-    "dialogue": "The smoke showed me a version of this town where every light stays on. I've been working toward that vision for a long time. These materials I'm gathering — they anchor a ritual of restoration. Your contribution tonight becomes part of something eternal.",
-    "requires": [
-      { "itemId": "void_shard", "qty": 4 },
-      { "itemId": "dark_matter", "qty": 3 },
-      { "itemId": "mist_vial", "qty": 3 }
-    ],
-    "reward": { "foodId": "focus_brew", "qty": 1 }
-  },
-  {
-    "id": "quest_004",
-    "npcIndex": 4,
-    "npcName": "Gran Moros",
-    "personality": "Elder",
-    "personalityTag": "Cranky Veteran",
-    "dialogue": "I've seen this town at its worst and I've seen it rise back up. Every time, it was because someone decided to act instead of wait. Right now, I need materials for the community forge — the one that'll let the young ones build their own futures. You going to be part of that?",
-    "requires": [
-      { "itemId": "canyon_iron", "qty": 5 },
-      { "itemId": "oil_drum", "qty": 3 },
-      { "itemId": "ember_grapes", "qty": 3 }
-    ],
-    "reward": { "foodId": "hearty_gruel", "qty": 1 }
-  },
-  {
-    "id": "quest_005",
-    "npcIndex": 5,
-    "npcName": "Pix-7",
-    "personality": "Tinkerer",
-    "personalityTag": "Overexcited Engineer",
-    "dialogue": "I've been working on a power grid upgrade for weeks — if this works, the whole town gets stable energy for the first time EVER! I just need these specific components and I'm SO CLOSE! You could literally be part of the moment the lights come on for everyone! Is that not amazing?!",
-    "requires": [
-      { "itemId": "rusty_cog", "qty": 4 },
-      { "itemId": "spark_plug", "qty": 2 },
-      { "itemId": "radiator_fin", "qty": 3 }
-    ],
-    "reward": { "foodId": "energy_shot", "qty": 1 }
-  },
-  {
-    "id": "quest_006",
-    "npcIndex": 6,
-    "npcName": "Sgt. Vale",
-    "personality": "Soldier",
-    "personalityTag": "No-Nonsense Officer",
-    "dialogue": "We're reinforcing the outer perimeter this week. Not to keep people out — to keep this community safe while it grows. These materials go directly into the barrier that protects every family in the north quarter. Your contribution matters more than you know.",
-    "requires": [
-      { "itemId": "metal_shard", "qty": 5 },
-      { "itemId": "engine_bolt", "qty": 4 },
-      { "itemId": "void_cherry", "qty": 2 }
-    ],
-    "reward": { "foodId": "precision_bento", "qty": 1 }
-  },
-  {
-    "id": "quest_007",
-    "npcIndex": 7,
-    "npcName": "Lune",
-    "personality": "Wanderer",
-    "personalityTag": "Drifting Soul",
-    "dialogue": "I've wandered long enough to know: a town is only as warm as the people willing to give a little of themselves to it. I'm setting up a waypoint shelter — a place where no traveler sleeps without cover. These materials are for the roof. Will you help me raise it?",
-    "requires": [
-      { "itemId": "dirty_rag", "qty": 5 },
-      { "itemId": "moldy_bread", "qty": 3 },
-      { "itemId": "faded_poster", "qty": 2 }
-    ],
-    "reward": { "foodId": "turbo_smoothie", "qty": 1 }
-  },
-  {
-    "id": "quest_008",
     "npcIndex": 8,
     "npcName": "Mira Voss",
     "personality": "Merchant",
     "personalityTag": "Sharp Dealer",
-    "dialogue": "I don't invest in things that don't grow — and right now I'm investing in Crystle Town's market expansion. A real trading hub means real opportunity for every resident here. I need these materials to lay the foundation. Let's build something worth coming back to.",
+    "dialogue": "The market in the Neon Slums is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
     "requires": [
-      { "itemId": "cracked_screen", "qty": 3 },
-      { "itemId": "old_coin", "qty": 4 },
-      { "itemId": "sky_berry", "qty": 2 }
+      {
+        "itemId": "crystle_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "hazard_tape",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "neon_bubble_tea", "qty": 1 }
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_009",
-    "npcIndex": 9,
-    "npcName": "Grit",
-    "personality": "Street Kid",
-    "personalityTag": "Slum Hustler",
-    "dialogue": "My crew and I are turning the old canyon lot into a training yard — a real one, with space for the kids to get strong, get skills, get futures. I just need the right materials to make it happen. You look like someone who believes in that kind of thing. Prove it.",
-    "requires": [
-      { "itemId": "exhaust_pipe", "qty": 3 },
-      { "itemId": "rubber_hose", "qty": 4 },
-      { "itemId": "steel_spring", "qty": 3 }
-    ],
-    "reward": { "foodId": "street_taco", "qty": 1 }
-  },
-  {
-    "id": "quest_010",
-    "npcIndex": 10,
-    "npcName": "Orvaan",
-    "personality": "Mystic",
-    "personalityTag": "The Hollow Reader",
-    "dialogue": "The space between things holds great power. I am constructing a resonance chamber — a sanctuary where the weary can find stillness and return to themselves. These elements are essential. What you bring here will help heal people you may never even meet.",
-    "requires": [
-      { "itemId": "void_fang", "qty": 4 },
-      { "itemId": "void_membrane", "qty": 3 },
-      { "itemId": "dark_matter", "qty": 3 }
-    ],
-    "reward": { "foodId": "void_sushi", "qty": 1 }
-  },
-  {
-    "id": "quest_011",
-    "npcIndex": 11,
-    "npcName": "Old Crag",
-    "personality": "Elder",
-    "personalityTag": "Grizzled Survivor",
-    "dialogue": "I've lived long enough to understand what a community needs to endure. Right now, it needs a strong well — clean water, accessible to everyone, no matter their station. These materials go toward building it. You'd be helping more lives than you can count. That's worth something, isn't it?",
-    "requires": [
-      { "itemId": "granite_fragment", "qty": 5 },
-      { "itemId": "petrified_wood", "qty": 3 },
-      { "itemId": "dragon_apple", "qty": 3 }
-    ],
-    "reward": { "foodId": "canyon_jerky", "qty": 1 }
-  },
-  {
-    "id": "quest_012",
-    "npcIndex": 12,
-    "npcName": "Dex-9",
-    "personality": "Tinkerer",
-    "personalityTag": "Lab Escapee",
-    "dialogue": "I've redesigned my cerebral interface four times this month and I am THRIVING. But my biggest project yet is the town signal relay — if I can get this working, every district in Crystle Town stays connected even when the outer lines go dark. All I need are these specific parts. Help a genius out?",
-    "requires": [
-      { "itemId": "fuel_filter", "qty": 3 },
-      { "itemId": "cracked_piston", "qty": 4 },
-      { "itemId": "fan_blade", "qty": 2 }
-    ],
-    "reward": { "foodId": "neon_bubble_tea", "qty": 1 }
-  },
-  {
-    "id": "quest_013",
-    "npcIndex": 13,
-    "npcName": "Commander Ash",
-    "personality": "Soldier",
-    "personalityTag": "Tactical Lead",
-    "dialogue": "Every strong town rests on a foundation of people who showed up when it mattered. We're setting up an emergency response post — proper gear, proper shelter, a place the whole district can count on. These materials make it possible. Your part in this will be remembered.",
-    "requires": [
-      { "itemId": "vintage_armor", "qty": 2 },
-      { "itemId": "canyon_iron", "qty": 4 },
-      { "itemId": "void_cherry", "qty": 2 }
-    ],
-    "reward": { "foodId": "grilled_steak", "qty": 1 }
-  },
-  {
-    "id": "quest_014",
-    "npcIndex": 14,
-    "npcName": "Celeste",
-    "personality": "Wanderer",
-    "personalityTag": "Quiet Nomad",
-    "dialogue": "I've crossed many places where people stopped looking forward. Crystle Town hasn't — not yet. I want to help it keep that spark. I'm gathering materials for a lantern post at the crossroads — so no one walks home in the dark. Will you walk this path with me?",
-    "requires": [
-      { "itemId": "stardust", "qty": 3 },
-      { "itemId": "cloud_silk", "qty": 3 },
-      { "itemId": "plasma_lemon", "qty": 2 }
-    ],
-    "reward": { "foodId": "turbo_smoothie", "qty": 1 }
-  },
-  {
-    "id": "quest_015",
-    "npcIndex": 15,
-    "npcName": "Corso Bane",
+    "id": "quest_002",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
     "personality": "Merchant",
-    "personalityTag": "Market King",
-    "dialogue": "The canyon trade lanes are finally opening up again, and I'm positioning Crystle Town to be the first beneficiary. This isn't just profit — every deal I make flows back into this town's infrastructure. Help me build the supply base and everyone here wins. Including you.",
+    "personalityTag": "Smug Trader",
+    "dialogue": "Opportunity is knocking in the Neon Slums. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
     "requires": [
-      { "itemId": "oil_drum", "qty": 4 },
-      { "itemId": "sand_glass", "qty": 5 },
-      { "itemId": "ember_grapes", "qty": 2 }
+      {
+        "itemId": "cracked_screen",
+        "qty": 3
+      },
+      {
+        "itemId": "metal_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 3
+      }
     ],
-    "reward": { "foodId": "canyon_jerky", "qty": 1 }
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_016",
-    "npcIndex": 16,
-    "npcName": "Blink",
-    "personality": "Street Kid",
-    "personalityTag": "The Fixer",
-    "dialogue": "Bro, I've figured out a way to reroute the district's water flow so the southern block finally gets proper pressure. Clean water. Consistent. For everyone. I just need some parts to build the valve system. Tell me you see what this means. Help me make it happen.",
+    "id": "quest_003",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
+    "personality": "Merchant",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "The market in the Neon Slums is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
     "requires": [
-      { "itemId": "neon_dust", "qty": 4 },
-      { "itemId": "broken_sensor", "qty": 3 },
-      { "itemId": "sky_berry", "qty": 2 }
+      {
+        "itemId": "faded_poster",
+        "qty": 5
+      },
+      {
+        "itemId": "slum_scrap",
+        "qty": 3
+      }
     ],
-    "reward": { "foodId": "focus_brew", "qty": 1 }
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_017",
-    "npcIndex": 17,
-    "npcName": "The Veilkeeper",
-    "personality": "Mystic",
-    "personalityTag": "Between-Walker",
-    "dialogue": "This town carries a living memory — every person who has walked it leaves a trace. I am weaving those traces into a tapestry of protection, a ward that watches over the streets even when no one else does. What you bring me becomes part of that watch. Forever.",
-    "requires": [
-      { "itemId": "shadow_pulse", "qty": 3 },
-      { "itemId": "neural_net", "qty": 4 },
-      { "itemId": "gravity_well", "qty": 2 }
-    ],
-    "reward": { "foodId": "precision_bento", "qty": 1 }
-  },
-  {
-    "id": "quest_018",
-    "npcIndex": 18,
-    "npcName": "Madame Rux",
-    "personality": "Elder",
-    "personalityTag": "Town Matriarch",
-    "dialogue": "Sixty-two years I've fed whoever came to my door. Now I'm building a proper community kitchen — a place where a hot meal is never more than a few steps away for anyone who needs strength. These supplies go directly into that kitchen. You'd be feeding the whole town, not just one person.",
-    "requires": [
-      { "itemId": "sea_salt", "qty": 5 },
-      { "itemId": "scorched_bone", "qty": 3 },
-      { "itemId": "ember_grapes", "qty": 3 }
-    ],
-    "reward": { "foodId": "hearty_gruel", "qty": 1 }
-  },
-  {
-    "id": "quest_019",
+    "id": "quest_004",
     "npcIndex": 19,
     "npcName": "Sparks",
     "personality": "Tinkerer",
     "personalityTag": "Caffeinated Inventor",
-    "dialogue": "Okay so I've been running on momentum since sunrise because I CRACKED the town's heat distribution problem — I know how to keep the northern housing warm through the cold season at zero extra cost! But I need these specific parts TODAY before the window closes! This helps EVERYONE! Let's GO!",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Neon Slums. It's 40% safe, which is a record! Need components!",
     "requires": [
-      { "itemId": "valve_stem", "qty": 3 },
-      { "itemId": "brake_pad", "qty": 3 },
-      { "itemId": "spark_plug", "qty": 2 }
+      {
+        "itemId": "rubber_hose",
+        "qty": 3
+      },
+      {
+        "itemId": "glowing_eye",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "energy_shot", "qty": 1 }
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_020",
-    "npcIndex": 20,
-    "npcName": "Holt",
-    "personality": "Soldier",
-    "personalityTag": "Frontline Veteran",
-    "dialogue": "I've spent years protecting people from the outside. Now I'm building something from the inside — a memorial post for veterans of this district, with a training ground attached so the next generation is ready. These materials are the first foundation stones. I'd be honored if you helped lay them.",
+    "id": "quest_005",
+    "npcIndex": 19,
+    "npcName": "Sparks",
+    "personality": "Tinkerer",
+    "personalityTag": "Caffeinated Inventor",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Neon Slums. It's 40% safe, which is a record! Need components!",
     "requires": [
-      { "itemId": "metal_shard", "qty": 4 },
-      { "itemId": "engine_bolt", "qty": 3 },
-      { "itemId": "void_cherry", "qty": 3 }
+      {
+        "itemId": "toxic_sludge",
+        "qty": 4
+      },
+      {
+        "itemId": "plastic_bottle",
+        "qty": 3
+      },
+      {
+        "itemId": "rusted_key",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "street_taco", "qty": 1 }
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_021",
-    "npcIndex": 21,
-    "npcName": "Sable",
-    "personality": "Wanderer",
-    "personalityTag": "Ash-Road Drifter",
-    "dialogue": "Every road I've walked has taught me something. Now I want to bring all of it back here — into a resource library, maps, guides, survival knowledge from a hundred places. A library built for people who are still finding their way. Help me give this town its compass.",
-    "requires": [
-      { "itemId": "cracked_tile", "qty": 5 },
-      { "itemId": "empty_can", "qty": 4 },
-      { "itemId": "dragon_apple", "qty": 2 }
-    ],
-    "reward": { "foodId": "power_curry", "qty": 1 }
-  },
-  {
-    "id": "quest_022",
-    "npcIndex": 22,
-    "npcName": "Lena Grey",
-    "personality": "Merchant",
-    "personalityTag": "Cold Negotiator",
-    "dialogue": "I've calculated that a properly stocked medical supply depot reduces district recovery time by 40 percent. That's not a number — that's lives. I'm building it, and I need these materials to make the numbers work for everyone. This is a good investment. For all of us.",
-    "requires": [
-      { "itemId": "bio_vial", "qty": 3 },
-      { "itemId": "cypher_chip", "qty": 2 },
-      { "itemId": "sky_berry", "qty": 3 }
-    ],
-    "reward": { "foodId": "power_curry", "qty": 1 }
-  },
-  {
-    "id": "quest_023",
-    "npcIndex": 23,
-    "npcName": "Loco",
-    "personality": "Street Kid",
-    "personalityTag": "Chaos Agent",
-    "dialogue": "Alright here's the deal — there's an abandoned lot in sector three that I want to turn into a public space. Not for anything serious, just... a place where people can breathe. Sit. Exist. I've got the vision and zero materials. You've got what I need. Let's create something the town actually deserves.",
-    "requires": [
-      { "itemId": "slum_rat_tail", "qty": 5 },
-      { "itemId": "toxic_sludge", "qty": 3 },
-      { "itemId": "mutant_tooth", "qty": 3 }
-    ],
-    "reward": { "foodId": "techno_ramen", "qty": 1 }
-  },
-  {
-    "id": "quest_024",
-    "npcIndex": 24,
-    "npcName": "Naavi",
-    "personality": "Mystic",
-    "personalityTag": "The Still One",
-    "dialogue": "There is a kind of healing that comes from stillness. I have been preparing a meditation grove at the town's edge — a place where anyone burdened by the weight of the world can set it down for a while. These materials complete the circle. Your help makes it real.",
-    "requires": [
-      { "itemId": "obsidian_glass", "qty": 4 },
-      { "itemId": "void_tear", "qty": 3 },
-      { "itemId": "plasma_lemon", "qty": 2 }
-    ],
-    "reward": { "foodId": "focus_brew", "qty": 1 }
-  },
-  {
-    "id": "quest_025",
-    "npcIndex": 25,
-    "npcName": "Iron Kam",
+    "id": "quest_006",
+    "npcIndex": 11,
+    "npcName": "Old Crag",
     "personality": "Elder",
-    "personalityTag": "The Unmoved",
-    "dialogue": "I built my first shelter in this town with my bare hands. Now I'm teaching a new group of residents how to do the same. These materials are for their first real project — a communal hall where the neighborhood meets, makes decisions, builds something shared. Come be part of what lasts.",
+    "personalityTag": "Grizzled Survivor",
+    "dialogue": "I've seen the Neon Slums swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
     "requires": [
-      { "itemId": "ember_shard", "qty": 5 },
-      { "itemId": "granite_fragment", "qty": 4 },
-      { "itemId": "golden_peach", "qty": 1 }
+      {
+        "itemId": "old_coin",
+        "qty": 4
+      },
+      {
+        "itemId": "mutant_tooth",
+        "qty": 3
+      }
     ],
-    "reward": { "foodId": "grilled_steak", "qty": 1 }
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_026",
+    "id": "quest_007",
     "npcIndex": 26,
     "npcName": "Bolt",
     "personality": "Tinkerer",
     "personalityTag": "Gear Witch",
-    "dialogue": "I work in the space between possible and impossible — and I'm telling you, a self-sustaining cooling network for the summer districts is absolutely possible right now. These components are the last pieces. Once it's running, no more heat-sick residents. You could be the one who makes that happen.",
+    "dialogue": "The grid is failing near the Neon Slums. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
     "requires": [
-      { "itemId": "clutch_plate", "qty": 2 },
-      { "itemId": "power_cell", "qty": 3 },
-      { "itemId": "neon_filament", "qty": 2 }
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      },
+      {
+        "itemId": "plastic_bottle",
+        "qty": 2
+      }
     ],
-    "reward": { "foodId": "turbo_smoothie", "qty": 1 }
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_027",
+    "id": "quest_008",
     "npcIndex": 27,
     "npcName": "Major Krix",
     "personality": "Soldier",
     "personalityTag": "Iron Discipline",
-    "dialogue": "I've commanded units through some of the hardest conditions this region has ever seen. What I've learned is this: the people worth protecting are exactly the kind worth fighting alongside. Crystle Town is worth protecting. Help me build the watchtower that keeps it safe at night.",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Neon Slums. We need materials to establish a forward observation post.",
     "requires": [
-      { "itemId": "titanium_link", "qty": 2 },
-      { "itemId": "carbon_filter", "qty": 2 },
-      { "itemId": "void_cherry", "qty": 3 }
+      {
+        "itemId": "faded_poster",
+        "qty": 3
+      },
+      {
+        "itemId": "rusted_key",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "precision_bento", "qty": 1 }
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_028",
-    "npcIndex": 28,
-    "npcName": "Myst",
-    "personality": "Wanderer",
-    "personalityTag": "Fog Walker",
-    "dialogue": "In every city I've passed through, I've looked for the thing that makes it worth staying in. Here, I think I've finally found it — the people. I want to document this place, its stories, its faces, before they're forgotten. These materials help me build the archive. Help me make sure this town is remembered.",
+    "id": "quest_009",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "Wisdom tells me that the Neon Slums holds many secrets. We need these supplies for the town library. For the next generation.",
     "requires": [
-      { "itemId": "mist_vial", "qty": 4 },
-      { "itemId": "cloud_silk", "qty": 3 },
-      { "itemId": "plasma_lemon", "qty": 2 }
+      {
+        "itemId": "slum_scrap",
+        "qty": 5
+      },
+      {
+        "itemId": "slum_medals",
+        "qty": 3
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 3
+      }
     ],
-    "reward": { "foodId": "void_sushi", "qty": 1 }
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_029",
-    "npcIndex": 29,
-    "npcName": "Tanaka",
+    "id": "quest_010",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Neon Slums. We need materials to establish a forward observation post.",
+    "requires": [
+      {
+        "itemId": "rusty_wire",
+        "qty": 3
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 3
+      },
+      {
+        "itemId": "rusted_key",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_011",
+    "npcIndex": 2,
+    "npcName": "Riz",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Runner",
+    "dialogue": "The elders say the Neon Slums is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
+    "requires": [
+      {
+        "itemId": "neon_filament",
+        "qty": 5
+      },
+      {
+        "itemId": "dirty_rag",
+        "qty": 4
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_012",
+    "npcIndex": 10,
+    "npcName": "Orvaan",
+    "personality": "Mystic",
+    "personalityTag": "The Hollow Reader",
+    "dialogue": "The energy of the Neon Slums is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "rusty_wire",
+        "qty": 3
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_013",
+    "npcIndex": 26,
+    "npcName": "Bolt",
+    "personality": "Tinkerer",
+    "personalityTag": "Gear Witch",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Neon Slums. It's 40% safe, which is a record! Need components!",
+    "requires": [
+      {
+        "itemId": "empty_can",
+        "qty": 4
+      },
+      {
+        "itemId": "broken_glasses",
+        "qty": 4
+      },
+      {
+        "itemId": "metal_shard",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_014",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
     "personality": "Merchant",
-    "personalityTag": "Premium Broker",
-    "dialogue": "My clients operate across five regions and they all agree — Crystle Town has something special. I'm establishing a cultural exchange hub here: crafts, stories, flavor, connection. These materials lay the groundwork. When this opens, this town becomes a destination. Let's make that happen together.",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "Opportunity is knocking in the Neon Slums. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
     "requires": [
-      { "itemId": "rusted_key", "qty": 3 },
-      { "itemId": "hazard_tape", "qty": 4 },
-      { "itemId": "sky_berry", "qty": 3 }
+      {
+        "itemId": "old_coin",
+        "qty": 3
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "neon_bubble_tea", "qty": 1 }
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
   },
   {
-    "id": "quest_030",
+    "id": "quest_015",
     "npcIndex": 30,
     "npcName": "Jinx",
     "personality": "Street Kid",
     "personalityTag": "Chaos Gremlin",
-    "dialogue": "Look, I go loud, I go fast, and people underestimate me constantly. But I've got a vision that none of them do — a youth center. A real one. Somewhere the next generation can be chaotic AND brilliant AND safe. I'm building it with or without help. But with yours, it happens faster. So what do you say?",
+    "dialogue": "The elders say the Neon Slums is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
     "requires": [
-      { "itemId": "slum_medals", "qty": 3 },
-      { "itemId": "bio_vial", "qty": 2 },
-      { "itemId": "dragon_apple", "qty": 3 }
+      {
+        "itemId": "toxic_sludge",
+        "qty": 2
+      },
+      {
+        "itemId": "glowing_eye",
+        "qty": 3
+      },
+      {
+        "itemId": "cracked_tile",
+        "qty": 5
+      }
     ],
-    "reward": { "foodId": "techno_ramen", "qty": 1 }
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_016",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "I've seen the Neon Slums swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "steel_spring",
+        "qty": 2
+      },
+      {
+        "itemId": "empty_can",
+        "qty": 2
+      },
+      {
+        "itemId": "slum_rat_tail",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_017",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "The elders say the Neon Slums is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
+    "requires": [
+      {
+        "itemId": "dirty_rag",
+        "qty": 2
+      },
+      {
+        "itemId": "glowing_eye",
+        "qty": 2
+      },
+      {
+        "itemId": "slum_medals",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_018",
+    "npcIndex": 11,
+    "npcName": "Old Crag",
+    "personality": "Elder",
+    "personalityTag": "Grizzled Survivor",
+    "dialogue": "In my youth, we respected the Neon Slums. Today, we just need its resources to survive. Please, help an old soul.",
+    "requires": [
+      {
+        "itemId": "moldy_bread",
+        "qty": 5
+      },
+      {
+        "itemId": "old_coin",
+        "qty": 2
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_019",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "The elders say the Neon Slums is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
+    "requires": [
+      {
+        "itemId": "slum_medals",
+        "qty": 3
+      },
+      {
+        "itemId": "glowing_eye",
+        "qty": 2
+      },
+      {
+        "itemId": "slum_scrap",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_020",
+    "npcIndex": 16,
+    "npcName": "Blink",
+    "personality": "Street Kid",
+    "personalityTag": "The Fixer",
+    "dialogue": "Heard you're the one who can handle the Neon Slums. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "faded_poster",
+        "qty": 3
+      },
+      {
+        "itemId": "cracked_screen",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_021",
+    "npcIndex": 7,
+    "npcName": "Lune",
+    "personality": "Wanderer",
+    "personalityTag": "Drifting Soul",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Rust Canyon to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "sand_glass",
+        "qty": 4
+      },
+      {
+        "itemId": "ancient_gear",
+        "qty": 4
+      },
+      {
+        "itemId": "fuel_filter",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_022",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Supply chains for the Rust Canyon are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "clutch_plate",
+        "qty": 4
+      },
+      {
+        "itemId": "exhaust_pipe",
+        "qty": 2
+      },
+      {
+        "itemId": "chrome_trim",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_023",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Rust Canyon to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "brake_pad",
+        "qty": 2
+      },
+      {
+        "itemId": "chrome_trim",
+        "qty": 4
+      },
+      {
+        "itemId": "ignition_coil",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_024",
+    "npcIndex": 7,
+    "npcName": "Lune",
+    "personality": "Wanderer",
+    "personalityTag": "Drifting Soul",
+    "dialogue": "The path through the Rust Canyon is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "exhaust_pipe",
+        "qty": 5
+      },
+      {
+        "itemId": "ancient_gear",
+        "qty": 2
+      },
+      {
+        "itemId": "fan_blade",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_025",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "The frontline in the Rust Canyon is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "power_cell",
+        "qty": 3
+      },
+      {
+        "itemId": "void_shard",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_026",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "I've seen the Rust Canyon swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "clutch_plate",
+        "qty": 3
+      },
+      {
+        "itemId": "metal_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "hydraulics",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_027",
+    "npcIndex": 24,
+    "npcName": "Naavi",
+    "personality": "Mystic",
+    "personalityTag": "The Still One",
+    "dialogue": "The veil is thin near the Rust Canyon. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "turbo_charger",
+        "qty": 3
+      },
+      {
+        "itemId": "chrome_trim",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_028",
+    "npcIndex": 18,
+    "npcName": "Madame Rux",
+    "personality": "Elder",
+    "personalityTag": "Town Matriarch",
+    "dialogue": "Wisdom tells me that the Rust Canyon holds many secrets. We need these supplies for the town library. For the next generation.",
+    "requires": [
+      {
+        "itemId": "exhaust_pipe",
+        "qty": 5
+      },
+      {
+        "itemId": "rusty_plate",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_029",
+    "npcIndex": 11,
+    "npcName": "Old Crag",
+    "personality": "Elder",
+    "personalityTag": "Grizzled Survivor",
+    "dialogue": "I've seen the Rust Canyon swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "titanium_link",
+        "qty": 2
+      },
+      {
+        "itemId": "fuel_filter",
+        "qty": 5
+      },
+      {
+        "itemId": "fan_blade",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_030",
+    "npcIndex": 15,
+    "npcName": "Corso Bane",
+    "personality": "Merchant",
+    "personalityTag": "Market King",
+    "dialogue": "Opportunity is knocking in the Rust Canyon. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "power_cell",
+        "qty": 3
+      },
+      {
+        "itemId": "turbo_charger",
+        "qty": 2
+      },
+      {
+        "itemId": "sand_glass",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_031",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "In my youth, we respected the Rust Canyon. Today, we just need its resources to survive. Please, help an old soul.",
+    "requires": [
+      {
+        "itemId": "carbon_filter",
+        "qty": 4
+      },
+      {
+        "itemId": "chrome_trim",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_032",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "Yo! My crew's planning something big in the Rust Canyon, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "oil_drum",
+        "qty": 4
+      },
+      {
+        "itemId": "rubber_hose",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_033",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
+    "personality": "Merchant",
+    "personalityTag": "Smug Trader",
+    "dialogue": "Supply chains for the Rust Canyon are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "turbo_charger",
+        "qty": 2
+      },
+      {
+        "itemId": "clutch_plate",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_034",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "In my youth, we respected the Rust Canyon. Today, we just need its resources to survive. Please, help an old soul.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "rubber_hose",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_035",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "Yo! My crew's planning something big in the Rust Canyon, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "stardust",
+        "qty": 5
+      },
+      {
+        "itemId": "cracked_piston",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_036",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Rust Canyon. It's 40% safe, which is a record! Need components!",
+    "requires": [
+      {
+        "itemId": "obsidian_glass",
+        "qty": 3
+      },
+      {
+        "itemId": "oil_drum",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_037",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "I've seen the Rust Canyon swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "obsidian_glass",
+        "qty": 4
+      },
+      {
+        "itemId": "titanium_link",
+        "qty": 3
+      },
+      {
+        "itemId": "metal_shard",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_038",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Rust Canyon. It's 40% safe, which is a record! Need components!",
+    "requires": [
+      {
+        "itemId": "sand_glass",
+        "qty": 3
+      },
+      {
+        "itemId": "oil_drum",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_039",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
+    "personality": "Merchant",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "The market in the Rust Canyon is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "rusty_plate",
+        "qty": 3
+      },
+      {
+        "itemId": "metal_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "sand_glass",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_040",
+    "npcIndex": 5,
+    "npcName": "Pix-7",
+    "personality": "Tinkerer",
+    "personalityTag": "Overexcited Engineer",
+    "dialogue": "The grid is failing near the Rust Canyon. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "cracked_piston",
+        "qty": 5
+      },
+      {
+        "itemId": "sand_glass",
+        "qty": 4
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_041",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
+    "personality": "Merchant",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "The market in the Void Sector 7 is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "phase_module",
+        "qty": 4
+      },
+      {
+        "itemId": "void_membrane",
+        "qty": 5
+      },
+      {
+        "itemId": "neon_dust",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_042",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
+    "personality": "Merchant",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "Supply chains for the Void Sector 7 are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "neural_net",
+        "qty": 3
+      },
+      {
+        "itemId": "void_essence",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_043",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "A vision came to me of the Void Sector 7. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "void_fang",
+        "qty": 2
+      },
+      {
+        "itemId": "dark_matter",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_044",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "The path through the Void Sector 7 is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "singularity",
+        "qty": 2
+      },
+      {
+        "itemId": "null_point",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_045",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "The grid is failing near the Void Sector 7. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "void_tear",
+        "qty": 3
+      },
+      {
+        "itemId": "quantum_bit",
+        "qty": 3
+      },
+      {
+        "itemId": "entropy_coil",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_046",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "The wind from the Void Sector 7 carries a lonely tune. I want to build a shelter there for fellow travelers. Will you contribute?",
+    "requires": [
+      {
+        "itemId": "rusty_wire",
+        "qty": 5
+      },
+      {
+        "itemId": "dark_energy_cell",
+        "qty": 5
+      },
+      {
+        "itemId": "void_essence",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_047",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "Yo! My crew's planning something big in the Void Sector 7, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "stardust",
+        "qty": 4
+      },
+      {
+        "itemId": "void_crystal",
+        "qty": 4
+      },
+      {
+        "itemId": "ancient_gear",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_048",
+    "npcIndex": 7,
+    "npcName": "Lune",
+    "personality": "Wanderer",
+    "personalityTag": "Drifting Soul",
+    "dialogue": "The path through the Void Sector 7 is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "void_crystal",
+        "qty": 2
+      },
+      {
+        "itemId": "entropy_coil",
+        "qty": 5
+      },
+      {
+        "itemId": "ancient_gear",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_049",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The energy of the Void Sector 7 is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "void_tear",
+        "qty": 2
+      },
+      {
+        "itemId": "void_cherry",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_050",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "Heard you're the one who can handle the Void Sector 7. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "void_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "obsidian_glass",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_051",
+    "npcIndex": 20,
+    "npcName": "Holt",
+    "personality": "Soldier",
+    "personalityTag": "Frontline Veteran",
+    "dialogue": "The frontline in the Void Sector 7 is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "singularity",
+        "qty": 2
+      },
+      {
+        "itemId": "void_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_052",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The veil is thin near the Void Sector 7. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "plasma_core",
+        "qty": 2
+      },
+      {
+        "itemId": "dark_matter",
+        "qty": 3
+      },
+      {
+        "itemId": "stardust",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_053",
+    "npcIndex": 26,
+    "npcName": "Bolt",
+    "personality": "Tinkerer",
+    "personalityTag": "Gear Witch",
+    "dialogue": "The grid is failing near the Void Sector 7. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "gravity_well",
+        "qty": 4
+      },
+      {
+        "itemId": "phase_module",
+        "qty": 4
+      },
+      {
+        "itemId": "cyber_heart",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_054",
+    "npcIndex": 8,
+    "npcName": "Mira Voss",
+    "personality": "Merchant",
+    "personalityTag": "Sharp Dealer",
+    "dialogue": "The market in the Void Sector 7 is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "void_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "toxic_sludge",
+        "qty": 3
+      },
+      {
+        "itemId": "singularity",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_055",
+    "npcIndex": 22,
+    "npcName": "Lena Grey",
+    "personality": "Merchant",
+    "personalityTag": "Cold Negotiator",
+    "dialogue": "The market in the Void Sector 7 is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "void_essence",
+        "qty": 3
+      },
+      {
+        "itemId": "singularity",
+        "qty": 4
+      },
+      {
+        "itemId": "titanium_link",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_056",
+    "npcIndex": 14,
+    "npcName": "Celeste",
+    "personality": "Wanderer",
+    "personalityTag": "Quiet Nomad",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Void Sector 7 to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "neural_net",
+        "qty": 4
+      },
+      {
+        "itemId": "shadow_pulse",
+        "qty": 5
+      },
+      {
+        "itemId": "core_pulse",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_057",
+    "npcIndex": 16,
+    "npcName": "Blink",
+    "personality": "Street Kid",
+    "personalityTag": "The Fixer",
+    "dialogue": "Yo! My crew's planning something big in the Void Sector 7, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "void_membrane",
+        "qty": 3
+      },
+      {
+        "itemId": "neon_dust",
+        "qty": 5
+      },
+      {
+        "itemId": "plasma_core",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_058",
+    "npcIndex": 14,
+    "npcName": "Celeste",
+    "personality": "Wanderer",
+    "personalityTag": "Quiet Nomad",
+    "dialogue": "The path through the Void Sector 7 is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "phase_module",
+        "qty": 2
+      },
+      {
+        "itemId": "neon_dust",
+        "qty": 3
+      },
+      {
+        "itemId": "neural_net",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_059",
+    "npcIndex": 15,
+    "npcName": "Corso Bane",
+    "personality": "Merchant",
+    "personalityTag": "Market King",
+    "dialogue": "The market in the Void Sector 7 is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "toxic_sludge",
+        "qty": 5
+      },
+      {
+        "itemId": "void_cherry",
+        "qty": 5
+      },
+      {
+        "itemId": "quantum_bit",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_060",
+    "npcIndex": 22,
+    "npcName": "Lena Grey",
+    "personality": "Merchant",
+    "personalityTag": "Cold Negotiator",
+    "dialogue": "Opportunity is knocking in the Void Sector 7. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "void_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "void_fang",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_061",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Inferno Crater to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "magma_core",
+        "qty": 3
+      },
+      {
+        "itemId": "ember_grapes",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_062",
+    "npcIndex": 10,
+    "npcName": "Orvaan",
+    "personality": "Mystic",
+    "personalityTag": "The Hollow Reader",
+    "dialogue": "A vision came to me of the Inferno Crater. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "magma_core",
+        "qty": 4
+      },
+      {
+        "itemId": "scorched_bone",
+        "qty": 5
+      },
+      {
+        "itemId": "ember_grapes",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_063",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "The energy of the Inferno Crater is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "ember_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "ember_grapes",
+        "qty": 3
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_064",
+    "npcIndex": 10,
+    "npcName": "Orvaan",
+    "personality": "Mystic",
+    "personalityTag": "The Hollow Reader",
+    "dialogue": "The veil is thin near the Inferno Crater. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "ember_grapes",
+        "qty": 3
+      },
+      {
+        "itemId": "ember_shard",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_065",
+    "npcIndex": 15,
+    "npcName": "Corso Bane",
+    "personality": "Merchant",
+    "personalityTag": "Market King",
+    "dialogue": "Opportunity is knocking in the Inferno Crater. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_066",
+    "npcIndex": 14,
+    "npcName": "Celeste",
+    "personality": "Wanderer",
+    "personalityTag": "Quiet Nomad",
+    "dialogue": "The path through the Inferno Crater is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_067",
+    "npcIndex": 21,
+    "npcName": "Sable",
+    "personality": "Wanderer",
+    "personalityTag": "Ash-Road Drifter",
+    "dialogue": "The path through the Inferno Crater is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "magma_core",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_068",
+    "npcIndex": 5,
+    "npcName": "Pix-7",
+    "personality": "Tinkerer",
+    "personalityTag": "Overexcited Engineer",
+    "dialogue": "The grid is failing near the Inferno Crater. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "magma_core",
+        "qty": 3
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_069",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Inferno Crater. We need materials to establish a forward observation post.",
+    "requires": [
+      {
+        "itemId": "fire_essence",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "ember_shard",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_070",
+    "npcIndex": 30,
+    "npcName": "Jinx",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Gremlin",
+    "dialogue": "The elders say the Inferno Crater is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
+    "requires": [
+      {
+        "itemId": "ember_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 4
+      },
+      {
+        "itemId": "fire_essence",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_071",
+    "npcIndex": 30,
+    "npcName": "Jinx",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Gremlin",
+    "dialogue": "Heard you're the one who can handle the Inferno Crater. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_072",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "A vision came to me of the Inferno Crater. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "magma_core",
+        "qty": 5
+      },
+      {
+        "itemId": "ember_grapes",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_073",
+    "npcIndex": 15,
+    "npcName": "Corso Bane",
+    "personality": "Merchant",
+    "personalityTag": "Market King",
+    "dialogue": "Supply chains for the Inferno Crater are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_074",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
+    "personality": "Merchant",
+    "personalityTag": "Smug Trader",
+    "dialogue": "Opportunity is knocking in the Inferno Crater. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "ember_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 5
+      },
+      {
+        "itemId": "fire_essence",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_075",
+    "npcIndex": 27,
+    "npcName": "Major Krix",
+    "personality": "Soldier",
+    "personalityTag": "Iron Discipline",
+    "dialogue": "The frontline in the Inferno Crater is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "ember_grapes",
+        "qty": 5
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 4
+      },
+      {
+        "itemId": "scorched_bone",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_076",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
+    "personality": "Merchant",
+    "personalityTag": "Smug Trader",
+    "dialogue": "The market in the Inferno Crater is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "ember_grapes",
+        "qty": 4
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_077",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "The energy of the Inferno Crater is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "ember_shard",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_078",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "The energy of the Inferno Crater is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "ember_grapes",
+        "qty": 4
+      },
+      {
+        "itemId": "ember_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "fire_essence",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_079",
+    "npcIndex": 6,
+    "npcName": "Sgt. Vale",
+    "personality": "Soldier",
+    "personalityTag": "No-Nonsense Officer",
+    "dialogue": "Standard protocol dictates we reinforce the Inferno Crater perimeter. Secure these logistics to ensure town safety.",
+    "requires": [
+      {
+        "itemId": "ember_shard",
+        "qty": 4
+      },
+      {
+        "itemId": "ember_grapes",
+        "qty": 3
+      },
+      {
+        "itemId": "scorched_bone",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_080",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
+    "personality": "Merchant",
+    "personalityTag": "Smug Trader",
+    "dialogue": "Supply chains for the Inferno Crater are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "fire_essence",
+        "qty": 4
+      },
+      {
+        "itemId": "ember_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "magma_core",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_081",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "Standard protocol dictates we reinforce the Tectonic Ridge perimeter. Secure these logistics to ensure town safety.",
+    "requires": [
+      {
+        "itemId": "granite_fragment",
+        "qty": 3
+      },
+      {
+        "itemId": "quake_stone",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_082",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "Yo! My crew's planning something big in the Tectonic Ridge, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "granite_fragment",
+        "qty": 3
+      },
+      {
+        "itemId": "quake_stone",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_083",
+    "npcIndex": 7,
+    "npcName": "Lune",
+    "personality": "Wanderer",
+    "personalityTag": "Drifting Soul",
+    "dialogue": "The wind from the Tectonic Ridge carries a lonely tune. I want to build a shelter there for fellow travelers. Will you contribute?",
+    "requires": [
+      {
+        "itemId": "quake_stone",
+        "qty": 2
+      },
+      {
+        "itemId": "dragon_apple",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_084",
+    "npcIndex": 11,
+    "npcName": "Old Crag",
+    "personality": "Elder",
+    "personalityTag": "Grizzled Survivor",
+    "dialogue": "In my youth, we respected the Tectonic Ridge. Today, we just need its resources to survive. Please, help an old soul.",
+    "requires": [
+      {
+        "itemId": "quake_stone",
+        "qty": 4
+      },
+      {
+        "itemId": "earth_essence",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_085",
+    "npcIndex": 21,
+    "npcName": "Sable",
+    "personality": "Wanderer",
+    "personalityTag": "Ash-Road Drifter",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Tectonic Ridge to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "earth_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_086",
+    "npcIndex": 10,
+    "npcName": "Orvaan",
+    "personality": "Mystic",
+    "personalityTag": "The Hollow Reader",
+    "dialogue": "The veil is thin near the Tectonic Ridge. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "dragon_apple",
+        "qty": 4
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_087",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Opportunity is knocking in the Tectonic Ridge. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "dragon_apple",
+        "qty": 3
+      },
+      {
+        "itemId": "granite_fragment",
+        "qty": 4
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_088",
+    "npcIndex": 26,
+    "npcName": "Bolt",
+    "personality": "Tinkerer",
+    "personalityTag": "Gear Witch",
+    "dialogue": "EXCITING NEWS! I've designed a kinetic relay for the Tectonic Ridge, but I'm missing the core components! Help me build it!",
+    "requires": [
+      {
+        "itemId": "quake_stone",
+        "qty": 2
+      },
+      {
+        "itemId": "earth_essence",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_089",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "A vision came to me of the Tectonic Ridge. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "quake_stone",
+        "qty": 2
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_090",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "EXCITING NEWS! I've designed a kinetic relay for the Tectonic Ridge, but I'm missing the core components! Help me build it!",
+    "requires": [
+      {
+        "itemId": "dragon_apple",
+        "qty": 4
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 5
+      },
+      {
+        "itemId": "quake_stone",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_091",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "The wind from the Tectonic Ridge carries a lonely tune. I want to build a shelter there for fellow travelers. Will you contribute?",
+    "requires": [
+      {
+        "itemId": "petrified_wood",
+        "qty": 2
+      },
+      {
+        "itemId": "quake_stone",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_092",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "A vision came to me of the Tectonic Ridge. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "quake_stone",
+        "qty": 3
+      },
+      {
+        "itemId": "dragon_apple",
+        "qty": 3
+      },
+      {
+        "itemId": "granite_fragment",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_093",
+    "npcIndex": 1,
+    "npcName": "Viktor Kael",
+    "personality": "Merchant",
+    "personalityTag": "Smug Trader",
+    "dialogue": "The market in the Tectonic Ridge is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "dragon_apple",
+        "qty": 4
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      },
+      {
+        "itemId": "granite_fragment",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_094",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Tectonic Ridge. We need materials to establish a forward observation post.",
+    "requires": [
+      {
+        "itemId": "dragon_apple",
+        "qty": 4
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_095",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "The path through the Tectonic Ridge is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "granite_fragment",
+        "qty": 3
+      },
+      {
+        "itemId": "earth_essence",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_096",
+    "npcIndex": 11,
+    "npcName": "Old Crag",
+    "personality": "Elder",
+    "personalityTag": "Grizzled Survivor",
+    "dialogue": "I've seen the Tectonic Ridge swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "granite_fragment",
+        "qty": 4
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 5
+      },
+      {
+        "itemId": "earth_essence",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_097",
+    "npcIndex": 2,
+    "npcName": "Riz",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Runner",
+    "dialogue": "The elders say the Tectonic Ridge is off-limits, but that's where the best stuff is. Swap me these items for a real meal.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      },
+      {
+        "itemId": "earth_essence",
+        "qty": 3
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_098",
+    "npcIndex": 16,
+    "npcName": "Blink",
+    "personality": "Street Kid",
+    "personalityTag": "The Fixer",
+    "dialogue": "Heard you're the one who can handle the Tectonic Ridge. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      },
+      {
+        "itemId": "dragon_apple",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_099",
+    "npcIndex": 24,
+    "npcName": "Naavi",
+    "personality": "Mystic",
+    "personalityTag": "The Still One",
+    "dialogue": "The energy of the Tectonic Ridge is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "dragon_apple",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_100",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The veil is thin near the Tectonic Ridge. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      },
+      {
+        "itemId": "petrified_wood",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_101",
+    "npcIndex": 10,
+    "npcName": "Orvaan",
+    "personality": "Mystic",
+    "personalityTag": "The Hollow Reader",
+    "dialogue": "A vision came to me of the Abyssal Trench. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "sea_salt",
+        "qty": 3
+      },
+      {
+        "itemId": "ocean_pearl",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_102",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "The market in the Abyssal Trench is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "ocean_pearl",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_103",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "The frontline in the Abyssal Trench is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      },
+      {
+        "itemId": "coral_spine",
+        "qty": 3
+      },
+      {
+        "itemId": "sea_salt",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "techno_ramen",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_104",
+    "npcIndex": 22,
+    "npcName": "Lena Grey",
+    "personality": "Merchant",
+    "personalityTag": "Cold Negotiator",
+    "dialogue": "The market in the Abyssal Trench is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "water_essence",
+        "qty": 5
+      },
+      {
+        "itemId": "sea_salt",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_105",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Supply chains for the Abyssal Trench are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      },
+      {
+        "itemId": "coral_spine",
+        "qty": 4
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_106",
+    "npcIndex": 17,
+    "npcName": "The Veilkeeper",
+    "personality": "Mystic",
+    "personalityTag": "Between-Walker",
+    "dialogue": "The veil is thin near the Abyssal Trench. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "coral_spine",
+        "qty": 3
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_107",
+    "npcIndex": 27,
+    "npcName": "Major Krix",
+    "personality": "Soldier",
+    "personalityTag": "Iron Discipline",
+    "dialogue": "The frontline in the Abyssal Trench is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "coral_spine",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_108",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "Heard you're the one who can handle the Abyssal Trench. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "ocean_pearl",
+        "qty": 2
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 3
+      },
+      {
+        "itemId": "sea_salt",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_109",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Supply chains for the Abyssal Trench are failing. Secure these goods for the town, and I'll grant you a premium food voucher.",
+    "requires": [
+      {
+        "itemId": "sea_salt",
+        "qty": 2
+      },
+      {
+        "itemId": "ocean_pearl",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_110",
+    "npcIndex": 6,
+    "npcName": "Sgt. Vale",
+    "personality": "Soldier",
+    "personalityTag": "No-Nonsense Officer",
+    "dialogue": "Standard protocol dictates we reinforce the Abyssal Trench perimeter. Secure these logistics to ensure town safety.",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      },
+      {
+        "itemId": "ocean_pearl",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_111",
+    "npcIndex": 21,
+    "npcName": "Sable",
+    "personality": "Wanderer",
+    "personalityTag": "Ash-Road Drifter",
+    "dialogue": "The path through the Abyssal Trench is treacherous. I'm leaving markers for those who follow. I need these materials to finish.",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_112",
+    "npcIndex": 16,
+    "npcName": "Blink",
+    "personality": "Street Kid",
+    "personalityTag": "The Fixer",
+    "dialogue": "Heard you're the one who can handle the Abyssal Trench. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "sea_salt",
+        "qty": 4
+      },
+      {
+        "itemId": "coral_spine",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_113",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "Yo! My crew's planning something big in the Abyssal Trench, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "coral_spine",
+        "qty": 2
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_114",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The veil is thin near the Abyssal Trench. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "coral_spine",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_115",
+    "npcIndex": 27,
+    "npcName": "Major Krix",
+    "personality": "Soldier",
+    "personalityTag": "Iron Discipline",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Abyssal Trench. We need materials to establish a forward observation post.",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      },
+      {
+        "itemId": "ocean_pearl",
+        "qty": 5
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_116",
+    "npcIndex": 24,
+    "npcName": "Naavi",
+    "personality": "Mystic",
+    "personalityTag": "The Still One",
+    "dialogue": "A vision came to me of the Abyssal Trench. These relics are ties to a future we must secure. Will you aid the town's spirit?",
+    "requires": [
+      {
+        "itemId": "water_essence",
+        "qty": 4
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_117",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Opportunity is knocking in the Abyssal Trench. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "ocean_pearl",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_118",
+    "npcIndex": 9,
+    "npcName": "Grit",
+    "personality": "Street Kid",
+    "personalityTag": "Slum Hustler",
+    "dialogue": "Heard you're the one who can handle the Abyssal Trench. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "ocean_pearl",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_119",
+    "npcIndex": 28,
+    "npcName": "Myst",
+    "personality": "Wanderer",
+    "personalityTag": "Fog Walker",
+    "dialogue": "I've seen many towns fall, but Crystle Town has heart. Help me gather these from the Abyssal Trench to keep that heart beating.",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 5
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "coral_spine",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_120",
+    "npcIndex": 15,
+    "npcName": "Corso Bane",
+    "personality": "Merchant",
+    "personalityTag": "Market King",
+    "dialogue": "The market in the Abyssal Trench is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "ocean_pearl",
+        "qty": 5
+      },
+      {
+        "itemId": "water_essence",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_121",
+    "npcIndex": 4,
+    "npcName": "Gran Moros",
+    "personality": "Elder",
+    "personalityTag": "Cranky Veteran",
+    "dialogue": "In my youth, we respected the Gale Empire. Today, we just need its resources to survive. Please, help an old soul.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "mist_vial",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_122",
+    "npcIndex": 22,
+    "npcName": "Lena Grey",
+    "personality": "Merchant",
+    "personalityTag": "Cold Negotiator",
+    "dialogue": "The market in the Gale Empire is highly volatile. I need specific assets to stabilize my position. Are you interested in a trade?",
+    "requires": [
+      {
+        "itemId": "storm_essence",
+        "qty": 3
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_123",
+    "npcIndex": 27,
+    "npcName": "Major Krix",
+    "personality": "Soldier",
+    "personalityTag": "Iron Discipline",
+    "dialogue": "Intelligence reports suggest a surge of activity in the Gale Empire. We need materials to establish a forward observation post.",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "precision_bento",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_124",
+    "npcIndex": 25,
+    "npcName": "Iron Kam",
+    "personality": "Elder",
+    "personalityTag": "The Unmoved",
+    "dialogue": "I've seen the Gale Empire swallow many hunters. This community needs these materials to reinforce our history. Can you help?",
+    "requires": [
+      {
+        "itemId": "mist_vial",
+        "qty": 4
+      },
+      {
+        "itemId": "storm_essence",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "focus_brew",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_125",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The veil is thin near the Gale Empire. Bring me these resonators so I may preserve our town's memory.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "storm_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_126",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "EXCITING NEWS! I've designed a kinetic relay for the Gale Empire, but I'm missing the core components! Help me build it!",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 4
+      },
+      {
+        "itemId": "storm_essence",
+        "qty": 4
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "hearty_gruel",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_127",
+    "npcIndex": 29,
+    "npcName": "Tanaka",
+    "personality": "Merchant",
+    "personalityTag": "Premium Broker",
+    "dialogue": "Opportunity is knocking in the Gale Empire. If you can secure the right materials, I'll make it worth your while with a gourmet reward.",
+    "requires": [
+      {
+        "itemId": "cloud_silk",
+        "qty": 5
+      },
+      {
+        "itemId": "gale_feather",
+        "qty": 3
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "grilled_steak",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_128",
+    "npcIndex": 19,
+    "npcName": "Sparks",
+    "personality": "Tinkerer",
+    "personalityTag": "Caffeinated Inventor",
+    "dialogue": "I'm working on a proto-engine that uses materials from the Gale Empire. It's 40% safe, which is a record! Need components!",
+    "requires": [
+      {
+        "itemId": "storm_essence",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_129",
+    "npcIndex": 19,
+    "npcName": "Sparks",
+    "personality": "Tinkerer",
+    "personalityTag": "Caffeinated Inventor",
+    "dialogue": "The grid is failing near the Gale Empire. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "energy_shot",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_130",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "Heard you're the one who can handle the Gale Empire. We need some items for our rooftop fort. You in or what?",
+    "requires": [
+      {
+        "itemId": "gale_feather",
+        "qty": 2
+      },
+      {
+        "itemId": "mist_vial",
+        "qty": 3
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_131",
+    "npcIndex": 23,
+    "npcName": "Loco",
+    "personality": "Street Kid",
+    "personalityTag": "Chaos Agent",
+    "dialogue": "Yo! My crew's planning something big in the Gale Empire, but we're short on gear. Help us out and I'll hook you up with some top-tier grub.",
+    "requires": [
+      {
+        "itemId": "storm_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      },
+      {
+        "itemId": "gale_feather",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "void_sushi",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_132",
+    "npcIndex": 25,
+    "npcName": "Iron Kam",
+    "personality": "Elder",
+    "personalityTag": "The Unmoved",
+    "dialogue": "Wisdom tells me that the Gale Empire holds many secrets. We need these supplies for the town library. For the next generation.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "turbo_smoothie",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_133",
+    "npcIndex": 13,
+    "npcName": "Commander Ash",
+    "personality": "Soldier",
+    "personalityTag": "Tactical Lead",
+    "dialogue": "The frontline in the Gale Empire is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "gale_feather",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_134",
+    "npcIndex": 7,
+    "npcName": "Lune",
+    "personality": "Wanderer",
+    "personalityTag": "Drifting Soul",
+    "dialogue": "The wind from the Gale Empire carries a lonely tune. I want to build a shelter there for fellow travelers. Will you contribute?",
+    "requires": [
+      {
+        "itemId": "cloud_silk",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_135",
+    "npcIndex": 3,
+    "npcName": "Zephara",
+    "personality": "Mystic",
+    "personalityTag": "Veil Seer",
+    "dialogue": "The energy of the Gale Empire is shifting. I require these materials to anchor a ritual of protection for our streets.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 5
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 5
+      },
+      {
+        "itemId": "mist_vial",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "canyon_jerky",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_136",
+    "npcIndex": 12,
+    "npcName": "Dex-9",
+    "personality": "Tinkerer",
+    "personalityTag": "Lab Escapee",
+    "dialogue": "EXCITING NEWS! I've designed a kinetic relay for the Gale Empire, but I'm missing the core components! Help me build it!",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 2
+      },
+      {
+        "itemId": "cloud_silk",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "neon_bubble_tea",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_137",
+    "npcIndex": 26,
+    "npcName": "Bolt",
+    "personality": "Tinkerer",
+    "personalityTag": "Gear Witch",
+    "dialogue": "The grid is failing near the Gale Empire. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "sky_berry",
+        "qty": 3
+      },
+      {
+        "itemId": "crystle_shard",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_138",
+    "npcIndex": 5,
+    "npcName": "Pix-7",
+    "personality": "Tinkerer",
+    "personalityTag": "Overexcited Engineer",
+    "dialogue": "The grid is failing near the Gale Empire. If you grab these parts, I can overclock the whole district's power! Think of the gainz!",
+    "requires": [
+      {
+        "itemId": "cloud_silk",
+        "qty": 2
+      },
+      {
+        "itemId": "storm_essence",
+        "qty": 2
+      },
+      {
+        "itemId": "sky_berry",
+        "qty": 5
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_139",
+    "npcIndex": 18,
+    "npcName": "Madame Rux",
+    "personality": "Elder",
+    "personalityTag": "Town Matriarch",
+    "dialogue": "Wisdom tells me that the Gale Empire holds many secrets. We need these supplies for the town library. For the next generation.",
+    "requires": [
+      {
+        "itemId": "beast_hide",
+        "qty": 2
+      },
+      {
+        "itemId": "mist_vial",
+        "qty": 3
+      },
+      {
+        "itemId": "gale_feather",
+        "qty": 2
+      }
+    ],
+    "reward": {
+      "foodId": "street_taco",
+      "qty": 1
+    }
+  },
+  {
+    "id": "quest_140",
+    "npcIndex": 20,
+    "npcName": "Holt",
+    "personality": "Soldier",
+    "personalityTag": "Frontline Veteran",
+    "dialogue": "The frontline in the Gale Empire is shifting. We're low on supplies. Help the defense and get prioritized rations.",
+    "requires": [
+      {
+        "itemId": "crystle_shard",
+        "qty": 3
+      },
+      {
+        "itemId": "mist_vial",
+        "qty": 5
+      },
+      {
+        "itemId": "beast_hide",
+        "qty": 4
+      }
+    ],
+    "reward": {
+      "foodId": "power_curry",
+      "qty": 1
+    }
   }
 ]

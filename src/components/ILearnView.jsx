@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
-import { NPCCard } from './NPCCard';
+import { NPCCard as AmbientNPCCard } from './NPCCard';
+import { ComicQuestCard, ComicQuestModal, TalkingNPC } from './SharedQuestUI';
 import { useGame } from '../contexts/GameContext';
 import QUIZZES from '../data/quizzes.json';
 
@@ -36,100 +37,58 @@ const QuizModal = ({ quiz, onClose, onComplete }) => {
     }
   };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-2 md:p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border-[4px] border-black shadow-[10px_10px_0_rgba(0,0,0,1)] bg-[#faf6f0]">
-        
-        {/* Dynamic Header */}
-        <div className={`w-full ${style.tape} py-3 px-6 border-b-[4px] border-black flex items-center justify-between`}>
-           <div className="flex items-center gap-3">
-              <Brain className="text-black" size={24} />
-              <h2 className="text-xl font-black text-black uppercase italic tracking-tighter">Neural Sync: {quiz.topic}</h2>
-           </div>
-           <button onClick={onClose} className="w-8 h-8 bg-black text-white rounded-lg border-2 border-white flex items-center justify-center hover:bg-slate-800 transition-colors">
-              <X size={16} />
-           </button>
-        </div>
+  return (
+    <ComicQuestModal
+      isOpen={true}
+      onClose={onClose}
+      npcIndex={quiz.npcIndex}
+      npcName={`Instructor ${quiz.npcIndex}`}
+      dialogue={quiz.question}
+      title={`NEURAL_SYNC: ${quiz.topic}`}
+      accentColor={style.tape}
+    >
+      <div className="grid grid-cols-1 gap-3 relative z-10">
+        {quiz.options.map((opt, i) => {
+          let btnStyle = "bg-white border-black text-black hover:bg-slate-100 hover:-translate-y-0.5";
+          if (isAnswered) {
+            if (i === quiz.answer) btnStyle = "bg-emerald-500 border-black text-black scale-95 shadow-none";
+            else if (i === selectedOption) btnStyle = "bg-red-500 border-black text-black scale-95 shadow-none";
+            else btnStyle = "bg-white border-black text-black opacity-30 shadow-none grayscale";
+          }
 
-        <div className="flex flex-col md:flex-row h-full max-h-[80vh] md:max-h-none overflow-y-auto md:overflow-hidden">
-          {/* Left: Full Scale Character Art */}
-          <div className="w-full md:w-56 shrink-0 relative bg-slate-900 border-b-[4px] md:border-b-0 md:border-r-[4px] border-black">
-             <img 
-                src={`/assets/CrystleTown/CrystleTownCitizen/CrystleTownCitizen (${quiz.npcIndex}).jpg`} 
-                className="w-full h-full object-cover object-top"
-                alt="Instructor"
-             />
-             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '8px 8px' }} />
-             <div className="absolute inset-x-0 bottom-0 bg-black/80 backdrop-blur-md p-3">
-                <p className="text-[10px] font-black text-white text-center uppercase italic tracking-widest">Instructor Node: SEC-0{quiz.npcIndex}</p>
-             </div>
-          </div>
-
-          {/* Right: Tactical Console */}
-          <div className="flex-1 p-4 md:p-6 flex flex-col relative">
-             {/* Halftone BG Pattern */}
-             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 2px, transparent 2px)', backgroundSize: '12px 12px' }} />
-             
-             <div className="mb-6 relative z-10">
-                <div className="flex items-center gap-2 mb-2">
-                   <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Incoming Transmission...</span>
-                </div>
-                <div className="bg-white border-[3px] border-black p-4 rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)] relative">
-                   <div className="absolute -left-2 top-6 w-4 h-4 bg-white border-l-[3px] border-b-[3px] border-black rotate-45 hidden md:block" />
-                   <p className="text-sm md:text-base font-black text-black leading-tight uppercase italic italic">
-                      "{quiz.question}"
-                   </p>
-                </div>
-             </div>
-
-             <div className="grid grid-cols-1 gap-3 relative z-10">
-                {quiz.options.map((opt, i) => {
-                  let btnStyle = "bg-white border-black text-black hover:bg-slate-100 hover:-translate-y-0.5";
-                  if (isAnswered) {
-                    if (i === quiz.answer) btnStyle = "bg-emerald-500 border-black text-black scale-95 shadow-none";
-                    else if (i === selectedOption) btnStyle = "bg-red-500 border-black text-black scale-95 shadow-none";
-                    else btnStyle = "bg-white border-black text-black opacity-30 shadow-none grayscale";
-                  }
-
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => handleSelect(i)}
-                      disabled={isAnswered}
-                      className={`group w-full p-4 text-left border-[3px] rounded-2xl font-black uppercase italic text-xs transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none ${btnStyle}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-3">
-                           <span className="w-6 h-6 rounded bg-black text-white flex items-center justify-center text-[10px] group-hover:scale-110 transition-transform">
-                              {String.fromCharCode(65 + i)}
-                           </span>
-                           {opt}
-                        </span>
-                        {isAnswered && i === quiz.answer && <CheckCircle size={20} className="animate-in zoom-in" />}
-                        {isAnswered && i === selectedOption && i !== quiz.answer && <X size={20} className="animate-in zoom-in" />}
-                      </div>
-                    </button>
-                  );
-                })}
-             </div>
-
-             {/* Feedback Footer */}
-             {isAnswered && (
-               <div className={`mt-6 p-4 rounded-2xl border-[3px] text-center animate-in slide-in-from-bottom-4 duration-300 relative z-10 ${isCorrect ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-red-100 border-red-500 text-red-800'}`}>
-                 <div className="flex items-center justify-center gap-3">
-                    {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
-                    <p className="text-sm font-black uppercase tracking-widest italic">
-                      {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
-                    </p>
-                 </div>
-               </div>
-             )}
-          </div>
-        </div>
+          return (
+            <button
+              key={i}
+              onClick={() => handleSelect(i)}
+              disabled={isAnswered}
+              className={`group w-full p-4 text-left border-[3px] rounded-2xl font-black uppercase italic text-xs transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none ${btnStyle}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-3">
+                   <span className="w-6 h-6 rounded bg-black text-white flex items-center justify-center text-[10px] group-hover:scale-110 transition-transform">
+                      {String.fromCharCode(65 + i)}
+                   </span>
+                   {opt}
+                </span>
+                {isAnswered && i === quiz.answer && <CheckCircle size={20} className="animate-in zoom-in" />}
+                {isAnswered && i === selectedOption && i !== quiz.answer && <X size={20} className="animate-in zoom-in" />}
+              </div>
+            </button>
+          );
+        })}
       </div>
-    </div>,
-    document.body
+
+      {isAnswered && (
+        <div className={`mt-6 p-4 rounded-2xl border-[3px] text-center animate-in slide-in-from-bottom-4 duration-300 relative z-10 ${isCorrect ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-red-100 border-red-500 text-red-800'}`}>
+          <div className="flex items-center justify-center gap-3">
+             {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
+             <p className="text-sm font-black uppercase tracking-widest italic">
+               {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
+             </p>
+          </div>
+        </div>
+      )}
+    </ComicQuestModal>
   );
 };
 
@@ -138,68 +97,21 @@ const QuizCard = ({ quiz, onOpen, isCompleted }) => {
   const style = TOPIC_STYLES[quiz.topic] || TOPIC_STYLES.Trivia;
 
   return (
-    <div
+    <ComicQuestCard
+      npcIndex={quiz.npcIndex}
+      title={`Instructor ${quiz.npcIndex}`}
+      subtitle={`"${quiz.question.slice(0, 80)}..."`}
+      badge={quiz.topic}
+      accentColor={style.tape}
       onClick={() => !isCompleted && onOpen(quiz)}
-      className={`relative group transition-all ${isCompleted ? 'opacity-50 cursor-not-allowed grayscale' : 'cursor-pointer hover:-translate-y-1'}`}
-    >
-      {/* Dynamic Background Tape Offset */}
-      <div className={`absolute inset-0 ${style.tape} rounded-2xl translate-x-1.5 translate-y-1.5 opacity-30 group-hover:opacity-50 transition-opacity`} />
-      
-      <div className="relative bg-white border-[3px] border-black rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] flex h-44">
-        {/* Left Side: Large Artistic Avatar */}
-        <div className="w-24 md:w-28 shrink-0 relative bg-slate-900 border-r-[3px] border-black overflow-hidden group-hover:bg-slate-800 transition-colors">
-           <img 
-              src={`/assets/CrystleTown/CrystleTownCitizen/CrystleTownCitizen (${quiz.npcIndex}).jpg`} 
-              className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" 
-              alt="Instructor"
-           />
-           <div className={`absolute inset-x-0 bottom-0 ${style.tape} text-[7px] font-black text-black text-center py-1 uppercase italic tracking-tighter border-t-[2px] border-black`}>
-              Instructor #{quiz.npcIndex}
-           </div>
-           {/* Half-tone overlay on image */}
-           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
+      isCompleted={isCompleted}
+      footer={
+        <div className="flex items-center gap-1 text-cyan-600">
+          <Star size={12} className="fill-cyan-500" />
+          <span className="text-[10px] font-black tabular-nums">+{quiz.xpReward} XP</span>
         </div>
-
-        {/* Right Side: Briefing Details */}
-        <div className="flex-1 p-3 flex flex-col bg-[#fafafa]">
-           <div className="flex items-center justify-between mb-2">
-              <div className={`px-2 py-0.5 rounded-md border-2 border-black ${style.tape} text-[8px] font-black uppercase italic tracking-widest shadow-[2px_2px_0_rgba(0,0,0,1)]`}>
-                 {quiz.topic}
-              </div>
-              <div className="flex items-center gap-1 text-cyan-600">
-                 <Star size={12} className="fill-cyan-500" />
-                 <span className="text-[10px] font-black tabular-nums">+{quiz.xpReward} XP</span>
-              </div>
-           </div>
-
-           <div className="flex-1 flex flex-col justify-center">
-              <div className="relative">
-                 <div className="absolute -left-1.5 top-0 bottom-0 w-1 bg-black/10 rounded-full" />
-                 <p className="text-[11px] font-bold text-slate-800 uppercase italic leading-[1.2] tracking-tight pl-3 line-clamp-3">
-                    "{quiz.question}"
-                 </p>
-              </div>
-           </div>
-
-           <div className="mt-2 flex items-center justify-end">
-              <div className="flex items-center gap-1 text-[8px] font-black text-slate-400 uppercase italic">
-                 <span>Commence Sync</span>
-                 <ChevronRight size={10} className="group-hover:translate-x-1 transition-transform" />
-              </div>
-           </div>
-        </div>
-
-        {/* Completed Overlay */}
-        {isCompleted && (
-          <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-[1px] flex items-center justify-center z-10">
-             <div className="bg-emerald-500 text-black text-sm font-black px-6 py-2 border-[3px] border-black -rotate-12 uppercase italic shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center gap-2">
-                <CheckCircle size={18} />
-                SOLVED
-             </div>
-          </div>
-        )}
-      </div>
-    </div>
+      }
+    />
   );
 };
 
@@ -278,26 +190,15 @@ export const ILearnView = React.memo(() => {
         npcNum={22}
       />
 
-      <NPCCard
-        citizenNum={22}
-        name="INSTRUCTOR"
-        accentColor="bg-cyan-500"
-        textColor="text-cyan-500"
-        glowColor="bg-cyan-400"
-        statusTag="NEURAL_LINK_ACTIVE"
-        statusTag2="QUIZ_READY"
-        prefix="◢INSTRUCTOR: "
-        dialogues={[
-          "Welcome to iLEARN! Train your mind and earn powerful rewards for correct answers.",
-          "Each quiz you complete cycles in a fresh training module. Keep learning!",
-          "Perfect answers unlock rare crafting materials and consumable drops.",
-          "Knowledge is your most scalable stat. An educated hunter never stays broke.",
-          "Quiz topics span Math, Science, Tech, Web3, and Trivia. All XP matters.",
-          "Completed modules are removed from your active queue automatically.",
-          "Failed answers still advance your understanding. Try again on the next cycle.",
-          "The fastest hunters I know are also the most curious. Feed your mind."
-        ]}
-      />
+      <div className="px-4 pt-4">
+        <TalkingNPC
+          npcIndex={22}
+          name="MASTER INSTRUCTOR"
+          accentColor="bg-cyan-500"
+          isTalking={true}
+          dialogue="Welcome to iLEARN! Train your mind and earn powerful rewards for correct answers. Knowledge is your most scalable stat. Let us begin."
+        />
+      </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 relative z-10">
         {/* Intro Section */}

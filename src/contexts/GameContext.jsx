@@ -26,7 +26,7 @@ import { useCombat } from '../hooks/useCombat';
 import { usePlayerActions } from '../hooks/usePlayerActions';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useWallet } from '../hooks/useWallet';
-import { useTelegram } from '../hooks/useTelegram';
+
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { LoadingScreen } from '../components/LoadingScreen';
 
@@ -44,7 +44,7 @@ const LOOTS = ITEMS.filter(i => i.category === 'Loot');
 const FRUITS = ITEMS.filter(i => i.category === 'Fruit');
 const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined);
 
-export const GameProvider = ({ children, user, farcasterContext }) => {
+export const GameProvider = ({ children, user }) => {
   const [logs, setLogs] = useState(["Synchronizing with Metaverse..."]);
   const [currentTime, setCurrentTime] = useState(new Date());
   
@@ -66,9 +66,6 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     localStorage.setItem('low_perf_mode', lowPerfMode);
   }, [lowPerfMode]);
 
-  // Telegram SDK
-  const telegram = useTelegram();
-
   // Network Connectivity Monitor
   const network = useNetworkStatus();
 
@@ -84,7 +81,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   const sentryStateRef = useRef({ view: 'menu', depth: 1 });
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict } = usePlayerSync(user, db, appId, farcasterContext, telegram);
+  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict } = usePlayerSync(user, db, appId);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -111,7 +108,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   );
 
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
-  const wallet = useWallet(addLog, farcasterContext);
+  const wallet = useWallet(addLog);
 
   const combat = useCombat(
     user, player, syncPlayer, 
@@ -121,7 +118,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS, ITEMS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES, PETS_METADATA,
-    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, triggerHaptic: telegram.triggerHaptic, setShowSuccessWindow }
+    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, setShowSuccessWindow }
   );
   
   const gameLoop = useGameLoop({
@@ -162,7 +159,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
   // Watches for any wallet connection and triggers a blockade scan
   useEffect(() => {
     const triggerGlobalUplink = async () => {
-      if (wallet.address && player && !player.walletAddress && !farcasterContext) {
+      if (wallet.address && player && !player.walletAddress) {
         console.log("System V3: Global Security Sentry Detected Unlinked Node. Initiating Sweep...");
         const result = await linkWallet(wallet.address);
         if (!result.success) {
@@ -178,7 +175,7 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
       }
     };
     triggerGlobalUplink();
-  }, [wallet.address, player?.walletAddress, farcasterContext]);
+  }, [wallet.address, player?.walletAddress]);
 
   // --- UPLINK SECURITY PROTOCOL ---
   // We no longer auto-sync browser wallets. 
@@ -283,8 +280,6 @@ export const GameProvider = ({ children, user, farcasterContext }) => {
     forgeResult, setForgeResult,
     adventure, combat, actions, gameLoop, market, audio, wallet, 
     linkWallet, migrateProfile,
-    farcasterContext,
-    telegram,
     network,
     gvgContext, setGvgContext,
     battleMode, setBattleMode,

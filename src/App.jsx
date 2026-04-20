@@ -3,20 +3,15 @@ import { GameProvider } from './contexts/GameContext';
 import { GameLayout } from './components/GameLayout';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
-import { UnifiedAuthBanner } from './components/UnifiedAuthBanner';
 import { NetworkAlert } from './components/NetworkAlert';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
-import { useAccount } from 'wagmi';
 
 export const App = () => {
-  const { user, loading, isFarcaster, isTelegram, farcasterContext, telegramUserData, loginWithGoogle, loginAnonymously, logout } = useUnifiedAuth();
-  const { address, isConnected } = useAccount();
+  const { user, loading, loginWithGoogle, logout } = useUnifiedAuth();
 
-  // Unified login gate:
-  // - Google/Farcaster: require a user object from Firebase Auth
-  // - Telegram: user starts as null briefly while anonymous auth completes;
-  //   treat TMA as authenticated the moment Telegram SDK confirms context.
-  const isAuthenticated = !!user || isTelegram || (isConnected && !!address);
+  // Google Auth is the single auth gate for the web version.
+  const isAuthenticated = !!user;
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       {loading ? (
@@ -24,15 +19,9 @@ export const App = () => {
           <LoadingScreen />
         </div>
       ) : !isAuthenticated ? (
-        <LoginView
-          handleGoogleLogin={loginWithGoogle}
-          handleFarcasterLogin={loginAnonymously}
-          farcasterContext={farcasterContext}
-          isTelegram={isTelegram}
-          telegramUserData={telegramUserData}
-        />
+        <LoginView handleGoogleLogin={loginWithGoogle} />
       ) : (
-        <GameProvider user={user} farcasterContext={farcasterContext}>
+        <GameProvider user={user}>
           <NetworkAlert />
           <GameLayout onLogout={logout} />
         </GameProvider>
@@ -40,4 +29,3 @@ export const App = () => {
     </div>
   );
 };
-

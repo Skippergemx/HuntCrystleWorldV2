@@ -13,6 +13,7 @@ import { CitizenMedia, AvatarMedia } from './GameUI';
  * @param {string}   statusTag2   - Status line 2 text (e.g. 'LINK_STABLE')
  * @param {string[]} dialogues    - Array of dialogue strings to cycle through
  * @param {string}   prefix       - Speaker prefix symbol+name (e.g. '◢BARTENDER: ')
+ * @param {boolean}  isHeader     - If true, applies compact styling for sticky headers
  */
 export const NPCCard = React.memo(({
   citizenNum = 1,
@@ -25,6 +26,7 @@ export const NPCCard = React.memo(({
   statusTag2 = 'LINK_STABLE',
   dialogues = ["Hello, traveller!"],
   prefix = '◢NPC: ',
+  isHeader = false,
 }) => {
   const [fullMsg, setFullMsg] = useState('');
   const [displayedMsg, setDisplayedMsg] = useState('');
@@ -48,23 +50,23 @@ export const NPCCard = React.memo(({
     pickMessage();
     const interval = setInterval(pickMessage, 12000);
     return () => clearInterval(interval);
-  }, [pickMessage]);
+  }, [dialogues]); // Depend on dialogues directly, skip pickMessage dependency trickery
 
   return (
     <div
-      className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-4 border-[3px] border-black rounded-2xl relative overflow-visible group shadow-[8px_8px_0_rgba(0,0,0,1)] -rotate-1 transform transition-all hover:rotate-0 z-20 cursor-pointer"
+      className={`flex items-center gap-4 bg-white/5 backdrop-blur-md p-3 border-[3px] border-black rounded-2xl relative overflow-visible group shadow-[8px_8px_0_rgba(0,0,0,1)] -rotate-1 transform transition-all hover:rotate-0 z-20 cursor-pointer ${isHeader ? 'max-w-xl mx-auto my-2' : ''}`}
       onClick={pickMessage}
     >
       {/* Portrait */}
       <div className="relative shrink-0">
         <div className={`absolute -inset-1 ${glowColor} rounded-xl blur opacity-30 animate-pulse`}></div>
-        <div className="w-20 h-32 md:w-24 md:h-40 border-4 border-black rounded-xl overflow-hidden bg-slate-900 shadow-[4px_4px_0_rgba(0,0,0,1)] relative z-10 transition-transform group-hover:scale-105">
+        <div className={`${isHeader ? 'w-16 h-24' : 'w-20 h-32 md:w-24 md:h-40'} border-4 border-black rounded-xl overflow-hidden bg-slate-900 shadow-[4px_4px_0_rgba(0,0,0,1)] relative z-10 transition-transform group-hover:scale-105`}>
           {avatarNum ? (
             <AvatarMedia num={avatarNum} animated={true} className="w-full h-full object-cover object-top" />
           ) : (
             <CitizenMedia num={citizenNum} className="w-full h-full object-cover object-top" />
           )}
-          <div className={`absolute inset-x-0 bottom-0 ${accentColor} text-black text-[7px] font-black px-1 py-0.5 border-t-2 border-black text-center uppercase italic z-20`}>
+          <div className={`absolute inset-x-0 bottom-0 ${accentColor} text-black text-[6px] font-black px-1 py-0.5 border-t-2 border-black text-center uppercase italic z-20`}>
             {name}
           </div>
         </div>

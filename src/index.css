@@ -357,3 +357,53 @@ body[data-perf-mode="low"] video {
     /* Potentially disable videos if they cause lag, but let's keep them for now */
     /* display: none !important; */
 }
+
+/* --- ANIME COMIC ANIMATIONS --- */
+@keyframes comic-bounce {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.02) rotate(1deg); }
+}
+
+.animate-comic-bounce {
+    animation: comic-bounce 3s ease-in-out infinite;
+}
+
+@keyframes talk-pulse {
+    0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+    25% { transform: scale(1.02) rotate(1deg); filter: brightness(1.05); }
+    50% { transform: scale(1.01) rotate(-0.5deg); filter: brightness(1.02); }
+    75% { transform: scale(1.03) rotate(0.5deg); filter: brightness(1.08); }
+}
+
+.animate-talking {
+    animation: talk-pulse 2s ease-in-out infinite;
+}
+
+@keyframes slide-skew-in {
+    0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    100% { transform: translateX(0) skewX(0deg); opacity: 1; }
+}
+
+.animate-slide-skew-in {
+    animation: slide-skew-in 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes badge-pop {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.animate-badge-pop {
+    animation: badge-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scanline-fast {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
+
+.bg-comic-dots {
+    background-image: radial-gradient(rgba(0,0,0,0.1) 1.5px, transparent 1.5px);
+    background-size: 8px 8px;
+}

@@ -1,48 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Send, Check, Sparkles } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useTonConnectUI, useTonAddress } from '@tonconnect/ui-react';
-
-// Sub-component to safely handle TON linking inside IdentityView
-function TonLinkButton({ syncPlayer, player, addLog, isLinking }) {
-  const [tonConnectUI] = useTonConnectUI();
-  const tonAddress = useTonAddress();
-
-  const handleTonLink = async () => {
-    if (tonAddress) {
-       addLog("TON Uplink already active.");
-       return;
-    }
-    tonConnectUI.openModal();
-  };
-
-  return (
-    <button
-      onClick={handleTonLink}
-      disabled={isLinking}
-      className="w-full group relative overflow-hidden bg-blue-950/40 border-[3px] border-blue-500/50 p-4 rounded-2xl shadow-[6px_6px_0_rgba(59,130,246,0.3)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(59,130,246,0.4)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
-    >
-       <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-       <div className="flex items-center gap-3 relative z-10">
-          <div className="bg-blue-600 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-white">
-             <Send size={20} className="-rotate-12 translate-x-[1px]" />
-          </div>
-          <div className="flex flex-col items-start leading-none">
-             <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize TON Link</span>
-             <span className="text-[7px] font-black text-blue-400 uppercase tracking-widest mt-1">Connect Tonkeeper or TG Wallet</span>
-          </div>
-       </div>
-    </button>
-  );
-}
 
 export const IdentityView = React.memo(() => {
-  const { player, syncPlayer, adventure, addLog, openGuide, wallet, farcasterContext, linkWallet, telegram } = useGame();
+  const { player, syncPlayer, adventure, addLog, openGuide, wallet, linkWallet } = useGame();
   const { setView } = adventure;
-  const isTelegram = telegram?.isTelegram;
   const [showRedirectHelp, setShowRedirectHelp] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
   const [localError, setLocalError] = useState(null);
@@ -72,7 +36,7 @@ export const IdentityView = React.memo(() => {
       npc: 6,
       visualType: 'wallet',
       text: "Connecting a wallet allows your Hunter profile to be permanently anchored to a blockchain node — securing your on-chain identity and future relic claims.",
-      hint: "Strategy: Telegram users should connect their TON wallet."
+      hint: "Strategy: Connect your Base wallet to claim on-chain relics."
     },
     {
       title: "Avatar System",
@@ -158,9 +122,7 @@ export const IdentityView = React.memo(() => {
                </div>
                
                <p className="text-[9px] font-black text-red-200 uppercase leading-relaxed mb-4 p-2 bg-red-900/30 rounded border border-red-500/20 italic">
-                  {localError === "WALLET_BOUND_TO_FARCASTER" || player.walletConflict?.message?.includes("Farcaster")
-                    ? "This wallet is bound to a Farcaster Hero! Launch via Warpcast to use this account."
-                    : "This wallet is already bound to another hunter node."}
+                  This wallet is already bound to another hunter node.
                </p>
 
                <div className="flex flex-col gap-2">
@@ -182,107 +144,78 @@ export const IdentityView = React.memo(() => {
                     </div>
                   )}
 
-                  {!isTelegram && (
-                    <button 
-                      onClick={() => {
-                          wallet.disconnectWallet();
-                          setLocalError(null);
-                          addLog("Uplink node ejected. Ready for new connection.");
-                      }}
-                      className="w-full py-2 bg-slate-800 text-white text-[9px] font-black uppercase italic rounded-xl border-2 border-black shadow-[3px_3px_0_rgba(15,23,42,1)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2 hover:bg-slate-700 mt-2"
-                    >
-                       <Wallet size={14} />
-                       Switch to Different Wallet
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => {
+                        wallet.disconnectWallet();
+                        setLocalError(null);
+                        addLog("Uplink node ejected. Ready for new connection.");
+                    }}
+                    className="w-full py-2 bg-slate-800 text-white text-[9px] font-black uppercase italic rounded-xl border-2 border-black shadow-[3px_3px_0_rgba(15,23,42,1)] active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2 hover:bg-slate-700 mt-2"
+                  >
+                     <Wallet size={14} />
+                     Switch to Different Wallet
+                  </button>
 
-                  {!isTelegram && (
-                    <button 
-                      onClick={() => {
-                          setLocalError(null);
-                          if (player.walletConflict) syncPlayer({ walletConflict: null });
-                      }}
-                      className="mt-3 text-[7px] font-black text-slate-500 uppercase underline hover:text-slate-300 transition-colors"
-                    >
-                      Clear Warning and Stay Unlinked
-                    </button>
-                  )}
+                  <button 
+                    onClick={() => {
+                        setLocalError(null);
+                        if (player.walletConflict) syncPlayer({ walletConflict: null });
+                    }}
+                    className="mt-3 text-[7px] font-black text-slate-500 uppercase underline hover:text-slate-300 transition-colors"
+                  >
+                    Clear Warning and Stay Unlinked
+                  </button>
                </div>
             </div>
-          ) : (isTelegram ? player.tonWalletAddress : player.walletAddress) ? (
+          ) : player.walletAddress ? (
             // --- ACTIVE UPLINK STATE ---
-            <div className={`${isTelegram ? 'bg-blue-950/20 border-blue-500/30' : 'bg-emerald-950/20 border-emerald-500/30'} border-2 rounded-2xl p-4 flex items-center justify-between`}>
+            <div className="bg-emerald-950/20 border-emerald-500/30 border-2 rounded-2xl p-4 flex items-center justify-between">
                <div className="flex items-center gap-3">
-                  <div className={`${isTelegram ? 'bg-blue-500/20 border-blue-500/40' : 'bg-emerald-500/20 border-emerald-500/40'} p-2 rounded-lg border`}>
-                     <ShieldCheck size={18} className={isTelegram ? 'text-blue-400' : 'text-emerald-400'} />
+                  <div className="bg-emerald-500/20 border-emerald-500/40 p-2 rounded-lg border">
+                     <ShieldCheck size={18} className="text-emerald-400" />
                   </div>
                   <div className="flex flex-col">
-                     <span className={`text-[8px] font-black ${isTelegram ? 'text-blue-500' : 'text-emerald-500'} uppercase tracking-widest`}>{isTelegram ? 'TON Wallet Linked' : 'Wallet Linked'}</span>
+                     <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Wallet Linked</span>
                      <span className="text-[10px] font-mono text-white/70">
-                        {isTelegram 
-                          ? `${player.tonWalletAddress.slice(0, 6)}...${player.tonWalletAddress.slice(-4)}`
-                          : `${player.walletAddress.slice(0, 6)}...${player.walletAddress.slice(-4)}`
-                        }
+                        {player.walletAddress.slice(0, 6)}...{player.walletAddress.slice(-4)}
                      </span>
                   </div>
                </div>
                <button 
-                 onClick={() => addLog(isTelegram ? "System V4: TON Relic capture protocol active." : "System V3: Relic capture protocol active.")}
-                 className="p-2 text-slate-500 hover:text-white"
+                 onClick={() => {
+                   wallet.disconnectWallet();
+                   syncPlayer({ walletAddress: null });
+                   addLog("Wallet uplink disconnected.");
+                 }}
+                 className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all"
+                 title="Disconnect Wallet"
                >
-                 {isTelegram ? <Send size={14} /> : <Globe size={14} />}
+                 <Unlink size={14} />
                </button>
             </div>
           ) : (
-            // --- UNIFIED LINKING CTA ---
+            // --- CONNECT WALLET CTA ---
             <div className="w-full">
-                {isTelegram ? (
-                  <TonLinkButton 
-                    syncPlayer={syncPlayer} 
-                    player={player} 
-                    addLog={addLog} 
-                    isLinking={isLinking}
-                  />
-                ) : (
-                  <button
-                    onClick={() => wallet.connectWallet()}
-                    disabled={isLinking}
-                    className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
-                  >
-                     {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
-                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                     <div className="flex items-center gap-3 relative z-10">
-                        <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
-                           <Wallet size={20} />
-                        </div>
-                        <div className="flex flex-col items-start leading-none">
-                           <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
-                           <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
-                        </div>
-                     </div>
-                  </button>
-                )}
+              <button
+                onClick={() => wallet.connectWallet()}
+                disabled={isLinking}
+                className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
+              >
+                 {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
+                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div className="flex items-center gap-3 relative z-10">
+                    <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
+                       <Wallet size={20} />
+                    </div>
+                    <div className="flex flex-col items-start leading-none">
+                       <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
+                       <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
+                    </div>
+                 </div>
+              </button>
             </div>
           )}
         </div>
-
-        {/* --- FARCASTER META (If applicable) --- */}
-        {farcasterContext?.user && (
-          <div className="w-full bg-indigo-950/30 border-2 border-indigo-900/50 rounded-2xl p-4 mb-8">
-             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg border-2 border-indigo-500 overflow-hidden shrink-0">
-                   <img src={farcasterContext.user.pfpUrl} className="w-full h-full object-cover" alt="FC Pfp" />
-                </div>
-                <div className="flex-1 min-w-0">
-                   <div className="flex items-baseline gap-2">
-                      <span className="text-xs font-black text-white italic">@{farcasterContext.user.username}</span>
-                      <span className="text-[8px] font-black text-indigo-400 uppercase">FID: {farcasterContext.user.fid}</span>
-                   </div>
-                   <p className="text-[8px] font-bold text-slate-500 uppercase tracking-tight truncate">{farcasterContext.user.displayName}</p>
-                </div>
-             </div>
-          </div>
-        )}
 
         <p className="text-[10px] text-slate-500 font-black uppercase text-center mb-4 tracking-widest border-b border-slate-800/50 pb-2 w-full">Select your combat avatar</p>
 
@@ -357,4 +290,3 @@ export const IdentityView = React.memo(() => {
     </div>
   );
 });
-

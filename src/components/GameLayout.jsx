@@ -47,7 +47,6 @@ import { BiometricCoreView } from './BiometricCoreView';
 import { HunterRegistryView } from './HunterRegistryView';
 // import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
-import { UnifiedAuthBanner } from './UnifiedAuthBanner';
 import { GUIDE_CONTENT } from '../data/guideContent';
 import { LoadingScreen } from './LoadingScreen';
 import { useGame } from '../contexts/GameContext';
@@ -145,7 +144,7 @@ export const GameLayout = ({ onLogout }) => {
     currentTime, showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
     showBlockadeModal, setShowBlockadeModal, blockadeError, collisionProfile,
     sessionConflict,
-    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, farcasterContext, linkWallet, migrateProfile,
+    adventure, combat, actions, gameLoop, audio, market, leaderboard, wallet, linkWallet, migrateProfile,
     db, appId, totalStats, handleLogout, openGuide,
     globalError, submitErrorReport,
     lowPerfMode, setLowPerfMode,
@@ -389,9 +388,6 @@ export const GameLayout = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Identity & Wallet Header */}
-      <UnifiedAuthBanner />
-
       <nav className="bg-slate-950 border-b-[4px] border-black sticky top-0 z-50 p-2 md:p-3 shadow-2xl relative overflow-hidden">
         {/* Halftone Overlay HUD */}
 
@@ -452,11 +448,7 @@ export const GameLayout = ({ onLogout }) => {
 
                 {(() => {
                   const isConflict = !!player.walletConflict;
-                  const isFarcaster = !!farcasterContext;
-                  const _webApp = typeof window !== 'undefined' ? window.Telegram?.WebApp : null;
-                  const isTelegram = !!_webApp && typeof _webApp.initData === 'string' && _webApp.initData.length > 0;
-                  const displayAddress = isTelegram ? player.tonWalletAddress : (player.walletAddress || (!player.walletConflict ? wallet.address : null));
-                  const isMobile = typeof navigator !== 'undefined' ? /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) : false;
+                  const displayAddress = player.walletAddress || (!player.walletConflict ? wallet.address : null);
 
                   if (isConflict) {
                     return (
@@ -464,7 +456,7 @@ export const GameLayout = ({ onLogout }) => {
                         onClick={() => setView('avatars')}
                         className="bg-red-600 text-white px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 animate-pulse flex items-center gap-2"
                       >
-                        <AlertCircle size={10} md:size={14} />
+                        <AlertCircle size={10} />
                         <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Uplink Blockade</span>
                       </button>
                     );
@@ -472,39 +464,37 @@ export const GameLayout = ({ onLogout }) => {
 
                   if (displayAddress) {
                     return (
-                      <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group">
-                        <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
-                        <div className="flex flex-col relative z-10 items-center justify-center">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-1.5 h-1.5 ${isTelegram ? 'bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,1)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,1)]'} rounded-full animate-pulse`}></div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <div className="bg-white text-black px-2 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden group">
+                          <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
+                          <div className="flex items-center gap-2 relative z-10">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,1)] rounded-full animate-pulse"></div>
                             <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
                               {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
                             </span>
                           </div>
-
-                          {isFarcaster && !isMobile && (
-                            <span className="text-[5px] md:text-[6.5px] font-black text-slate-500 uppercase tracking-widest mt-0.5 text-center w-full leading-none">
-                              Linked Mobile Wallet
-                            </span>
-                          )}
                         </div>
+                        <button
+                          onClick={wallet.disconnectWallet}
+                          className="bg-red-900/30 text-red-400 px-2 py-0.5 md:py-1.5 border-[2px] border-red-500/40 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white transition-all flex items-center gap-1 shrink-0 group/disc"
+                          title="Disconnect Wallet"
+                        >
+                          <Wallet size={9} className="group-hover/disc:rotate-12 transition-transform" />
+                          <span className="font-black text-[6px] md:text-[9px] uppercase tracking-tighter italic leading-none hidden sm:block">UNLINK</span>
+                        </button>
                       </div>
                     );
                   }
 
-                  if (!isFarcaster && !isTelegram) {
-                    return (
-                      <button
-                        onClick={wallet.connectWallet}
-                        className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
-                      >
-                        <Wallet size={10} md:size={14} className="group-hover:rotate-12" />
-                        <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
-                      </button>
-                    );
-                  }
-
-                  return null;
+                  return (
+                    <button
+                      onClick={wallet.connectWallet}
+                      className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+                    >
+                      <Wallet size={10} className="group-hover:rotate-12" />
+                      <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
+                    </button>
+                  );
                 })()}
 
                 <div className="flex flex-row items-center gap-1 bg-slate-900 border-[1.5px] border-black px-1.5 md:px-2.5 py-0.5 shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1 shrink-0">
@@ -521,26 +511,13 @@ export const GameLayout = ({ onLogout }) => {
                     <button 
                       onClick={() => {
                         const gear = `${player.equipped?.Weapon?.name || 'Fists'} | ${player.equipped?.Armor?.name || 'Tunic'}`;
-                        const text = `🚨 HERO STATUS SYNC: ${player.name}\n💎 Level: ${player.level}\n⚔️ Gear: ${gear}\n\nConquering the Grid @dungeonswithgems! 🛡️⚔️\n #Base #Gaming`;
-                        const gameUrl = 'https://metaverse.dungeonswithgems.quest';
-                        window.open(`https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(gameUrl)}`, '_blank');
-                      }}
-                      className="p-1 px-1.5 bg-purple-600 border border-black hover:bg-purple-400 text-white rounded-md transition-all active:scale-90 flex items-center gap-1 group/cast"
-                      title="Cast Hero Progress"
-                    >
-                      <MessageSquare size={10} md:size={12} className="group-hover/cast:rotate-12" />
-                      <span className="text-[7px] md:text-[9px] font-black uppercase">CAST</span>
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const gear = `${player.equipped?.Weapon?.name || 'Fists'} | ${player.equipped?.Armor?.name || 'Tunic'}`;
                         const text = `🚨 HERO STATUS SYNC: ${player.name}\n💎 Level: ${player.level}\n⚔️ Gear: ${gear}\n\nConquering the Grid @DungeonsWithGems on #Base! 🛡️⚔️\n\n📡 Play: https://metaverse.dungeonswithgems.quest\n #Web3Gaming #BaseNetwork`;
                         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
                       }}
                       className="p-1 px-1.5 bg-slate-800 border border-black hover:bg-white hover:text-black text-white rounded-md transition-all active:scale-90 flex items-center gap-1 group/x"
                       title="Tweet Hero Progress"
                     >
-                      <Twitter size={10} md:size={12} className="group-hover/x:scale-110" />
+                      <Twitter size={10} className="group-hover/x:scale-110" />
                       <span className="text-[7px] md:text-[9px] font-black uppercase">X</span>
                     </button>
                   </div>
