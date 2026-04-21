@@ -139,7 +139,7 @@ export const DragonsGroundView = React.memo(() => {
   };
 
   const feedDragon = () => {
-    const dragonFruit = Object.values(player.inventory || {}).find(i => i.type === 'Fruit');
+    const dragonFruit = Object.values(player.inventory || {}).find(i => i?.type === 'Fruit');
     if (!dragonFruit) {
       setMessage({ type: 'error', text: 'You need Dragon Fruits to feed the Dragon!' });
       return;

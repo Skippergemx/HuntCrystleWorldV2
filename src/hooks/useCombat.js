@@ -552,23 +552,23 @@ export const useCombat = (
       let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit) * elementalMultiplier);
 
       const effects = Object.values(player?.equipped || {}).filter(i => i?.effect).map(i => i.effect);
-      const critSpike = effects.find(e => e.type === 'CritSpike');
+      const critSpike = effects.find(e => e?.type === 'CritSpike');
       if (isCrit && critSpike) {
           dmg = Math.floor(dmg * (critSpike.mult / 2.5));
           addLog(`✨ CRIT SPIKE!`);
       }
-      const doubleStrike = effects.find(e => e.type === 'DoubleStrike');
+      const doubleStrike = effects.find(e => e?.type === 'DoubleStrike');
       if (doubleStrike && Math.random() < doubleStrike.chance) {
           dmg *= 2;
           addLog(`⚔️ DOUBLE STRIKE!`);
       }
-      const lifesteal = effects.find(e => e.type === 'LifeSteal');
+      const lifesteal = effects.find(e => e?.type === 'LifeSteal');
       if (lifesteal && Math.random() < lifesteal.chance) {
           const heal = Math.floor(dmg * lifesteal.amount);
           syncPlayer({ hp: Math.min(totalStats.maxHp, (player?.hp || 0) + heal) });
           addLog(`🩸 LIFESTEAL: +${heal} HP`);
       }
-      const allInOne = effects.find(e => e.type === 'AllInOne');
+      const allInOne = effects.find(e => e?.type === 'AllInOne');
       if (allInOne && Math.random() < allInOne.chance) {
           dmg *= 4;
           addLog(`🧿 OMEGA OVERLOAD: 4x DMG!`);

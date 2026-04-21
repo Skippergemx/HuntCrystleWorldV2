@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Sparkles, PlusCircle, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, children }) => (
@@ -52,7 +53,7 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
 export const GuideModal = React.memo(({ isOpen, onClose, title, content = [] }) => {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
       <div className="relative max-w-lg w-full max-h-[90vh] flex flex-col">
         {/* Comic Panel Shadow */}
@@ -113,7 +114,8 @@ export const GuideModal = React.memo(({ isOpen, onClose, title, content = [] }) 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });
 
@@ -313,7 +315,7 @@ export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, 
 export const ConfirmationModal = React.memo(({ isOpen, onClose, onConfirm, title, message, confirmText = "CONFIRM", cancelText = "CANCEL" }) => {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in zoom-in duration-300">
       <div className="relative max-w-sm w-full">
         <div className="absolute inset-0 bg-red-800 rounded-3xl transform translate-x-3 translate-y-3"></div>
@@ -343,6 +345,7 @@ export const ConfirmationModal = React.memo(({ isOpen, onClose, onConfirm, title
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 });

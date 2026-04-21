@@ -758,11 +758,11 @@ export const CombatView = React.memo(() => {
               <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
               <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
             </button>
-            <div className="w-12 md:w-24 h-8 md:h-12 bg-yellow-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
-               <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+            <div className="w-12 md:w-24 h-8 md:h-12 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+               <span className="text-[5px] md:text-[9px] font-black text-white/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
                  {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
                </span>
-               <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+               <span className="text-[8px] md:text-xl font-black text-white italic leading-none">
                  {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
                </span>
             </div>

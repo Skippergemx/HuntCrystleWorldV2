@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles, LogOut } from 'lucide-react';
+import { deleteField } from 'firebase/firestore';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
-export const IdentityView = React.memo(() => {
+export const IdentityView = React.memo(({ onLogout }) => {
   const { player, syncPlayer, adventure, addLog, openGuide, wallet, linkWallet } = useGame();
   const { setView } = adventure;
   const [showRedirectHelp, setShowRedirectHelp] = useState(false);
@@ -181,17 +182,22 @@ export const IdentityView = React.memo(() => {
                      </span>
                   </div>
                </div>
-               <button 
-                 onClick={() => {
-                   wallet.disconnectWallet();
-                   syncPlayer({ walletAddress: null });
-                   addLog("Wallet uplink disconnected.");
-                 }}
-                 className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all"
-                 title="Disconnect Wallet"
-               >
-                 <Unlink size={14} />
-               </button>
+                <button 
+                  onClick={() => {
+                    console.log("Identity Core: Initiating Manual Node Ejection Protocol...");
+                    // Immediate sync to null ensures the UI updates instantly
+                    syncPlayer({ walletAddress: null }, true);
+                    
+                    // Trigger async background disconnect
+                    wallet.disconnectWallet();
+                    
+                    addLog("Wallet uplink disconnected.");
+                  }}
+                  className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer z-20"
+                  title="Disconnect Wallet"
+                >
+                  <Unlink size={16} />
+                </button>
             </div>
           ) : (
             // --- CONNECT WALLET CTA ---
@@ -229,6 +235,24 @@ export const IdentityView = React.memo(() => {
               <img src={`/assets/playeravatar/CrystleHunterAvatar (${num}).jpg`} className="w-full h-full object-cover" loading="lazy" />
             </button>
           ))}
+        </div>
+
+        {/* --- SYSTEM TERMINATE SECTION --- */}
+        <div className="w-full mt-6 pt-4 border-t border-slate-800 flex flex-col gap-3">
+           <p className="text-[8px] font-black text-slate-600 uppercase tracking-[0.3em] text-center italic mb-1">Authorization Controls</p>
+           <button
+             onClick={onLogout}
+             className="w-full group relative overflow-hidden bg-red-950/20 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(127,29,29,0.3)] hover:bg-red-600 hover:text-white transition-all flex items-center justify-center gap-3 active:translate-y-1 active:shadow-none"
+           >
+              <div className="bg-red-600 p-2 rounded-xl border-2 border-black group-hover:bg-white group-hover:text-red-600 transition-colors">
+                 <LogOut size={20} />
+              </div>
+              <div className="flex flex-col items-start leading-none group-hover:text-white transition-colors">
+                 <span className="text-xs font-black uppercase italic tracking-tighter">Terminate Session</span>
+                 <span className="text-[7px] font-black uppercase tracking-widest mt-1 opacity-60">Logout from Neural Grid</span>
+              </div>
+           </button>
+           <p className="text-[7px] text-slate-700 font-bold uppercase text-center mt-2 tracking-tighter">Session Hash: {player.sessionId?.slice(-8) || '0xDEADAFFE'}</p>
         </div>
       </div>
 

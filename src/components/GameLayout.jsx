@@ -474,14 +474,6 @@ export const GameLayout = ({ onLogout }) => {
                             </span>
                           </div>
                         </div>
-                        <button
-                          onClick={wallet.disconnectWallet}
-                          className="bg-red-900/30 text-red-400 px-2 py-0.5 md:py-1.5 border-[2px] border-red-500/40 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white transition-all flex items-center gap-1 shrink-0 group/disc"
-                          title="Disconnect Wallet"
-                        >
-                          <Wallet size={9} className="group-hover/disc:rotate-12 transition-transform" />
-                          <span className="font-black text-[6px] md:text-[9px] uppercase tracking-tighter italic leading-none hidden sm:block">UNLINK</span>
-                        </button>
                       </div>
                     );
                   }
@@ -527,13 +519,6 @@ export const GameLayout = ({ onLogout }) => {
                       <Target size={9} /> {player.abilityPoints} PTS
                     </div>
                   )}
-                  <button
-                    onClick={onLogoutWrapper}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 border-[1.5px] border-red-500/50 text-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] hover:bg-red-600 hover:text-white rounded-md group transition-all"
-                  >
-                    <Lock size={10} md:size={14} className="group-hover:rotate-12" />
-                    <span className="text-[10px] md:text-xs font-black uppercase italic tracking-tighter">Logout</span>
-                  </button>
                 </div>
             </div>
 
@@ -722,7 +707,7 @@ export const GameLayout = ({ onLogout }) => {
           )}
 
           {view === 'avatars' && (
-            <IdentityView />
+            <IdentityView onLogout={onLogoutWrapper} />
           )}
 
           {view === 'shop' && (

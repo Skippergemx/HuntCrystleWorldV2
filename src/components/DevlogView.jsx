@@ -23,6 +23,25 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.12.0',
+    date: '2026-04-22',
+    title: 'GOOGLE AUTH TRANSITION & CINEMATIC UI STABILIZATION',
+    category: 'INFRASTRUCTURE & UI CONSOLIDATION',
+    type: 'feature',
+    tag: 'STABLE',
+    color: 'emerald',
+    description: 'Today’s update marks the full transition to a standardized Web experience. We have successfully phased out legacy platform dependencies, hardened the Google Auth gateway, and completely redesigned the mission interface into a cinematic wide-screen experience.',
+    changes: [
+      'Auth: Successfully migrated to Google Auth-only web experience (removed Telegram/Farcaster residue)',
+      'UI: Rebuilt Quest Interface with high-fidelity "Cinematic Splash" layout and 5xl width',
+      'UX: Standardized 1-2-3 Gameplay Loop with persistent main menu "Step" badges',
+      'Ads: Migrated OpenAds network to React component tree for cross-platform stability',
+      'Technical: Resolved React Portal "Target Container" error in GuideModal logic',
+      'Optimization: Scaled down mission console density for improved desktop visibility'
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: '1.11.0',
     date: '2026-04-16',
     title: 'HIGH-FIDELITY COMMAND GALLERY & BAZAAR OVERHAUL',

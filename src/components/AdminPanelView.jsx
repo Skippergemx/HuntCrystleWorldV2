@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2 } from 'lucide-react';
-import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 
@@ -334,6 +334,56 @@ export const AdminPanelView = React.memo(() => {
     }
   };
 
+  const [migrationSource, setMigrationSource] = useState('');
+  const [migrationTarget, setMigrationTarget] = useState('');
+
+  const migratePlayerData = async () => {
+    if (!migrationSource || !migrationTarget) {
+      setMessage({ type: 'error', text: 'Migration Blocked: Source and Target UIDs required.' });
+      return;
+    }
+
+    if (!window.confirm(`MIGRATION PROTOCOL: This will clone ALL data from [${migrationSource}] into [${migrationTarget}]. Any existing data in the target will be OVERWRITTEN. Proceed?`)) return;
+
+    setLoading(true);
+    setMessage(null);
+    try {
+      const sourceSnap = await getDoc(doc(db, 'players', migrationSource));
+      if (!sourceSnap.exists()) {
+        throw new Error(`Source Profile [${migrationSource}] not found in sector.`);
+      }
+
+      const sourceData = sourceSnap.data();
+      const targetRef = doc(db, 'players', migrationTarget);
+      
+      // We keep the target's UID but copy everything else
+      const migratedData = {
+        ...sourceData,
+        uid: migrationTarget, // Override UID to match target
+        migratedFrom: migrationSource,
+        migrationTimestamp: new Date()
+      };
+
+      await setDoc(targetRef, migratedData);
+      
+      // Optional: Mark source as migrated
+      await updateDoc(doc(db, 'players', migrationSource), {
+        status: 'MIGRATED',
+        migratedTo: migrationTarget
+      });
+
+      setMessage({ type: 'success', text: `Uplink Successful: Data migrated to ${migrationTarget}. Source document marked as Legacy.` });
+      setMigrationSource('');
+      setMigrationTarget('');
+      await fetchStats();
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Migration Failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAdmin) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4 bg-slate-950">
@@ -546,6 +596,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'errors' ? 'bg-red-500 text-white border-red-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           Fault Logs
+        </button>
+        <button 
+          onClick={() => setActiveTab('migration')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'migration' ? 'bg-indigo-600 text-white border-indigo-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          Migration
         </button>
       </div>
 
@@ -1040,6 +1096,75 @@ export const AdminPanelView = React.memo(() => {
                     </div>
                  </div>
               </div>
+           </div>
+        </div>
+      ) : activeTab === 'migration' ? (
+        <div className="bg-black border-4 border-indigo-600 p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
+           <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-indigo-600 pl-4">Migration Uplink Port</h2>
+           
+           <div className="bg-indigo-950/20 border-2 border-indigo-600/30 p-6 rounded-xl space-y-6">
+              <div className="flex items-center gap-3 text-indigo-400">
+                 <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
+                 <div>
+                    <h3 className="font-black uppercase italic text-lg leading-none">Data Transfer Protocol</h3>
+                    <p className="text-[10px] font-medium text-slate-500 uppercase tracking-widest mt-1">Move Genesis progression between unique identities.</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Source Account (Legacy UID)</label>
+                    <input 
+                       type="text" 
+                       placeholder="Enter Telegram/Legacy UID..."
+                       className="w-full bg-black border-2 border-slate-800 p-4 text-white font-mono text-xs focus:border-indigo-500 outline-none italic"
+                       value={migrationSource}
+                       onChange={(e) => setMigrationSource(e.target.value)}
+                    />
+                    <p className="text-[8px] text-slate-500 italic uppercase">This document will be copied and then marked as 'MIGRATED'.</p>
+                 </div>
+
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Target Account (Google UID)</label>
+                    <input 
+                       type="text" 
+                       placeholder="Enter New Google UID..."
+                       className="w-full bg-black border-2 border-slate-800 p-4 text-white font-mono text-xs focus:border-emerald-500 outline-none italic"
+                       value={migrationTarget}
+                       onChange={(e) => setMigrationTarget(e.target.value)}
+                    />
+                    <p className="text-[8px] text-slate-500 italic uppercase">Any existing data under this ID will be overwritten.</p>
+                 </div>
+              </div>
+
+              <div className="pt-4 border-t border-white/5">
+                 <button
+                    onClick={migratePlayerData}
+                    disabled={loading || !migrationSource || !migrationTarget}
+                    className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black uppercase italic rounded-xl border-4 border-black shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all disabled:opacity-30 disabled:grayscale flex items-center justify-center gap-4"
+                 >
+                    {loading ? <RefreshCw className="animate-spin" size={24} /> : <Activity size={24} />}
+                    <span className="text-xl">COMMENCE DATA MIGRATION</span>
+                 </button>
+              </div>
+           </div>
+
+           <div className="bg-slate-900/50 p-6 rounded-xl border border-white/5">
+              <h4 className="text-xs font-black text-indigo-400 uppercase mb-4 flex items-center gap-2">
+                 <AlertCircle size={14} /> Migration Safety Checklist
+              </h4>
+              <ul className="space-y-2">
+                 {[
+                   "Ensure the target Google account has logged in at least once.",
+                   "Copy UIDs directly from the Player Registry tab.",
+                   "Migration is atomic: it copies inventory, stats, level, and crystals.",
+                   "The legacy account remains as a record but is tagged as MIGRATED."
+                 ].map((t, i) => (
+                   <li key={i} className="text-[10px] text-slate-400 flex items-start gap-2 italic">
+                      <span className="text-indigo-500 font-bold">•</span> {t}
+                   </li>
+                 ))}
+              </ul>
            </div>
         </div>
       ) : (

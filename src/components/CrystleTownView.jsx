@@ -84,21 +84,21 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
            <p className="text-[10px] font-black uppercase text-black/50 mb-3 tracking-widest flex items-center gap-2">
               <span className="w-4 h-[2px] bg-black/20" /> REQUIRED LOGISTICS
            </p>
-           <div className="grid grid-cols-1 gap-2">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {requirementStatus.map((req, i) => (
                  <div 
                    key={i} 
                    onMouseEnter={() => setActiveTooltip(req.itemId)}
                    onMouseLeave={() => setActiveTooltip(null)}
                    onClick={() => setActiveTooltip(activeTooltip === req.itemId ? null : req.itemId)}
-                   className={`group/req relative flex items-center gap-3 px-3 py-2 border-[3px] rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all cursor-help ${req.met ? 'border-green-500 bg-green-50' : req.color}`}
+                   className={`group/req relative flex items-center gap-2 px-2 py-1.5 border-2 rounded-xl shadow-[3px_3px_0_rgba(0,0,0,0.1)] transition-all cursor-help ${req.met ? 'border-green-500 bg-green-50' : req.color}`}
                  >
-                  <span className="text-2xl leading-none">{req.itemIcon}</span>
+                  <span className="text-xl leading-none">{req.itemIcon}</span>
                   <div className="flex-1">
-                    <p className="text-[11px] font-black uppercase text-black leading-none">{req.itemName}</p>
-                    <p className="text-[8px] font-bold opacity-60 mt-1 uppercase leading-tight italic">{activeTooltip === req.itemId ? `DROPS IN: ${req.sources}` : `Gather from ${req.sources.split(',')[0]}`}</p>
+                    <p className="text-[10px] font-black uppercase text-black leading-none">{req.itemName}</p>
+                    <p className="text-[8px] font-bold opacity-60 mt-0.5 uppercase leading-tight italic">{activeTooltip === req.itemId ? `DROPS IN: ${req.sources}` : `Gather from ${req.sources.split(',')[0]}`}</p>
                   </div>
-                  <div className={`text-[11px] font-black px-3 py-1 rounded-full border-[2px] ${req.met ? 'bg-green-500 border-green-600 text-white shadow-sm' : 'bg-black/5 border-black/10 text-black'}`}>
+                  <div className={`text-[10px] font-black px-2 py-0.5 rounded-full border-2 ${req.met ? 'bg-green-500 border-green-600 text-white' : 'bg-black/5 border-black/10 text-black'}`}>
                     {req.owned}/{req.qty}
                   </div>
                 </div>
@@ -106,15 +106,15 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
            </div>
         </div>
 
-        {rewardFood && (
-          <div className="bg-slate-900 p-3 rounded-2xl border-[3px] border-black flex items-center gap-4 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-            <div className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/5">
-               <span className="text-4xl leading-none">{rewardFood.icon}</span>
+         {rewardFood && (
+          <div className="bg-slate-900 p-2.5 rounded-2xl border-[3px] border-black flex items-center gap-3 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/5 shrink-0">
+               <span className="text-3xl leading-none">{rewardFood.icon}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black uppercase text-cyan-400 tracking-[0.2em] mb-1">CONTRACT_REWARD</p>
-              <p className="text-xs font-black text-white uppercase italic truncate">Meta-Delicacy: {rewardFood.name}</p>
-              <p className="text-[10px] text-white/50 font-bold italic truncate mt-0.5">{rewardFood.effectLabel}</p>
+              <p className="text-[9px] font-black uppercase text-cyan-400 tracking-[0.2em] mb-0.5">CONTRACT_REWARD</p>
+              <p className="text-[11px] font-black text-white uppercase italic truncate">Meta-Delicacy: {rewardFood.name}</p>
+              <p className="text-[9px] text-white/50 font-bold italic truncate">{rewardFood.effectLabel}</p>
             </div>
           </div>
         )}

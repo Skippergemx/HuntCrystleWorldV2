@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronRight, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { CitizenMedia, AvatarMedia } from './GameUI';
 
@@ -169,82 +170,90 @@ export const ComicQuestModal = ({
 }) => {
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-xl flex items-center justify-center p-2 md:p-4 animate-in fade-in duration-300">
-      <div className="relative w-full max-w-2xl bg-[#faf6f0] border-[5px] border-black rounded-[2.5rem] overflow-hidden shadow-[15px_15px_0_rgba(0,0,0,1)] animate-slide-skew-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6 md:p-16 animate-in fade-in duration-300 pointer-events-auto overflow-hidden">
+      <div className="relative w-full max-w-5xl h-fit max-h-[92vh] bg-[#faf6f0] border-[5px] border-black rounded-[2.5rem] overflow-hidden shadow-[20px_20px_0_rgba(0,0,0,1)] animate-slide-skew-in flex flex-col">
         
         {/* Dynamic Header */}
-        <div className={`w-full ${accentColor} py-4 px-8 border-b-[5px] border-black flex items-center justify-between shadow-inner`}>
+        <div className={`w-full ${accentColor} py-4 px-8 border-b-[5px] border-black flex items-center justify-between shadow-inner shrink-0 relative z-30`}>
           <div className="flex items-center gap-4">
-            <div className="w-3 h-3 bg-black rounded-full animate-pulse" />
-            <h2 className="text-xl md:text-2xl font-black text-black uppercase italic tracking-tighter drop-shadow-sm">
+            <div className="w-4 h-4 bg-black rounded-full animate-pulse shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
+            <h2 className="text-xl md:text-3xl font-black text-black uppercase italic tracking-tighter drop-shadow-sm">
               MISSION_LOG: {title}
             </h2>
           </div>
           <button 
             onClick={onClose}
-            className="w-8 h-8 bg-red-600 text-white rounded-lg border-[3px] border-black flex items-center justify-center hover:bg-red-500 transition-all hover:scale-110 active:scale-95 shadow-[2px_2px_0_rgba(0,0,0,1)]"
+            className="w-10 h-10 bg-red-600 text-white rounded-xl border-[4px] border-black flex items-center justify-center hover:bg-red-500 transition-all hover:scale-110 active:scale-95 shadow-[3px_3px_0_rgba(0,0,0,1)]"
           >
-            <X size={20} strokeWidth={4} />
+            <X size={24} strokeWidth={4} />
           </button>
         </div>
 
-        <div className="flex flex-col md:flex-row h-full max-h-[85vh] md:max-h-[600px] overflow-y-auto custom-scrollbar">
-          {/* Left Panel: Dramatic NPC Portrait */}
-          <div className="w-full md:w-64 shrink-0 relative bg-slate-950 border-b-[5px] md:border-b-0 md:border-r-[5px] border-black overflow-hidden group">
+        <div className="flex-1 flex flex-col md:flex-row relative z-20 min-h-0 overflow-y-auto custom-scrollbar">
+          {/* Left Panel: Dramatic NPC Portrait (Full Coverage) */}
+          <div className="w-full h-[45vh] md:h-full md:w-[35%] shrink-0 relative bg-slate-950 border-b-[5px] md:border-b-0 md:border-r-[5px] border-black overflow-hidden group">
             <CitizenMedia 
               num={npcIndex} 
-              className="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 transition-opacity duration-700" 
+              className="w-full h-full object-cover object-top opacity-90 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105" 
             />
             {/* Action Lines Overlay */}
-            <div className="absolute inset-0 opacity-[0.1] bg-comic-dots pointer-events-none" />
+            <div className="absolute inset-0 opacity-[0.2] bg-comic-dots pointer-events-none" />
             
-            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black to-transparent p-6">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 p-2 rounded-lg text-center">
-                <p className="text-[10px] font-black text-white uppercase italic tracking-[0.25em]">{npcName}</p>
-                <p className="text-[8px] font-bold text-white/50 uppercase mt-1">Authorized Civilian</p>
-              </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent flex flex-col justify-end p-8">
+               <div className="bg-white px-4 py-2 border-[4px] border-black -rotate-2 shadow-[4px_4px_0_rgba(0,0,0,1)] w-fit mb-2">
+                 <p className="text-xs font-black text-black uppercase italic tracking-widest">{npcName}</p>
+               </div>
+               <div className="bg-black/80 backdrop-blur-sm border-l-4 border-white px-3 py-1 w-fit">
+                 <p className="text-[9px] font-bold text-white uppercase tracking-[0.3em]">Authorized Civilian_Entry</p>
+               </div>
             </div>
             
             {/* Scanline Animation */}
-            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none animate-scroll-diag opacity-20" />
+            <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none animate-scroll-diag opacity-30" />
           </div>
 
           {/* Right Panel: Interactive Console */}
-          <div className="flex-1 p-6 md:p-8 flex flex-col relative bg-[#fdfaf5]">
+          <div className="flex-1 pl-6 pr-6 pt-6 md:pl-10 md:pr-10 md:pt-10 flex flex-col relative bg-[#fdfaf5]">
             {/* Grid Pattern */}
-            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1.5px, transparent 1.5px), linear-gradient(90deg, #000 1.5px, transparent 1.5px)', backgroundSize: '20px 20px' }} />
+            <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1.5px, transparent 1.5px), linear-gradient(90deg, #000 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
 
-            {/* Talking Block */}
-            <div className="mb-8 relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="px-2 py-1 bg-black text-white text-[8px] font-black uppercase italic tracking-widest rounded">COMM_LINK</div>
-                <div className="h-[2px] flex-1 bg-black/10" />
-              </div>
-              
-              <div className="bg-white border-[4px] border-black p-5 rounded-3xl shadow-[6px_6px_0_rgba(0,0,0,1)] relative group">
-                <div className="absolute -left-2 top-8 w-5 h-5 bg-white border-l-[4px] border-b-[4px] border-black rotate-45 hidden md:block" />
-                <p className="text-15px md:text-lg font-black text-black leading-tight uppercase italic quote">
-                  "{dialogue}"
-                </p>
-              </div>
-            </div>
+            <div className="relative z-10 flex flex-col">
+                {/* Talking Block */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="px-3 py-1 bg-black text-white text-[10px] font-black uppercase italic tracking-[0.3em] rounded-sm transform -rotate-1">COMM_LINK</div>
+                    <div className="h-[2px] flex-1 bg-black/10" />
+                  </div>
+                  
+                  <div className="bg-white border-[4px] border-black p-5 rounded-3xl shadow-[8px_8px_0_rgba(0,0,0,1)] relative transition-transform hover:scale-[1.01]">
+                    <div className="absolute -left-2 top-10 w-6 h-6 bg-white border-l-[4px] border-b-[4px] border-black rotate-45 hidden md:block" />
+                    <p className="text-16px md:text-lg font-black text-black leading-tight uppercase italic quote">
+                      "{dialogue}"
+                    </p>
+                  </div>
+                </div>
 
-            {/* Content Slot */}
-            <div className="flex-1 relative z-10 mb-8 min-h-[120px]">
-              {children}
-            </div>
+                {/* Content Slot - Flex grow to push buttons down */}
+                <div className="flex-1 min-h-0">
+                  {children}
+                </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 relative z-20">
-              {actions}
+                {/* Action Buttons */}
+                {actions && (
+                  <div className="flex gap-4 shrink-0 pb-6 md:pb-10 mt-4">
+                    {actions}
+                  </div>
+                )}
             </div>
           </div>
         </div>
 
         {/* Floating Background Decorations */}
-        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-black opacity-[0.02] rounded-full pointer-events-none" />
+        <div className="absolute top-1/4 -left-20 w-40 h-40 bg-black opacity-[0.03] rounded-full pointer-events-none" />
+        <div className="absolute bottom-1/4 -right-20 w-60 h-60 bg-black opacity-[0.02] rounded-full pointer-events-none" />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

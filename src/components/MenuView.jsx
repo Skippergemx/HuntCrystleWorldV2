@@ -216,25 +216,25 @@ export const MenuView = React.memo(() => {
 
   const tutorialSteps = [
     {
-      title: "Hunter Command",
+      title: "1. DEPLOYMENT: DUNGEONS",
       npc: 1,
-      visualType: 'hub',
-      text: "Welcome to the new Tactical HUD. We've prioritized your deployment protocols for maximum efficiency.",
-      hint: "Tip: Top-left for Stats, Top-right for Trade."
-    },
-    {
-      title: "Tactical Hierarchy",
-      npc: 11,
-      visualType: 'nav',
-      text: "The massive center core is your Battle Hub. Below it, you'll find tokens for Town, Relics, and Knowledge.",
-      hint: "Strategy: Watch the pulsing core for deployment readiness."
-    },
-    {
-      title: "Operation Startup",
-      npc: 17,
       visualType: 'dungeon',
-      text: "Stay focused on the Primary Core. If it turns red, your neural link is overheated. Proceed when green.",
-      hint: "Warning: Defeat triggers a neural recalibration period."
+      text: "Step one: RAID DUNGEONS. This is where you deployment for combat to collect raw materials and tactical loot needed for city contracts.",
+      hint: "Objective: Clear floors to fill your inventory with scrap and gems."
+    },
+    {
+      title: "2. EXCHANGE: CRYSTLE TOWN",
+      npc: 18,
+      visualType: 'town',
+      text: "Step two: CRYSTLE TOWN. Use your collected materials to complete citizen quests. This is your primary protocol for EARNING ETH rewards.",
+      hint: "The Hook: Turning materials into ETH is the path to wealth."
+    },
+    {
+      title: "3. OPTIMIZE: iLEARN HUB",
+      npc: 22,
+      visualType: 'brain',
+      text: "Step three: iLEARN. Sharpen your neural core with educational challenges to farm high-grade POTIONS and stay combat-ready.",
+      hint: "Meta-Strategy: Use potions from iLearn to push deeper into Dungeons."
     }
   ];
 
@@ -300,6 +300,9 @@ export const MenuView = React.memo(() => {
             {/* 1. RAID DUNGEON */}
             <div className="relative group cursor-pointer animate-in zoom-in duration-500 flex flex-col items-center" onClick={startDungeon}>
                <div className={`w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-1 group-hover:rotate-0 overflow-hidden relative`}>
+                  {/* Step Badge */}
+                  <div className="absolute top-4 -left-8 bg-red-600 text-white px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 01</div>
+                  
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-2 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
@@ -324,6 +327,9 @@ export const MenuView = React.memo(() => {
             {/* 2. CRYSTLE TOWN QUEST */}
             <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('crystle_town')}>
                <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  {/* Step Badge */}
+                  <div className="absolute top-4 -left-8 bg-amber-500 text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 02</div>
+
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
@@ -346,6 +352,9 @@ export const MenuView = React.memo(() => {
             {/* 3. iLEARN QUEST */}
             <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('ilearn')}>
                <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  {/* Step Badge */}
+                  <div className="absolute top-4 -left-8 bg-blue-600 text-white px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 03</div>
+
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
@@ -358,8 +367,8 @@ export const MenuView = React.memo(() => {
                      <div className="p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-6 mb-1 group-hover:rotate-0 transition-all bg-blue-700">
                         <span className="text-xl drop-shadow-md">🧠</span>
                      </div>
-                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center">
-                        <h3 className="text-[10px] md:text-[11px] font-[1000] text-black uppercase italic tracking-tighter leading-none">ILEARN QUEST</h3>
+                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
+                        <h3 className="text-[10px] md:text-[11px] font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap">ILEARN QUEST</h3>
                      </div>
                   </div>
                </div>
@@ -441,9 +450,9 @@ export const MenuView = React.memo(() => {
                   <AvatarMedia num={tutorialSteps[tutorialStep].npc} animated={true} className="w-full h-full object-cover object-top" />
                   <div className="absolute inset-x-0 bottom-0 bg-emerald-500 text-[6px] font-black text-black text-center py-0.5 uppercase italic">COMMANDER</div>
                 </div>
-                <div className="w-16 h-16 rounded-xl border-[3px] border-black bg-slate-950 flex items-center justify-center shrink-0">
-                  {tutorialSteps[tutorialStep].visualType === 'hub' && <Globe className="text-emerald-400 animate-pulse" size={36} />}
-                  {tutorialSteps[tutorialStep].visualType === 'nav' && <MapIcon className="text-cyan-400 animate-bounce" size={36} />}
+                <div className="w-16 h-16 rounded-xl border-[3px] border-black bg-slate-950 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                  {tutorialSteps[tutorialStep].visualType === 'town' && <MapIcon className="text-amber-400 animate-bounce" size={36} />}
+                  {tutorialSteps[tutorialStep].visualType === 'brain' && <Brain className="text-blue-400 animate-pulse" size={36} />}
                   {tutorialSteps[tutorialStep].visualType === 'dungeon' && <Swords className="text-red-400 animate-pulse" size={36} />}
                 </div>
               </div>

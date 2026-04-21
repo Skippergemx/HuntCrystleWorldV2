@@ -159,18 +159,17 @@ export const GameProvider = ({ children, user }) => {
   // Watches for any wallet connection and triggers a blockade scan
   useEffect(() => {
     const triggerGlobalUplink = async () => {
-      if (wallet.address && player && !player.walletAddress) {
-        console.log("System V3: Global Security Sentry Detected Unlinked Node. Initiating Sweep...");
+      // SECURITY FIX: Only auto-link if the player has NO wallet address entry at all (undefined).
+      // If the user just unlinked, the field becomes null/deleted, and we should NOT re-link immediately.
+      if (wallet.address && player && player.walletAddress === undefined) {
+        console.log("System V3: Global Security Sentry Detected New Node. Initiating Initial Sweep...");
         const result = await linkWallet(wallet.address);
         if (!result.success) {
-           console.warn(`SECURITY ALERT: Ejecting unauthorized node connection. Reason: ${result.error}`);
            setBlockadeError(result.error);
            setCollisionProfile(result.collision || null);
            setShowBlockadeModal(true);
-           wallet.disconnectWallet(); // AUTO-EJECT ON BLOCKADE
+           wallet.disconnectWallet();
            addLog(`Security Alert: ${result.error}. Node Ejected.`);
-        } else {
-           addLog("Uplink Established.");
         }
       }
     };
