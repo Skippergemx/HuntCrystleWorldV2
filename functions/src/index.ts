@@ -79,11 +79,17 @@ export const claimFaucetReward = onCall(
     // 8. Process Viem Transaction
     try {
       // Dynamically load viem to bypass the 10s deployment parser
-      const { createWalletClient, http, parseEther } = await import('viem');
+      const { createWalletClient, createPublicClient, http, parseEther } = await import('viem');
       const { privateKeyToAccount } = await import('viem/accounts');
       const { base } = await import('viem/chains');
 
       const account = privateKeyToAccount(privateKey);
+      
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+
       const walletClient = createWalletClient({
         account,
         chain: base, // Base network
@@ -91,10 +97,18 @@ export const claimFaucetReward = onCall(
       });
 
       const rewardAmount = "0.0000035"; // ~ $0.01 USD in ETH
+      const rewardValue = parseEther(rewardAmount);
+
+      // 8a. Pre-flight Balance Check (Prevent 'Dry Faucet' Generic Errors)
+      const balance = await publicClient.getBalance({ address: account.address });
+      if (balance < (rewardValue + parseEther("0.00001"))) { // Buffer for gas
+         console.warn(`🚨 FAUCET DRY: Wallet ${account.address} only has ${balance.toString()} wei remaining.`);
+         throw new HttpsError('resource-exhausted', "The town's treasury is currently depleted! Citizens are working to restock the faucet. Try again later.");
+      }
 
       const hash = await walletClient.sendTransaction({
         to: targetWalletAddress as `0x${string}`,
-        value: parseEther(rewardAmount)
+        value: rewardValue
       });
 
       // 9. Update User's Firestore stats on success
@@ -109,8 +123,17 @@ export const claimFaucetReward = onCall(
           txHash: hash 
       };
 
-    } catch (error) {
-      console.error("Viem TX Failed:", error);
+    } catch (error: any) {
+      console.error("Faucet Interaction Failed:", error);
+      
+      // Pass through our custom 'resource-exhausted' error
+      if (error instanceof HttpsError) throw error;
+
+      // Handle specific Viem InsufficientFunds error if the pre-flight missed it
+      if (error.message?.includes('insufficient funds')) {
+        throw new HttpsError('resource-exhausted', "The faucet well has run dry. Please notify the administrators.");
+      }
+
       throw new HttpsError('internal', "Faucet network error. Try again later.");
     }
   }

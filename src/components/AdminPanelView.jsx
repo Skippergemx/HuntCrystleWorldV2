@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink } from 'lucide-react';
+import { createPublicClient, http, formatEther } from 'viem';
+import { base } from 'viem/chains';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
@@ -17,6 +19,8 @@ export const AdminPanelView = React.memo(() => {
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorReports, setErrorReports] = useState([]);
+  const [faucetBalance, setFaucetBalance] = useState(null);
+  const faucetAddress = "0x8dca8d7B35004630F460B85F70d1189795CDe6Fc";
   const itemsPerPage = 10;
 
   const isAdmin = userEmail === 'skippergemx@gmail.com';
@@ -75,6 +79,25 @@ export const AdminPanelView = React.memo(() => {
       setLoading(false);
     }
   };
+
+  const fetchFaucetBalance = useCallback(async () => {
+    try {
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+      const balance = await publicClient.getBalance({ address: faucetAddress });
+      setFaucetBalance(formatEther(balance));
+    } catch (e) {
+      console.error("Faucet Scan Error:", e);
+    }
+  }, [faucetAddress]);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'system') {
+      fetchFaucetBalance();
+    }
+  }, [isAdmin, activeTab, fetchFaucetBalance]);
 
   const resetLeaderboard = async () => {
     if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL V2 players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
@@ -1097,7 +1120,69 @@ export const AdminPanelView = React.memo(() => {
                  </div>
               </div>
            </div>
-        </div>
+
+            {/* FAUCET TERMINAL v2 */}
+            <div className="bg-emerald-950/20 border-2 border-emerald-500/30 p-6 rounded-2xl space-y-6 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-1000"></div>
+               
+               <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                     <div className="bg-emerald-500 p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2">
+                        <Droplets size={24} className="text-black" />
+                     </div>
+                     <div>
+                        <h3 className="font-black uppercase italic text-xl leading-none text-emerald-400">FAUCET TERMINAL</h3>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Status: {faucetBalance && parseFloat(faucetBalance) > 0.001 ? 'HEALTHY' : 'CRITICAL - REFILL REQUIRED'}</p>
+                     </div>
+                  </div>
+                  <button 
+                    onClick={fetchFaucetBalance}
+                    className="p-3 bg-black border-2 border-slate-800 text-slate-400 hover:text-white hover:border-emerald-500 transition-all rounded-xl"
+                  >
+                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-black/40 border-2 border-white/5 p-4 rounded-xl flex flex-col justify-center">
+                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">RESERVE BALANCE</p>
+                     <div className="flex items-baseline gap-1">
+                        <p className="text-2xl font-black text-white italic">{faucetBalance ? parseFloat(faucetBalance).toFixed(6) : "SCANNING..."}</p>
+                        <p className="text-[10px] font-black text-emerald-500 uppercase">ETH</p>
+                     </div>
+                  </div>
+                  
+                  <div className="md:col-span-2 bg-black/40 border-2 border-white/5 p-4 rounded-xl space-y-2">
+                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">TRANSMISSION ANCHOR</p>
+                     <div className="flex items-center justify-between text-[10px] font-mono text-emerald-400/60 lowercase italic truncate">
+                        <span>{faucetAddress}</span>
+                        <a 
+                          href={`https://basescan.org/address/${faucetAddress}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="ml-2 hover:text-emerald-400"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4">
+                 <button className="py-4 bg-slate-900 border-2 border-slate-800 text-slate-400 font-black uppercase italic text-xs rounded-xl hover:bg-slate-800 transition-all cursor-not-allowed">
+                   Protocol Logs
+                 </button>
+                 <a 
+                   href="https://bridge.base.org/" 
+                   target="_blank" 
+                   rel="noreferrer"
+                   className="py-4 bg-emerald-600 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] text-black font-black uppercase italic text-xs rounded-xl hover:bg-emerald-500 transition-all flex items-center justify-center gap-2"
+                 >
+                   REFILL RESERVES <Droplets size={14} />
+                 </a>
+               </div>
+            </div>
+         </div>
       ) : activeTab === 'migration' ? (
         <div className="bg-black border-4 border-indigo-600 p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
            <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-indigo-600 pl-4">Migration Uplink Port</h2>

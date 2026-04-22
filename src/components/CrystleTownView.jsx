@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, ChevronRight, CheckCircle, AlertCircle, Coins, ExternalLink, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
 import { ComicQuestCard, ComicQuestModal, TalkingNPC } from './SharedQuestUI';
@@ -282,8 +282,7 @@ const CooldownCard = ({ expiration, id, onRush, idx }) => {
 
 // --- Main View ---
 export const CrystleTownView = () => {
-  const { player, adventure, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, openGuide } = useGame();
-  const { setView } = adventure;
+  const { player, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, setView, openGuide, SOUNDS, faucetResult, setFaucetResult } = useGame();
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
@@ -627,6 +626,74 @@ export const CrystleTownView = () => {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* --- FAUCET CELEBRATION MODAL --- */}
+      {faucetResult && createPortal(
+         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+            {/* Animated Light Rays */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20 capitalize">
+               <div className="absolute top-1/2 left-1/2 w-full h-[500%] bg-gradient-to-t from-emerald-500 to-transparent transform -translate-x-1/2 -translate-y-1/2 animate-[spin_20s_linear_infinite]" />
+               <div className="absolute top-1/2 left-1/2 w-full h-[500%] bg-gradient-to-t from-cyan-400 to-transparent transform -translate-x-1/2 -translate-y-1/2 animate-[spin_30s_linear_infinite_reverse]" />
+            </div>
+
+            <div className="relative w-full max-w-sm bg-slate-900 border-[4px] border-black rounded-[2.5rem] shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+               {/* Halftone BG Overlay */}
+               <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
+
+               {/* Header Banner */}
+               <div className="bg-emerald-500 py-3 border-b-[4px] border-black transform -rotate-2 relative z-10 shadow-xl">
+                  <h2 className="text-2xl font-black text-black text-center uppercase tracking-tighter italic scale-110">TREASURY SIGNAL!</h2>
+                  <div className="absolute -top-1 -right-4 bg-black text-white px-3 py-1 text-[8px] font-black uppercase tracking-[0.3em] transform rotate-12 border-2 border-white">
+                     PROTOCOL SECURED
+                  </div>
+               </div>
+
+               {/* Reward Body */}
+               <div className="p-8 flex flex-col items-center text-center relative z-10 gap-6 pt-10">
+                  <div className="relative">
+                     <div className="absolute inset-0 bg-emerald-500/30 blur-2xl rounded-full scale-110 animate-pulse" />
+                     <div className="w-28 h-28 bg-black rounded-3xl border-[4px] border-black flex items-center justify-center relative shadow-[6px_6px_0_rgba(16,185,129,1)] transform rotate-3">
+                        <Coins size={64} className="text-emerald-400" />
+                        <div className="absolute -top-3 -right-3 w-10 h-10 bg-emerald-500 rounded-full border-2 border-black flex items-center justify-center animate-bounce">
+                           <Sparkles size={20} className="text-black" />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] leading-none mb-1">Crystle Hunter Subsidy</p>
+                     <h3 className="text-4xl font-black text-white italic tracking-tighter leading-none">0.0000035 ETH</h3>
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-tight italic mt-2">"Your dedication to the district has attracted a Faucet Drop."</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="w-full flex flex-col gap-3 mt-4">
+                     <a 
+                       href={`https://basescan.org/tx/${faucetResult.txHash}`}
+                       target="_blank"
+                       rel="noreferrer"
+                       className="w-full py-4 bg-black border-[3px] border-slate-700 text-emerald-400 font-black uppercase italic rounded-2xl hover:border-emerald-500 hover:bg-slate-800 transition-all flex items-center justify-center gap-2 group"
+                     >
+                        VIEW ON BASESCAN <ExternalLink size={16} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                     </a>
+                     
+                     <button
+                        onClick={() => setFaucetResult(null)}
+                        className="w-full py-5 bg-emerald-500 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] text-black font-black uppercase italic text-xl rounded-2xl active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                     >
+                        ACKNOWLEDGE
+                     </button>
+                  </div>
+               </div>
+
+               {/* Footer Decoration */}
+               <div className="bg-black/40 py-2 border-t border-white/5 relative z-10">
+                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Transmission ID: {faucetResult.txHash?.slice(0, 16)}...</p>
+               </div>
+            </div>
+         </div>,
+         document.body
       )}
     </div>
   );

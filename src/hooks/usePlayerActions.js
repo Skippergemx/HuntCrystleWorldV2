@@ -1,5 +1,6 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { calculateNagaStats, getXpRequired, AP_PER_LEVEL } from '../utils/gameLogic';
 
 /**
@@ -21,7 +22,9 @@ export const usePlayerActions = (
   db,
   appId,
   PETS_METADATA,
-  gvgActions = {}
+  gvgActions = {},
+  functions = null,
+  setFaucetResult = null
 ) => {
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
 
@@ -224,8 +227,11 @@ export const usePlayerActions = (
     
     if (item.id === 'hp_potion') {
       updates.potions = (player.potions || 0) + qty;
-    } else if (item.id === 'auto_scroll') {
-      updates.autoScrolls = (player.autoScrolls || 0) + qty;
+    } else if (item.id?.includes('auto_scroll')) {
+      // Dynamic scaling for 1m, 3m, 6m, etc.
+      const durationMatch = item.id.match(/(\d+)m/);
+      const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+      updates.autoScrolls = (player.autoScrolls || 0) + (qty * scrollValue);
     } else {
       // For equipment, generate multiple unique IDs if buying bulk
       for (let i = 0; i < qty; i++) {
@@ -308,6 +314,7 @@ export const usePlayerActions = (
       recipe.materials.forEach(mat => {
         let found = 0;
         inventory.forEach(([key, invItem]) => {
+          if (!invItem) return;
           const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
           const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
           if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
@@ -334,10 +341,13 @@ export const usePlayerActions = (
       const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
       
       // Standardize: Route to numeric counters for stackable essentials
-      if (recipe.id?.startsWith('hp_potion')) {
+      if (recipe.id === 'hp_potion') {
         updates.potions = (player.potions || 0) + 1;
-      } else if (recipe.id?.startsWith('auto_scroll')) {
-        updates.autoScrolls = (player.autoScrolls || 0) + 1;
+      } else if (recipe.id?.includes('auto_scroll')) {
+        // Dynamic scaling for 1m, 3m, 6m, etc.
+        const durationMatch = recipe.id.match(/(\d+)m/);
+        const qty = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+        updates.autoScrolls = (player.autoScrolls || 0) + qty;
       } else {
         updates[`inventory.${mixedItem.id}`] = mixedItem;
       }
@@ -365,7 +375,7 @@ export const usePlayerActions = (
     
     // Check if player has the tool
     const inventory = Object.values(player.inventory || {});
-    const targetTool = inventory.find(i => i.id?.startsWith(tamingItemId));
+    const targetTool = inventory.find(i => i && i.id?.startsWith(tamingItemId));
     if (!targetTool) return addLog(`❌ PURIFY FAILED: Missing ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism!`);
 
     // Element check
@@ -444,6 +454,7 @@ export const usePlayerActions = (
       recipe.materials.forEach(mat => {
         let found = 0;
         inventory.forEach(([key, invItem]) => {
+          if (!invItem) return;
           const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
           const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
           if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
@@ -834,19 +845,8 @@ export const usePlayerActions = (
       
       let updates = { tokens: (player.tokens || 0) + gxReward };
       
-      // Auto-Scrolls 12m Generation
-      for (let i = 0; i < scrollCount; i++) {
-         const id = `auto_scroll_12m_${Date.now()}_${i}`;
-         updates[`inventory.${id}`] = {
-           id,
-           name: "Auto-Hunt (12m)",
-           sellValue: 1400,
-           type: "Consumable",
-           category: "Consumable",
-           duration: 720000,
-           description: "12 minutes of autonomous hunting."
-         };
-      }
+      // Auto-Scrolls 12m Generation - Now routed to numeric counter
+      updates.autoScrolls = (player.autoScrolls || 0) + (scrollCount * 12);
       
       await updateDoc(warRef, { [`claimed.${player.uid}`]: true });
       syncPlayer(updates);
@@ -957,7 +957,7 @@ export const usePlayerActions = (
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
-  const completeTownQuest = useCallback((quest, FOODS) => {
+  const completeTownQuest = useCallback(async (quest, FOODS) => {
     if (!quest || !player) return;
     const inventory = player.inventory || {};
 
@@ -1020,7 +1020,32 @@ export const usePlayerActions = (
     }
     
     addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
-  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
+    // --- Faucet Protocol: Automated Reward Trigger ---
+    if (functions && player.walletAddress) {
+       console.log("🏙️ FAUCET: Attempting reward transmission sequence...");
+       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+       try {
+         const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
+         const data = result.data;
+         if (data.success) {
+            addLog(`🎁 CRYSTLE FAUCET: ${data.message}`);
+            playSFX(SOUNDS.obtainLoot);
+            if (setFaucetResult) {
+               setFaucetResult({ success: true, txHash: data.txHash, message: data.message });
+            }
+         } else {
+            // Silently log level or rate limit issues unless critical
+            console.log(`🏙️ FAUCET_SIGNAL: ${data.message}`);
+         }
+       } catch (e) {
+          console.warn("🏙️ FAUCET_ERROR:", e.message);
+          if (e.message.includes("depleted")) {
+             addLog("🏙️ FAUCET: The town treasury is temporarily dry.");
+          }
+       }
+    }
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions]);
 
   const abandonTownQuest = useCallback((questId) => {
     if (!player) return;
@@ -1086,14 +1111,26 @@ export const usePlayerActions = (
     let rId = null;
     let rQty = 1;
 
-    // 60% Chance to drop a Potion reward (Only Mega or Ultra)
-    if (roll < 0.60) {
-       const rarityRoll = Math.random();
-       if (rarityRoll < 0.85) { rId = 'mega_hp_potion'; rQty = 1; } // 85% Mega
-       else { rId = 'ultra_hp_potion'; rQty = 1; }                  // 15% Ultra
+    // 70% Total Reward Probability
+    if (roll < 0.70) {
+       const typeRoll = Math.random();
+       
+       // 50% Chance for Tactical Potions
+       if (typeRoll < 0.50) {
+          const rarityRoll = Math.random();
+          if (rarityRoll < 0.85) { rId = 'mega_hp_potion'; rQty = 1; } // 85% Mega
+          else { rId = 'ultra_hp_potion'; rQty = 1; }                  // 15% Ultra
+       } 
+       // 50% Chance for Augmented Auto-Scrolls (Weighted)
+       else {
+          const scrollRoll = Math.random() * 100;
+          if (scrollRoll < 3) { rId = 'auto_scroll_12m'; rQty = 1; }      // 3% Epic
+          else if (scrollRoll < 15) { rId = 'auto_scroll_9m'; rQty = 1; } // 12% Rare
+          else if (scrollRoll < 40) { rId = 'auto_scroll_6m'; rQty = 1; } // 25% Uncommon
+          else { rId = 'auto_scroll_3m'; rQty = 1; }                      // 60% Common
+       }
     } 
     // Fallback to static quiz-defined reward if random roll failed but static exists. 
-    // We already cleaned quizzes.json so this will only trigger for non-hp_potion rewards.
     else if (quiz.itemRewardId && quiz.itemRewardId !== 'hp_potion') {
        rId = quiz.itemRewardId;
        rQty = quiz.itemRewardQty || 1;
@@ -1109,10 +1146,13 @@ export const usePlayerActions = (
         dropData = { ...masterDrop, qty: rQty };
         
         // Standardize: Route to numeric counters for stackable essentials
-        if (masterDrop.id?.startsWith('hp_potion')) {
+        if (masterDrop.id === 'hp_potion') {
            updates.potions = (player.potions || 0) + rQty;
-        } else if (masterDrop.id?.startsWith('auto_scroll')) {
-           updates.autoScrolls = (player.autoScrolls || 0) + rQty;
+        } else if (masterDrop.id?.includes('auto_scroll')) {
+           // Dynamic scaling for 1m, 3m, 6m, etc.
+           const durationMatch = masterDrop.id.match(/(\d+)m/);
+           const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+           updates.autoScrolls = (player.autoScrolls || 0) + (rQty * scrollValue);
         } else {
            for (let i = 0; i < rQty; i++) {
               const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;

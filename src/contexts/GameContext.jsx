@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { db, appId } from '../firebase';
+import { db, appId, functions } from '../firebase';
 import MONSTERS from '../data/monsters.json';
 import TAVERN_MATES from '../data/mates.json';
 import CRYSTLE_RECIPES from '../data/recipes.json';
@@ -54,6 +54,7 @@ export const GameProvider = ({ children, user }) => {
   const [showBossVideo, setShowBossVideo] = useState(false);
   const [showSuccessWindow, setShowSuccessWindow] = useState(false);
   const [forgeResult, setForgeResult] = useState(null); // { success: boolean, item: object }
+  const [faucetResult, setFaucetResult] = useState(null); // { success: boolean, txHash: string, message: string }
   const [showBlockadeModal, setShowBlockadeModal] = useState(false);
   const [blockadeError, setBlockadeError] = useState(null);
   const [collisionProfile, setCollisionProfile] = useState(null);
@@ -104,7 +105,8 @@ export const GameProvider = ({ children, user }) => {
     player, setPlayer, syncPlayer, addLog, audio.playSFX, SOUNDS, 
     TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId,
     PETS_METADATA,
-    { setBattleMode, setGvgContext, setEnemy: adventure.setEnemy, setView: adventure.setView }
+    { setBattleMode, setGvgContext, setEnemy: adventure.setEnemy, setView: adventure.setView },
+    functions, setFaucetResult
   );
 
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
@@ -269,6 +271,7 @@ export const GameProvider = ({ children, user }) => {
 
   const engine = {
     user, player, syncPlayer, logs, addLog, currentTime,
+    db, appId, functions,
     showGuide, setShowGuide, guideType, setGuideType,
     bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
     showSuccessWindow, setShowSuccessWindow,
@@ -277,6 +280,7 @@ export const GameProvider = ({ children, user }) => {
     collisionProfile, setCollisionProfile,
     sessionConflict,
     forgeResult, setForgeResult,
+    faucetResult, setFaucetResult,
     adventure, combat, actions, gameLoop, market, audio, wallet, 
     linkWallet, migrateProfile,
     network,
@@ -287,7 +291,7 @@ export const GameProvider = ({ children, user }) => {
     updateBoardTab: leaderboardObj.setActiveBoard,
     activeBoardTab: leaderboardObj.activeBoard,
 
-    db, appId, totalStats: dynamicStats, handleLogout, openGuide,
+    totalStats: dynamicStats, handleLogout, openGuide,
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
