@@ -99,7 +99,16 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       }
 
       const updates = { tokens: player.tokens - totalCost };
-      returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
+      
+      // Standardize: Route to numeric counters for stackable essentials
+      if (listing.item.id?.startsWith('hp_potion')) {
+        updates.potions = (player.potions || 0) + qty;
+      } else if (listing.item.id?.startsWith('auto_scroll')) {
+        updates.autoScrolls = (player.autoScrolls || 0) + qty;
+      } else {
+        returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
+      }
+
       await syncPlayer(updates);
 
       addLog(`🤝 DEAL SECURED: Acquired ${qty}x ${listing.item.name} for ${totalCost} GX.`);

@@ -44,16 +44,23 @@ export const MarketplaceView = React.memo(() => {
 
   const getOwnedQty = (item) => {
     if (!item) return 0;
-    if (item.id === 'hp_potion') return player.potions || 0;
-    if (item.id === 'auto_scroll') return player.autoScrolls || 0;
+    
+    // Base counter from player state
+    let count = 0;
+    if (item.id === 'hp_potion') count = player.potions || 0;
+    else if (item.id === 'auto_scroll') count = player.autoScrolls || 0;
+
+    // SCRAMBLE FIX: Scan inventory for any stray units that arrived as objects
     const master = getMasterData(item);
     const id = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
-    return Object.values(player.inventory || {}).filter(i => {
+    const invCount = Object.values(player.inventory || {}).filter(i => {
        if (!i) return false;
        const iMaster = getMasterData(i);
        const cleanId = iMaster?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
        return cleanId === id;
     }).length;
+
+    return count + invCount;
   };
 
   useEffect(() => {
