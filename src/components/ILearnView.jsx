@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award } from 'lucide-react';
+import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award, Star, Trophy } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
 import { ComicQuestCard, ComicQuestModal, TalkingNPC } from './SharedQuestUI';
@@ -115,11 +116,7 @@ const QuizCard = ({ quiz, onOpen, isCompleted }) => {
   );
 };
 
-const Star = ({ size, className, fill }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
+
 
 export const ILearnView = React.memo(() => {
   const { player, syncPlayer, adventure, actions, audio, SOUNDS, ITEMS, FOODS, CRYSTLE_RECIPES } = useGame();
@@ -170,12 +167,40 @@ export const ILearnView = React.memo(() => {
     }
   }, [quizSlots.length, player, completedQuizzes]);
 
+  const triggerConfetti = useCallback(() => {
+    const end = Date.now() + 3000;
+    const colors = ['#06b6d4', '#f59e0b', '#10b981', '#ffffff'];
+
+    (function frame() {
+      confetti({
+        particleCount: 2,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: colors
+      });
+      confetti({
+        particleCount: 2,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: colors
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  }, []);
+
   const handleComplete = (quiz, isCorrect) => {
     if (isCorrect) {
       const result = actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
       setSessionReward(result);
       setActiveQuiz(null);
-      setTimeout(() => setSessionReward(null), 4000);
+      if (result.item) {
+         triggerConfetti();
+      }
     }
   };
 
@@ -216,36 +241,76 @@ export const ILearnView = React.memo(() => {
            </div>
         </div>
 
-        {/* Reward Feedback Toast */}
-        {sessionReward && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[10000] animate-in slide-in-from-top-4 fade-in duration-500">
-             <div className="bg-emerald-500 border-[4px] border-black px-4 py-3 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,1)] flex items-center gap-4 min-w-[280px]">
-                <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center shrink-0">
-                    <Award className="text-emerald-400" size={28} />
+        {/* Knowledge Acquisition Modal (Celebratory Burst) */}
+        {sessionReward && createPortal(
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+             <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden">
+                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+                
+                <div className="relative z-10 space-y-6 text-center">
+                   <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
+                      {sessionReward.item ? (
+                         <span className="text-6xl relative z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-bounce font-serif">{sessionReward.item.icon || '📦'}</span>
+                      ) : (
+                         <Trophy className="text-amber-400 w-16 h-16 animate-bounce relative z-10" />
+                      )}
+                      <div className="absolute inset-0 border-4 border-dashed border-cyan-400/50 rounded-full animate-spin-slow"></div>
+                   </div>
+
+                   <div className="space-y-2">
+                      <h2 className="text-2xl font-[1000] text-white uppercase italic tracking-tighter leading-none">
+                         KNOWLEDGE ACQUISITION
+                      </h2>
+                      <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] animate-pulse">
+                         Rewards Authorized by Master Instructor
+                      </p>
+                   </div>
+
+                   <div className="bg-black/60 border-[3px] border-white/10 p-4 rounded-xl space-y-3">
+                      <div className="flex items-center justify-center gap-4">
+                         <div className="flex flex-col items-center">
+                            <span className="text-2xl font-black text-white italic">+{sessionReward.xp}</span>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Net_EXP</span>
+                         </div>
+                         {sessionReward.item && (
+                            <>
+                               <div className="w-[2px] h-8 bg-white/10"></div>
+                               <div className="flex flex-col items-center">
+                                  <span className="text-2xl font-black text-white italic">x{sessionReward.item.qty}</span>
+                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Quantity</span>
+                               </div>
+                            </>
+                         )}
+                      </div>
+                      
+                      {sessionReward.item && (
+                         <div className="pt-2 border-t border-white/5">
+                            <p className="text-[11px] font-black text-white uppercase tracking-tight italic">
+                               "{sessionReward.item.name}"
+                            </p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase opacity-60">
+                               Added to Neural Inventory Hub
+                            </p>
+                         </div>
+                      )}
+                   </div>
+
+                   <button 
+                     onClick={() => setSessionReward(null)}
+                     className="w-full py-3 bg-cyan-500 text-black font-black text-xs uppercase italic tracking-widest border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-3"
+                   >
+                     CLOSE TRANSMISSION <ChevronRight size={16} />
+                   </button>
                 </div>
                 
-                <div className="flex-1 flex flex-col justify-center border-l-2 border-black/20 pl-4">
-                   <div className="flex items-baseline gap-2">
-                       <span className="text-lg font-black text-black tabular-nums">+{sessionReward.xp}</span>
-                       <span className="text-[10px] font-black text-black/60 uppercase italic">EXP</span>
-                   </div>
-                   
-                   {sessionReward.item && (
-                      <div className="flex items-center gap-2 mt-1 pt-1 border-t border-black/10">
-                         <span className="text-lg leading-none">{sessionReward.item.icon || '📦'}</span>
-                         <span className="text-[9px] font-black text-black uppercase truncate max-w-[120px]">
-                            {sessionReward.item.name}
-                         </span>
-                         <span className="bg-black text-white text-[8px] font-black px-1 rounded">x{sessionReward.item.qty}</span>
-                      </div>
-                   )}
-                </div>
-
-                <div className="w-10 h-10 border-2 border-black rounded-full flex items-center justify-center bg-white/20">
-                   <Sparkles className="text-black animate-spin-slow" size={20} />
+                <div className="absolute top-2 right-2 flex gap-1">
+                   <div className="w-1.5 h-1.5 bg-cyan-500 animate-ping"></div>
+                   <div className="w-1.5 h-1.5 bg-slate-700"></div>
                 </div>
              </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Quiz Grid */}

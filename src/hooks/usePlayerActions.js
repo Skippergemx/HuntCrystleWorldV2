@@ -315,9 +315,11 @@ export const usePlayerActions = (
         let found = 0;
         inventory.forEach(([key, invItem]) => {
           if (!invItem) return;
-          const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
-          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
-          if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+          const parts = (invItem.id || "").split('_');
+          const cleanId = parts.filter(p => !/^\d+$/.test(p) && !/^[a-z0-9]{4}$/.test(p)).join('_');
+          const itMaster = ITEMS.find(item => item.id === cleanId || item.id === invItem.id || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+          const matchResult = (cleanId === mat.id) || (invItem.id === mat.id) || (itMaster?.id === mat.id);
+          if (matchResult && found < mat.count) {
              if (!itemsToConsume.find(c => c.key === key)) {
                itemsToConsume.push({ key, ...invItem });
                found++;
@@ -340,14 +342,12 @@ export const usePlayerActions = (
       const suffix = Math.random().toString(36).slice(2, 6);
       const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
       
-      // Standardize: Route to numeric counters for stackable essentials
+      // Standardize: Only base 1m essentials go to numeric counters.
+      // Advanced variants (3m scrolls, Mega potions) remain as unique inventory objects.
       if (recipe.id === 'hp_potion') {
         updates.potions = (player.potions || 0) + 1;
-      } else if (recipe.id?.includes('auto_scroll')) {
-        // Dynamic scaling for 1m, 3m, 6m, etc.
-        const durationMatch = recipe.id.match(/(\d+)m/);
-        const qty = durationMatch ? parseInt(durationMatch[1], 10) : 1;
-        updates.autoScrolls = (player.autoScrolls || 0) + qty;
+      } else if (recipe.id === 'auto_scroll') {
+        updates.autoScrolls = (player.autoScrolls || 0) + 1;
       } else {
         updates[`inventory.${mixedItem.id}`] = mixedItem;
       }
@@ -455,9 +455,11 @@ export const usePlayerActions = (
         let found = 0;
         inventory.forEach(([key, invItem]) => {
           if (!invItem) return;
-          const cleanId = invItem.id?.replace(/(_\d+)+$/, '');
-          const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === invItem.name?.toLowerCase());
-          if (((cleanId === mat.id) || (master?.id === mat.id)) && found < mat.count) {
+          const parts = (invItem.id || "").split('_');
+          const cleanId = parts.filter(p => !/^\d+$/.test(p) && !/^[a-z0-9]{4}$/.test(p)).join('_');
+          const itMaster = ITEMS.find(item => item.id === cleanId || item.id === invItem.id || item.name?.toLowerCase() === invItem.name?.toLowerCase());
+          const matchResult = (cleanId === mat.id) || (invItem.id === mat.id) || (itMaster?.id === mat.id);
+          if (matchResult && found < mat.count) {
              if (!itemsToConsume.find(c => c.key === key)) {
                itemsToConsume.push({ key, ...invItem });
                found++;
@@ -1148,11 +1150,8 @@ export const usePlayerActions = (
         // Standardize: Route to numeric counters for stackable essentials
         if (masterDrop.id === 'hp_potion') {
            updates.potions = (player.potions || 0) + rQty;
-        } else if (masterDrop.id?.includes('auto_scroll')) {
-           // Dynamic scaling for 1m, 3m, 6m, etc.
-           const durationMatch = masterDrop.id.match(/(\d+)m/);
-           const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
-           updates.autoScrolls = (player.autoScrolls || 0) + (rQty * scrollValue);
+        } else if (masterDrop.id === 'auto_scroll') {
+           updates.autoScrolls = (player.autoScrolls || 0) + rQty;
         } else {
            for (let i = 0; i < rQty; i++) {
               const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;

@@ -22,6 +22,8 @@ export const LaboratoryView = React.memo(() => {
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
+  const [isMaterializing, setIsMaterializing] = useState(false);
+  const [materializeProgress, setMaterializeProgress] = useState(0);
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_lab_tutorial') === 'true';
@@ -152,6 +154,57 @@ export const LaboratoryView = React.memo(() => {
         ))}
       </div>
       
+      {/* Materializing Overlay (High Fidelity Sync Modal) */}
+      {isMaterializing && createPortal(
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden">
+              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #22d3ee 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+              
+              <div className="relative z-10 space-y-6 text-center">
+                 <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+                    <FlaskConical className="text-cyan-400 w-16 h-16 animate-bounce" />
+                    <div className="absolute inset-0 border-4 border-dashed border-cyan-400/50 rounded-full animate-spin-slow"></div>
+                 </div>
+
+                 <div className="space-y-2">
+                    <h2 className="text-2xl font-[1000] text-white uppercase italic tracking-tighter leading-none">
+                       MATERIALIZING...
+                    </h2>
+                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] animate-pulse">
+                       Synchronizing Molecular Bonds with Hub
+                    </p>
+                 </div>
+
+                 {/* Custom Progress Bar */}
+                 <div className="w-full h-8 bg-black border-[3px] border-white/20 relative overflow-hidden">
+                    <div 
+                       className="h-full bg-cyan-500 transition-all duration-300 ease-out"
+                       style={{ width: `${materializeProgress}%` }}
+                    >
+                       <div className="absolute inset-0 bg-grid-white/20 animate-pull"></div>
+                    </div>
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-white mix-blend-difference italic">
+                       {Math.floor(materializeProgress)}% SYNC
+                    </span>
+                 </div>
+
+                 <div className="pt-4 border-t border-white/10">
+                    <p className="text-[9px] font-black text-slate-500 uppercase leading-relaxed">
+                       Please wait. Verifying transaction integrity on the central sector grid. Don't close the terminal.
+                    </p>
+                 </div>
+              </div>
+              
+              {/* Corner Accents */}
+              <div className="absolute top-2 right-2 flex gap-1">
+                 <div className="w-1.5 h-1.5 bg-cyan-500 animate-ping"></div>
+                 <div className="w-1.5 h-1.5 bg-slate-700"></div>
+              </div>
+           </div>
+        </div>,
+        document.body
+      )}
+      
       {/* Synthesis Result Modal (Comic Aesthetic) */}
       {forgeResult && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -280,11 +333,28 @@ export const LaboratoryView = React.memo(() => {
                    </div>
                 </div>
                 <button 
-                  onClick={() => mixLaboratoryItem(recipe)} 
-                  disabled={!hasMaterials || player.tokens < recipe.cost} 
-                  className={`px-4 py-2 border-[3px] border-black font-black text-[11px] uppercase tracking-tighter transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${!hasMaterials || player.tokens < recipe.cost ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-emerald-500 text-black hover:bg-emerald-400'}`}
+                  onClick={async () => {
+                    setIsMaterializing(true);
+                    setMaterializeProgress(0);
+                    const interval = setInterval(() => {
+                      setMaterializeProgress(prev => Math.min(95, prev + (100 / 30)));
+                    }, 1000);
+                    
+                    try {
+                      await mixLaboratoryItem(recipe);
+                      setMaterializeProgress(100);
+                      setTimeout(() => setIsMaterializing(false), 500);
+                    } catch (e) {
+                      addLog("🚨 SYNTHESIS ERROR: Hub connection dropped.");
+                      setIsMaterializing(false);
+                    } finally {
+                      clearInterval(interval);
+                    }
+                  }} 
+                  disabled={!hasMaterials || player.tokens < recipe.cost || isMaterializing} 
+                  className={`px-4 py-2 border-[3px] border-black font-black text-[11px] uppercase tracking-tighter transition-all shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none ${(!hasMaterials || player.tokens < recipe.cost || isMaterializing) ? 'bg-slate-200 text-slate-400 border-slate-300 shadow-none cursor-not-allowed' : 'bg-emerald-500 text-black hover:bg-emerald-400'}`}
                 >
-                  {hasMaterials ? 'MATERIALIZE' : 'MISSING REAGENTS'}
+                  {isMaterializing ? 'SYNCING...' : (hasMaterials ? 'MATERIALIZE' : 'MISSING REAGENTS')}
                 </button>
               </div>
             </div>

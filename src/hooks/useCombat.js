@@ -372,30 +372,31 @@ export const useCombat = (
           }
 
           if (lootItem) {
-            // Standardize: Route to numeric counters for stackable essentials
-            const isPotion = lootItem.id?.startsWith('hp_potion');
-            const isScroll = lootItem.id?.startsWith('auto_scroll');
+            // Standardize: Only base 1m essentials go to numeric counters.
+            const isPotion = lootItem.id === 'hp_potion';
+            const isScroll = lootItem.id === 'auto_scroll';
+            let dropToTrack = lootItem;
 
             if (isPotion) {
                updates.potions = (player?.potions || 0) + 1;
             } else if (isScroll) {
                updates.autoScrolls = (player?.autoScrolls || 0) + 1;
             } else {
-               // BUG-04 FIX: Add random suffix to prevent key collision on rapid kills
+               // Unique Inventory Item
                const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
                updates[`inventory.${itemWithId.id}`] = itemWithId;
                setLastLoot(itemWithId);
+               dropToTrack = itemWithId;
             }
 
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
             setTimeout(() => setLastLoot(null), 3000);
 
-            // BUG-10 FIX: Track dropped item directly, no fragile key re-lookup
             setSessionRewards(prev => ({
               tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
-              loots: [...prev.loots, itemWithId]
+              loots: [...prev.loots, dropToTrack]
             }));
           } else {
             setSessionRewards(prev => ({

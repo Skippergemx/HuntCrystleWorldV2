@@ -292,76 +292,61 @@ export const usePlayerSync = (user, db, appId) => {
     if (!user) return;
     if (!activeDocId) return;
 
-    // Sterilize numbers: Prevent float jitter for combat-critical metrics
-    const sterilized = { ...updates };
-    ['hp', 'maxHp', 'xp', 'tokens'].forEach(key => {
-      if (sterilized[key] !== undefined && typeof sterilized[key] === 'number') {
-        sterilized[key] = Math.floor(sterilized[key]);
-      }
-    });
-
-    // LOCAL PATH: Apply changes to React state with explicit maths — NO sentinel objects in local state.
-    setPlayer(prev => {
-      const next = { ...prev };
-
-      const applyToTarget = (target, key, value) => {
-        // Firestore sentinel: deleteField()
-        if (value && typeof value === 'object' && value._methodName === 'deleteField') {
-          delete target[key];
-          return;
-        }
-        // Firestore sentinel: increment(n)
-        if (value && typeof value === 'object' && value._methodName === 'increment') {
-          const operand = value._operand ?? 0;
-          target[key] = (Number(target[key]) || 0) + Number(operand);
-          return;
-        }
-        // Firestore sentinel: arrayUnion(...elements)
-        if (value && typeof value === 'object' && value._methodName === 'arrayUnion') {
-          const toAdd = Array.isArray(value._elements) ? value._elements : [];
-          const existing = Array.isArray(target[key]) ? target[key] : [];
-          const merged = [...existing];
-          toAdd.forEach(el => { if (!merged.includes(el)) merged.push(el); });
-          target[key] = merged;
-          return;
-        }
-        // Firestore sentinel: arrayRemove(...elements)
-        if (value && typeof value === 'object' && value._methodName === 'arrayRemove') {
-          const toRemove = Array.isArray(value._elements) ? value._elements : [];
-          target[key] = (Array.isArray(target[key]) ? target[key] : []).filter(el => !toRemove.includes(el));
-          return;
-        }
-        // Plain value
-        target[key] = value;
-      };
-
-      Object.entries(sterilized).forEach(([key, value]) => {
-        if (key.includes('.')) {
-          // Dot-notation path: e.g. 'baseStats.str'
-          const parts = key.split('.');
-          let cursor = next;
-          for (let i = 0; i < parts.length - 1; i++) {
-            cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
-            cursor = cursor[parts[i]];
-          }
-          applyToTarget(cursor, parts[parts.length - 1], value);
-        } else {
-          applyToTarget(next, key, value);
+      const sterilized = { ...updates };
+      ['hp', 'maxHp', 'xp', 'tokens'].forEach(key => {
+        if (sterilized[key] !== undefined && typeof sterilized[key] === 'number') {
+          sterilized[key] = Math.floor(sterilized[key]);
         }
       });
 
-      next.updatedAt = new Date();
+      // --- WIPE GUARD: DATA INTEGRITY FIREWALL ---
+      // Prevents "Hollow Syncs" from corrupting the database if local state is lost.
+      const isHollowSync = 
+        (sterilized.tokens === 0 && (player?.tokens || 0) > 2000) || 
+        (sterilized.level === 1 && (player?.level || 1) > 5);
 
-      // REMOTE PATH: Queue the ORIGINAL sentinel payload for Firestore — no transformation needed.
+      if (isHollowSync && !immediate) {
+        console.error("🛑 WIPE_GUARD: Hollow sync detected and aborted. State integrity preserved.");
+        return;
+      }
+
+      let nextState = null;
+      setPlayer(prev => {
+        const next = { ...prev };
+        
+        // ... apply sterilized updates to next ...
+        Object.entries(sterilized).forEach(([key, value]) => {
+          if (key.includes('.')) {
+            const parts = key.split('.');
+            let cursor = next;
+            for (let i = 0; i < parts.length - 1; i++) {
+               cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+               cursor = cursor[parts[i]];
+            }
+            // applyToTarget logic inside
+            if (value && typeof value === 'object' && value._methodName === 'deleteField') { delete cursor[parts[parts.length - 1]]; }
+            else if (value && typeof value === 'object' && value._methodName === 'increment') {
+               const op = value._operand ?? 0;
+               cursor[parts[parts.length - 1]] = (Number(cursor[parts[parts.length - 1]]) || 0) + Number(op);
+            } else { cursor[parts[parts.length - 1]] = value; }
+          } else {
+            if (value && typeof value === 'object' && value._methodName === 'increment') {
+               next[key] = (Number(next[key]) || 0) + Number(value._operand ?? 0);
+            } else { next[key] = value; }
+          }
+        });
+        next.updatedAt = new Date();
+        nextState = next;
+        return next;
+      });
+
+      // Update the remote queue
       pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
 
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
-
       const performSync = async () => {
-        if (sessionConflict) return; // Hard gate for multi-device sync collisions
-        if (isSyncing) return; // Prevent concurrent requests during network lag
+        if (sessionConflict) return;
+        if (isSyncing) return;
 
-        // Before starting payload execution, snapshot the queue
         const payload = { ...pendingUpdatesRef.current };
         if (Object.keys(payload).length === 0) return;
 
@@ -374,41 +359,49 @@ export const usePlayerSync = (user, db, appId) => {
           await updateDoc(docRef, payload);
           setLastSyncFailed(false);
           syncFailureCount.current = 0;
-          console.log("System V4: Remote Sector Synchronized.", activeDocId);
 
-          // --- LEADERBOARD PUBLIC ECHO PUSH ---
+          // --- MILESTONE SNAPSHOT HANDLER ---
+          // Creates a full "Last Known Good" recovery point on significant progress
+          const curr = nextState;
+          const shouldSnapshot = 
+              (curr.level > (player?.lastSnapshotLevel || 0)) || 
+              (Date.now() - (player?.lastSnapshotAt || 0) > 24 * 60 * 60 * 1000);
+
+          if (shouldSnapshot && curr.level > 1) {
+            const snapRef = doc(db, 'player_snapshots', activeDocId);
+            const snapshotData = { ...curr, lastSnapshotAt: Date.now(), lastSnapshotLevel: curr.level };
+            setDoc(snapRef, snapshotData).catch(e => console.error("Snapshot error:", e));
+            // Update the main doc with the milestone markers (no-await to not block)
+            updateDoc(docRef, { lastSnapshotAt: Date.now(), lastSnapshotLevel: curr.level }).catch(() => {});
+          }
+
+          // --- LEADERBOARD ECHO ---
           try {
-            import('firebase/firestore').then(({ doc: fsDoc, setDoc: fsSetDoc }) => {
+            import('firebase/firestore').then(({ setDoc: fsSetDoc }) => {
               const publicData = {
-                name: next.name || "Unknown",
-                avatar: next.avatar || 1,
-                platform: next.platform || 'browser',
-                level: next.level || 1,
-                totalBossDamage: next.totalBossDamage || 0,
-                maxDepthScore: next.maxDepthScore || 0,
-                maxDepthMapName: next.maxDepthMapName || 'Neon Slums',
-                maxDepthMapMinLevel: next.maxDepthMapMinLevel || 1,
-                tokens: next.tokens || 0,
-                walletAddress: next.walletAddress || null,
+                name: curr.name || "Unknown",
+                avatar: curr.avatar || 1,
+                platform: curr.platform || 'browser',
+                level: curr.level || 1,
+                totalBossDamage: curr.totalBossDamage || 0,
+                maxDepthScore: curr.maxDepthScore || 0,
+                maxDepthMapName: curr.maxDepthMapName || 'Neon Slums',
+                maxDepthMapMinLevel: curr.maxDepthMapMinLevel || 1,
+                tokens: curr.tokens || 0,
+                walletAddress: curr.walletAddress || null,
                 updatedAt: Date.now()
               };
               setDoc(doc(db, 'leaderboard', activeDocId), publicData, { merge: true }).catch(() => {});
             });
           } catch (e) { console.error("Echo Error:", e); }
+
         } catch (e) {
-          console.error("Sync Error - Retrying in next batch:", e);
+          console.error("Sync Error - Retrying:", e);
           syncFailureCount.current += 1;
-
-          if (syncFailureCount.current >= 3) {
-            console.error("CRITICAL_SYNC_COLLAPSE: Enforcing Rollback Policy.");
-          }
-
-          // Failsafe: Restore unsynced data to the queue
           pendingUpdatesRef.current = { ...payload, ...pendingUpdatesRef.current };
           setLastSyncFailed(true);
         } finally {
           setIsSyncing(false);
-          // If new updates accumulated while this sync was in progress, process them now.
           if (Object.keys(pendingUpdatesRef.current).length > 0) {
             syncTimeoutRef.current = setTimeout(performSync, 1000);
           }
@@ -416,14 +409,14 @@ export const usePlayerSync = (user, db, appId) => {
       };
 
       if (immediate) {
-        performSync();
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+        return performSync();
       } else {
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
         syncTimeoutRef.current = setTimeout(performSync, 2000);
       }
-
-      return next;
-    });
-  }, [user, db, appId, activeDocId]);
+      return nextState;
+    }, [user, db, appId, activeDocId, player, sessionConflict, isSyncing]);
 
   // 4. EXPLICIT WALLET LINKING (Enforced through Sentry)
   const linkWallet = useCallback(async (newAddress) => {
