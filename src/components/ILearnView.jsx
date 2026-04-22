@@ -193,9 +193,9 @@ export const ILearnView = React.memo(() => {
     }());
   }, []);
 
-  const handleComplete = (quiz, isCorrect) => {
+  const handleComplete = async (quiz, isCorrect) => {
     if (isCorrect) {
-      const result = actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
+      const result = await actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
       setSessionReward(result);
       setActiveQuiz(null);
       if (result.item) {
