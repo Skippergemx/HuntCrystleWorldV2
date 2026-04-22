@@ -177,14 +177,16 @@ export const ILearnView = React.memo(() => {
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: colors
+        colors: colors,
+        zIndex: 10002
       });
       confetti({
         particleCount: 2,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: colors
+        colors: colors,
+        zIndex: 10002
       });
 
       if (Date.now() < end) {
@@ -243,8 +245,8 @@ export const ILearnView = React.memo(() => {
 
         {/* Knowledge Acquisition Modal (Celebratory Burst) */}
         {sessionReward && createPortal(
-          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-             <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden">
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-transparent pointer-events-none animate-in fade-in duration-300">
+             <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden pointer-events-auto">
                 <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
                 
                 <div className="relative z-10 space-y-6 text-center">
