@@ -144,7 +144,15 @@ export const MarketplaceView = React.memo(() => {
       return matchesType && matchesSearch;
     });
 
-    // 2. Stack items by Master ID or Name fallback
+    // 2. Synthesize counters into the list for easy selling
+    if (player.potions > 0) {
+      raw.push({ id: 'hp_potion', name: 'Small Potion', count: player.potions, icon: '🧪', type: 'Consumable', category: 'Consumable' });
+    }
+    if (player.autoScrolls > 0) {
+      raw.push({ id: 'auto_scroll', name: 'Auto-Hunt Scroll', count: player.autoScrolls, icon: '🤖', type: 'Consumable', category: 'Consumable' });
+    }
+
+    // 3. Stack items by Master ID or Name fallback
     return raw.reduce((acc, item) => {
       const master = getMasterData(item);
       const baseId = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
@@ -154,9 +162,9 @@ export const MarketplaceView = React.memo(() => {
          return iBaseId === baseId;
       });
       if (existing) {
-        existing.count = (existing.count || 1) + 1;
+        existing.count = (existing.count || 1) + (item.count || 1);
       } else {
-        acc.push({ ...item, count: 1 });
+        acc.push({ ...item, count: item.count || 1 });
       }
       return acc;
     }, []);

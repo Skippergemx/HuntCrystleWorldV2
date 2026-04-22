@@ -295,22 +295,22 @@ export const LaboratoryView = React.memo(() => {
       {/* Synthesis Result Modal (Comic Aesthetic) */}
       {forgeResult && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-           <div className={`max-w-xs w-full p-8 border-[6px] border-black shadow-[12px_12px_0_rgba(0,0,0,1)] relative animate-in zoom-in-95 duration-300 transform rotate-1 bg-emerald-500`}>
+           <div className={`max-w-xs w-full p-8 border-[6px] border-black shadow-[12px_12px_0_rgba(0,0,0,1)] relative animate-in zoom-in-95 duration-300 transform ${forgeResult.success ? 'bg-emerald-500 rotate-1' : 'bg-pink-600 -rotate-1'}`}>
               <div className="absolute -top-6 -left-6 bg-white border-4 border-black px-4 py-1 transform -rotate-12 shadow-[4px_4px_0_rgba(0,0,0,1)]">
-                <span className="text-xl font-black italic uppercase text-black tracking-tighter">SCIENCE!</span>
+                <span className="text-xl font-black italic uppercase text-black tracking-tighter">{forgeResult.success ? 'SCIENCE!' : 'ERROR!'}</span>
               </div>
 
               <div className="text-center space-y-4">
                 <div className="w-24 h-24 mx-auto bg-black flex items-center justify-center border-4 border-white shadow-[6px_6px_0_rgba(0,0,0,0.5)] transform rotate-3">
-                  <span className="text-5xl">{forgeResult.item?.icon || '🧪'}</span>
+                  <span className="text-5xl">{forgeResult.success ? (forgeResult.item?.icon || '🧪') : '💥'}</span>
                 </div>
                 
                 <div className="space-y-1">
                   <h2 className="text-2xl font-black text-white italic uppercase leading-none tracking-tighter">
-                    SYNTHESIS SUCCESS!
+                    {forgeResult.success ? 'SYNTHESIS SUCCESS!' : 'SYNTHESIS FAILED!'}
                   </h2>
                   <p className="text-[10px] font-black text-black/60 uppercase tracking-widest leading-tight">
-                    Object Materialized: {forgeResult.item?.name}
+                    {forgeResult.success ? `Object Materialized: ${forgeResult.item?.name}` : (forgeResult.error || 'Molecular fusion destabilized.')}
                   </p>
                 </div>
 
@@ -318,7 +318,7 @@ export const LaboratoryView = React.memo(() => {
                   onClick={() => setForgeResult(null)}
                   className="w-full py-3 bg-black text-white font-black uppercase italic border-2 border-white/20 hover:bg-white hover:text-black transition-all shadow-[4px_4px_0_rgba(0,0,0,0.5)] active:translate-x-1 active:translate-y-1 active:shadow-none mt-4"
                 >
-                  Confirm & Continue
+                  {forgeResult.success ? 'Confirm & Continue' : 'Retry Protocol'}
                 </button>
               </div>
            </div>

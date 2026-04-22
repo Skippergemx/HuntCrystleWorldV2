@@ -332,14 +332,28 @@ export const usePlayerActions = (
 
       const suffix = Math.random().toString(36).slice(2, 6);
       const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
-      updates[`inventory.${mixedItem.id}`] = mixedItem;
+      
+      // Standardize: Route to numeric counters for stackable essentials
+      if (recipe.id?.startsWith('hp_potion')) {
+        updates.potions = (player.potions || 0) + 1;
+      } else if (recipe.id?.startsWith('auto_scroll')) {
+        updates.autoScrolls = (player.autoScrolls || 0) + 1;
+      } else {
+        updates[`inventory.${mixedItem.id}`] = mixedItem;
+      }
 
-      syncPlayer(updates, true);
+      await syncPlayer(updates, true);
+      if (setForgeResult) {
+        setForgeResult({ success: true, item: masterData });
+      }
 
       addLog(`✅ SUCCESS: Created ${masterData.name}!`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
+      if (setForgeResult) {
+        setForgeResult({ success: false, error: "Molecular fusion destabilized." });
+      }
       addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
     }
   };
@@ -1093,9 +1107,17 @@ export const usePlayerActions = (
       
       if (masterDrop) {
         dropData = { ...masterDrop, qty: rQty };
-        for (let i = 0; i < rQty; i++) {
-           const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-           updates[`inventory.${dropKey}`] = { ...masterDrop, id: dropKey };
+        
+        // Standardize: Route to numeric counters for stackable essentials
+        if (masterDrop.id?.startsWith('hp_potion')) {
+           updates.potions = (player.potions || 0) + rQty;
+        } else if (masterDrop.id?.startsWith('auto_scroll')) {
+           updates.autoScrolls = (player.autoScrolls || 0) + rQty;
+        } else {
+           for (let i = 0; i < rQty; i++) {
+              const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+              updates[`inventory.${dropKey}`] = { ...masterDrop, id: dropKey };
+           }
         }
         addLog(`🎁 KNOWLEDGE REWARD: Acquired ${rQty}x ${masterDrop.name}!`);
       }

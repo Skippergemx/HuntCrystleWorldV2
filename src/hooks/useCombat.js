@@ -372,12 +372,23 @@ export const useCombat = (
           }
 
           if (lootItem) {
-            // BUG-04 FIX: Add random suffix to prevent key collision on rapid kills
-            const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
-            updates[`inventory.${itemWithId.id}`] = itemWithId;
+            // Standardize: Route to numeric counters for stackable essentials
+            const isPotion = lootItem.id?.startsWith('hp_potion');
+            const isScroll = lootItem.id?.startsWith('auto_scroll');
+
+            if (isPotion) {
+               updates.potions = (player?.potions || 0) + 1;
+            } else if (isScroll) {
+               updates.autoScrolls = (player?.autoScrolls || 0) + 1;
+            } else {
+               // BUG-04 FIX: Add random suffix to prevent key collision on rapid kills
+               const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
+               updates[`inventory.${itemWithId.id}`] = itemWithId;
+               setLastLoot(itemWithId);
+            }
+
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
-            setLastLoot(itemWithId);
             setTimeout(() => setLastLoot(null), 3000);
 
             // BUG-10 FIX: Track dropped item directly, no fragile key re-lookup

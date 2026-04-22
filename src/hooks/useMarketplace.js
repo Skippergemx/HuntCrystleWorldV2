@@ -149,28 +149,55 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
           }
         });
 
-        if (itemsToConsume.length < quantity) throw new Error("INSUFFICIENT_STOCK");
+        // Hub Strategy: Check counters if inventory is shallow
+        let counterDeduction = 0;
+        if (itemsToConsume.length < quantity) {
+           const needed = quantity - itemsToConsume.length;
+           let availableInCounter = 0;
+           if (baseId === 'hp_potion') availableInCounter = playerData.potions || 0;
+           else if (baseId === 'auto_scroll') availableInCounter = playerData.autoScrolls || 0;
+
+           if (availableInCounter >= needed) {
+              counterDeduction = needed;
+           } else {
+              throw new Error("INSUFFICIENT_STOCK");
+           }
+        }
 
         // Delete from player inventory
         const updates = {};
         itemsToConsume.forEach(loot => {
           updates[`inventory.${loot.key}`] = deleteField();
         });
+
+        // Deduct from counter if needed
+        if (counterDeduction > 0) {
+           if (baseId === 'hp_potion') updates.potions = (playerData.potions || 0) - counterDeduction;
+           else if (baseId === 'auto_scroll') updates.autoScrolls = (playerData.autoScrolls || 0) - counterDeduction;
+        }
+        
         transaction.update(playerRef, updates);
 
         // Add to global marketplace
         const pricePerUnit = Math.max(1, Math.floor(totalPrice / quantity));
         const listRef = doc(collection(db, 'marketplace'));
+        
+        // Use a consistent item template for market entries (prevents UUID-bloated IDs in market docs)
+        const marketItemTemplate = itemsToConsume.length > 0 ? itemsToConsume[0] : { 
+           id: baseId, 
+           name: baseId === 'hp_potion' ? "Small Potion" : "Auto-Hunt Scroll",
+           icon: baseId === 'hp_potion' ? "🧪" : "🤖"
+        };
+
         transaction.set(listRef, {
           sellerUid: user.uid,
           sellerName: player.name,
-          item: itemsToConsume[0], 
+          item: marketItemTemplate, 
           quantity: quantity,
           price: pricePerUnit,
           createdAt: Date.now()
         });
 
-        // Trigger local update via log
         console.log(`📡 TRANSACTION_LISTING: Atomic broadcast for ${quantity}x ${item.name} successful.`);
       });
 
@@ -201,11 +228,21 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         const timestamp = Date.now();
         const playerRef = doc(db, 'players', user.uid);
         const updates = {};
+        const baseId = listing.item.id?.replace(/(_\d+)+$/, '');
 
-        for (let i = 0; i < qty; i++) {
-          const suffix = Math.random().toString(36).slice(2, 6);
-          const newId = `${listing.item.id?.replace(/(_\d+)+$/, '')}_${timestamp}_${suffix}_${i}`;
-          updates[`inventory.${newId}`] = { ...listing.item, id: newId };
+        // Standardize: Return to numeric counters for stackable essentials
+        if (baseId === 'hp_potion') {
+           const pSnap = await transaction.get(playerRef);
+           updates.potions = (pSnap.data()?.potions || 0) + qty;
+        } else if (baseId === 'auto_scroll') {
+           const pSnap = await transaction.get(playerRef);
+           updates.autoScrolls = (pSnap.data()?.autoScrolls || 0) + qty;
+        } else {
+           for (let i = 0; i < qty; i++) {
+             const suffix = Math.random().toString(36).slice(2, 6);
+             const newId = `${baseId}_${timestamp}_${suffix}_${i}`;
+             updates[`inventory.${newId}`] = { ...listing.item, id: newId };
+           }
         }
         
         transaction.update(playerRef, updates);
