@@ -282,7 +282,8 @@ const CooldownCard = ({ expiration, id, onRush, idx }) => {
 
 // --- Main View ---
 export const CrystleTownView = () => {
-  const { player, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, setView, openGuide, SOUNDS, faucetResult, setFaucetResult } = useGame();
+  const { player, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, adventure, openGuide, SOUNDS, faucetResult, setFaucetResult } = useGame();
+  const { setView } = adventure;
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
