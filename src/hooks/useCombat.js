@@ -272,6 +272,15 @@ export const useCombat = (
     ];
     const totalScrollWeight = scrollPool.reduce((sum, s) => sum + s.weight, 0);
 
+    let totalMinutesGained = 0;
+    const scrollSpecs = {
+      'auto_scroll': 1,
+      'auto_scroll_3m': 3,
+      'auto_scroll_6m': 6,
+      'auto_scroll_9m': 9,
+      'auto_scroll_12m': 12
+    };
+
     for (let i = 0; i < 5; i++) {
       let rand = Math.random() * totalScrollWeight;
       let selectedId = 'auto_scroll_3m';
@@ -279,13 +288,17 @@ export const useCombat = (
         if (rand < s.weight) { selectedId = s.id; break; }
         rand -= s.weight;
       }
+      
+      const minutes = scrollSpecs[selectedId] || 1;
+      totalMinutesGained += minutes;
+      
       const scrollItem = ITEMS.find(item => item.id === selectedId);
       if (scrollItem) {
-        const itemWithId = { ...scrollItem, id: `${scrollItem.id}_TREASURY_${i}_${Date.now()}` };
-        rewards.push(itemWithId);
-        updates[`inventory.${itemWithId.id}`] = itemWithId;
+        rewards.push(scrollItem); // Track in session rewards UI without unique ID
       }
     }
+
+    updates.autoScrolls = (player?.autoScrolls || 0) + totalMinutesGained;
 
     addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
 
@@ -379,8 +392,16 @@ export const useCombat = (
 
             if (isPotion) {
                updates.potions = (player?.potions || 0) + 1;
-            } else if (isScroll) {
-               updates.autoScrolls = (player?.autoScrolls || 0) + 1;
+            } else if (lootItem.id?.startsWith('auto_scroll')) {
+               const scrollSpecs = {
+                 'auto_scroll': 1,
+                 'auto_scroll_3m': 3,
+                 'auto_scroll_6m': 6,
+                 'auto_scroll_9m': 9,
+                 'auto_scroll_12m': 12
+               };
+               const minutes = scrollSpecs[lootItem.id] || 1;
+               updates.autoScrolls = (player?.autoScrolls || 0) + minutes;
             } else {
                // Unique Inventory Item
                const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };

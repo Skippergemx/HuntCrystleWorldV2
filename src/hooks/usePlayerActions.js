@@ -228,7 +228,7 @@ export const usePlayerActions = (
     if (item.id === 'hp_potion') {
       updates.potions = (player.potions || 0) + qty;
     } else if (item.id?.includes('auto_scroll')) {
-      // Dynamic scaling for 1m, 3m, 6m, etc.
+      // Standardize: All Auto-Hunt variants (1m, 3m, 6m, etc.) now pool into the numeric 'autoScrolls' counter (Minutes).
       const durationMatch = item.id.match(/(\d+)m/);
       const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
       updates.autoScrolls = (player.autoScrolls || 0) + (qty * scrollValue);
@@ -258,39 +258,26 @@ export const usePlayerActions = (
     const selection = player.selectedScrollId || 'auto_scroll';
 
     const scrollSpecs = {
-      'auto_scroll': { ms: 60000, label: '1m' },
-      'auto_scroll_3m': { ms: 180000, label: '3m' },
-      'auto_scroll_6m': { ms: 360000, label: '6m' },
-      'auto_scroll_9m': { ms: 540000, label: '9m' },
-      'auto_scroll_12m': { ms: 720000, label: '12m' }
+      'auto_scroll': { ms: 60000, val: 1, label: '1m' },
+      'auto_scroll_3m': { ms: 180000, val: 3, label: '3m' },
+      'auto_scroll_6m': { ms: 360000, val: 6, label: '6m' },
+      'auto_scroll_9m': { ms: 540000, val: 9, label: '9m' },
+      'auto_scroll_12m': { ms: 720000, val: 12, label: '12m' }
     };
 
     const spec = scrollSpecs[selection] || scrollSpecs['auto_scroll'];
-    const targetItem = inventory.find(i => i && i.id?.startsWith(selection));
-    const hasCounter = (player.autoScrolls || 0) > 0;
+    const hasCounter = (player.autoScrolls || 0) >= spec.val;
 
-    let usedItemId = null;
-    let useCounter = false;
-
-    if (targetItem) {
-      usedItemId = targetItem.id;
-    } else if (selection === 'auto_scroll' && hasCounter) {
-      useCounter = true;
-    } else {
-      return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag.`);
+    if (!hasCounter) {
+      return addLog(`Wait! Not enough ${selection.replace(/_/g, ' ')}'s (Minutes) in pool.`);
     }
 
     playSFX(SOUNDS.useHeal);
     const updates = { 
       autoUntil: Date.now() + spec.ms,
-      autoMode: view || 'dungeon'
+      autoMode: view || 'dungeon',
+      autoScrolls: player.autoScrolls - spec.val
     };
-
-    if (useCounter) {
-      updates.autoScrolls = player.autoScrolls - 1;
-    } else {
-      updates[`inventory.${usedItemId}`] = deleteField();
-    }
 
     syncPlayer(updates);
     addLog(`LOCK-ON ACTIVATED! (${spec.label})`);
@@ -344,10 +331,13 @@ export const usePlayerActions = (
       
       // Standardize: Only base 1m essentials go to numeric counters.
       // Advanced variants (3m scrolls, Mega potions) remain as unique inventory objects.
+      // Standardize: All Auto-Hunt variants route to the numeric counter (Minutes).
       if (recipe.id === 'hp_potion') {
         updates.potions = (player.potions || 0) + 1;
-      } else if (recipe.id === 'auto_scroll') {
-        updates.autoScrolls = (player.autoScrolls || 0) + 1;
+      } else if (recipe.id?.includes('auto_scroll')) {
+        const durationMatch = recipe.id.match(/(\d+)m/);
+        const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+        updates.autoScrolls = (player.autoScrolls || 0) + scrollValue;
       } else {
         updates[`inventory.${mixedItem.id}`] = mixedItem;
       }
@@ -1150,8 +1140,10 @@ export const usePlayerActions = (
         // Standardize: Route to numeric counters for stackable essentials
         if (masterDrop.id === 'hp_potion') {
            updates.potions = (player.potions || 0) + rQty;
-        } else if (masterDrop.id === 'auto_scroll') {
-           updates.autoScrolls = (player.autoScrolls || 0) + rQty;
+        } else if (masterDrop.id?.includes('auto_scroll')) {
+           const durationMatch = masterDrop.id.match(/(\d+)m/);
+           const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+           updates.autoScrolls = (player.autoScrolls || 0) + (rQty * scrollValue);
         } else {
            for (let i = 0; i < rQty; i++) {
               const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;

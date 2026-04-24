@@ -100,11 +100,12 @@ export const InventoryView = React.memo(() => {
      const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: true }));
      
      // Synthesize base root items into physical objects for the main grid
+     // Synthesize base root items into physical objects for the main grid (Representative only)
      if (player.autoScrolls > 0) {
-        for (let i = 0; i < player.autoScrolls; i++) inv.push({ id: `auto_scroll_99999${i}`, type: 'Consumable', category: 'Consumable', isEquipped: false });
+        inv.push({ id: `auto_scroll_pool`, name: 'Auto-Hunt Energy', type: 'Consumable', category: 'Consumable', count: player.autoScrolls, isEquipped: false, icon: '🪄', desc: 'Unified reservoir of auto-hunt minutes.' });
      }
      if (player.potions > 0) {
-        for (let i = 0; i < player.potions; i++) inv.push({ id: `hp_potion_99999${i}`, type: 'Consumable', category: 'Consumable', isEquipped: false });
+        inv.push({ id: `hp_potion_pool`, name: 'Standard HP Potion', type: 'Consumable', category: 'Consumable', count: player.potions, isEquipped: false, icon: '🧪', desc: 'Standard biological recovery unit.' });
      }
 
      let fullList = [...inv, ...equipped];
@@ -211,11 +212,11 @@ export const InventoryView = React.memo(() => {
                <TrendingUp size={12} className="text-cyan-500 animate-bounce" />
              </div>
              <div className="grid grid-cols-5 gap-1.5 md:gap-2">
-                 {renderResource('🪄', '1 Min', player.autoScrolls || 0)}
-                 {renderResource('📜', '3 Min', counts['auto_scroll_3m'] || 0)}
-                 {renderResource('📜', '6 Min', counts['auto_scroll_6m'] || 0)}
-                 {renderResource('📜', '9 Min', counts['auto_scroll_9m'] || 0)}
-                 {renderResource('📜', '12 Min', counts['auto_scroll_12m'] || 0)}
+                 {renderResource('🪄', 'Total Mins', player.autoScrolls || 0)}
+                 {renderResource('📜', '3m Units', Math.floor((player.autoScrolls || 0) / 3))}
+                 {renderResource('📜', '6m Units', Math.floor((player.autoScrolls || 0) / 6))}
+                 {renderResource('📜', '9m Units', Math.floor((player.autoScrolls || 0) / 9))}
+                 {renderResource('📜', '12m Units', Math.floor((player.autoScrolls || 0) / 12))}
              </div>
            </div>
          </div>

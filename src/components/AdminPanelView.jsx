@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink } from 'lucide-react';
 import { createPublicClient, http, formatEther } from 'viem';
 import { base } from 'viem/chains';
-import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 
@@ -15,7 +15,7 @@ export const AdminPanelView = React.memo(() => {
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', or 'system'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorReports, setErrorReports] = useState([]);
@@ -267,6 +267,55 @@ export const AdminPanelView = React.memo(() => {
     } catch (e) {
       console.error(e);
       setMessage({ type: 'error', text: 'Healing failed: ' + e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const repairScrollPools = async () => {
+    if (!window.confirm("SCROLL REPAIR PROTOCOL: This will scan ALL players for legacy 'Auto-Hunt Scrolls' in their inventory and convert them into the unified numeric pool (Minutes). This fixes the 'Wipeout' bug for existing users. Proceed?")) return;
+    setLoading(true);
+    setMessage(null);
+    try {
+      const batch = writeBatch(db);
+      let fixedCount = 0;
+      let totalMinutesMigrated = 0;
+
+      players.forEach(p => {
+        const inventory = p.inventory || {};
+        const updates = {};
+        let minutesToGain = 0;
+        let foundLegacy = false;
+
+        Object.entries(inventory).forEach(([key, item]) => {
+          if (item?.id?.includes('auto_scroll')) {
+             const durationMatch = item.id.match(/(\d+)m/);
+             const val = durationMatch ? parseInt(durationMatch[1], 10) : 1;
+             minutesToGain += val;
+             updates[`inventory.${key}`] = deleteField();
+             foundLegacy = true;
+          }
+        });
+
+        if (foundLegacy) {
+           updates.autoScrolls = (p.autoScrolls || 0) + minutesToGain;
+           const profileRef = doc(db, 'players', p.id);
+           batch.update(profileRef, updates);
+           fixedCount++;
+           totalMinutesMigrated += minutesToGain;
+        }
+      });
+
+      if (fixedCount > 0) {
+        await batch.commit();
+        setMessage({ type: 'success', text: `REPAIR COMPLETE: Sanitized ${fixedCount} hunters. Consolidated ${totalMinutesMigrated} minutes into unified pools.` });
+        await fetchStats();
+      } else {
+        setMessage({ type: 'warning', text: 'No legacy scroll artifacts detected in active sector.' });
+      }
+    } catch (e) {
+      console.error(e);
+      setMessage({ type: 'error', text: 'Repair failed: ' + e.message });
     } finally {
       setLoading(false);
     }
@@ -625,6 +674,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'migration' ? 'bg-indigo-600 text-white border-indigo-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           Migration
+        </button>
+        <button 
+          onClick={() => setActiveTab('scrolls')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'scrolls' ? 'bg-purple-600 text-white border-purple-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          Scroll Mapping
         </button>
       </div>
 
@@ -1252,9 +1307,121 @@ export const AdminPanelView = React.memo(() => {
               </ul>
            </div>
         </div>
+      ) : activeTab === 'scrolls' ? (
+        <div className="bg-black border-4 border-purple-600 p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-purple-500 pl-4">Auto-Hunt Scroll Mapping</h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Diagnostic Lifecycle & Formatting Trace</p>
+            </div>
+            <button 
+               onClick={repairScrollPools}
+               className="px-6 py-3 bg-purple-600 text-white font-black uppercase italic text-xs shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-purple-500 transition-all border-2 border-black flex items-center gap-2"
+            >
+               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+               Repair Legacy Scroll Pools
+            </button>
+          </div>
+
+          {/* Trace Table */}
+          <div className="overflow-hidden border-2 border-slate-800 rounded-xl bg-slate-900/20">
+            <table className="w-full text-left">
+              <thead className="bg-slate-900/80 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                <tr>
+                  <th className="p-4 border-r border-slate-800">Module / Path</th>
+                  <th className="p-4 border-r border-slate-800">Logic Handler</th>
+                  <th className="p-4 border-r border-slate-800">Data Format</th>
+                  <th className="p-4">Database Target</th>
+                </tr>
+              </thead>
+              <tbody className="text-xs font-bold">
+                <tr className="border-t border-slate-800 bg-slate-950/40">
+                  <td className="p-4 border-r border-slate-800 text-cyan-400 italic font-black">Bazaar (Shop)</td>
+                  <td className="p-4 border-r border-slate-800">qty * duration (Minutes)</td>
+                  <td className="p-4 border-r border-slate-800 text-purple-400">Numeric Pool</td>
+                  <td className="p-4 text-slate-400">`player.autoScrolls`</td>
+                </tr>
+                <tr className="border-t border-slate-800">
+                  <td className="p-4 border-r border-slate-800 text-cyan-400 italic font-black">Naga War (Guild)</td>
+                  <td className="p-4 border-r border-slate-800">Auto-Scaled (Minutes)</td>
+                  <td className="p-4 border-r border-slate-800 text-purple-400">Numeric Pool</td>
+                  <td className="p-4 text-slate-400">`player.autoScrolls`</td>
+                </tr>
+                <tr className="border-t border-slate-800 bg-slate-950/40">
+                  <td className="p-4 border-r border-slate-800 text-cyan-400 italic font-black">iLearn / Lab</td>
+                  <td className="p-4 border-r border-slate-800">Unified Conversion</td>
+                  <td className="p-4 border-r border-slate-800 text-purple-400">Numeric Pool <span className="text-[8px] text-emerald-500 font-black leading-none bg-emerald-500/10 px-1 rounded ml-1">v2_PATCH</span></td>
+                  <td className="p-4 text-slate-400">`player.autoScrolls`</td>
+                </tr>
+                <tr className="border-t border-slate-800">
+                  <td className="p-4 border-r border-slate-800 text-pink-500 italic font-black">Combat Usage</td>
+                  <td className="p-4 border-r border-slate-800">Pool Deduction (-Xm)</td>
+                  <td className="p-4 border-r border-slate-800 text-purple-400">Numeric Math</td>
+                  <td className="p-4 text-slate-400">`player.autoScrolls`</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mind Map Visualization */}
+          <div className="space-y-4">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest italic">Neural System Architecture</h3>
+            <div className="relative bg-slate-900/30 p-12 border-2 border-dashed border-slate-800 rounded-3xl flex items-center justify-center min-h-[350px] overflow-hidden">
+               {/* Center Node */}
+               <div className="z-10 bg-gradient-to-br from-purple-600 to-indigo-700 text-white p-8 border-4 border-black shadow-[12px_12px_0_rgba(0,0,0,1)] text-center transform hover:scale-105 transition-all cursor-help group">
+                  <Activity className="mx-auto mb-2 text-white group-hover:animate-spin" size={32} />
+                  <p className="font-black italic uppercase text-2xl tracking-tighter">autoScrolls</p>
+                  <p className="text-[10px] font-black uppercase text-purple-200 mt-1">Unified Minute Reservoir</p>
+               </div>
+
+               {/* Background Orbitals */}
+               <div className="absolute inset-0 border-[1px] border-white/5 rounded-full w-[400px] h-[400px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-[spin_20s_linear_infinite]"></div>
+               <div className="absolute inset-0 border-[1px] border-white/5 rounded-full w-[300px] h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-[spin_15s_linear_infinite_reverse]"></div>
+
+               {/* Connection Lines & Sources */}
+               <div className="absolute inset-0 p-8 flex flex-col justify-between">
+                  <div className="flex justify-between items-start">
+                     <div className="bg-slate-900/90 border-2 border-cyan-500 p-4 rounded-xl shadow-[4px_4px_0_rgba(6,182,212,0.2)]">
+                        <p className="text-[10px] font-black text-cyan-400 uppercase leading-none">Marketplace</p>
+                        <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 italic">Direct Inject</p>
+                     </div>
+                     <div className="bg-slate-900/90 border-2 border-emerald-500 p-4 rounded-xl shadow-[4px_4px_0_rgba(16,185,129,0.2)]">
+                        <p className="text-[10px] font-black text-emerald-400 uppercase leading-none">Xenon Lab</p>
+                        <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 italic">Conversion v2</p>
+                     </div>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                     <div className="bg-slate-900/90 border-2 border-pink-500 p-4 rounded-xl shadow-[4px_4px_0_rgba(236,72,153,0.2)]">
+                        <p className="text-[10px] font-black text-pink-400 uppercase leading-none">Combat Usage</p>
+                        <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 italic">Decrement Protocol</p>
+                     </div>
+                     <div className="bg-slate-900/90 border-2 border-amber-500 p-4 rounded-xl shadow-[4px_4px_0_rgba(245,158,11,0.2)]">
+                        <p className="text-[10px] font-black text-amber-400 uppercase leading-none">Naga War</p>
+                        <p className="text-[8px] text-slate-500 font-bold uppercase mt-1 italic">Bounty Scaling</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+
+          <div className="p-6 bg-purple-950/30 border-2 border-purple-500/20 rounded-2xl">
+             <div className="flex items-start gap-4">
+                <ShieldAlert className="text-purple-400 shrink-0" size={24} />
+                <div className="space-y-2">
+                   <p className="text-sm font-black text-white uppercase italic leading-none">Structural Resolution Summary</p>
+                   <p className="text-xs text-slate-400 italic leading-relaxed">
+                      The "Wipeout" phenomenon was a side-effect of a hybrid system where some scrolls were treated as unique inventory keys and others as numeric counters. When a 1M selection was activated, the logic attempted a fuzzy search for <span className="text-white font-bold">"auto_scroll"</span>, accidentally matching and deleting high-tier variants like <span className="text-white font-bold">"auto_scroll_12m"</span>. 
+                      <br /><br />
+                      <span className="text-purple-400 font-black">FIX APPLIED:</span> All scroll variants now contribute to a unified <span className="text-white font-bold">autoScrolls</span> minute-pool. The inventory map is no longer touched for auto-hunt logic, ensuring absolute data safety.
+                   </p>
+                </div>
+             </div>
+          </div>
+        </div>
       ) : (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4">
-          <h2 className="text-xl font-black text-white uppercase italic mb-6">System Health Matrix</h2>
+          <h2 className="text-xl font-black text-white uppercase italic mb-6 border-l-4 border-emerald-600 pl-4">System Health Matrix</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-slate-900 border-2 border-slate-800 p-6 rounded-xl relative overflow-hidden">
                <Activity className="absolute bottom-[-20px] right-[-20px] w-24 h-24 text-cyan-500/10 -rotate-12" />

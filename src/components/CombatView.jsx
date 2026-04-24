@@ -61,17 +61,28 @@ export const CombatView = React.memo(() => {
 
   const scrollCountData = useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
-    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
+    const scrollSpecs = {
+      'auto_scroll': 1,
+      'auto_scroll_3m': 3,
+      'auto_scroll_6m': 6,
+      'auto_scroll_9m': 9,
+      'auto_scroll_12m': 12
+    };
+    const req = scrollSpecs[sel] || 1;
     const baseCount = player.autoScrolls || 0;
+    
+    // Calculate how many times we can trigger the selected duration
+    const possibleActivations = Math.floor(baseCount / req);
+
     return {
       selected: sel,
-      count: sel === 'auto_scroll' ? (invCount + baseCount) : invCount,
-      hasSelected: (sel === 'auto_scroll' ? (invCount + baseCount) : invCount) > 0
+      count: possibleActivations,
+      hasSelected: possibleActivations > 0
     };
-  }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
+  }, [player.selectedScrollId, player.autoScrolls]);
 
   const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0, [player.autoScrolls]);
 
 
   const foodInventory = useMemo(() => {
