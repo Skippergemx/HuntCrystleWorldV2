@@ -1068,7 +1068,7 @@ export const usePlayerActions = (
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
-  const completeQuiz = useCallback((quiz, isCorrect, ITEMS, FOODS, CRYSTLE_RECIPES) => {
+  const completeQuiz = useCallback(async (quiz, isCorrect, ITEMS, FOODS, CRYSTLE_RECIPES) => {
     if (!quiz || !player) return;
     
     if (!isCorrect) {
@@ -1164,8 +1164,31 @@ export const usePlayerActions = (
     syncPlayer(updates);
     addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
     playSFX(SOUNDS.lvlUp);
+
+    // --- Neural Faucet Protocol: Tier 1 Influence Roll (1-9) ---
+    const townLevel = player.crystleTownLevel || 1;
+    if (townLevel >= 1 && townLevel <= 9 && Math.random() < 0.04) {
+       if (functions && player.walletAddress) {
+          console.log("🎒 iLEARN_FAUCET: Triggering Tier 1 ETH roll...");
+          const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+          try {
+            const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
+            const data = result.data;
+            if (data.success) {
+               addLog(`💎 iLEARN REWARD: ETH subsidy transmitted!`);
+               playSFX(SOUNDS.obtainLoot);
+               if (setFaucetResult) {
+                  setFaucetResult({ success: true, txHash: data.txHash, message: "Neural Link Subsidy Authorized" });
+               }
+            }
+          } catch (e) {
+             console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);
+          }
+       }
+    }
+
     return { xp: quiz.xpReward, item: dropData };
-  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions, setFaucetResult]);
 
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,

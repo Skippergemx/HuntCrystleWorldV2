@@ -131,19 +131,10 @@ export const ILearnView = React.memo(() => {
   const activeQuizzes = useMemo(() => {
     return quizSlots
       .map(id => QUIZZES.find(q => q.id === id))
-      .filter(Boolean)
-      .filter(q => !completedQuizzes[q.id]); // ONLY show unsolved in slots
-  }, [quizSlots, completedQuizzes]);
+      .filter(Boolean);
+  }, [quizSlots]);
 
-  // Sanity Check: Purge completed quizzes from quizSlots if they linger
-  useEffect(() => {
-    if (!player || quizSlots.length === 0) return;
-    const solvedInSlots = quizSlots.filter(id => completedQuizzes[id]);
-    if (solvedInSlots.length > 0) {
-      const cleanSlots = quizSlots.filter(id => !completedQuizzes[id]);
-      syncPlayer({ quizSlots: cleanSlots });
-    }
-  }, [quizSlots, completedQuizzes, player]);
+  // Legacy Sanity Check removed to support infinite repeatable cycles.
 
   // Handle slot initialization and refill
   useEffect(() => {
@@ -151,21 +142,21 @@ export const ILearnView = React.memo(() => {
     
     // Initial setup if slots are empty
     if (quizSlots.length === 0) {
-      const initial = QUIZZES.filter(q => !completedQuizzes[q.id]).slice(0, 10).map(q => q.id);
+      const initial = [...QUIZZES].sort(() => Math.random() - 0.5).slice(0, 10).map(q => q.id);
       if (initial.length > 0) syncPlayer({ quizSlots: initial });
       return;
     }
 
-    // Refill logic: if under 10 slots, pick new ones not completed and not already in slots
+    // Refill logic: if under 10 slots, pick any new ones not already in active slots
     if (quizSlots.length < 10) {
-      const available = QUIZZES.filter(q => !completedQuizzes[q.id] && !quizSlots.includes(q.id));
+      const available = QUIZZES.filter(q => !quizSlots.includes(q.id));
       if (available.length > 0) {
         const needed = 10 - quizSlots.length;
         const picks = [...available].sort(() => Math.random() - 0.5).slice(0, needed).map(q => q.id);
         syncPlayer({ quizSlots: [...quizSlots, ...picks] });
       }
     }
-  }, [quizSlots.length, player, completedQuizzes]);
+  }, [quizSlots.length, player]);
 
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 3000;
@@ -322,15 +313,15 @@ export const ILearnView = React.memo(() => {
                key={quiz.id} 
                quiz={quiz} 
                onOpen={setActiveQuiz}
-               isCompleted={!!completedQuizzes[quiz.id]}
+               isCompleted={false}
              />
            ))}
            
            {activeQuizzes.length === 0 && (
              <div className="col-span-full py-20 text-center">
-                <p className="text-4xl mb-4">🏆</p>
-                <h3 className="text-white font-black uppercase italic">Academic Superiority Achieved</h3>
-                <p className="text-cyan-500 text-[10px] font-bold uppercase mt-2 italic tracking-widest">Global pool exhausted. You are the Metaverse Core.</p>
+                <p className="text-4xl mb-4">🌀</p>
+                <h3 className="text-white font-black uppercase italic">Neural Sync Initializing</h3>
+                <p className="text-cyan-500 text-[10px] font-bold uppercase mt-2 italic tracking-widest">Awaiting new training data from the Master Instructor...</p>
              </div>
            )}
         </div>
