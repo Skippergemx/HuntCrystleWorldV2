@@ -1167,7 +1167,7 @@ export const usePlayerActions = (
 
     // --- Neural Faucet Protocol: Tier 1 Influence Roll (1-9) ---
     const townLevel = player.crystleTownLevel || 1;
-    if (townLevel >= 1 && townLevel <= 9 && Math.random() < 0.04) {
+    if (townLevel >= 1 && townLevel <= 9 && Math.random() < 0.80) {
        if (functions && player.walletAddress) {
           console.log("🎒 iLEARN_FAUCET: Triggering Tier 1 ETH roll...");
           const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
@@ -1183,6 +1183,9 @@ export const usePlayerActions = (
             }
           } catch (e) {
              console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);
+             if (e.message.includes("depleted")) {
+                addLog("🏙️ FAUCET: The neural treasury is temporarily dry.");
+             }
           }
        }
     }
