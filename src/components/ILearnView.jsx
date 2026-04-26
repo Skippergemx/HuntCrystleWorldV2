@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award, Star, Trophy } from 'lucide-react';
+import { X, ChevronRight, CheckCircle, AlertCircle, BookOpen, Brain, Sparkles, Zap, Award, Star, Trophy, Coins } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
@@ -17,7 +17,7 @@ const TOPIC_STYLES = {
 };
 
 // --- Quiz Modal ---
-const QuizModal = ({ quiz, onClose, onComplete }) => {
+const QuizModal = ({ quiz, onClose, onComplete, isSyncing }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -82,10 +82,19 @@ const QuizModal = ({ quiz, onClose, onComplete }) => {
       {isAnswered && (
         <div className={`mt-6 p-4 rounded-2xl border-[3px] text-center animate-in slide-in-from-bottom-4 duration-300 relative z-10 ${isCorrect ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-red-100 border-red-500 text-red-800'}`}>
           <div className="flex items-center justify-center gap-3">
-             {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
-             <p className="text-sm font-black uppercase tracking-widest italic">
-               {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
-             </p>
+             {isSyncing ? (
+               <div className="flex items-center gap-3 animate-pulse">
+                 <Zap className="animate-spin text-cyan-600" size={24} />
+                 <p className="text-sm font-black uppercase tracking-widest italic text-cyan-700">COMMITTING TO ARCHIVE...</p>
+               </div>
+             ) : (
+               <>
+                 {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
+                 <p className="text-sm font-black uppercase tracking-widest italic">
+                   {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
+                 </p>
+               </>
+             )}
           </div>
         </div>
       )}
@@ -119,10 +128,11 @@ const QuizCard = ({ quiz, onOpen, isCompleted }) => {
 
 
 export const ILearnView = React.memo(() => {
-  const { player, syncPlayer, adventure, actions, audio, SOUNDS, ITEMS, FOODS, CRYSTLE_RECIPES } = useGame();
+  const { player, syncPlayer, adventure, actions, audio, SOUNDS, ITEMS, FOODS, CRYSTLE_RECIPES, faucetResult, setFaucetResult } = useGame();
   const { setView } = adventure;
   const [activeQuiz, setActiveQuiz] = useState(null);
   const [sessionReward, setSessionReward] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const quizSlots = player?.quizSlots || [];
   const completedQuizzes = player?.completedQuizzes || {};
@@ -188,11 +198,18 @@ export const ILearnView = React.memo(() => {
 
   const handleComplete = async (quiz, isCorrect) => {
     if (isCorrect) {
-      const result = await actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
-      setSessionReward(result);
-      setActiveQuiz(null);
-      if (result.item) {
-         triggerConfetti();
+      setIsSyncing(true);
+      try {
+        const result = await actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
+        setSessionReward(result);
+        setActiveQuiz(null);
+        if (result.item) {
+           triggerConfetti();
+        }
+      } catch (e) {
+        console.error("iLearn Sync Error:", e);
+      } finally {
+        setIsSyncing(false);
       }
     }
   };
@@ -330,9 +347,71 @@ export const ILearnView = React.memo(() => {
       {activeQuiz && (
         <QuizModal 
           quiz={activeQuiz} 
-          onClose={() => setActiveQuiz(null)}
+          onClose={() => !isSyncing && setActiveQuiz(null)}
           onComplete={handleComplete}
+          isSyncing={isSyncing}
         />
+      )}
+
+      {/* --- FAUCET CELEBRATION MODAL --- */}
+      {faucetResult && createPortal(
+         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="relative w-full max-w-sm bg-slate-900 border-[4px] border-black rounded-[2.5rem] shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+               <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }} />
+
+               <div className="bg-cyan-500 py-3 border-b-[4px] border-black transform -rotate-2 relative z-10 shadow-xl">
+                  <h2 className="text-2xl font-black text-black text-center uppercase tracking-tighter italic scale-110">TREASURY SIGNAL!</h2>
+                  <div className="absolute -top-1 -right-4 bg-black text-white px-3 py-1 text-[8px] font-black uppercase tracking-[0.3em] transform rotate-12 border-2 border-white">
+                     PROTOCOL SECURED
+                  </div>
+               </div>
+
+               <div className="p-8 flex flex-col items-center text-center relative z-10 gap-6 pt-10">
+                  <div className="relative">
+                     <div className="absolute inset-0 bg-cyan-500/30 blur-2xl rounded-full scale-110 animate-pulse" />
+                     <div className="w-28 h-28 bg-black rounded-3xl border-[4px] border-black flex items-center justify-center relative shadow-[6px_6px_0_rgba(6,182,212,1)] transform rotate-3">
+                        <Coins size={64} className="text-cyan-400" />
+                        <div className="absolute -top-3 -right-3 w-10 h-10 bg-cyan-500 rounded-full border-2 border-black flex items-center justify-center animate-bounce">
+                           <Sparkles size={20} className="text-black" />
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                     <p className="text-[10px] font-black text-cyan-400/60 uppercase tracking-[0.2em] leading-none mb-1">Crystle Hunter Subsidy</p>
+                     <h3 className="text-4xl font-black text-white italic tracking-tighter leading-none">{faucetResult.message.includes('Neural') ? '0.0000035 ETH' : 'Subsidy Claimed'}</h3>
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-tight italic mt-2">"Your neural link has attracted a district faucet reward."</p>
+                  </div>
+
+                  <div className="w-full flex flex-col gap-3 mt-4">
+                     {faucetResult.txHash && (
+                       <a
+                          href={`https://basescan.org/tx/${faucetResult.txHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-3 bg-white text-black font-black text-[10px] uppercase tracking-widest border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-2 rounded-xl"
+                       >
+                          VIEW ON BASESCAN <ChevronRight size={14} />
+                       </a>
+                     )}
+                     <button
+                        onClick={() => setFaucetResult(null)}
+                        className="w-full py-4 bg-cyan-500 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] text-black font-black uppercase italic text-xl rounded-2xl active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
+                     >
+                        ACKNOWLEDGE
+                     </button>
+                  </div>
+               </div>
+
+               {/* Footer Decoration */}
+               {faucetResult.txHash && (
+                  <div className="bg-black/40 py-2 border-t border-white/5 relative z-10">
+                     <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest text-center">Transmission ID: {faucetResult.txHash?.slice(0, 16)}...</p>
+                  </div>
+               )}
+            </div>
+         </div>,
+         document.body
       )}
     </div>
   );

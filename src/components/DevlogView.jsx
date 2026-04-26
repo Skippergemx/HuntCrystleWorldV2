@@ -23,6 +23,25 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.13.0',
+    date: '2026-04-26',
+    title: 'ETH REWARD PROTOCOL & I-LEARN STABILIZATION',
+    category: 'WEB3 & REWARD ECONOMY',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'A major milestone in the Hunt Crystle economy. We have successfully deployed the ETH Faucet protocol in Crystle Town and hardened the iLearn educational reward system. Hunters can now earn real ETH on Base Mainnet through tactical exploration and knowledge mastery.',
+    changes: [
+      'Rewards: Deployed Crystle Town ETH Faucet with dynamic level-based drop rates',
+      'iLearn: Integrated high-fidelity celebratory feedback and reward modals for quiz completion',
+      'Laboratory: Implemented "Wipe Guard" and "Milestone Snapshot" for Xenon Lab synthesis',
+      'Technical: Secure Cloud Transaction bridge on Base Mainnet via Google Secret Manager',
+      'UI/UX: Enhanced reward transparency with real-time transaction hash tracking',
+      'Stability: Patched navigation crashes in Crystle Town and stabilized OpenAds integration'
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: '1.12.0',
     date: '2026-04-22',
     title: 'GOOGLE AUTH TRANSITION & CINEMATIC UI STABILIZATION',

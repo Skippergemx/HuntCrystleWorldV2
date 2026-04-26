@@ -1161,7 +1161,9 @@ export const usePlayerActions = (
        updates.quizSlots = player.quizSlots.filter(id => id !== quiz.id);
     }
     
-    syncPlayer(updates);
+    console.log("🎒 iLEARN: Initiating immediate blocking sync...");
+    await syncPlayer(updates, true);
+    
     addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
     playSFX(SOUNDS.lvlUp);
 
