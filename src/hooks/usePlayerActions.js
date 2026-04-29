@@ -227,8 +227,11 @@ export const usePlayerActions = (
     
     if (item.id === 'hp_potion') {
       updates.potions = (player.potions || 0) + qty;
+    } else if (item.id === 'auto_scroll') {
+      // Standardize: Pool base 1m scrolls into numeric counter for "Energy (Mins)" UI.
+      updates.autoScrolls = (player.autoScrolls || 0) + qty;
     } else if (item.id?.includes('auto_scroll')) {
-      // V2: Stop pooling into numeric counter. Create discrete items for better UX.
+      // V2: Advanced variants (3m+) remain discrete items.
       for (let i = 0; i < qty; i++) {
         const suffix = Math.random().toString(36).slice(2, 6);
         const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
@@ -270,10 +273,11 @@ export const usePlayerActions = (
     const spec = scrollSpecs[selection] || scrollSpecs['auto_scroll'];
     
     // 1. Check Inventory for Physical Item (Priority)
+    const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
     const targetItemEntry = inventory.find(([key, item]) => {
       if (!item || !item.id) return false;
-      const baseId = item.id.replace(/(_\d+)+$/, '');
-      return baseId === selection;
+      const itemBaseId = possibleScrollIds.find(baseId => item.id.startsWith(baseId));
+      return itemBaseId === selection;
     });
     
     // 2. Fallback: Check Legacy Numeric Pool
@@ -352,6 +356,8 @@ export const usePlayerActions = (
       // Advanced variants (3m scrolls, Mega potions) remain as unique inventory objects.
       if (recipe.id === 'hp_potion') {
         updates.potions = (player.potions || 0) + 1;
+      } else if (recipe.id === 'auto_scroll') {
+        updates.autoScrolls = (player.autoScrolls || 0) + 1;
       } else {
         updates[`inventory.${mixedItem.id}`] = mixedItem;
       }
@@ -1055,6 +1061,8 @@ export const usePlayerActions = (
           }
        }
     }
+    
+    return { xp: 5, item: food ? { ...food, qty: 1 } : null };
   }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions]);
 
   const abandonTownQuest = useCallback((questId) => {

@@ -22,13 +22,19 @@ export const ShopView = React.memo(() => {
 
   const getOwnedQty = (item) => {
     if (!item) return 0;
-    if (item.id === 'hp_potion') return player.potions || 0;
-    if (item.id === 'auto_scroll') return player.autoScrolls || 0;
-    return Object.values(player.inventory || {}).filter(i => {
+    
+    let pooled = 0;
+    if (item.id === 'hp_potion') pooled = player.potions || 0;
+    if (item.id === 'auto_scroll') pooled = player.autoScrolls || 0;
+
+    const inventoryCount = Object.values(player.inventory || {}).filter(i => {
        if (!i) return false;
        const cleanId = i.id?.replace(/(_\d+)+$/, '');
-       return cleanId === item.id;
+       // Check for both exact ID match and base ID match (for discrete items)
+       return cleanId === item.id || i.id === item.id;
     }).length;
+
+    return pooled + inventoryCount;
   };
 
   const handleBuyClick = (item) => {

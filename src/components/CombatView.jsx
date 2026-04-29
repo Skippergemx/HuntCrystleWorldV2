@@ -7,7 +7,7 @@ import { useGame } from '../contexts/GameContext';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS
+    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
@@ -71,18 +71,31 @@ export const CombatView = React.memo(() => {
     const req = scrollSpecs[sel] || 1;
     const baseCount = player.autoScrolls || 0;
     
-    // Calculate how many times we can trigger the selected duration
-    const possibleActivations = Math.floor(baseCount / req);
+    // Calculate discrete items of this specific type
+    const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
+    const invCount = Object.values(player.inventory || {}).filter(i => {
+      if (!i || !i.id) return false;
+      const itemBaseId = possibleScrollIds.find(baseId => i.id.startsWith(baseId));
+      return itemBaseId === sel;
+    }).length;
+
+    // For 1m scrolls (auto_scroll), we can trigger them using the pool (divided by 1) PLUS discrete items
+    let totalPossible = 0;
+    if (sel === 'auto_scroll') {
+      totalPossible = Math.floor(baseCount / req) + invCount;
+    } else {
+      totalPossible = invCount;
+    }
 
     return {
       selected: sel,
-      count: possibleActivations,
-      hasSelected: possibleActivations > 0
+      count: totalPossible,
+      hasSelected: totalPossible > 0
     };
-  }, [player.selectedScrollId, player.autoScrolls]);
+  }, [player.selectedScrollId, player.autoScrolls, player.inventory, ITEMS]);
 
   const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0, [player.autoScrolls]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0 || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
 
   const foodInventory = useMemo(() => {
@@ -560,6 +573,123 @@ export const CombatView = React.memo(() => {
               )}
           </div>
         </div>
+
+        {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
+        <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none">
+          <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
+
+            {/* Potion Slot */}
+            <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+              <button 
+                onClick={cyclePotion} 
+                className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              >
+                <RefreshCw size={12} className="md:w-5 md:h-5" />
+              </button>
+              <button 
+                onClick={handleHeal} 
+                disabled={!potionCountData.hasSelected} 
+                className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+              >
+                <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
+                <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
+              </button>
+              <div className="w-12 md:w-24 h-8 md:h-12 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+                 <span className="text-[5px] md:text-[9px] font-black text-white/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                   {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
+                 </span>
+                 <span className="text-[8px] md:text-xl font-black text-white italic leading-none">
+                   {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
+                 </span>
+              </div>
+            </div>
+
+            {combat.battleMode !== 'GVG' && (
+              <>
+                <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+                {/* Scroll Slot */}
+                <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+                  {isAutoActive ? (
+                    <div className="h-8 md:h-12 px-2 md:px-6 bg-cyan-600 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                      <WandSparkles size={12} className="text-black animate-spin-slow md:w-5 md:h-5" />
+                      <div className="flex items-baseline gap-0.5 md:gap-1">
+                         <span className="text-[10px] md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
+                         <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap">s</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={cycleScroll} 
+                        disabled={!hasAnyScrolls}
+                        className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
+                      >
+                        <RefreshCw size={12} className="md:w-5 md:h-5" />
+                      </button>
+                      <button 
+                        onClick={() => activateAutoScroll(view)} 
+                        disabled={!hasAnyScrolls}
+                        className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
+                      >
+                        <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
+                        <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>
+                      </button>
+                      <div className="w-12 md:w-24 h-8 md:h-12 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-1 shrink-0">
+                         <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                           {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected === 'auto_scroll_3m' ? '3M' : scrollCountData.selected === 'auto_scroll_6m' ? '6M' : scrollCountData.selected === 'auto_scroll_9m' ? '9M' : '12M'}
+                         </span>
+                         <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+                           {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                         </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Food Slot */}
+                <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+                  {isFoodActive ? (
+                    <div className="h-8 md:h-12 px-2 md:px-6 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                      <span className="text-sm md:text-2xl leading-none">
+                        {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
+                      </span>
+                      <div className="flex items-baseline gap-0.5 md:gap-1">
+                         <span className="text-[10px] md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
+                         <span className="text-[5px] md:text-xs font-black text-white/60 italic uppercase whitespace-nowrap">s</span>
+                      </div>
+                    </div>
+                  ) : (
+                    foodInventory.length > 0 && (
+                      <>
+                        {foodInventory.length > 1 && (
+                          <button
+                            onClick={cycleFoodSelection}
+                            className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                          >
+                            <RefreshCw size={12} className="md:w-5 md:h-5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => selectedFood && eatFood(selectedFood)}
+                          disabled={!selectedFood}
+                          className="h-8 md:h-12 px-1.5 md:px-4 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+                        >
+                          <span className="text-sm md:text-2xl leading-none group-hover:scale-125 transition-transform">{selectedFood?.icon || '🍽️'}</span>
+                          <span className="text-[10px] md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
+                        </button>
+                        <div className="w-12 md:w-24 h-8 md:h-12 bg-emerald-500 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+                           <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">EAT</span>
+                           <span className="text-[8px] md:text-xl font-black text-black italic leading-none">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
+                        </div>
+                      </>
+                    )
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
 
@@ -749,122 +879,7 @@ export const CombatView = React.memo(() => {
         confirmText="YES, PURIFY"
         cancelText="NO, STRIKE INSTEAD"
       />
-      {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
-      <div className="absolute bottom-[130px] md:bottom-[170px] left-0 right-0 z-[60] flex justify-center px-2 md:px-4 pointer-events-none">
-        <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
 
-          {/* Potion Slot */}
-          <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
-            <button 
-              onClick={cyclePotion} 
-              className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-            >
-              <RefreshCw size={12} className="md:w-5 md:h-5" />
-            </button>
-            <button 
-              onClick={handleHeal} 
-              disabled={!potionCountData.hasSelected} 
-              className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
-            >
-              <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
-              <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
-            </button>
-            <div className="w-12 md:w-24 h-8 md:h-12 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
-               <span className="text-[5px] md:text-[9px] font-black text-white/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
-                 {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
-               </span>
-               <span className="text-[8px] md:text-xl font-black text-white italic leading-none">
-                 {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
-               </span>
-            </div>
-          </div>
-
-          <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
-
-          {/* Scroll Slot */}
-          {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
-              {isAutoActive ? (
-                <div className="h-8 md:h-12 px-2 md:px-6 bg-cyan-600 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
-                  <WandSparkles size={12} className="text-black animate-spin-slow md:w-5 md:h-5" />
-                  <div className="flex items-baseline gap-0.5 md:gap-1">
-                     <span className="text-[10px] md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
-                     <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap">s</span>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <button 
-                    onClick={cycleScroll} 
-                    disabled={!hasAnyScrolls}
-                    className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
-                  >
-                    <RefreshCw size={12} className="md:w-5 md:h-5" />
-                  </button>
-                  <button 
-                    onClick={() => activateAutoScroll(view)} 
-                    disabled={!hasAnyScrolls}
-                    className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
-                  >
-                    <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
-                    <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>
-                  </button>
-                  <div className="w-12 md:w-24 h-8 md:h-12 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-1 shrink-0">
-                     <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
-                       {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected === 'auto_scroll_3m' ? '3M' : scrollCountData.selected === 'auto_scroll_6m' ? '6M' : scrollCountData.selected === 'auto_scroll_9m' ? '9M' : '12M'}
-                     </span>
-                     <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
-                       {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
-                     </span>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Food Slot */}
-          {combat.battleMode !== 'GVG' && (
-            <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
-              {isFoodActive ? (
-                <div className="h-8 md:h-12 px-2 md:px-6 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
-                  <span className="text-sm md:text-2xl leading-none">
-                    {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
-                  </span>
-                  <div className="flex items-baseline gap-0.5 md:gap-1">
-                     <span className="text-[10px] md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
-                     <span className="text-[5px] md:text-xs font-black text-white/60 italic uppercase whitespace-nowrap">s</span>
-                  </div>
-                </div>
-              ) : (
-                foodInventory.length > 0 && (
-                  <>
-                    {foodInventory.length > 1 && (
-                      <button
-                        onClick={cycleFoodSelection}
-                        className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
-                      >
-                        <RefreshCw size={12} className="md:w-5 md:h-5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => selectedFood && eatFood(selectedFood)}
-                      disabled={!selectedFood}
-                      className="h-8 md:h-12 px-1.5 md:px-4 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
-                    >
-                      <span className="text-sm md:text-2xl leading-none group-hover:scale-125 transition-transform">{selectedFood?.icon || '🍽️'}</span>
-                      <span className="text-[10px] md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
-                    </button>
-                    <div className="w-12 md:w-24 h-8 md:h-12 bg-emerald-500 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
-                       <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">EAT</span>
-                       <span className="text-[8px] md:text-xl font-black text-black italic leading-none">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
-                    </div>
-                  </>
-                )
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
       {/* --- REFINED MISSION PROGRESS HUD --- */}
       {combat.battleMode !== 'GVG' && (

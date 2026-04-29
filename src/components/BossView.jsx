@@ -98,9 +98,14 @@ export const BossView = () => {
 
   const currentScrollCount = React.useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
-    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
+    const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
+    const invCount = Object.values(player.inventory || {}).filter(i => {
+      if (!i || !i.id) return false;
+      const itemBaseId = possibleScrollIds.find(baseId => i.id.startsWith(baseId));
+      return itemBaseId === sel;
+    }).length;
     return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
-  }, [player.selectedScrollId, player.inventory, player.autoScrolls]);
+  }, [player.selectedScrollId, player.inventory, player.autoScrolls, ITEMS]);
 
   const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
   const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, CheckCircle, AlertCircle, Coins, ExternalLink, Sparkles } from 'lucide-react';
+import { X, ChevronRight, CheckCircle, AlertCircle, Coins, ExternalLink, Sparkles, Zap, Trophy } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
 import { ComicQuestCard, ComicQuestModal, TalkingNPC } from './SharedQuestUI';
@@ -287,6 +288,37 @@ export const CrystleTownView = () => {
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
   const [confirmAbandon, setConfirmAbandon] = useState(null);
+  
+  const [sessionReward, setSessionReward] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const triggerConfetti = useCallback(() => {
+    const end = Date.now() + 3000;
+    const colors = ['#10b981', '#f59e0b', '#06b6d4', '#ffffff'];
+
+    (function frame() {
+      confetti({
+        particleCount: 2,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+        colors: colors,
+        zIndex: 10002
+      });
+      confetti({
+        particleCount: 2,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+        colors: colors,
+        zIndex: 10002
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    }());
+  }, []);
 
   // Tutorial state
   const [showTutorial, setShowTutorial] = useState(false);
@@ -394,12 +426,23 @@ export const CrystleTownView = () => {
     }
   }, []);
 
-  const handleComplete = useCallback((quest) => {
-    actions.completeTownQuest(quest, FOODS);
-    setCompletedFlash(quest.id);
+  const handleComplete = useCallback(async (quest) => {
     setActiveQuest(null);
-    setTimeout(() => setCompletedFlash(null), 1500);
-  }, [actions, FOODS]);
+    setIsSyncing(true);
+    try {
+      const result = await actions.completeTownQuest(quest, FOODS);
+      if (result) {
+        setSessionReward(result);
+        if (result.item) {
+          triggerConfetti();
+        }
+      }
+    } catch (e) {
+      console.error("Crystle Town Sync Error:", e);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [actions, FOODS, triggerConfetti]);
 
   const foodsOwned = useMemo(() => {
     return Object.values(player?.inventory || {}).filter(i => {
@@ -507,7 +550,7 @@ export const CrystleTownView = () => {
                   key={quest.id}
                   quest={quest}
                   idx={idx}
-                  onOpen={setActiveQuest}
+                  onOpen={(q) => { if (!isSyncing && !sessionReward) setActiveQuest(q); }}
                 />
               );
             })}
@@ -623,6 +666,92 @@ export const CrystleTownView = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Knowledge Acquisition Modal (Celebratory Burst) */}
+      {(isSyncing || sessionReward) && createPortal(
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300">
+          <div className="max-w-sm w-full bg-[#e8e0d5] border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden pointer-events-auto">
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+
+            {isSyncing ? (
+              <div className="relative z-10 space-y-6 text-center py-8">
+                <div className="flex items-center justify-center mb-6">
+                  <Zap className="animate-spin text-emerald-600" size={64} />
+                </div>
+                <h2 className="text-2xl font-[1000] text-emerald-600 uppercase italic tracking-tighter leading-none animate-pulse">
+                  COMMITTING TO ARCHIVE...
+                </h2>
+                <p className="text-xs font-black text-black/60 uppercase tracking-[0.2em]">
+                  Securing town registry
+                </p>
+              </div>
+            ) : sessionReward && (
+              <div className="relative z-10 space-y-6 text-center">
+                <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-xl animate-pulse"></div>
+                  {sessionReward.item ? (
+                    <span className="text-6xl relative z-10 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-bounce font-serif">{sessionReward.item.icon || '📦'}</span>
+                  ) : (
+                    <Trophy className="text-amber-500 w-16 h-16 animate-bounce relative z-10" />
+                  )}
+                  <div className="absolute inset-0 border-4 border-dashed border-emerald-500/50 rounded-full animate-spin-slow"></div>
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-[1000] text-black uppercase italic tracking-tighter leading-none">
+                    QUEST COMPLETE
+                  </h2>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] animate-pulse">
+                    District Support Acknowledged
+                  </p>
+                </div>
+
+                <div className="bg-white/60 border-[3px] border-black/10 p-4 rounded-xl space-y-3">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl font-black text-black italic">+{sessionReward.xp}</span>
+                      <span className="text-[8px] font-black text-black/60 uppercase tracking-widest leading-none">INFLUENCE XP</span>
+                    </div>
+                    {sessionReward.item && (
+                      <>
+                        <div className="w-[2px] h-8 bg-black/10"></div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-2xl font-black text-black italic">x{sessionReward.item.qty}</span>
+                          <span className="text-[8px] font-black text-black/60 uppercase tracking-widest leading-none">Quantity</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {sessionReward.item && (
+                    <div className="pt-2 border-t border-black/5">
+                      <p className="text-[11px] font-black text-black uppercase tracking-tight italic">
+                        "{sessionReward.item.name}"
+                      </p>
+                      <p className="text-[8px] font-bold text-black/60 uppercase opacity-60">
+                        Added to Inventory
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setSessionReward(null)}
+                  className="w-full py-3 bg-emerald-500 text-black font-black text-xs uppercase italic tracking-widest border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-3"
+                >
+                  CLOSE TRANSMISSION <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+
+            <div className="absolute top-2 right-2 flex gap-1">
+              <div className="w-1.5 h-1.5 bg-emerald-500 animate-ping"></div>
+              <div className="w-1.5 h-1.5 bg-slate-700"></div>
             </div>
           </div>
         </div>,

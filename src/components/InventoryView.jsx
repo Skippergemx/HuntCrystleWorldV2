@@ -200,7 +200,7 @@ export const InventoryView = React.memo(() => {
                <Activity size={12} className="text-red-500 animate-pulse" />
              </div>
              <div className="grid grid-cols-3 gap-2">
-                 {renderResource('🧪', 'Standard', player.potions || 0)}
+                 {renderResource('🧪', 'Standard', (player.potions || 0) + (counts['hp_potion'] || 0))}
                  {renderResource('🧪', 'Mega (+250)', counts['mega_hp_potion'] || 0)}
                  {renderResource('🧬', 'Ultra (+MAX)', counts['ultra_hp_potion'] || 0)}
              </div>
@@ -212,7 +212,7 @@ export const InventoryView = React.memo(() => {
                <TrendingUp size={12} className="text-cyan-500 animate-bounce" />
              </div>
              <div className="grid grid-cols-5 gap-1.5 md:gap-2">
-                 {renderResource('🪄', 'Energy (Mins)', player.autoScrolls || 0)}
+                 {renderResource('🪄', 'Energy (Mins)', (player.autoScrolls || 0) + (counts['auto_scroll'] || 0))}
                  {renderResource('📜', '3m Units', counts['auto_scroll_3m'] || 0)}
                  {renderResource('📜', '6m Units', counts['auto_scroll_6m'] || 0)}
                  {renderResource('📜', '9m Units', counts['auto_scroll_9m'] || 0)}

@@ -389,16 +389,12 @@ export const useCombat = (
 
             if (isPotion) {
                updates.potions = (player?.potions || 0) + 1;
+            } else if (lootItem.id === 'auto_scroll') {
+                // Standardize: Pool base 1m scrolls into numeric counter for "Energy (Mins)" UI.
+                updates.autoScrolls = (player?.autoScrolls || 0) + 1;
+                dropToTrack = { ...lootItem, id: `auto_scroll_pool_${Date.now()}` };
             } else if (lootItem.id?.startsWith('auto_scroll')) {
-               const scrollSpecs = {
-                 'auto_scroll': 1,
-                 'auto_scroll_3m': 3,
-                 'auto_scroll_6m': 6,
-                 'auto_scroll_9m': 9,
-                 'auto_scroll_12m': 12
-               };
-               const minutes = scrollSpecs[lootItem.id] || 1;
-                               const uniqueId = `${lootItem.id}_LOOT_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                const uniqueId = `${lootItem.id}_LOOT_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
                 updates[`inventory.${uniqueId}`] = { ...lootItem, id: uniqueId };
                 dropToTrack = { ...lootItem, id: uniqueId };
             } else {

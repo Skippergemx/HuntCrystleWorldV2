@@ -17,7 +17,7 @@ const TOPIC_STYLES = {
 };
 
 // --- Quiz Modal ---
-const QuizModal = ({ quiz, onClose, onComplete, isSyncing }) => {
+const QuizModal = ({ quiz, onClose, onComplete }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -82,19 +82,10 @@ const QuizModal = ({ quiz, onClose, onComplete, isSyncing }) => {
       {isAnswered && (
         <div className={`mt-6 p-4 rounded-2xl border-[3px] text-center animate-in slide-in-from-bottom-4 duration-300 relative z-10 ${isCorrect ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-red-100 border-red-500 text-red-800'}`}>
           <div className="flex items-center justify-center gap-3">
-            {isSyncing ? (
-              <div className="flex items-center gap-3 animate-pulse">
-                <Zap className="animate-spin text-cyan-600" size={24} />
-                <p className="text-sm font-black uppercase tracking-widest italic text-cyan-700">COMMITTING TO ARCHIVE...</p>
-              </div>
-            ) : (
-              <>
-                {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
-                <p className="text-sm font-black uppercase tracking-widest italic">
-                  {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
-                </p>
-              </>
-            )}
+            {isCorrect ? <Sparkles size={24} /> : <AlertCircle size={24} />}
+            <p className="text-sm font-black uppercase tracking-widest italic">
+              {isCorrect ? `SYNC SUCCESS: +${quiz.xpReward} XP LOGGED` : 'SYNC FAILED: NEURAL LINK SEVERED'}
+            </p>
           </div>
         </div>
       )}
@@ -198,11 +189,11 @@ export const ILearnView = React.memo(() => {
 
   const handleComplete = async (quiz, isCorrect) => {
     if (isCorrect) {
+      setActiveQuiz(null);
       setIsSyncing(true);
       try {
         const result = await actions.completeQuiz(quiz, true, ITEMS, FOODS, CRYSTLE_RECIPES);
         setSessionReward(result);
-        setActiveQuiz(null);
         if (result.item) {
           triggerConfetti();
         }
@@ -252,67 +243,81 @@ export const ILearnView = React.memo(() => {
         </div>
 
         {/* Knowledge Acquisition Modal (Celebratory Burst) */}
-        {sessionReward && createPortal(
-          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-transparent pointer-events-none animate-in fade-in duration-300">
+        {(isSyncing || sessionReward) && createPortal(
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300">
             <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden pointer-events-auto">
               <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
 
-              <div className="relative z-10 space-y-6 text-center">
-                <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
-                  {sessionReward.item ? (
-                    <span className="text-6xl relative z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-bounce font-serif">{sessionReward.item.icon || '📦'}</span>
-                  ) : (
-                    <Trophy className="text-amber-400 w-16 h-16 animate-bounce relative z-10" />
-                  )}
-                  <div className="absolute inset-0 border-4 border-dashed border-cyan-400/50 rounded-full animate-spin-slow"></div>
-                </div>
-
-                <div className="space-y-2">
-                  <h2 className="text-2xl font-[1000] text-white uppercase italic tracking-tighter leading-none">
-                    KNOWLEDGE ACQUISITION
+              {isSyncing ? (
+                <div className="relative z-10 space-y-6 text-center py-8">
+                  <div className="flex items-center justify-center mb-6">
+                    <Zap className="animate-spin text-cyan-500" size={64} />
+                  </div>
+                  <h2 className="text-2xl font-[1000] text-cyan-400 uppercase italic tracking-tighter leading-none animate-pulse">
+                    COMMITTING TO ARCHIVE...
                   </h2>
-                  <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] animate-pulse">
-                    Rewards Authorized by Master Instructor
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
+                    Securing neural link data
                   </p>
                 </div>
+              ) : sessionReward && (
+                <div className="relative z-10 space-y-6 text-center">
+                  <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
+                    {sessionReward.item ? (
+                      <span className="text-6xl relative z-10 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)] animate-bounce font-serif">{sessionReward.item.icon || '📦'}</span>
+                    ) : (
+                      <Trophy className="text-amber-400 w-16 h-16 animate-bounce relative z-10" />
+                    )}
+                    <div className="absolute inset-0 border-4 border-dashed border-cyan-400/50 rounded-full animate-spin-slow"></div>
+                  </div>
 
-                <div className="bg-black/60 border-[3px] border-white/10 p-4 rounded-xl space-y-3">
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="flex flex-col items-center">
-                      <span className="text-2xl font-black text-white italic">+{sessionReward.xp}</span>
-                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Net_EXP</span>
+                  <div className="space-y-2">
+                    <h2 className="text-2xl font-[1000] text-white uppercase italic tracking-tighter leading-none">
+                      KNOWLEDGE ACQUISITION
+                    </h2>
+                    <p className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.2em] animate-pulse">
+                      Rewards Authorized by Master Instructor
+                    </p>
+                  </div>
+
+                  <div className="bg-black/60 border-[3px] border-white/10 p-4 rounded-xl space-y-3">
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="flex flex-col items-center">
+                        <span className="text-2xl font-black text-white italic">+{sessionReward.xp}</span>
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Net_EXP</span>
+                      </div>
+                      {sessionReward.item && (
+                        <>
+                          <div className="w-[2px] h-8 bg-white/10"></div>
+                          <div className="flex flex-col items-center">
+                            <span className="text-2xl font-black text-white italic">x{sessionReward.item.qty}</span>
+                            <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Quantity</span>
+                          </div>
+                        </>
+                      )}
                     </div>
+
                     {sessionReward.item && (
-                      <>
-                        <div className="w-[2px] h-8 bg-white/10"></div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-2xl font-black text-white italic">x{sessionReward.item.qty}</span>
-                          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Quantity</span>
-                        </div>
-                      </>
+                      <div className="pt-2 border-t border-white/5">
+                        <p className="text-[11px] font-black text-white uppercase tracking-tight italic">
+                          "{sessionReward.item.name}"
+                        </p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase opacity-60">
+                          Added to Neural Inventory Hub
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  {sessionReward.item && (
-                    <div className="pt-2 border-t border-white/5">
-                      <p className="text-[11px] font-black text-white uppercase tracking-tight italic">
-                        "{sessionReward.item.name}"
-                      </p>
-                      <p className="text-[8px] font-bold text-slate-400 uppercase opacity-60">
-                        Added to Neural Inventory Hub
-                      </p>
-                    </div>
-                  )}
+                  <button
+                    onClick={() => setSessionReward(null)}
+                    className="w-full py-3 bg-cyan-500 text-black font-black text-xs uppercase italic tracking-widest border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-3"
+                  >
+                    CLOSE TRANSMISSION <ChevronRight size={16} />
+                  </button>
                 </div>
-
-                <button
-                  onClick={() => setSessionReward(null)}
-                  className="w-full py-3 bg-cyan-500 text-black font-black text-xs uppercase italic tracking-widest border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none transition-all flex items-center justify-center gap-3"
-                >
-                  CLOSE TRANSMISSION <ChevronRight size={16} />
-                </button>
-              </div>
+              )}
 
               <div className="absolute top-2 right-2 flex gap-1">
                 <div className="w-1.5 h-1.5 bg-cyan-500 animate-ping"></div>
@@ -329,7 +334,7 @@ export const ILearnView = React.memo(() => {
             <QuizCard
               key={quiz.id}
               quiz={quiz}
-              onOpen={setActiveQuiz}
+              onOpen={(q) => { if (!isSyncing && !sessionReward) setActiveQuiz(q); }}
               isCompleted={false}
             />
           ))}
@@ -347,9 +352,8 @@ export const ILearnView = React.memo(() => {
       {activeQuiz && (
         <QuizModal
           quiz={activeQuiz}
-          onClose={() => !isSyncing && setActiveQuiz(null)}
+          onClose={() => setActiveQuiz(null)}
           onComplete={handleComplete}
-          isSyncing={isSyncing}
         />
       )}
 

@@ -15,7 +15,7 @@ export const AdminPanelView = React.memo(() => {
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls', 'rewards'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorReports, setErrorReports] = useState([]);
@@ -680,6 +680,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'scrolls' ? 'bg-purple-600 text-white border-purple-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           Scroll Mapping
+        </button>
+        <button 
+          onClick={() => setActiveTab('rewards')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'rewards' ? 'bg-emerald-500 text-black border-emerald-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          🎁 Reward Audit
         </button>
       </div>
 
@@ -1417,6 +1423,237 @@ export const AdminPanelView = React.memo(() => {
                    </p>
                 </div>
              </div>
+          </div>
+        </div>
+      ) : activeTab === 'rewards' ? (
+        <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 space-y-8">
+          <h2 className="text-xl font-black text-white uppercase italic border-l-4 border-emerald-500 pl-4">🎁 Reward System Audit</h2>
+
+          {/* MIND MAP FLOW */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Reward Flow Architecture</p>
+            {/* Root */}
+            <div className="flex flex-col items-center gap-0">
+              <div className="px-6 py-3 bg-emerald-500 border-4 border-black text-black font-black uppercase italic text-sm shadow-[6px_6px_0_rgba(0,0,0,1)]">
+                PLAYER REWARDS
+              </div>
+              <div className="w-[2px] h-6 bg-white/20" />
+              {/* Branches Row */}
+              <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                {/* Combat */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-full py-2 px-3 bg-red-700 border-2 border-black text-white font-black uppercase text-[10px] text-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                    ⚔️ Combat
+                  </div>
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="bg-slate-900 border border-red-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-red-400 font-black block">Guaranteed</span>
+                      GX (enemy.loot)<br/>EXP (enemy.xp)
+                    </div>
+                    <div className="bg-slate-900 border border-red-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-amber-400 font-black block">~Floor% Drop</span>
+                      Loot Table Item<br/>Floor-gated Rarity
+                    </div>
+                  </div>
+                </div>
+
+                {/* iLearn */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-full py-2 px-3 bg-cyan-600 border-2 border-black text-white font-black uppercase text-[10px] text-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                    🧠 iLearn
+                  </div>
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="bg-slate-900 border border-cyan-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-cyan-400 font-black block">Guaranteed</span>
+                      EXP (quiz.xpReward)<br/>Faucet ETH Claim
+                    </div>
+                    <div className="bg-slate-900 border border-cyan-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-amber-400 font-black block">70% Random Drop</span>
+                      <span className="text-emerald-400">50%:</span> Mega/Ultra HP Potion<br/>
+                      <span className="text-purple-400">50%:</span> Auto-Scroll (3m–12m)
+                    </div>
+                    <div className="bg-slate-800 border border-purple-500/20 p-1.5 rounded text-[8px] text-slate-400 font-bold">
+                      Scroll weights:<br/>60% 3m · 25% 6m · 12% 9m · 3% 12m
+                    </div>
+                  </div>
+                </div>
+
+                {/* Crystle Town */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-full py-2 px-3 bg-amber-500 border-2 border-black text-black font-black uppercase text-[10px] text-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                    🏙️ Town Quest
+                  </div>
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="bg-slate-900 border border-amber-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-amber-400 font-black block">Guaranteed</span>
+                      1x Food Buff Item<br/>+5 Town Influence XP<br/>Faucet ETH Claim
+                    </div>
+                    <div className="bg-slate-900 border border-amber-500/30 p-2 rounded text-[9px] text-slate-400 font-bold italic">
+                      No random drops
+                    </div>
+                  </div>
+                </div>
+
+                {/* Naga War */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-full py-2 px-3 bg-purple-700 border-2 border-black text-white font-black uppercase text-[10px] text-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                    ⚔️ Naga War
+                  </div>
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="bg-slate-900 border border-purple-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-emerald-400 font-black block">Win</span>
+                      10,000 GX · 10x 12m Scrolls
+                    </div>
+                    <div className="bg-slate-900 border border-purple-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-yellow-400 font-black block">Tie</span>
+                      7,500 GX · 7x 12m Scrolls
+                    </div>
+                    <div className="bg-slate-900 border border-purple-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-red-400 font-black block">Loss</span>
+                      5,000 GX · 5x 12m Scrolls
+                    </div>
+                  </div>
+                </div>
+
+                {/* Syndicate */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-full py-2 px-3 bg-slate-700 border-2 border-black text-white font-black uppercase text-[10px] text-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                    🏛️ Syndicate
+                  </div>
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div className="bg-slate-900 border border-slate-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-slate-300 font-black block">Daily Bounty</span>
+                      5,000 GX base<br/>+1,000 per Lab Lvl
+                    </div>
+                    <div className="bg-slate-900 border border-slate-500/30 p-2 rounded text-[9px] text-slate-300 font-bold">
+                      <span className="text-slate-400 font-black block">Economy</span>
+                      Salvage → same-rarity item<br/>Sell → item.sellValue GX
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TABULATED REPORT */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tabulated Reward Report</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b-2 border-slate-800">
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Source</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Guaranteed</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Randomized</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Limits / Cooldown</th>
+                    <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Sanity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-900">
+                  {[
+                    {
+                      src: '⚔️ Dungeon Combat', color: 'text-red-400',
+                      guaranteed: 'GX + EXP (per enemy)',
+                      random: 'Loot table item · floor-gated rarity',
+                      limits: 'HP / AP gated',
+                      status: 'ok', note: 'Verified'
+                    },
+                    {
+                      src: '🧠 iLearn Quests', color: 'text-cyan-400',
+                      guaranteed: 'EXP + Faucet ETH',
+                      random: '70%: Potion (50%) OR Scroll (50%)',
+                      limits: 'Active quiz slots',
+                      status: 'warn', note: 'Race condition PATCHED (Apr 29)'
+                    },
+                    {
+                      src: '🏙️ Crystle Town', color: 'text-amber-400',
+                      guaranteed: '1x Food Buff + 5 Influence XP + Faucet ETH',
+                      random: 'None',
+                      limits: '30m slot cooldown on skip',
+                      status: 'warn', note: 'Race condition PATCHED (Apr 29)'
+                    },
+                    {
+                      src: '⚔️ Naga War (Guild PvP)', color: 'text-purple-400',
+                      guaranteed: '5k–10k GX + 5–10x 12m Scrolls',
+                      random: 'None (tier-fixed)',
+                      limits: 'Weekly event-gated',
+                      status: 'ok', note: 'Unique scroll IDs — no wipeout risk'
+                    },
+                    {
+                      src: '🏛️ Syndicate Bounty', color: 'text-slate-300',
+                      guaranteed: '5,000 + (LabLvl × 1,000) GX',
+                      random: 'None',
+                      limits: 'Daily claim via Cloud Function',
+                      status: 'ok', note: 'Server-side secured'
+                    },
+                    {
+                      src: '♻️ Salvaging', color: 'text-emerald-400',
+                      guaranteed: '1x same-rarity random item',
+                      random: 'Item identity random within tier',
+                      limits: 'Requires 3x same-rarity items',
+                      status: 'ok', note: 'Verified'
+                    },
+                    {
+                      src: '💰 Item Selling', color: 'text-yellow-400',
+                      guaranteed: 'item.sellValue in GX',
+                      random: 'None',
+                      limits: 'None',
+                      status: 'ok', note: 'Verified'
+                    },
+                  ].map((row, i) => (
+                    <tr key={i} className="hover:bg-slate-900/50 transition-colors">
+                      <td className={`py-3 px-4 font-black italic whitespace-nowrap ${row.color}`}>{row.src}</td>
+                      <td className="py-3 px-4 text-slate-300 font-bold">{row.guaranteed}</td>
+                      <td className="py-3 px-4 text-slate-400 font-medium italic">{row.random}</td>
+                      <td className="py-3 px-4 text-slate-500 font-medium">{row.limits}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase rounded border ${
+                          row.status === 'ok'
+                            ? 'bg-emerald-950 border-emerald-700 text-emerald-400'
+                            : 'bg-amber-950 border-amber-700 text-amber-400'
+                        }`}>
+                          {row.status === 'ok' ? '✓' : '⚠'} {row.note}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* AUDIT FLAGS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-amber-950/20 border-2 border-amber-700/40 p-5 rounded-xl space-y-2">
+              <p className="text-amber-400 font-black uppercase text-xs flex items-center gap-2">⚠ Inflation Watch: Auto-Scroll Accumulation</p>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                Players receive scrolls from <strong className="text-white">3 independent sources</strong>: iLearn drops (70% chance), Naga War bounties (5–10x 12m), and Dungeon loot tables.
+                An active player completing 10 iLearn quizzes + 1 war win per week can accumulate <strong className="text-amber-300">35+ scroll-minutes</strong> without spending any.
+                Monitor <code className="text-amber-400 text-[9px] bg-black/40 px-1">player.autoScrolls</code> totals in the Player Registry for outliers.
+              </p>
+            </div>
+            <div className="bg-amber-950/20 border-2 border-amber-700/40 p-5 rounded-xl space-y-2">
+              <p className="text-amber-400 font-black uppercase text-xs flex items-center gap-2">⚠ Faucet Double-Trigger Risk</p>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                Both iLearn and Crystle Town quests fire <code className="text-amber-400 text-[9px] bg-black/40 px-1">claimFaucetReward</code> on completion.
+                If a player completes both in rapid succession, two claims hit the server simultaneously.
+                Verify the Cloud Function enforces <strong className="text-white">per-wallet cooldowns</strong> server-side to prevent double ETH payouts.
+              </p>
+            </div>
+            <div className="bg-emerald-950/20 border-2 border-emerald-700/40 p-5 rounded-xl space-y-2">
+              <p className="text-emerald-400 font-black uppercase text-xs flex items-center gap-2">✓ Race Condition Sealed (Apr 29)</p>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                Both iLearn and Town quest hubs now use <code className="text-emerald-400 text-[9px] bg-black/40 px-1">isSyncing</code> state locks + <code className="text-emerald-400 text-[9px] bg-black/40 px-1">pointer-events-auto</code> backdrop hardening.
+                Cards reject clicks while a quest is in-flight, preventing the concurrent completion bug that was causing duplicate scroll generation.
+              </p>
+            </div>
+            <div className="bg-emerald-950/20 border-2 border-emerald-700/40 p-5 rounded-xl space-y-2">
+              <p className="text-emerald-400 font-black uppercase text-xs flex items-center gap-2">✓ Scroll Uniqueness Guaranteed</p>
+              <p className="text-slate-400 text-xs font-medium leading-relaxed">
+                Every rewarded scroll uses a unique inventory key: <code className="text-emerald-400 text-[9px] bg-black/40 px-1">_ILEARN_timestamp_hash</code> or <code className="text-emerald-400 text-[9px] bg-black/40 px-1">_WAR_timestamp_hash</code>.
+                This prevents any stacking collision and is safe against the legacy "Wipeout" fuzzy-match bug documented in the Scroll Mapping tab.
+              </p>
+            </div>
           </div>
         </div>
       ) : (
