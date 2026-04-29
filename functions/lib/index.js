@@ -4,7 +4,8 @@ exports.claimFaucetReward = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const params_1 = require("firebase-functions/params");
-const ethers_1 = require("ethers");
+// Move ethers import inside handler to prevent deployment timeouts
+// import { ethers } from "ethers";
 // Lazily initialize to prevent timeout during deployment parsing
 const getDb = () => {
     try {
@@ -23,7 +24,8 @@ exports.claimFaucetReward = (0, https_1.onCall)({ secrets: [faucetPrivateKeySecr
         throw new https_1.HttpsError('unauthenticated', 'You must be logged in to claim.');
     }
     const { targetWalletAddress } = request.data;
-    if (!targetWalletAddress || !ethers_1.ethers.isAddress(targetWalletAddress)) {
+    const { ethers } = require("ethers");
+    if (!targetWalletAddress || !ethers.isAddress(targetWalletAddress)) {
         throw new https_1.HttpsError('invalid-argument', 'Missing or invalid target wallet address');
     }
     const uid = request.auth.uid;
@@ -37,32 +39,33 @@ exports.claimFaucetReward = (0, https_1.onCall)({ secrets: [faucetPrivateKeySecr
     const userData = userSnap.data();
     // Default to level 1 for testing if not set
     const townInfluenceLevel = userData?.crystleTownLevel || 1;
-    // 4. Faucet Drop Chance Logic
+    // 4. Faucet Drop Chance Logic (Redesigned for Grinding)
     let dropChance = 0;
     if (townInfluenceLevel >= 1 && townInfluenceLevel <= 10)
-        dropChance = 80; // TEST_MODE: 80% (Production: 4%)
-    else if (townInfluenceLevel >= 11 && townInfluenceLevel <= 20)
-        dropChance = 5;
-    else if (townInfluenceLevel >= 21 && townInfluenceLevel <= 30)
         dropChance = 10;
-    else if (townInfluenceLevel >= 31 && townInfluenceLevel <= 40)
+    else if (townInfluenceLevel >= 11 && townInfluenceLevel <= 20)
+        dropChance = 12;
+    else if (townInfluenceLevel >= 21 && townInfluenceLevel <= 30)
         dropChance = 15;
-    else if (townInfluenceLevel >= 41 && townInfluenceLevel <= 50)
+    else if (townInfluenceLevel >= 31 && townInfluenceLevel <= 40)
         dropChance = 20;
+    else if (townInfluenceLevel >= 41 && townInfluenceLevel <= 50)
+        dropChance = 25;
     if (dropChance === 0) {
         return { success: false, message: "Level too low to attract the Faucet." };
     }
-    // 5. Rate Limiting (Check if recently claimed to prevent spam)
-    const now = admin.firestore.Timestamp.now();
-    const lastClaim = userData?.lastFaucetClaim;
-    if (lastClaim && now.seconds - lastClaim.seconds < 86400) {
-        return { success: false, message: "You can only claim Faucet once every 24 hours." };
+    // 5. Daily Capping Logic (Reset every UTC day)
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const lastDate = userData?.lastFaucetDate || "";
+    let dailyWins = lastDate === today ? (userData?.dailyFaucetWins || 0) : 0;
+    if (dailyWins >= 30) {
+        return { success: false, message: "The Faucet well is recharging! Daily limit reached (30/30)." };
     }
     // 6. The Roll
     const roll = Math.floor(Math.random() * 100) + 1;
-    console.log(`User ${uid} Faucet Roll: ${roll} / ${dropChance}% chance`);
+    console.log(`User ${uid} Faucet Roll: ${roll} / ${dropChance}% chance | Daily: ${dailyWins}/30`);
     if (roll > dropChance) {
-        return { success: false, message: "No luck this time! Keep questing." };
+        return { success: false, message: "No luck this time! The Faucet remains elusive." };
     }
     // 7. Access Private Key securely from Google Cloud Secret Manager
     let privateKey;
@@ -82,15 +85,15 @@ exports.claimFaucetReward = (0, https_1.onCall)({ secrets: [faucetPrivateKeySecr
     // 8. Process Transaction with ethers.js
     try {
         // Connect to Base Network via public JSON-RPC provider
-        const provider = new ethers_1.ethers.JsonRpcProvider("https://mainnet.base.org");
-        const wallet = new ethers_1.ethers.Wallet(privateKey, provider);
+        const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
+        const wallet = new ethers.Wallet(privateKey, provider);
         const rewardAmount = "0.0000035"; // ~ $0.01 USD in ETH
-        const rewardValue = ethers_1.ethers.parseEther(rewardAmount);
-        // 8a. Pre-flight Balance Check (Prevent 'Dry Faucet' Generic Errors)
+        const rewardValue = ethers.parseEther(rewardAmount);
+        // 8a. Pre-flight Balance Check
         const balance = await provider.getBalance(wallet.address);
-        if (balance < (rewardValue + ethers_1.ethers.parseEther("0.00001"))) { // Buffer for gas
+        if (balance < (rewardValue + ethers.parseEther("0.00001"))) {
             console.warn(`🚨 FAUCET DRY: Wallet ${wallet.address} only has ${balance.toString()} wei remaining.`);
-            throw new https_1.HttpsError('resource-exhausted', "The town's treasury is currently depleted! Citizens are working to restock the faucet. Try again later.");
+            throw new https_1.HttpsError('resource-exhausted', "The town's treasury is currently depleted! Citizens are working to restock the faucet.");
         }
         // Send the transaction
         const tx = await wallet.sendTransaction({
@@ -100,12 +103,15 @@ exports.claimFaucetReward = (0, https_1.onCall)({ secrets: [faucetPrivateKeySecr
         // 9. Update User's Firestore stats on success
         await userRef.update({
             lastFaucetClaim: admin.firestore.FieldValue.serverTimestamp(),
+            lastFaucetDate: today,
+            dailyFaucetWins: admin.firestore.FieldValue.increment(1),
             lifetimeFaucetWins: admin.firestore.FieldValue.increment(1)
         });
         return {
             success: true,
-            message: "You discovered ETH in Crystle Town!",
-            txHash: tx.hash
+            message: "ETH Discovery Successful!",
+            txHash: tx.hash,
+            dailyCount: dailyWins + 1
         };
     }
     catch (error) {

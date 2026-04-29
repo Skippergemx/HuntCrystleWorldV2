@@ -289,16 +289,13 @@ export const useCombat = (
         rand -= s.weight;
       }
       
-      const minutes = scrollSpecs[selectedId] || 1;
-      totalMinutesGained += minutes;
-      
       const scrollItem = ITEMS.find(item => item.id === selectedId);
       if (scrollItem) {
-        rewards.push(scrollItem); // Track in session rewards UI without unique ID
+        const uniqueId = `${selectedId}_TREASURY_${Date.now()}_${Math.random().toString(36).slice(2, 6)}_${i}`;
+        updates[`inventory.${uniqueId}`] = { ...scrollItem, id: uniqueId };
+        rewards.push({ ...scrollItem, id: uniqueId });
       }
     }
-
-    updates.autoScrolls = (player?.autoScrolls || 0) + totalMinutesGained;
 
     addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
 
@@ -401,7 +398,9 @@ export const useCombat = (
                  'auto_scroll_12m': 12
                };
                const minutes = scrollSpecs[lootItem.id] || 1;
-               updates.autoScrolls = (player?.autoScrolls || 0) + minutes;
+                               const uniqueId = `${lootItem.id}_LOOT_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                updates[`inventory.${uniqueId}`] = { ...lootItem, id: uniqueId };
+                dropToTrack = { ...lootItem, id: uniqueId };
             } else {
                // Unique Inventory Item
                const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };

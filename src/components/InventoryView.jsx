@@ -212,11 +212,11 @@ export const InventoryView = React.memo(() => {
                <TrendingUp size={12} className="text-cyan-500 animate-bounce" />
              </div>
              <div className="grid grid-cols-5 gap-1.5 md:gap-2">
-                 {renderResource('🪄', 'Total Mins', player.autoScrolls || 0)}
-                 {renderResource('📜', '3m Units', Math.floor((player.autoScrolls || 0) / 3))}
-                 {renderResource('📜', '6m Units', Math.floor((player.autoScrolls || 0) / 6))}
-                 {renderResource('📜', '9m Units', Math.floor((player.autoScrolls || 0) / 9))}
-                 {renderResource('📜', '12m Units', Math.floor((player.autoScrolls || 0) / 12))}
+                 {renderResource('🪄', 'Energy (Mins)', player.autoScrolls || 0)}
+                 {renderResource('📜', '3m Units', counts['auto_scroll_3m'] || 0)}
+                 {renderResource('📜', '6m Units', counts['auto_scroll_6m'] || 0)}
+                 {renderResource('📜', '9m Units', counts['auto_scroll_9m'] || 0)}
+                 {renderResource('📜', '12m Units', counts['auto_scroll_12m'] || 0)}
              </div>
            </div>
          </div>

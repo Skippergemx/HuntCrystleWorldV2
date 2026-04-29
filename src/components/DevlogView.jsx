@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.14.0',
+    date: '2026-04-27',
+    title: 'CRYSTLE TOWN TREASURY: THE GRIND PROTOCOL',
+    category: 'ECONOMY & REWARDS',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'We have overhauled the ETH Faucet mechanics to promote active gameplay. The previous "once-per-day" restriction has been replaced with a generous 30-win daily cap, allowing hunters to accumulate rewards through consistent exploration and questing.',
+    changes: [
+      'Economy: Replaced 24-hour rate limit with a 30-win daily cap',
+      'Balancing: Adjusted ETH drop rates (Starting at 10%) to reward high-frequency gameplay',
+      'Technical: Implemented server-side daily reset logic based on UTC cycles',
+      'UI: Updated reward telemetry to track daily win progress',
+      'Logic: Higher Influence levels now provide scaling drop bonuses up to 25%'
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: '1.13.0',
     date: '2026-04-26',
     title: 'ETH REWARD PROTOCOL & I-LEARN STABILIZATION',

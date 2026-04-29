@@ -228,10 +228,12 @@ export const usePlayerActions = (
     if (item.id === 'hp_potion') {
       updates.potions = (player.potions || 0) + qty;
     } else if (item.id?.includes('auto_scroll')) {
-      // Standardize: All Auto-Hunt variants (1m, 3m, 6m, etc.) now pool into the numeric 'autoScrolls' counter (Minutes).
-      const durationMatch = item.id.match(/(\d+)m/);
-      const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
-      updates.autoScrolls = (player.autoScrolls || 0) + (qty * scrollValue);
+      // V2: Stop pooling into numeric counter. Create discrete items for better UX.
+      for (let i = 0; i < qty; i++) {
+        const suffix = Math.random().toString(36).slice(2, 6);
+        const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
+        updates[`inventory.${purchaseItem.id}`] = purchaseItem;
+      }
     } else {
       // For equipment, generate multiple unique IDs if buying bulk
       for (let i = 0; i < qty; i++) {
@@ -254,7 +256,7 @@ export const usePlayerActions = (
   };
 
   const activateAutoScroll = (view) => {
-    const inventory = Object.values(player.inventory || {});
+    const inventory = Object.entries(player.inventory || {});
     const selection = player.selectedScrollId || 'auto_scroll';
 
     const scrollSpecs = {
@@ -266,21 +268,38 @@ export const usePlayerActions = (
     };
 
     const spec = scrollSpecs[selection] || scrollSpecs['auto_scroll'];
-    const hasCounter = (player.autoScrolls || 0) >= spec.val;
+    
+    // 1. Check Inventory for Physical Item (Priority)
+    const targetItemEntry = inventory.find(([key, item]) => {
+      if (!item || !item.id) return false;
+      const baseId = item.id.replace(/(_\d+)+$/, '');
+      return baseId === selection;
+    });
+    
+    // 2. Fallback: Check Legacy Numeric Pool
+    const hasPoolValue = (player.autoScrolls || 0) >= spec.val;
 
-    if (!hasCounter) {
-      return addLog(`Wait! Not enough ${selection.replace(/_/g, ' ')}'s (Minutes) in pool.`);
+    if (!targetItemEntry && !hasPoolValue) {
+      return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
 
     playSFX(SOUNDS.useHeal);
     const updates = { 
       autoUntil: Date.now() + spec.ms,
-      autoMode: view || 'dungeon',
-      autoScrolls: player.autoScrolls - spec.val
+      autoMode: view || 'dungeon'
     };
 
+    if (targetItemEntry) {
+      // Consume the physical item
+      updates[`inventory.${targetItemEntry[0]}`] = deleteField();
+      addLog(`LOCK-ON ACTIVATED! (Used Item: ${spec.label})`);
+    } else {
+      // Deduct from legacy pool
+      updates.autoScrolls = (player.autoScrolls || 0) - spec.val;
+      addLog(`LOCK-ON ACTIVATED! (Used Energy: ${spec.label})`);
+    }
+
     syncPlayer(updates);
-    addLog(`LOCK-ON ACTIVATED! (${spec.label})`);
   };
 
   const mixLaboratoryItem = async (recipe) => {
@@ -331,13 +350,8 @@ export const usePlayerActions = (
       
       // Standardize: Only base 1m essentials go to numeric counters.
       // Advanced variants (3m scrolls, Mega potions) remain as unique inventory objects.
-      // Standardize: All Auto-Hunt variants route to the numeric counter (Minutes).
       if (recipe.id === 'hp_potion') {
         updates.potions = (player.potions || 0) + 1;
-      } else if (recipe.id?.includes('auto_scroll')) {
-        const durationMatch = recipe.id.match(/(\d+)m/);
-        const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
-        updates.autoScrolls = (player.autoScrolls || 0) + scrollValue;
       } else {
         updates[`inventory.${mixedItem.id}`] = mixedItem;
       }
@@ -835,10 +849,14 @@ export const usePlayerActions = (
       let gxReward = isWinner ? 10000 : (isTie ? 7500 : 5000);
       let scrollCount = isWinner ? 10 : (isTie ? 7 : 5);
       
-      let updates = { tokens: (player.tokens || 0) + gxReward };
+      const updates = { tokens: (player.tokens || 0) + gxReward };
       
-      // Auto-Scrolls 12m Generation - Now routed to numeric counter
-      updates.autoScrolls = (player.autoScrolls || 0) + (scrollCount * 12);
+      // Auto-Scrolls 12m Generation - Now discrete items
+      const scrollBase = ITEMS.find(i => i.id === 'auto_scroll_12m');
+      for (let i = 0; i < scrollCount; i++) {
+        const uniqueId = `auto_scroll_12m_WAR_${Date.now()}_${Math.random().toString(36).slice(2, 6)}_${i}`;
+        updates[`inventory.${uniqueId}`] = { ...scrollBase, id: uniqueId };
+      }
       
       await updateDoc(warRef, { [`claimed.${player.uid}`]: true });
       syncPlayer(updates);
@@ -1140,10 +1158,6 @@ export const usePlayerActions = (
         // Standardize: Route to numeric counters for stackable essentials
         if (masterDrop.id === 'hp_potion') {
            updates.potions = (player.potions || 0) + rQty;
-        } else if (masterDrop.id?.includes('auto_scroll')) {
-           const durationMatch = masterDrop.id.match(/(\d+)m/);
-           const scrollValue = durationMatch ? parseInt(durationMatch[1], 10) : 1;
-           updates.autoScrolls = (player.autoScrolls || 0) + (rQty * scrollValue);
         } else {
            for (let i = 0; i < rQty; i++) {
               const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -1167,29 +1181,26 @@ export const usePlayerActions = (
     addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
     playSFX(SOUNDS.lvlUp);
 
-    // --- Neural Faucet Protocol: Tier 1 Influence Roll (1-9) ---
-    const townLevel = player.crystleTownLevel || 1;
-    if (townLevel >= 1 && townLevel <= 9 && Math.random() < 0.80) {
-       if (functions && player.walletAddress) {
-          console.log("🎒 iLEARN_FAUCET: Triggering Tier 1 ETH roll...");
-          const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
-          try {
-            const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
-            const data = result.data;
-            if (data.success) {
-               addLog(`💎 iLEARN REWARD: ETH subsidy transmitted!`);
-               playSFX(SOUNDS.obtainLoot);
-               if (setFaucetResult) {
-                  setFaucetResult({ success: true, txHash: data.txHash, message: "Neural Link Subsidy Authorized" });
-               }
-            }
-          } catch (e) {
-             console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);
-             if (e.message.includes("depleted")) {
-                addLog("🏙️ FAUCET: The neural treasury is temporarily dry.");
-             }
+    // --- Neural Faucet Protocol: Automated Reward Trigger ---
+    if (functions && player.walletAddress) {
+      console.log("🎒 iLEARN_FAUCET: Attempting reward transmission sequence...");
+      const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+      try {
+        const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
+        const data = result.data;
+        if (data.success) {
+          addLog(`💎 iLEARN REWARD: ETH subsidy transmitted!`);
+          playSFX(SOUNDS.obtainLoot);
+          if (setFaucetResult) {
+            setFaucetResult({ success: true, txHash: data.txHash, message: "Neural Link Subsidy Authorized" });
           }
-       }
+        }
+      } catch (e) {
+        console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);
+        if (e.message.includes("depleted")) {
+          addLog("🏙️ FAUCET: The neural treasury is temporarily dry.");
+        }
+      }
     }
 
     return { xp: quiz.xpReward, item: dropData };

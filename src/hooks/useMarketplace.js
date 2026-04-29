@@ -100,11 +100,8 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
       const updates = { tokens: player.tokens - totalCost };
       
-      // Standardize: Route to numeric counters for stackable essentials
       if (listing.item.id?.startsWith('hp_potion')) {
         updates.potions = (player.potions || 0) + qty;
-      } else if (listing.item.id?.startsWith('auto_scroll')) {
-        updates.autoScrolls = (player.autoScrolls || 0) + qty;
       } else {
         returnedItems.forEach(item => { updates[`inventory.${item.id}`] = item; });
       }
@@ -234,9 +231,6 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         if (baseId === 'hp_potion') {
            const pSnap = await transaction.get(playerRef);
            updates.potions = (pSnap.data()?.potions || 0) + qty;
-        } else if (baseId === 'auto_scroll') {
-           const pSnap = await transaction.get(playerRef);
-           updates.autoScrolls = (pSnap.data()?.autoScrolls || 0) + qty;
         } else {
            for (let i = 0; i < qty; i++) {
              const suffix = Math.random().toString(36).slice(2, 6);

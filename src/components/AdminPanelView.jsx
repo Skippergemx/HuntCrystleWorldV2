@@ -1413,7 +1413,7 @@ export const AdminPanelView = React.memo(() => {
                    <p className="text-xs text-slate-400 italic leading-relaxed">
                       The "Wipeout" phenomenon was a side-effect of a hybrid system where some scrolls were treated as unique inventory keys and others as numeric counters. When a 1M selection was activated, the logic attempted a fuzzy search for <span className="text-white font-bold">"auto_scroll"</span>, accidentally matching and deleting high-tier variants like <span className="text-white font-bold">"auto_scroll_12m"</span>. 
                       <br /><br />
-                      <span className="text-purple-400 font-black">FIX APPLIED:</span> All scroll variants now contribute to a unified <span className="text-white font-bold">autoScrolls</span> minute-pool. The inventory map is no longer touched for auto-hunt logic, ensuring absolute data safety.
+                      <span className="text-purple-400 font-black">ARCHITECTURAL REVISION V4:</span> All scrolls are now treated as <span className="text-white font-bold">discrete inventory items</span> with unique IDs and exact base-ID matching. A legacy <span className="text-white font-bold">Energy (Mins)</span> pool remains for backward compatibility and non-item rewards. This provides the best of both worlds: individual item security and unified energy flexibility.
                    </p>
                 </div>
              </div>
