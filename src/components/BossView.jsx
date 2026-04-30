@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw, Check, Sparkles } from 'lucide-react';
-import { BossImpactSplash, ImpactSplash } from './CombatEffects';
+import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw, Check, Sparkles, WandSparkles } from 'lucide-react';
+import { BossImpactSplash, ImpactSplash, BattleParticles } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
@@ -26,19 +26,24 @@ const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => 
 export const BossView = () => {
   const {
       player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState, 
-      BOSS, BOSS_MEDIA_FILES, TAVERN_MATES, openGuide, syncPlayer, lowPerfMode,
+      BOSS, BOSS_MEDIA_FILES, TAVERN_MATES, openGuide, syncPlayer, lowPerfMode, FOODS,
       bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo
   } = useGame();
 
   const { view, setView, enemyFlinch } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt } = combat;
-  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll } = actions;
+  const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, buffTimeLeft, foodTimeLeft } = gameLoop;
   const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const battleParticlesRef = React.useRef(null);
+  const bossContainerRef = React.useRef(null);
+  const playerContainerRef = React.useRef(null);
+  const arenaRef = React.useRef(null);
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_boss_tutorial') === 'true';
@@ -90,28 +95,99 @@ export const BossView = () => {
   const isMateBuffActive = (buffTimeLeft || 0) > 0;
   const activeMate = isMateBuffActive ? TAVERN_MATES.find(m => m.id === player.hiredMate) : null;
 
-  const currentPotionCount = React.useMemo(() => {
+  const potionCountData = React.useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
     const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
-    return sel === 'hp_potion' ? invCount + (player.potions || 0) : invCount;
+    const baseCount = player.potions || 0;
+    return {
+      selected: sel,
+      count: sel === 'hp_potion' ? (invCount + baseCount) : invCount,
+      hasSelected: (sel === 'hp_potion' ? (invCount + baseCount) : invCount) > 0
+    };
   }, [player.selectedPotionId, player.inventory, player.potions]);
 
-  const currentScrollCount = React.useMemo(() => {
+  const scrollCountData = React.useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
+    const scrollSpecs = {
+      'auto_scroll': 1,
+      'auto_scroll_3m': 3,
+      'auto_scroll_6m': 6,
+      'auto_scroll_9m': 9,
+      'auto_scroll_12m': 12
+    };
+    const req = scrollSpecs[sel] || 1;
+    const baseCount = player.autoScrolls || 0;
+    
     const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
     const invCount = Object.values(player.inventory || {}).filter(i => {
       if (!i || !i.id) return false;
       const itemBaseId = possibleScrollIds.find(baseId => i.id.startsWith(baseId));
       return itemBaseId === sel;
     }).length;
-    return sel === 'auto_scroll' ? invCount + (player.autoScrolls || 0) : invCount;
-  }, [player.selectedScrollId, player.inventory, player.autoScrolls, ITEMS]);
+
+    let totalPossible = 0;
+    if (sel === 'auto_scroll') {
+      totalPossible = Math.floor(baseCount / req) + invCount;
+    } else {
+      totalPossible = invCount;
+    }
+
+    return {
+      selected: sel,
+      count: totalPossible,
+      hasSelected: totalPossible > 0
+    };
+  }, [player.selectedScrollId, player.autoScrolls, player.inventory]);
 
   const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
   const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
 
+  const foodInventory = React.useMemo(() => {
+    if (!FOODS) return [];
+    const owned = [];
+    FOODS.forEach(food => {
+      const instances = Object.values(player.inventory || {}).filter(i => i?.id?.startsWith(food.id));
+      if (instances.length > 0) owned.push({ ...food, count: instances.length, instanceId: instances[0].id });
+    });
+    return owned;
+  }, [player.inventory, FOODS]);
+  
+  const [selectedFoodIdx, setSelectedFoodIdx] = useState(0);
+  const selectedFood = foodInventory[selectedFoodIdx] || null;
+  const cycleFoodSelection = () => setSelectedFoodIdx(prev => foodInventory.length > 0 ? (prev + 1) % foodInventory.length : 0);
+
+  React.useEffect(() => {
+    if (impactSplash && battleParticlesRef.current && bossContainerRef.current && arenaRef.current) {
+      const rect = bossContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      battleParticlesRef.current.emit(
+        (rect.left - arenaRect.left) + rect.width / 2, 
+        (rect.top - arenaRect.top) + rect.height / 2, 
+        'spark', 
+        { speed: 20, size: 20, gravity: -0.2, count: 80 }
+      );
+    }
+  }, [impactSplash]);
+
+  React.useEffect(() => {
+    if (playerImpactSplash && battleParticlesRef.current && playerContainerRef.current && arenaRef.current) {
+      const rect = playerContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      battleParticlesRef.current.emit(
+        (rect.left - arenaRect.left) + rect.width / 2, 
+        (rect.top - arenaRect.top) + rect.height / 2, 
+        'spark', 
+        { speed: 20, size: 20, gravity: -0.2, count: 80 }
+      );
+    }
+  }, [playerImpactSplash]);
+
   return (
-    <div className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}>
+    <div 
+      ref={arenaRef}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}
+    >
+      <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
       {/* Dynamic Action Lines Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden sm:opacity-40">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-action-lines" style={{ backgroundImage: 'repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(239,68,68,0.05) 10deg 20deg)' }}></div>
@@ -120,7 +196,6 @@ export const BossView = () => {
       {/* Halftone Overlay HUD */}
       <div className="absolute inset-0 opacity-20 pointer-events-none z-10 comic-halftone text-red-500"></div>
 
-      {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
       {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
       <Header 
         title="ABYSSAL BREACH: SECTOR Ω" 
@@ -131,54 +206,11 @@ export const BossView = () => {
            setShowTutorial(true);
         }}
       >
-        {/* CONSOLIDATED BIOLOGICAL/RESONANCE TOOLS */}
-        <div className="flex items-center gap-1 md:gap-2 p-1 md:p-2 bg-red-950/20 border-[2px] border-black rounded shadow-[2px_2px_0_rgba(0,0,0,1)] backdrop-blur-md scale-75 md:scale-100">
-          {/* Potion Slot */}
-          <div className="flex items-center gap-1">
-            <button onClick={cyclePotion} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
-              <RefreshCw size={10} className="md:w-4 md:h-4" />
-            </button>
-            <button onClick={handleHeal} disabled={currentPotionCount <= 0} className="flex items-center gap-1 bg-red-600 border-2 border-black px-1.5 md:px-3 py-1 rounded hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)] disabled:opacity-30">
-              <span className="text-[10px] md:text-lg">🧪</span>
-              <div className="flex flex-col items-start leading-none">
-                <span className="text-[4px] md:text-[7px] font-black uppercase text-white/70 italic">HEAL</span>
-                <span className="text-[8px] md:text-sm font-black text-white italic">{currentPotionCount}</span>
-              </div>
-            </button>
-          </div>
-
-          <div className="w-[1px] h-6 bg-red-600/20 mx-1"></div>
-
-          {/* Scroll Slot */}
-          <div className="flex items-center gap-1">
-            {isAutoActive ? (
-              <div className="flex items-center gap-2 bg-red-600 border-2 border-black px-2 md:px-4 py-1 rounded shadow-[2px_2px_0_rgba(0,0,0,1)] animate-pulse">
-                <Sparkles size={12} className="text-black animate-spin-slow" />
-                <span className="text-[9px] md:text-base font-black text-black italic">{autoTimeLeft}s</span>
-              </div>
-            ) : (
-              hasAnyScrolls && (
-                <>
-                  <button onClick={cycleScroll} className="p-1 md:p-2 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded shadow-[1px_1px_0_rgba(0,0,0,1)]">
-                    <RefreshCw size={10} className="md:w-4 md:h-4" />
-                  </button>
-                  <button onClick={() => activateAutoScroll(view)} className="flex items-center gap-1 bg-red-600 border-2 border-black px-1.5 md:px-4 py-1 rounded hover:bg-red-500 shadow-[2px_2px_0_rgba(0,0,0,1)]">
-                    <MousePointer size={12} className="text-black" />
-                    <div className="flex flex-col items-start leading-none">
-                      <span className="text-[4px] md:text-[7px] font-black uppercase text-black/70 italic">AUTO</span>
-                      <span className="text-[8px] md:text-sm font-black text-black italic">{currentScrollCount}</span>
-                    </div>
-                  </button>
-                </>
-              )
-            )}
-          </div>
-        </div>
       </Header>
 
 
       {/* --- BATTLE ARENA: RESTRUCTURED FOR SYMMETRY --- */}
-      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col relative z-40 px-2 md:px-12 py-2">
+      <div className="flex-1 w-full max-w-7xl mx-auto flex flex-col relative z-40 px-2 md:px-12 py-2 pb-32 md:pb-44">
         
         {/* VS CENTRAL BADGE */}
         <div className="hidden lg:flex absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100] pointer-events-none">
@@ -214,7 +246,10 @@ export const BossView = () => {
           {/* BOSS AVATAR */}
           <div className={`flex flex-col items-center lg:items-end transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
              <div className="relative group">
-                <div className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(239,68,68,0.3)] md:shadow-[12px_12px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : 'animate-float'}`}>
+                <div 
+                  ref={bossContainerRef}
+                  className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(239,68,68,0.3)] md:shadow-[12px_12px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : 'animate-float'}`}
+                >
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-60 z-20"></div>
                     <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo && !lowPerfMode} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
                     
@@ -258,7 +293,10 @@ export const BossView = () => {
           <div className={`flex flex-col items-center lg:items-start transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
              <div className="relative group">
                 <div className="flex items-center gap-3 md:gap-8">
-                  <div className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(8,145,178,0.3)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}>
+                  <div 
+                    ref={playerContainerRef}
+                    className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(8,145,178,0.3)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}
+                  >
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50 z-20"></div>
                       <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-10 pointer-events-none"></div>
                       {player.avatar && (
@@ -402,7 +440,120 @@ export const BossView = () => {
         </div>
       </div>
 
+      {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
+      <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none relative pb-4">
+        <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
 
+          {/* Potion Slot */}
+          <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+            <button 
+              onClick={cyclePotion} 
+              className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            >
+              <RefreshCw size={12} className="md:w-5 md:h-5" />
+            </button>
+            <button 
+              onClick={handleHeal} 
+              disabled={!potionCountData.hasSelected} 
+              className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+            >
+              <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
+              <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
+            </button>
+            <div className="w-12 md:w-24 h-8 md:h-12 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+               <span className="text-[5px] md:text-[9px] font-black text-white/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                 {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
+               </span>
+               <span className="text-[8px] md:text-xl font-black text-white italic leading-none">
+                 {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
+               </span>
+            </div>
+          </div>
+
+          <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+          {/* Scroll Slot */}
+          <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+            {isAutoActive ? (
+              <div className="h-8 md:h-12 px-2 md:px-6 bg-cyan-600 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                <WandSparkles size={12} className="text-black animate-spin-slow md:w-5 md:h-5" />
+                <div className="flex items-baseline gap-0.5 md:gap-1">
+                   <span className="text-[10px] md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
+                   <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap">s</span>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button 
+                  onClick={cycleScroll} 
+                  disabled={!hasAnyScrolls}
+                  className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
+                >
+                  <RefreshCw size={12} className="md:w-5 md:h-5" />
+                </button>
+                <button 
+                  onClick={() => activateAutoScroll(view)} 
+                  disabled={!hasAnyScrolls}
+                  className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
+                >
+                  <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
+                  <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>
+                </button>
+                <div className="w-12 md:w-24 h-8 md:h-12 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-1 shrink-0">
+                   <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                     {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected === 'auto_scroll_3m' ? '3M' : scrollCountData.selected === 'auto_scroll_6m' ? '6M' : scrollCountData.selected === 'auto_scroll_9m' ? '9M' : '12M'}
+                   </span>
+                   <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+                     {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
+                   </span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+          {/* Food Slot */}
+          <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+            {isFoodActive ? (
+              <div className="h-8 md:h-12 px-2 md:px-6 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+                <span className="text-sm md:text-2xl leading-none">
+                  {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
+                </span>
+                <div className="flex items-baseline gap-0.5 md:gap-1">
+                   <span className="text-[10px] md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
+                   <span className="text-[5px] md:text-xs font-black text-white/60 italic uppercase whitespace-nowrap">s</span>
+                </div>
+              </div>
+            ) : (
+              foodInventory.length > 0 && (
+                <>
+                  {foodInventory.length > 1 && (
+                    <button
+                      onClick={cycleFoodSelection}
+                      className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                    >
+                      <RefreshCw size={12} className="md:w-5 md:h-5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => selectedFood && eatFood(selectedFood)}
+                    disabled={!selectedFood}
+                    className="h-8 md:h-12 px-1.5 md:px-4 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+                  >
+                    <span className="text-sm md:text-2xl leading-none group-hover:scale-125 transition-transform">{selectedFood?.icon || '🍽️'}</span>
+                    <span className="text-[10px] md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
+                  </button>
+                  <div className="w-12 md:w-24 h-8 md:h-12 bg-emerald-500 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
+                     <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">EAT</span>
+                     <span className="text-[8px] md:text-xl font-black text-black italic leading-none">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
+                  </div>
+                </>
+              )
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Confirmation Modal */}
       <ConfirmationModal 
