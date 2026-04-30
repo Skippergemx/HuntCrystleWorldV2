@@ -120,6 +120,18 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
           </div>
         )}
 
+        {!player.walletAddress && (
+          <div className="bg-amber-100 border-[3px] border-amber-500 p-3 rounded-2xl flex items-center gap-3 shadow-[4px_4px_0_rgba(245,158,11,0.2)] animate-pulse">
+            <div className="bg-amber-500 p-1.5 rounded-lg border-2 border-black text-white shrink-0">
+               <AlertCircle size={16} />
+            </div>
+            <div>
+               <p className="text-[9px] font-black text-amber-800 uppercase tracking-tighter leading-none mb-0.5">UPLINK_REQUIRED</p>
+               <p className="text-[10px] font-bold text-amber-900 leading-tight">No node detected. ETH rewards from this request will be skipped.</p>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={onClose}

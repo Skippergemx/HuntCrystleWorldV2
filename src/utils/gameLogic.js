@@ -117,10 +117,14 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   if (player.petId) {
     const activePet = PETS_METADATA.find(p => p.id === player.petId);
     if (activePet) {
-      stats.maxHp += (activePet.hpBonus || 0);
-      stats.str += (activePet.strBonus || 0);
-      stats.agi += (activePet.agiBonus || 0);
-      stats.dex += (activePet.dexBonus || 0);
+      // Pet level multiplier: +15% per level above 1
+      const petLvl = player.petLevels?.[activePet.id] || player.petLevel || 1;
+      const levelMult = 1 + ((petLvl - 1) * 0.15);
+
+      stats.maxHp += Math.floor((activePet.hpBonus || 0) * levelMult);
+      stats.str += Math.floor((activePet.strBonus || 0) * levelMult);
+      stats.agi += Math.floor((activePet.agiBonus || 0) * levelMult);
+      stats.dex += Math.floor((activePet.dexBonus || 0) * levelMult);
     }
   }
 

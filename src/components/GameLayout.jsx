@@ -400,7 +400,10 @@ export const GameLayout = ({ onLogout }) => {
 
         <div className="max-w-5xl mx-auto flex flex-row gap-2 md:gap-4 relative z-10 items-stretch">
           {/* PROFILE CARD - COMPACT CHARACTER CARD */}
-          <div className={`w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20 transition-all duration-500 ${view === 'menu' ? 'border-cyan-500/40 hover:border-cyan-400' : 'border-black'}`}>
+          <div 
+            onClick={() => setView('avatars')}
+            className={`w-24 sm:w-28 md:w-32 aspect-[9/16] bg-slate-900 border-[2px] md:border-[3px] rounded-lg md:rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[6px_6px_0_rgba(0,0,0,1)] relative flex flex-col group shrink-0 ring-1 ring-cyan-500/20 transition-all duration-500 cursor-pointer active:scale-95 ${view === 'menu' ? 'border-cyan-500/40 hover:border-cyan-400' : 'border-black hover:border-cyan-500'}`}
+          >
             <div className="absolute inset-0 z-0">
               <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-1000 contrast-125 brightness-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-white/10 opacity-70" />
@@ -409,7 +412,7 @@ export const GameLayout = ({ onLogout }) => {
             {/* Float Edit Button - ONLY ACTIVE ON MAIN MENU */}
             {view === 'menu' && (
               <button
-                onClick={() => setView('avatars')}
+                onClick={(e) => { e.stopPropagation(); setView('avatars'); }}
                 className="absolute top-1 right-1 z-20 p-1 md:p-2 bg-black/60 hover:bg-cyan-500 text-white hover:text-black rounded-md border border-black/50 backdrop-blur-md transition-all group/btn shadow-lg"
                 title="Edit Identity"
               >
@@ -448,7 +451,7 @@ export const GameLayout = ({ onLogout }) => {
 
                 {(() => {
                   const isConflict = !!player.walletConflict;
-                  const displayAddress = player.walletAddress || (!player.walletConflict ? wallet.address : null);
+                  const linkedAddress = player.walletAddress;
 
                   if (isConflict) {
                     return (
@@ -462,15 +465,18 @@ export const GameLayout = ({ onLogout }) => {
                     );
                   }
 
-                  if (displayAddress) {
+                  if (linkedAddress) {
                     return (
-                      <div className="flex items-center gap-1 shrink-0">
-                        <div className="bg-white text-black px-2 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden group">
+                      <div 
+                        onClick={() => setView('avatars')}
+                        className="flex items-center gap-1 shrink-0 cursor-pointer group"
+                      >
+                        <div className="bg-white text-black px-2 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden">
                           <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
                           <div className="flex items-center gap-2 relative z-10">
                             <div className="w-1.5 h-1.5 bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,1)] rounded-full animate-pulse"></div>
                             <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
-                              {displayAddress.slice(0, 6)}...{displayAddress.slice(-4)}
+                              {linkedAddress.slice(0, 6)}...{linkedAddress.slice(-4)}
                             </span>
                           </div>
                         </div>
@@ -480,11 +486,11 @@ export const GameLayout = ({ onLogout }) => {
 
                   return (
                     <button
-                      onClick={wallet.connectWallet}
-                      className="bg-amber-400 text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:bg-amber-300 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
+                      onClick={() => setView('avatars')}
+                      className="bg-slate-800/40 text-slate-500 px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden shrink-0 group hover:text-cyan-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-2"
                     >
                       <Wallet size={10} className="group-hover:rotate-12" />
-                      <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Establish Uplink</span>
+                      <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">Offline</span>
                     </button>
                   );
                 })()}

@@ -202,23 +202,41 @@ export const IdentityView = React.memo(({ onLogout }) => {
           ) : (
             // --- CONNECT WALLET CTA ---
             <div className="w-full">
-              <button
-                onClick={() => wallet.connectWallet()}
-                disabled={isLinking}
-                className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
-              >
-                 {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
-                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                 <div className="flex items-center gap-3 relative z-10">
-                    <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
-                       <Wallet size={20} />
+              {wallet.address && !player.walletAddress ? (
+                <button
+                  onClick={() => handleManualLink(wallet.address)}
+                  disabled={isLinking}
+                  className="w-full group relative overflow-hidden bg-emerald-600 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-3 relative z-10 text-white">
+                    <div className="bg-white p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-emerald-600">
+                       <Link size={20} />
                     </div>
                     <div className="flex flex-col items-start leading-none">
-                       <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
-                       <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
+                       <span className="text-xs font-black uppercase italic tracking-tighter">Link Connected Wallet</span>
+                       <span className="text-[7px] font-black uppercase tracking-widest mt-1">Found: {wallet.address.slice(0,6)}...</span>
                     </div>
-                 </div>
-              </button>
+                  </div>
+                </button>
+              ) : (
+                <button
+                  onClick={() => wallet.connectWallet()}
+                  disabled={isLinking}
+                  className="w-full group relative overflow-hidden bg-slate-900 border-[3px] border-black p-4 rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all flex flex-col items-center disabled:opacity-50 disabled:grayscale"
+                >
+                   {isLinking && <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center"><div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></div></div>}
+                   <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                   <div className="flex items-center gap-3 relative z-10">
+                      <div className="bg-cyan-500 p-2 rounded-xl border-2 border-black rotate-[-4deg] group-hover:rotate-0 transition-transform text-black">
+                         <Wallet size={20} />
+                      </div>
+                      <div className="flex flex-col items-start leading-none">
+                         <span className="text-xs font-black text-white uppercase italic tracking-tighter">Initialize Uplink</span>
+                         <span className="text-[7px] font-black text-cyan-400 uppercase tracking-widest mt-1">Connect Base Wallet to Sync</span>
+                      </div>
+                   </div>
+                </button>
+              )}
             </div>
           )}
         </div>

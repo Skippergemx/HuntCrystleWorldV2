@@ -100,9 +100,12 @@ export const GearView = React.memo(() => {
   const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
 
   const equipment = useMemo(() => {
-    const raw = Object.values(player.inventory || {}).filter(i => 
-      i && (i.type === 'Weapon' || i.type === 'Armor' || i.type === 'Headgear' || i.type === 'Footwear' || i.type === 'Relic')
-    ) || [];
+    const raw = Object.values(player.inventory || {}).filter(i => {
+      if (!i) return false;
+      const master = getBaseItemData(i);
+      const type = i.type || master?.type;
+      return ['Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic'].includes(type);
+    }) || [];
     
     // Grouping by Base ID for stacking
     return raw.reduce((acc, item) => {

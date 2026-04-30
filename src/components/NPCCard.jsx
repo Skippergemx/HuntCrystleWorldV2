@@ -38,11 +38,15 @@ export const NPCCard = React.memo(({
   }, [dialogues]);
 
   useEffect(() => {
+    let isMounted = true;
     if (displayedMsg.length < fullMsg.length) {
       const timeout = setTimeout(() => {
-        setDisplayedMsg(fullMsg.slice(0, displayedMsg.length + 1));
+        if (isMounted) setDisplayedMsg(fullMsg.slice(0, displayedMsg.length + 1));
       }, 28);
-      return () => clearTimeout(timeout);
+      return () => {
+        isMounted = false;
+        clearTimeout(timeout);
+      };
     }
   }, [displayedMsg, fullMsg]);
 
@@ -50,7 +54,7 @@ export const NPCCard = React.memo(({
     pickMessage();
     const interval = setInterval(pickMessage, 12000);
     return () => clearInterval(interval);
-  }, [dialogues]); // Depend on dialogues directly, skip pickMessage dependency trickery
+  }, [pickMessage]); // Use pickMessage which is now properly memoized via useCallback in the component
 
   return (
     <div

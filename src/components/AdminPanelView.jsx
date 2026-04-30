@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink } from 'lucide-react';
+import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink, DollarSign, BarChart3, ShoppingBag, Hammer, Microscope } from 'lucide-react';
 import { createPublicClient, http, formatEther } from 'viem';
 import { base } from 'viem/chains';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField } from 'firebase/firestore';
@@ -15,7 +15,7 @@ export const AdminPanelView = React.memo(() => {
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls', 'rewards'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls', 'rewards', 'economy'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorReports, setErrorReports] = useState([]);
@@ -637,8 +637,8 @@ export const AdminPanelView = React.memo(() => {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2">
+      {/* Tabs - Wrapped and Styled for better accessibility */}
+      <div className="flex flex-wrap gap-2 md:gap-3 bg-black/40 p-2 border border-white/5 rounded-xl shadow-inner">
         <button 
           onClick={() => setActiveTab('maintenance')}
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'maintenance' ? 'bg-red-600 text-white border-red-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
@@ -686,6 +686,12 @@ export const AdminPanelView = React.memo(() => {
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'rewards' ? 'bg-emerald-500 text-black border-emerald-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
           🎁 Reward Audit
+        </button>
+        <button 
+          onClick={() => setActiveTab(activeTab === 'economy' ? 'maintenance' : 'economy')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'economy' ? 'bg-blue-600 text-white border-blue-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          📊 Economy Audit
         </button>
       </div>
 
@@ -1424,6 +1430,220 @@ export const AdminPanelView = React.memo(() => {
                 </div>
              </div>
           </div>
+        </div>
+      ) : activeTab === 'economy' ? (
+        <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 space-y-8">
+            <div className="flex justify-between items-center border-l-4 border-blue-500 pl-4">
+              <h2 className="text-xl font-black text-white uppercase italic">📊 Economy & Equipment Audit</h2>
+              <div className="flex gap-4">
+                 <div className="bg-slate-900 px-4 py-2 border border-slate-800 rounded">
+                    <p className="text-[8px] font-black text-slate-500 uppercase">Avg. Gear Cost</p>
+                    <p className="text-sm font-black text-blue-400 italic">22,450 GX</p>
+                 </div>
+                 <div className="bg-slate-900 px-4 py-2 border border-slate-800 rounded">
+                    <p className="text-[8px] font-black text-slate-500 uppercase">Lab Reagent Yield</p>
+                    <p className="text-sm font-black text-pink-400 italic">88.5%</p>
+                 </div>
+                 <div className="bg-slate-900 px-4 py-2 border border-slate-800 rounded">
+                    <p className="text-[8px] font-black text-slate-500 uppercase">Zoo-Material Flux</p>
+                    <p className="text-sm font-black text-emerald-400 italic">High</p>
+                 </div>
+                 <div className="bg-slate-900 px-4 py-2 border border-slate-800 rounded">
+                    <p className="text-[8px] font-black text-slate-500 uppercase">Industrial Sink</p>
+                     <p className="text-sm font-black text-amber-500 italic">ACTIVE</p>
+                  </div>
+                  <div className="bg-slate-900 px-4 py-2 border border-slate-800 rounded">
+                     <p className="text-[8px] font-black text-slate-500 uppercase">Material/GX Ratio</p>
+                    <p className="text-sm font-black text-amber-400 italic">1:450</p>
+                 </div>
+              </div>
+           </div>
+
+           {/* EQUIPMENT POWER VS COST MATRIX */}
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-4">
+                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Microscope size={14} /> Item Progression Matrix
+                 </p>
+                 <div className="overflow-x-auto border-2 border-slate-900 rounded-xl overflow-hidden">
+                    <table className="w-full text-left border-collapse text-[10px]">
+                       <thead>
+                          <tr className="bg-slate-900">
+                             <th className="py-3 px-4 font-black text-slate-500 uppercase">Item</th>
+                             <th className="py-3 px-4 font-black text-slate-500 uppercase">Power (Str+Agi+Dex)</th>
+                             <th className="py-3 px-4 font-black text-slate-500 uppercase">Source</th>
+                             <th className="py-3 px-4 font-black text-slate-500 uppercase">Current Cost</th>
+                             <th className="py-3 px-4 font-black text-slate-500 uppercase">Sanity Score</th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-900 bg-black/40">
+                          {(() => {
+                             const { ITEMS, CRYSTLE_RECIPES, LAB_RECIPES } = useGame();
+                             const allEquips = ITEMS.filter(i => i.category === 'Equipment').sort((a,b) => {
+                                const aPower = Object.values(a.stats || {}).reduce((acc, v) => acc + v, 0);
+                                const bPower = Object.values(b.stats || {}).reduce((acc, v) => acc + v, 0);
+                                return bPower - aPower;
+                             });
+
+                             return allEquips.map(item => {
+                                const recipe = CRYSTLE_RECIPES.find(r => r.id === item.id);
+                                const power = Object.values(item.stats || {}).reduce((acc, v) => acc + v, 0);
+                                const source = item.cost ? 'Shop' : (recipe ? 'Crafted' : 'Loot');
+                                const cost = item.cost || recipe?.cost || 'N/A';
+                                
+                                const XENON_REAGENTS = ['toxic_sludge', 'bio_vial', 'turbo_charger', 'neon_filament', 'cypher_chip', 'power_cell'];
+                                const usesXenon = recipe?.materials?.some(m => XENON_REAGENTS.includes(m.id));
+
+                                // Sanity Formula: (Power * 100) vs Cost
+                                let sanity = 'OK';
+                                let sanityColor = 'text-emerald-400';
+                                if (cost !== 'N/A') {
+                                   const ratio = cost / (power || 1);
+                                   if (ratio < 10) { sanity = 'CRITICAL_UNDERVALUED'; sanityColor = 'text-red-500 animate-pulse'; }
+                                   else if (ratio < 50) { sanity = 'UNDERPRICED'; sanityColor = 'text-amber-500'; }
+                                }
+
+                                return (
+                                   <tr key={item.id} className="hover:bg-slate-900/30 transition-colors">
+                                      <td className="py-3 px-4">
+                                         <div className="flex items-center gap-2">
+                                            <span className="text-lg">{item.icon}</span>
+                                            <div>
+                                               <p className="font-black text-white uppercase italic">{item.name}</p>
+                                               <p className="text-[8px] text-slate-500 font-bold uppercase">{item.rarity || 'Common'} {item.type}</p>
+                                            </div>
+                                         </div>
+                                      </td>
+                                      <td className="py-3 px-4 font-mono font-black text-blue-400">{power} CP</td>
+                                      <td className="py-3 px-4">
+                                         <div className="flex flex-col gap-1">
+                                            <span className={`px-2 py-0.5 rounded-sm border text-[8px] font-black uppercase text-center ${
+                                               source === 'Shop' ? 'bg-cyan-950 border-cyan-800 text-cyan-400' :
+                                               source === 'Crafted' ? 'bg-purple-950 border-purple-800 text-purple-400' :
+                                               'bg-amber-950 border-amber-800 text-amber-400'
+                                            }`}>
+                                               {source}
+                                            </span>
+                                            {usesXenon && (
+                                               <span className="px-2 py-0.5 rounded-sm border border-pink-500 bg-pink-950/30 text-pink-400 text-[7px] font-black uppercase text-center italic">
+                                                  XENON_REAGENT
+                                               </span>
+                                            )}
+                                         </div>
+                                      </td>
+                                      <td className="py-3 px-4 font-black text-white italic">
+                                         {cost !== 'N/A' ? `${cost.toLocaleString()} GX` : '--'}
+                                      </td>
+                                      <td className={`py-3 px-4 font-black italic text-[9px] ${sanityColor}`}>
+                                         {sanity}
+                                      </td>
+                                   </tr>
+                                );
+                             });
+                          })()}
+                       </tbody>
+                    </table>
+                 </div>
+              </div>
+
+              <div className="space-y-6">
+                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                    <Activity size={14} /> Economic Resilience
+                 </p>
+
+                 {/* GX SINK ANALYSIS */}
+                 <div className="bg-slate-900/50 border-2 border-slate-800 p-6 rounded-2xl space-y-4">
+                    <h3 className="text-xs font-black text-white uppercase italic flex items-center gap-2">
+                       <DollarSign size={16} className="text-emerald-400" /> GX Sink Efficiency
+                    </h3>
+                    <div className="space-y-4">
+                       <div className="space-y-1">
+                          <div className="flex justify-between text-[9px] font-black uppercase italic">
+                             <span className="text-slate-500">Current Sink: Crafting Fee</span>
+                             <span className="text-emerald-400">Low Efficiency</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                             <div className="w-[15%] h-full bg-emerald-500" />
+                          </div>
+                       </div>
+                       <div className="space-y-1">
+                          <div className="flex justify-between text-[9px] font-black uppercase italic">
+                             <span className="text-slate-500">Proposed Sink: Material Market</span>
+                             <span className="text-blue-400">High Efficiency</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                             <div className="w-[85%] h-full bg-blue-500" />
+                          </div>
+                       </div>
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium leading-relaxed italic">
+                       *Note: With 1M GX in circulation per player, crafting fees must increase by 500% to remain a viable currency drain.
+                    </p>
+                 </div>
+
+                 {/* MATERIAL GATE ANALYSIS */}
+                 <div className="bg-amber-950/10 border-2 border-amber-900/30 p-6 rounded-2xl space-y-4">
+                    <h3 className="text-xs font-black text-amber-500 uppercase italic flex items-center gap-2">
+                       <ShoppingBag size={16} /> Reagent Scarcity Watch
+                    </h3>
+                    <div className="space-y-3">
+                       <div className="flex items-center justify-between p-2 bg-black/40 rounded border border-amber-900/20">
+                          <span className="text-[9px] font-black text-white uppercase">Void Essence</span>
+                          <span className="text-[8px] font-black text-red-400 bg-red-950/50 px-1 rounded">HARD_GATE</span>
+                       </div>
+                       <div className="flex items-center justify-between p-2 bg-black/40 rounded border border-amber-900/20">
+                          <span className="text-[9px] font-black text-white uppercase">Turbo Charger</span>
+                          <span className="text-[8px] font-black text-red-400 bg-red-950/50 px-1 rounded">LAB_CRITICAL</span>
+                       </div>
+                       <div className="flex items-center justify-between p-2 bg-black/40 rounded border border-amber-900/20">
+                          <span className="text-[9px] font-black text-white uppercase">Magma Core</span>
+                          <span className="text-[8px] font-black text-amber-400 bg-amber-950/50 px-1 rounded">MODERATE_GATE</span>
+                       </div>
+                       <div className="flex items-center justify-between p-2 bg-black/40 rounded border border-amber-900/20">
+                          <span className="text-[9px] font-black text-white uppercase">Black Hole Shard</span>
+                          <span className="text-[8px] font-black text-purple-400 bg-purple-950/50 px-1 rounded">PET_OMEGA_GATE</span>
+                       </div>
+                       <div className="flex items-center justify-between p-2 bg-black/40 rounded border border-amber-900/20">
+                          <span className="text-[9px] font-black text-white uppercase">Slum Scrap</span>
+                          <span className="text-[8px] font-black text-emerald-400 bg-emerald-950/50 px-1 rounded">OPEN_FLOW</span>
+                       </div>
+                    </div>
+                    <p className="text-[9px] text-slate-500 font-medium leading-relaxed">
+                       Xenon Lab reagents are currently <strong className="text-white">stagnating</strong> in Sector 3. Recommend boosting <strong className="text-cyan-400">Turbo Charger</strong> drop rates by 5% to prevent scroll inflation stalling.
+                    </p>
+                 </div>
+
+                  {/* ZOOLOGICAL REAGENT FLUX */}
+                  <div className="bg-emerald-950/10 border-2 border-emerald-900/30 p-6 rounded-2xl space-y-4">
+                     <h3 className="text-xs font-black text-emerald-500 uppercase italic flex items-center gap-2">
+                        <Activity size={16} /> Zoological Reagent Flux
+                     </h3>
+                     <div className="grid grid-cols-2 gap-3">
+                        {[
+                           { name: 'Taming (Hydro)', color: 'text-blue-400', status: 'Optimal' },
+                           { name: 'Taming (Pyro)', color: 'text-red-400', status: 'Bottleneck' },
+                           { name: 'Taming (Gale)', color: 'text-cyan-400', status: 'Surplus' },
+                           { name: 'Taming (Cosmic)', color: 'text-purple-400', status: 'Critical' }
+                        ].map((t, idx) => (
+                           <div key={idx} className="bg-black/40 p-3 rounded border border-emerald-900/10 flex flex-col gap-1">
+                              <span className={`text-[9px] font-black uppercase ${t.color}`}>{t.name}</span>
+                              <div className="flex justify-between items-center">
+                                 <span className="text-[8px] font-bold text-slate-500">Status</span>
+                                 <span className={`text-[8px] font-black uppercase px-1 rounded ${
+                                    t.status === 'Optimal' ? 'bg-emerald-950 text-emerald-400' :
+                                    t.status === 'Critical' ? 'bg-red-950 text-red-400 animate-pulse' :
+                                    'bg-amber-950 text-amber-400'
+                                 }`}>{t.status}</span>
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     <p className="text-[8px] text-slate-500 italic leading-relaxed">
+                        Cosmic taming materials (<strong className="text-white">Dark Matter</strong>) are currently 400% more expensive than Hydro. Recommend adding Dark Matter to the Syndicate Bounty rotation.
+                     </p>
+                  </div>
+              </div>
+           </div>
         </div>
       ) : activeTab === 'rewards' ? (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 space-y-8">

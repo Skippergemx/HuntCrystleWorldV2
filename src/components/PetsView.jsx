@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Sparkles, ShieldCheck, AlertCircle, Wallet, ArrowRight, Heart, Zap, Star, Lock, Check, HelpCircle } from 'lucide-react';
+import { Sparkles, ShieldCheck, Lock, Check, Heart, Zap, Star, Activity, Hexagon, Fingerprint, X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 import { NPCCard } from './NPCCard';
 
 export const PetsView = () => {
   const { player, syncPlayer, adventure, addLog, PETS_METADATA } = useGame();
-  const { setView } = adventure;
   const [loading, setLoading] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
 
@@ -33,36 +32,15 @@ export const PetsView = () => {
   }, []);
 
   const tutorialSteps = [
-    {
-      title: "Crystle Companions",
-      npc: 1,
-      visualType: 'companions',
-      text: "Welcome to the Sanctuary. Crystles are rare entities that boost your system's efficiency, granting massive bonuses to Experience and Core HP.",
-      hint: "Tip: Examine each Crystle to find the optimal specs."
-    },
-    {
-      title: "Soul Unlocking",
-      npc: 11,
-      visualType: 'unlocking',
-      text: "Many Crystles remain dormant. You must purify corrupted anomalies or complete specific raids to unlock their signatures.",
-      hint: "Strategy: Watch for special event transmissions."
-    },
-    {
-      title: "Active Link",
-      npc: 14,
-      visualType: 'activation',
-      text: "Your HUD can only support one active Crystle link at a time. The active Crystle will accompany you in dungeon exploration.",
-      hint: "Warning: Changing companions may alter your combat stats."
-    }
+    { title: "Crystle Companions", text: "Welcome to the Sanctuary. Crystles are rare entities that boost your system's efficiency, granting massive bonuses to Experience and Core HP.", hint: "Examine each Crystle to find optimal specs." },
+    { title: "Soul Unlocking", text: "Many Crystles remain dormant. You must purify corrupted anomalies or complete specific raids to unlock their signatures.", hint: "Watch for special event transmissions." },
+    { title: "Active Link", text: "Your HUD can only support one active Crystle link at a time. The active Crystle will accompany you in dungeon exploration.", hint: "Changing companions may alter your combat stats." }
   ];
 
   const nextStep = () => {
-    if (tutorialStep < tutorialSteps.length - 1) {
-      setTutorialStep(tutorialStep + 1);
-    } else {
-      if (dontShowAgain) {
-        localStorage.setItem('hide_pets_tutorial', 'true');
-      }
+    if (tutorialStep < tutorialSteps.length - 1) setTutorialStep(tutorialStep + 1);
+    else {
+      if (dontShowAgain) localStorage.setItem('hide_pets_tutorial', 'true');
       setShowTutorial(false);
     }
   };
@@ -87,60 +65,175 @@ export const PetsView = () => {
   const selectedPetMeta = selectedPet ? PETS_METADATA.find(p => p.id === selectedPet) : null;
   const isSelectedUnlocked = selectedPetMeta && player.unlockedPets?.includes(selectedPetMeta.id);
 
+  const getRarityColor = (rarity) => {
+    switch(rarity) {
+      case 'Legendary': return 'text-amber-400 border-amber-400/50 shadow-[0_0_15px_rgba(251,191,36,0.3)] bg-amber-950/30';
+      case 'Epic': return 'text-purple-400 border-purple-400/50 shadow-[0_0_15px_rgba(192,132,252,0.3)] bg-purple-950/30';
+      case 'Rare': return 'text-blue-400 border-blue-400/50 shadow-[0_0_15px_rgba(96,165,250,0.3)] bg-blue-950/30';
+      case 'Uncommon': return 'text-emerald-400 border-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.3)] bg-emerald-950/30';
+      default: return 'text-slate-300 border-slate-500/50 bg-slate-900/50';
+    }
+  };
+
+  const getElementColor = (element) => {
+    switch(element) {
+      case 'Pyro': return 'text-red-400 border-red-500/30 bg-red-950/40';
+      case 'Hydro': return 'text-blue-400 border-blue-500/30 bg-blue-950/40';
+      case 'Gale': return 'text-cyan-400 border-cyan-500/30 bg-cyan-950/40';
+      case 'Earthen': return 'text-emerald-400 border-emerald-500/30 bg-emerald-950/40';
+      case 'Cosmic': return 'text-purple-400 border-purple-500/30 bg-purple-950/40';
+      default: return 'text-slate-400 border-slate-500/30 bg-slate-900/40';
+    }
+  };
+
   return (
-    <div className="flex-1 h-full overflow-hidden relative font-black italic">
-       {/* INSPECTION MODAL (COMIC POP-UP) - NOW IN PORTAL FOR ABSOLUTE CENTERING */}
+    <div className="flex-1 h-full overflow-hidden relative bg-slate-950 font-sans">
+       {/* Premium Background Grid */}
+       <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-20"></div>
+          <div className="absolute top-0 inset-x-0 h-[500px] bg-gradient-to-b from-cyan-900/20 to-transparent blur-3xl"></div>
+       </div>
+
+       {/* INSPECTION MODAL (CYBER TERMINAL) */}
        {selectedPetMeta && createPortal(
-         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 overflow-hidden">
-            <div className="max-w-sm w-full bg-white border-[4px] md:border-[6px] border-black p-4 md:p-8 shadow-[10px_10px_0_rgba(0,0,0,1)] relative animate-in zoom-in-95 duration-300 transform -rotate-1 flex flex-col gap-4">
-                <button onClick={() => setSelectedPet(null)} className="absolute -top-4 -right-4 w-10 h-10 bg-black text-white border-2 border-white rounded-full flex items-center justify-center font-black text-xl hover:bg-red-600 transition-colors shadow-lg z-[10000]">X</button>
+         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300 overflow-hidden">
+            <div className="max-w-md w-full max-h-[90vh] overflow-y-auto custom-scrollbar bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 md:p-6 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative animate-in zoom-in-95 duration-300 backdrop-blur-xl flex flex-col gap-4 md:gap-6">
                 
-                <div className="flex flex-col items-center gap-4">
-                   <div className="w-40 h-40 md:w-52 md:h-52 border-4 border-black bg-slate-900 overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,0.2)] relative shrink-0">
-                      {!isSelectedUnlocked && (
-                         <div className="absolute inset-0 bg-black/70 z-10 flex flex-col items-center justify-center gap-1">
-                            <Lock size={32} className="text-white animate-pulse" />
-                            <span className="text-white text-[8px] font-black uppercase tracking-widest text-center px-2">Signal Not Found</span>
-                         </div>
-                      )}
-                      <img src={`/assets/pets/genesis-pets/Genesis Pets (${selectedPetMeta.id}).jpg`} className={`w-full h-full object-cover ${!isSelectedUnlocked ? 'grayscale' : ''}`} />
+                {/* Holographic scanning line */}
+                <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                   <div className="w-full h-1 bg-cyan-400/20 shadow-[0_0_10px_rgba(34,211,238,0.5)] animate-scan"></div>
+                </div>
+
+                {/* Highly Visible Close Button */}
+                <button onClick={() => setSelectedPet(null)} className="absolute top-3 right-3 md:top-4 md:right-4 w-10 h-10 bg-slate-800/80 hover:bg-red-500/80 hover:text-white text-slate-300 rounded-full flex items-center justify-center border border-white/10 transition-colors z-20 shadow-lg backdrop-blur-md">
+                   <X size={20} />
+                </button>
+                
+                <div className="flex flex-col items-center gap-4 md:gap-6 relative z-10 pt-4">
+                   
+                   {/* Avatar Frame */}
+                   <div className={`w-28 h-28 md:w-40 md:h-40 rounded-full border border-cyan-500/50 p-1 relative shrink-0 ${isSelectedUnlocked ? 'shadow-[0_0_30px_rgba(6,182,212,0.3)]' : 'opacity-50'}`}>
+                      <div className="w-full h-full rounded-full overflow-hidden relative bg-slate-950">
+                        {!isSelectedUnlocked && (
+                           <div className="absolute inset-0 bg-black/80 z-10 flex flex-col items-center justify-center gap-2">
+                              <Lock size={24} className="text-cyan-500/50" />
+                              <span className="text-cyan-500/50 text-[10px] uppercase tracking-[0.2em]">Encrypted</span>
+                           </div>
+                        )}
+                        <img src={`/assets/pets/genesis-pets/Genesis Pets (${selectedPetMeta.id}).jpg`} className={`w-full h-full object-cover transition-transform duration-700 hover:scale-110 ${!isSelectedUnlocked ? 'grayscale brightness-50' : ''}`} />
+                      </div>
+                      
+                      {/* Element Badge */}
+                      <div className={`absolute -bottom-2 right-4 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border backdrop-blur-md flex items-center gap-1 ${getElementColor(selectedPetMeta.element)}`}>
+                         <Fingerprint size={12} /> {selectedPetMeta.element}
+                      </div>
                    </div>
                    
-                   <div className="text-center w-full flex flex-col gap-2">
-                      <h2 className="text-xl md:text-2xl font-black text-black uppercase italic tracking-tighter underline decoration-4 underline-offset-4">{selectedPetMeta.name}</h2>
-                      
-                      <div className="flex justify-center gap-2">
-                        <div className={`px-2 py-0.5 border-2 border-black/20 text-[8px] font-black uppercase italic ${
-                          selectedPetMeta.element === 'Pyro' ? 'bg-orange-100 text-orange-900' :
-                          selectedPetMeta.element === 'Hydro' ? 'bg-blue-100 text-blue-900' :
-                          selectedPetMeta.element === 'Gale' ? 'bg-purple-100 text-purple-900' :
-                          selectedPetMeta.element === 'Earthen' ? 'bg-emerald-100 text-emerald-900' : 'bg-slate-100 text-slate-900'
-                        }`}>EL: {selectedPetMeta.element}</div>
-                        <div className="bg-cyan-100 px-2 py-0.5 border-2 border-cyan-900/20 text-[8px] font-black text-cyan-900 uppercase italic">RANK: {selectedPetMeta.rarity}</div>
-                      </div>
-
-                      <div className="bg-slate-50 border-2 border-black p-2 text-left relative my-2">
-                        <div className="absolute -top-3 left-3 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase">Active Specs</div>
-                        <div className="flex flex-col gap-1">
-                          {selectedPetMeta.xpMult > 1 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">EXPERIENCE</span><span className="text-xs font-black text-emerald-600">x{selectedPetMeta.xpMult?.toFixed(2)}</span></div>}
-                          {selectedPetMeta.lootMult > 1 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">GX GENERATION</span><span className="text-xs font-black text-amber-600">x{selectedPetMeta.lootMult?.toFixed(2)}</span></div>}
-                          {selectedPetMeta.hpBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">CORE VITALITY</span><span className="text-xs font-black text-cyan-600">+{selectedPetMeta.hpBonus} HP</span></div>}
-                          {selectedPetMeta.strBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">REVERB POWER</span><span className="text-xs font-black text-red-600">+{selectedPetMeta.strBonus} STR</span></div>}
-                          {selectedPetMeta.agiBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">REFLEX SYNC</span><span className="text-xs font-black text-emerald-500">+{selectedPetMeta.agiBonus} AGI</span></div>}
-                          {selectedPetMeta.dexBonus > 0 && <div className="flex justify-between items-center"><span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter italic">FOCUS OPTIC</span><span className="text-xs font-black text-blue-600">+{selectedPetMeta.dexBonus} DEX</span></div>}
+                   <div className="text-center w-full flex flex-col gap-4">
+                      <div>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-wider mb-2">{selectedPetMeta.name}</h2>
+                        <div className="flex justify-center gap-2">
+                          <div className={`px-3 py-1 rounded border text-[10px] font-bold uppercase tracking-widest ${getRarityColor(selectedPetMeta.rarity)}`}>{selectedPetMeta.rarity} CLASS</div>
                         </div>
                       </div>
+
+                      {/* Stats Grid */}
+                      <div className="bg-slate-950/50 border border-white/5 rounded-xl p-4 text-left">
+                        <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
+                           <Activity size={14} className="text-cyan-400" />
+                           <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Biometric Specs</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                          {selectedPetMeta.xpMult > 1 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Experience</span><span className="text-sm font-bold text-emerald-400">x{selectedPetMeta.xpMult?.toFixed(2)}</span></div>}
+                          {selectedPetMeta.lootMult > 1 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">GX Yield</span><span className="text-sm font-bold text-amber-400">x{selectedPetMeta.lootMult?.toFixed(2)}</span></div>}
+                          {selectedPetMeta.hpBonus > 0 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Vitality</span><span className="text-sm font-bold text-cyan-400">+{Math.floor(selectedPetMeta.hpBonus * (1 + ((player.petLevels?.[selectedPetMeta.id] || 1) - 1) * 0.15))} HP</span></div>}
+                          {selectedPetMeta.strBonus > 0 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Power</span><span className="text-sm font-bold text-red-400">+{Math.floor(selectedPetMeta.strBonus * (1 + ((player.petLevels?.[selectedPetMeta.id] || 1) - 1) * 0.15))} STR</span></div>}
+                          {selectedPetMeta.agiBonus > 0 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Reflex</span><span className="text-sm font-bold text-emerald-400">+{Math.floor(selectedPetMeta.agiBonus * (1 + ((player.petLevels?.[selectedPetMeta.id] || 1) - 1) * 0.15))} AGI</span></div>}
+                          {selectedPetMeta.dexBonus > 0 && <div className="flex flex-col"><span className="text-[8px] text-slate-500 uppercase tracking-widest">Focus</span><span className="text-sm font-bold text-blue-400">+{Math.floor(selectedPetMeta.dexBonus * (1 + ((player.petLevels?.[selectedPetMeta.id] || 1) - 1) * 0.15))} DEX</span></div>}
+                        </div>
+                      </div>
+
+                      {/* --- FEEDING SUBSYSTEM --- */}
+                      {isSelectedUnlocked && (
+                        <div className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/30 rounded-xl p-4">
+                          <div className="flex justify-between items-end mb-2">
+                             <div className="flex items-center gap-2">
+                                <Star size={14} className="text-amber-400" />
+                                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Ascension Lvl {player.petLevels?.[selectedPetMeta.id] || 1}</span>
+                             </div>
+                             <span className="text-[10px] font-bold text-amber-500/70">{player.petExp?.[selectedPetMeta.id] || 0} / {(player.petLevels?.[selectedPetMeta.id] || 1) * 50} EXP</span>
+                          </div>
+                          
+                          <div className="h-1 w-full bg-black rounded-full overflow-hidden mb-4">
+                             <div className="h-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-500" style={{ width: `${Math.min(100, ((player.petExp?.[selectedPetMeta.id] || 0) / ((player.petLevels?.[selectedPetMeta.id] || 1) * 50)) * 100)}%` }} />
+                          </div>
+
+                          <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
+                            {Object.entries(
+                               Object.values(player.inventory || {})
+                                 .filter(i => i?.type === 'Fruit')
+                                 .reduce((acc, item) => {
+                                   acc[item.id] = acc[item.id] || { ...item, count: 0, keys: [] };
+                                   acc[item.id].count++;
+                                   acc[item.id].keys.push(Object.keys(player.inventory).find(k => player.inventory[k] === item));
+                                   return acc;
+                                 }, {})
+                            ).map(([fruitId, group]) => (
+                               <button 
+                                 key={fruitId}
+                                 disabled={loading}
+                                 onClick={async () => {
+                                    const keyToRemove = group.keys[0];
+                                    if (!keyToRemove) return;
+                                    setLoading(true);
+                                    let currentExp = player.petExp?.[selectedPetMeta.id] || 0;
+                                    let currentLvl = player.petLevels?.[selectedPetMeta.id] || 1;
+                                    const expGained = group.exp || 10;
+                                    currentExp += expGained;
+                                    const requiredExp = currentLvl * 50;
+                                    
+                                    if (currentExp >= requiredExp) {
+                                       currentExp -= requiredExp;
+                                       currentLvl++;
+                                       addLog(`🌟 ASCENSION: ${selectedPetMeta.name} reached Level ${currentLvl}!`);
+                                    } else {
+                                       addLog(`🍒 ${selectedPetMeta.name} gained +${expGained} EXP`);
+                                    }
+
+                                    try {
+                                      await syncPlayer({
+                                        [`inventory.${keyToRemove}`]: null,
+                                        [`petExp.${selectedPetMeta.id}`]: currentExp,
+                                        [`petLevels.${selectedPetMeta.id}`]: currentLvl
+                                      });
+                                    } catch(e) {}
+                                    setLoading(false);
+                                 }}
+                                 className="relative w-10 h-10 rounded-lg border border-white/10 bg-black/50 flex items-center justify-center text-lg shrink-0 hover:border-amber-400/50 hover:bg-amber-900/30 transition-all group"
+                               >
+                                 <span className="group-hover:scale-110 transition-transform">{group.icon}</span>
+                                 <span className="absolute -top-1 -right-1 bg-black text-amber-400 border border-amber-400/30 text-[8px] font-bold px-1.5 py-0.5 rounded-md">{group.count}</span>
+                               </button>
+                            ))}
+                            {Object.values(player.inventory || {}).filter(i => i?.type === 'Fruit').length === 0 && (
+                               <div className="text-[10px] font-medium text-slate-500 w-full text-center py-2">No nutritional items found in inventory.</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       <button 
                          onClick={() => handleAdopt(selectedPetMeta.id)}
                          disabled={loading || player.petId === selectedPetMeta.id || !isSelectedUnlocked}
-                         className={`w-full py-3 transition-all font-black text-base md:text-lg uppercase italic border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,0.3)] active:shadow-none active:translate-x-1 active:translate-y-1 disabled:opacity-30 ${
+                         className={`w-full py-3 mt-2 rounded-xl transition-all font-bold text-sm uppercase tracking-widest ${
                            !isSelectedUnlocked 
-                           ? 'bg-slate-200 text-slate-400 border-slate-300' 
-                           : 'bg-black text-white hover:bg-emerald-500 hover:text-black'
+                           ? 'bg-slate-800 text-slate-500 cursor-not-allowed' 
+                           : player.petId === selectedPetMeta.id
+                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                             : 'bg-cyan-500 hover:bg-cyan-400 text-slate-900 shadow-[0_0_20px_rgba(6,182,212,0.4)]'
                          }`}
                       >
-                         {!isSelectedUnlocked ? 'TAMING REQUIRED' : (player.petId === selectedPetMeta.id ? 'ACTIVE' : 'SIGNAL COMPANION')}
+                         {!isSelectedUnlocked ? 'ENCRYPTED SOUL' : (player.petId === selectedPetMeta.id ? 'ACTIVE COMPANION' : 'INITIALIZE LINK')}
                       </button>
                    </div>
                 </div>
@@ -149,184 +242,184 @@ export const PetsView = () => {
          document.body
        )}
 
-       <div className="flex-1 flex flex-col p-4 md:p-8 animate-in slide-in-from-bottom-10 h-full overflow-hidden relative">
-      {/* CRYSTLE BACKGROUND DEPTH */}
-      <div className="absolute inset-0 bg-slate-950 z-0">
-        <div className="absolute inset-0 opacity-10 comic-halftone pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1.5px, transparent 1.5px)', backgroundSize: '15px 15px' }}></div>
-        <div className="absolute top-0 left-0 w-full h-[50%] bg-gradient-to-b from-cyan-950/40 to-transparent"></div>
-      </div>
+       <div className="flex-1 flex flex-col p-4 md:p-8 animate-in slide-in-from-bottom-10 h-full overflow-hidden relative z-10">
+          <Header title="SANCTUARY NODE" onClose={adventure.goBack} npcNum={30} onHelp={() => {
+             setTutorialStep(0);
+             setShowTutorial(true);
+           }} />
 
-      <Header title="PET SANCTUARY" onClose={adventure.goBack} npcNum={30} onHelp={() => {
-         setTutorialStep(0);
-         setShowTutorial(true);
-       }} />
-
-      <NPCCard
-        citizenNum={30}
-        name="PET KEEPER"
-        accentColor="bg-pink-500"
-        textColor="text-pink-600"
-        glowColor="bg-pink-500"
-        statusTag="SANCTUARY_ONLINE"
-        statusTag2="SOULS_DETECTED"
-        prefix="◢KEEPER: "
-        dialogues={[
-          "Welcome to the Crystle Sanctuary! These companions are no ordinary creatures.",
-          "Each Crystle Pet boosts your XP gain and extends your HP Core. Pair wisely!",
-          "Rare Crystles are locked — you must purify corrupted anomalies to access them.",
-          "Your active Crystle will accompany you inside every dungeon sector.",
-          "Only one companion can be active at a time. Choose based on your build.",
-          "Genesis Pets have fixed elemental attributes — Fire, Water, Wind, and Earth.",
-          "A higher-ranked Crystle can be the difference between surviving Sector 7 or not.",
-          "I've cared for all 30 souls here. Each one has a unique spirit."
-        ]}
-      />
-      
-      <div className="flex-1 flex flex-col gap-4 md:gap-8 overflow-hidden z-10 relative">
-        {/* CRYSTLE WELCOME BANNER (COMICAL STYLE) */}
-        <div className="bg-amber-400 border-[4px] md:border-[6px] border-black rounded-[20px] md:rounded-[40px] p-4 md:p-8 shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] relative overflow-hidden shrink-0 transform rotate-1 group">
-            <div className="absolute inset-0 comic-halftone opacity-20 group-hover:rotate-12 transition-transform duration-1000"></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6">
-              <div className="text-center md:text-left">
-                  <div className="flex items-center gap-2 justify-center md:justify-start mb-1 md:mb-2">
-                    <Heart size={12} className="text-red-600 fill-red-600 animate-pulse md:w-[14px]" /> 
-                    <span className="text-[7px] md:text-[10px] font-black text-black uppercase tracking-[0.2em] italic">Companion Subsystem Online</span>
+          <NPCCard
+            citizenNum={30}
+            name="KEEPER PROTOCOL"
+            accentColor="bg-cyan-500"
+            textColor="text-cyan-400"
+            glowColor="bg-cyan-500"
+            statusTag="SANCTUARY_ONLINE"
+            statusTag2="SOULS_DETECTED"
+            prefix="◢SYS: "
+            dialogues={[
+              "Welcome to the Sanctuary. These entities boost system efficiency.",
+              "Feed unlocked entities with nutritional data to increase their multipliers.",
+              "Rare signatures require purification to access.",
+              "Only one companion link can be sustained at a time."
+            ]}
+          />
+          
+          <div className="flex-1 flex flex-col gap-6 overflow-hidden mt-6">
+            
+            {/* Holographic Header */}
+            <div className="bg-slate-900/60 backdrop-blur-md border border-cyan-500/30 rounded-2xl p-6 relative overflow-hidden shrink-0 group">
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-1000"></div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="text-center md:text-left">
+                      <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
+                        <Heart size={14} className="text-cyan-400 animate-pulse" /> 
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-[0.3em]">Companion Subsystem</span>
+                      </div>
+                      <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-wider">Crystle Entities</h2>
                   </div>
-                  <h2 className="text-xl md:text-5xl font-black text-black italic uppercase drop-shadow-[2px_2px_0_#fff] md:drop-shadow-[3px_3px_0_#fff] tracking-tighter leading-none">Crystles</h2>
-              </div>
-               <div className="flex gap-2 md:gap-6">
-                  <div className="bg-black/10 border-2 border-black/20 p-2 md:p-3 rounded-lg md:rounded-xl flex flex-col items-center min-w-[50px] md:min-w-[80px]">
-                    <div className="flex items-center gap-1"><Star size={8} className="text-black md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-black">UNIQUE</span></div>
-                    <span className="text-[5px] md:text-[8px] font-black text-black/50 uppercase">BUFF PATHS</span>
-                  </div>
-                  <div className="bg-black text-white border-2 border-black p-2 md:p-3 rounded-lg md:rounded-xl flex flex-col items-center min-w-[50px] md:min-w-[80px] shadow-[4px_4px_0_rgba(0,0,0,0.3)]">
-                    <div className="flex items-center gap-1"><Zap size={8} className="text-cyan-400 md:w-[10px]" /><span className="text-[9px] md:text-sm font-black text-white">GENESIS</span></div>
-                    <span className="text-[5px] md:text-[8px] font-black text-white/40 uppercase">COLLECTION</span>
-                  </div>
-              </div>
-            </div>
-        </div>
-
-        {/* COMPANION REGISTRY (GRID) */}
-        <div className="flex-1 bg-white border-[6px] border-black rounded-[30px] md:rounded-[50px] p-4 md:p-10 shadow-[10px_10px_0_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative transform -rotate-0.5">
-           <div className="absolute inset-0 opacity-[0.03] comic-halftone pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 2px, transparent 2px)', backgroundSize: '10px 10px' }}></div>
-           
-           <div className="mb-4 md:mb-8 flex justify-between items-center relative z-10 px-2 text-black">
-             <div className="flex flex-col">
-               <h3 className="text-lg md:text-2xl font-black uppercase italic leading-none tracking-tighter">Genesis Squad</h3>
-               <p className="text-[8px] md:text-[11px] font-black opacity-40 uppercase tracking-widest mt-1 italic">{PETS_METADATA.length} Unique Souls Scanned in Sector</p>
-             </div>
-             {player.petId && (
-                <div className="bg-emerald-500 border-4 border-black px-4 py-2 rounded-xl text-black font-black uppercase text-[10px] md:text-xs shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-2 italic transform rotate-3">
-                   <ShieldCheck size={14} /> ACTIVE COMPANION: {PETS_METADATA.find(p => p.id === player.petId)?.name || `#${player.petId}`}
-                </div>
-             )}
-           </div>
-
-           {/* SYNERGY TRACKER */}
-           <div className="grid grid-cols-5 gap-2 md:gap-4 mb-6 relative z-10 px-2">
-              {Object.entries(collectionSync).map(([el, count]) => (
-                <div key={el} className="flex flex-col gap-1">
-                   <div className="flex justify-between items-end px-1">
-                      <span className={`text-[6px] md:text-[8px] font-black uppercase italic ${
-                        el === 'Pyro' ? 'text-orange-600' : el === 'Hydro' ? 'text-blue-600' : el === 'Gale' ? 'text-purple-600' : el === 'Earthen' ? 'text-emerald-600' : 'text-slate-600'
-                      }`}>{el}</span>
-                      <span className="text-[8px] md:text-[10px] font-black text-black italic">{count}/10</span>
-                   </div>
-                   <div className="h-2 md:h-3 bg-slate-200 border-2 border-black rounded-full overflow-hidden relative">
-                      <div 
-                        className={`h-full transition-all duration-1000 ${
-                           el === 'Pyro' ? 'bg-orange-500' : el === 'Hydro' ? 'bg-blue-500' : el === 'Gale' ? 'bg-purple-500' : el === 'Earthen' ? 'bg-emerald-500' : 'bg-pink-500'
-                        }`} 
-                        style={{ width: `${(count / 10) * 100}%` }} 
-                      />
-                      {count >= 3 && <div className="absolute left-[30%] top-0 bottom-0 w-[1.5px] bg-black/40" />}
-                      {count >= 6 && <div className="absolute left-[60%] top-0 bottom-0 w-[1.5px] bg-black/40" />}
-                   </div>
-                </div>
-              ))}
-           </div>
-
-           <div className="flex-1 overflow-y-auto px-2 md:px-4 custom-scrollbar pb-10 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8 content-start relative z-10">
-              {PETS_METADATA
-                .slice()
-                .sort((a, b) => {
-                  const aUnlocked = player.unlockedPets?.includes(a.id);
-                  const bUnlocked = player.unlockedPets?.includes(b.id);
-                  const aActive = player.petId === a.id;
-                  const bActive = player.petId === b.id;
-
-                  if (aActive) return -1;
-                  if (bActive) return 1;
-                  if (aUnlocked && !bUnlocked) return -1;
-                  if (!aUnlocked && bUnlocked) return 1;
-                  return a.id - b.id;
-                })
-                .map((pet) => {
-                  const isUnlocked = player.unlockedPets?.includes(pet.id);
-                  return (
-                    <button 
-                    key={pet.id}
-                    onClick={() => setSelectedPet(pet.id)}
-                    disabled={loading}
-                    className={`
-                      group relative aspect-[4/5] rounded-[20px] md:rounded-[30px] border-[4px] md:border-[5px] transition-all duration-300
-                      hover:scale-110 active:scale-95 hover:-rotate-3 hover:translate-y-[-10px]
-                      ${player.petId === pet.id 
-                        ? 'bg-amber-400 border-black shadow-[6px_6px_0_rgba(0,0,0,1)]' 
-                        : (isUnlocked ? 'bg-slate-100 border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] hover:shadow-[12px_12px_0_rgba(0,0,0,0.5)] border-black hover:bg-white' : 'bg-slate-200 border-slate-300 grayscale opacity-80')}
-                    `}
-                  >
-                    {/* Character Frame */}
-                    <div className="absolute inset-2 md:inset-3 border-[2px] md:border-[3px] border-black rounded-[15px] md:rounded-[22px] overflow-hidden bg-white shadow-inner relative">
-                        <img 
-                          src={`/assets/pets/genesis-pets/Genesis Pets (${pet.id}).jpg`} 
-                          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-125 ${player.petId === pet.id ? 'filter-none' : (isUnlocked ? 'grayscale-[0.4] group-hover:grayscale-0' : 'grayscale')}`} 
-                          loading="lazy" 
-                        />
-                        {/* ID Badge */}
-                        <div className="absolute top-1 md:top-2 left-1 md:left-2 bg-black text-white px-1.5 md:px-2 py-0.5 rounded-lg text-[6px] md:text-[9px] font-black italic border-2 border-white shadow-lg">#{pet.id}</div>
-                        
-                        {!isUnlocked && (
-                           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                              <Lock size={20} className="text-white drop-shadow-md" />
+                   <div className="flex gap-4">
+                      {player.petId && (
+                        <div className="bg-emerald-950/40 border border-emerald-500/30 px-4 py-2 rounded-xl flex items-center gap-3">
+                           <ShieldCheck size={16} className="text-emerald-400" />
+                           <div>
+                              <p className="text-[8px] text-emerald-500/70 uppercase tracking-widest">Active Link</p>
+                              <p className="text-xs font-bold text-emerald-400">{PETS_METADATA.find(p => p.id === player.petId)?.name || `#${player.petId}`}</p>
                            </div>
-                        )}
+                        </div>
+                      )}
+                  </div>
+                </div>
+            </div>
 
-                        {/* Element Icon Badge */}
-                        <div className={`absolute top-1 md:top-2 right-1 md:right-2 w-4 h-4 md:w-6 md:h-6 rounded-full border-2 border-black flex items-center justify-center text-[8px] md:text-[10px] shadow-lg ${
-                            pet.element === 'Pyro' ? 'bg-orange-500' :
-                            pet.element === 'Hydro' ? 'bg-blue-500' :
-                            pet.element === 'Gale' ? 'bg-purple-500' :
-                            pet.element === 'Earthen' ? 'bg-emerald-500' : 'bg-slate-500'
+            {/* Entity Grid Area */}
+            <div className="flex-1 bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-6 overflow-hidden flex flex-col relative">
+               
+               {/* Synergy Tracker (Sleek) */}
+               <div className="grid grid-cols-5 gap-3 mb-6 relative z-10">
+                  {Object.entries(collectionSync).map(([el, count]) => (
+                    <div key={el} className="flex flex-col gap-1.5 p-2 rounded-lg bg-black/20 border border-white/5">
+                       <div className="flex justify-between items-center">
+                          <span className={`text-[8px] font-bold uppercase tracking-widest ${
+                            el === 'Pyro' ? 'text-red-400' : el === 'Hydro' ? 'text-blue-400' : el === 'Gale' ? 'text-cyan-400' : el === 'Earthen' ? 'text-emerald-400' : 'text-purple-400'
+                          }`}>{el}</span>
+                          <span className="text-[9px] font-bold text-slate-400">{count}/10</span>
+                       </div>
+                       <div className="h-1 bg-slate-950 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-1000 ${
+                               el === 'Pyro' ? 'bg-red-500 shadow-[0_0_5px_red]' : el === 'Hydro' ? 'bg-blue-500 shadow-[0_0_5px_blue]' : el === 'Gale' ? 'bg-cyan-500 shadow-[0_0_5px_cyan]' : el === 'Earthen' ? 'bg-emerald-500 shadow-[0_0_5px_green]' : 'bg-purple-500 shadow-[0_0_5px_purple]'
+                            }`} 
+                            style={{ width: `${(count / 10) * 100}%` }} 
+                          />
+                       </div>
+                    </div>
+                  ))}
+               </div>
+
+               <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 content-start">
+                  {PETS_METADATA
+                    .slice()
+                    .sort((a, b) => {
+                      const aUnlocked = player.unlockedPets?.includes(a.id);
+                      const bUnlocked = player.unlockedPets?.includes(b.id);
+                      if (player.petId === a.id) return -1;
+                      if (player.petId === b.id) return 1;
+                      if (aUnlocked && !bUnlocked) return -1;
+                      if (!aUnlocked && bUnlocked) return 1;
+                      return a.id - b.id;
+                    })
+                    .map((pet) => {
+                      const isUnlocked = player.unlockedPets?.includes(pet.id);
+                      const isActive = player.petId === pet.id;
+                      
+                      return (
+                        <button 
+                        key={pet.id}
+                        onClick={() => setSelectedPet(pet.id)}
+                        disabled={loading}
+                        className={`
+                          group relative aspect-[3/4] rounded-2xl border transition-all duration-500 overflow-hidden
+                          hover:-translate-y-2 hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)]
+                          ${isActive 
+                            ? 'bg-emerald-950/40 border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.2)]' 
+                            : (isUnlocked ? 'bg-slate-900/60 border-white/10 hover:border-cyan-500/50' : 'bg-slate-950 border-white/5 opacity-60')}
+                        `}
+                      >
+                        {/* Image Container */}
+                        <div className="absolute inset-0 p-1">
+                            <div className="w-full h-full rounded-xl overflow-hidden relative bg-black">
+                              <img 
+                                src={`/assets/pets/genesis-pets/Genesis Pets (${pet.id}).jpg`} 
+                                className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${isActive ? 'filter-none' : (isUnlocked ? 'brightness-75 group-hover:brightness-100' : 'grayscale brightness-25')}`} 
+                                loading="lazy" 
+                              />
+                              
+                              {/* Dark gradient overlay for text readability */}
+                              <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black to-transparent"></div>
+                            </div>
+                        </div>
+
+                        {/* Badges */}
+                        <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded font-mono text-[8px] border border-white/10">#{pet.id}</div>
+                        
+                        <div className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] backdrop-blur-md border ${
+                            pet.element === 'Pyro' ? 'bg-red-500/20 border-red-500/50' :
+                            pet.element === 'Hydro' ? 'bg-blue-500/20 border-blue-500/50' :
+                            pet.element === 'Gale' ? 'bg-cyan-500/20 border-cyan-500/50' :
+                            pet.element === 'Earthen' ? 'bg-emerald-500/20 border-emerald-500/50' : 'bg-purple-500/20 border-purple-500/50'
                         }`}>
                             {pet.element === 'Pyro' ? '🔥' : pet.element === 'Hydro' ? '💧' : pet.element === 'Gale' ? '⚡' : pet.element === 'Earthen' ? '⛰️' : '✨'}
                         </div>
-                    </div>
 
-                    {/* Status/Adopt Label */}
-                    <div className={`
-                      absolute -bottom-2 left-1/2 -translate-x-1/2 w-[85%] md:w-[90%]
-                      px-2 py-1.5 md:py-2.5 rounded-xl border-[2px] md:border-[3px] border-black font-black uppercase text-[7px] md:text-[10px] italic shadow-md
-                      transition-all duration-300 group-hover:scale-110
-                      ${player.petId === pet.id 
-                        ? 'bg-black text-amber-400' 
-                        : (isUnlocked ? 'bg-black text-white group-hover:bg-cyan-500 group-hover:text-black' : 'bg-slate-400 text-slate-100')}
-                    `}>
-                        {player.petId === pet.id ? 'ACTIVE' : (isUnlocked ? 'READY' : 'LOCKED')}
-                    </div>
-                </button>
-                );
-              })}
-           </div>
-        </div>
-      </div>
+                        {!isUnlocked && (
+                           <div className="absolute inset-0 flex items-center justify-center">
+                              <Lock size={20} className="text-slate-500" />
+                           </div>
+                        )}
 
-      <style>{`
-        .xs\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        @media (min-width: 480px) { .xs\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-      `}</style>
-      </div>
+                        {/* Bottom Info */}
+                        <div className="absolute bottom-2 inset-x-2 flex flex-col items-center">
+                           <div className={`w-full text-center py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-colors ${
+                             isActive ? 'bg-emerald-500 text-black' : (isUnlocked ? 'bg-white/10 text-white backdrop-blur-md group-hover:bg-cyan-500 group-hover:text-black' : 'bg-black/50 text-slate-500')
+                           }`}>
+                              {isActive ? 'ACTIVE LINK' : (isUnlocked ? 'STANDBY' : 'ENCRYPTED')}
+                           </div>
+                        </div>
+                    </button>
+                    );
+                  })}
+               </div>
+            </div>
+          </div>
+       </div>
+
+       {showTutorial && createPortal(
+          <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300">
+             <div className="max-w-sm w-full bg-slate-900 border border-cyan-500/30 rounded-2xl p-6 shadow-[0_0_50px_rgba(6,182,212,0.1)] relative">
+                <div className="mb-6 border-b border-white/10 pb-4">
+                   <h3 className="text-xl font-black text-white uppercase tracking-widest">{tutorialSteps[tutorialStep].title}</h3>
+                   <div className="text-cyan-400 text-[10px] font-mono mt-1">LOG {tutorialStep + 1}/{tutorialSteps.length}</div>
+                </div>
+                <p className="text-slate-300 text-sm leading-relaxed mb-6">{tutorialSteps[tutorialStep].text}</p>
+                <div className="bg-cyan-950/30 border border-cyan-500/20 p-3 rounded-lg mb-6">
+                   <p className="text-cyan-400 text-[10px] uppercase tracking-widest font-bold">INFO // {tutorialSteps[tutorialStep].hint}</p>
+                </div>
+                <div className="flex flex-col gap-3">
+                   <button onClick={nextStep} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors">
+                      {tutorialStep === tutorialSteps.length - 1 ? 'ACKNOWLEDGE' : 'NEXT PROTOCOL'}
+                   </button>
+                   <button onClick={() => setDontShowAgain(!dontShowAgain)} className="flex items-center justify-center gap-2 text-slate-500 hover:text-white transition-colors">
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center ${dontShowAgain ? 'bg-cyan-500 border-cyan-500' : 'border-slate-500'}`}>
+                         {dontShowAgain && <Check size={12} className="text-white" />}
+                      </div>
+                      <span className="text-[10px] uppercase tracking-widest font-bold">Mute Future Briefings</span>
+                   </button>
+                </div>
+             </div>
+          </div>,
+          document.body
+       )}
     </div>
   );
 };

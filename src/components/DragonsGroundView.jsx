@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { deleteField } from 'firebase/firestore';
 import { createPortal } from 'react-dom';
 import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair, Check } from 'lucide-react';
@@ -269,6 +269,17 @@ export const DragonsGroundView = React.memo(() => {
     syncPlayer({ dragonAnimationEnabled: !player.dragonAnimationEnabled });
   };
 
+  const groundDialogues = useMemo(() => [
+    "Dragons Ground — where the bravest (and most reckless) hunters come to grind.",
+    "Iron Pets discovered here can be tamed to boost your XP permanently.",
+    "The Orchard drop zone yields fruits for Crystle Town requests. Farm it!",
+    "Dragon Crystle Shards are your currency here. Collect them every run.",
+    "Harder floors drop better loot. Push your depth as far as your build allows.",
+    "Watch your HP in the deep floors. A retreat preserves your Tavern contract.",
+    "Iron Pet 2-2 is a beast — worth the grind to tame it if you haven't yet.",
+    "The Ground never stops spawning. Stay active and the shards will accumulate."
+  ], []);
+
   // Auto-hide messages
   useEffect(() => {
     if (message) {
@@ -290,7 +301,7 @@ export const DragonsGroundView = React.memo(() => {
         </div>
       )}
 
-      <div className="p-4 z-30">
+      <div className="p-4 z-30 space-y-3">
         <Header 
           title="Dragons Ground" 
           onClose={adventure.goBack} 
@@ -301,6 +312,23 @@ export const DragonsGroundView = React.memo(() => {
           }}
         />
 
+        <div className="flex items-center gap-3">
+          <div className="bg-black/80 border-2 border-emerald-500/50 px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-md">
+            <Gem size={16} className="text-cyan-400 animate-pulse" />
+            <div>
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Crystle Shards</p>
+              <p className="text-sm font-black text-white italic">{crystalsInInventory}</p>
+            </div>
+          </div>
+          <div className="bg-black/80 border-2 border-amber-500/50 px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg backdrop-blur-md">
+            <ShoppingBag size={16} className="text-amber-400 animate-bounce" />
+            <div>
+              <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest">Dragon Fruits</p>
+              <p className="text-sm font-black text-white italic">{fruitsInInventory}</p>
+            </div>
+          </div>
+        </div>
+
         <NPCCard
           citizenNum={14}
           name="DRAGON WARDEN"
@@ -310,34 +338,8 @@ export const DragonsGroundView = React.memo(() => {
           statusTag="GROUND_SECTOR_ACTIVE"
           statusTag2="DRAGON_SIGNAL_LIVE"
           prefix="◢WARDEN: "
-          dialogues={[
-            "Dragons Ground — where the bravest (and most reckless) hunters come to grind.",
-            "Iron Pets discovered here can be tamed to boost your XP permanently.",
-            "The Orchard drop zone yields fruits for Crystle Town requests. Farm it!",
-            "Dragon Crystle Shards are your currency here. Collect them every run.",
-            "Harder floors drop better loot. Push your depth as far as your build allows.",
-            "Watch your HP in the deep floors. A retreat preserves your Tavern contract.",
-            "Iron Pet 2-2 is a beast — worth the grind to tame it if you haven't yet.",
-            "The Ground never stops spawning. Stay active and the shards will accumulate."
-          ]}
+          dialogues={groundDialogues}
         />
-
-        <div className="flex items-center gap-2 mt-2">
-          <div className="bg-black/60 border-2 border-emerald-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
-            <Gem size={14} className="text-cyan-400" />
-            <div>
-              <p className="text-[7px] font-black text-slate-500 uppercase">Crystle Shards</p>
-              <p className="text-xs font-black text-white">{crystalsInInventory}</p>
-            </div>
-          </div>
-          <div className="bg-black/60 border-2 border-amber-500/50 px-3 py-1 rounded-lg flex items-center gap-2 shadow-lg">
-            <ShoppingBag size={14} className="text-amber-400" />
-            <div>
-              <p className="text-[7px] font-black text-slate-500 uppercase">Dragon Fruits</p>
-              <p className="text-xs font-black text-white">{fruitsInInventory}</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">

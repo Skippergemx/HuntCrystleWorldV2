@@ -18,6 +18,7 @@ const TOPIC_STYLES = {
 
 // --- Quiz Modal ---
 const QuizModal = ({ quiz, onClose, onComplete }) => {
+  const { player } = useGame();
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -78,6 +79,20 @@ const QuizModal = ({ quiz, onClose, onComplete }) => {
           );
         })}
       </div>
+      
+      {!player?.walletAddress && (
+        <div className="mt-4 bg-amber-500/10 border-[3px] border-amber-500/30 p-3 rounded-2xl flex items-center gap-3 animate-pulse relative z-10">
+           <div className="bg-amber-500 p-1.5 rounded-lg border-2 border-black text-black shrink-0">
+              <AlertCircle size={16} />
+           </div>
+           <div className="flex-1">
+              <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest leading-none mb-1">NODE_UPLINK_OFFLINE</p>
+              <p className="text-[10px] font-bold text-black uppercase leading-tight italic">
+                Uplink required to authorize ETH subsidies. Link your node in Identity Core to claim rewards.
+              </p>
+           </div>
+        </div>
+      )}
 
       {isAnswered && (
         <div className={`mt-6 p-4 rounded-2xl border-[3px] text-center animate-in slide-in-from-bottom-4 duration-300 relative z-10 ${isCorrect ? 'bg-emerald-100 border-emerald-500 text-emerald-800' : 'bg-red-100 border-red-500 text-red-800'}`}>

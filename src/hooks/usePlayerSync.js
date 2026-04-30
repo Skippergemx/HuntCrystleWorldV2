@@ -94,7 +94,7 @@ export const usePlayerSync = (user, db, appId) => {
 
           // --- WALLET CONFLICT CHECK ---
           let walletConflict = null;
-          let activeWalletSync = data.walletAddress || null;
+          let activeWalletSync = data.walletAddress;
 
           if (data.walletAddress || user.walletAddress) {
             const addr = (data.walletAddress || user.walletAddress);
@@ -107,7 +107,7 @@ export const usePlayerSync = (user, db, appId) => {
                 message: "This wallet belongs to another Hero node!",
                 isFarcaster: false
               };
-              activeWalletSync = null;
+              activeWalletSync = undefined;
             } else if (scan.success) {
               activeWalletSync = addr.toLowerCase().trim();
             }
@@ -133,7 +133,7 @@ export const usePlayerSync = (user, db, appId) => {
             name: (data.name || user?.username || "").trim() || `Hunter_${(user?.uid || '0000').toString().slice(0, 4)}`,
             pfp: data.pfp || user?.pfp || null,
 
-            walletAddress: activeWalletSync,
+            walletAddress: data.walletAddress,
             walletConflict: walletConflict || null,
 
             level: level,
@@ -241,7 +241,6 @@ export const usePlayerSync = (user, db, appId) => {
             selectedScrollId: 'auto_scroll',
             avatar: 1,
             unlockedPets: [1, 11, 21, 31, 41],
-            walletAddress: null,
             sessionId: localSessionId,
             createdAt: serverTimestamp()
           };
@@ -388,7 +387,7 @@ export const usePlayerSync = (user, db, appId) => {
                 maxDepthMapName: curr.maxDepthMapName || 'Neon Slums',
                 maxDepthMapMinLevel: curr.maxDepthMapMinLevel || 1,
                 tokens: curr.tokens || 0,
-                walletAddress: curr.walletAddress || null,
+                walletAddress: curr.walletAddress ?? null,
                 updatedAt: Date.now()
               };
               setDoc(doc(db, 'leaderboard', activeDocId), publicData, { merge: true }).catch(() => {});
@@ -422,8 +421,10 @@ export const usePlayerSync = (user, db, appId) => {
   const linkWallet = useCallback(async (newAddress) => {
     if (!activeDocId || !newAddress) return { success: false, error: "System offline." };
 
+    console.log(`System V4: Initiating Uplink Scan for node [${newAddress}]...`);
     const scan = await identitySentry(newAddress);
     if (!scan.success) {
+      console.warn("System V4: Uplink Blockade! Collision detected:", scan.collision);
       return {
         success: false,
         collision: scan.collision,
@@ -431,7 +432,9 @@ export const usePlayerSync = (user, db, appId) => {
       };
     }
 
-    await syncPlayer({ walletAddress: newAddress.toLowerCase().trim(), walletConflict: null });
+    console.log("System V4: Identity Clear. Committing Uplink to Firestore...");
+    // Force immediate sync for wallet links to ensure persistence
+    await syncPlayer({ walletAddress: newAddress.toLowerCase().trim(), walletConflict: null }, true);
     return { success: true };
   }, [activeDocId, identitySentry, syncPlayer]);
 

@@ -42,7 +42,7 @@ export const useGame = () => {
 const EQUIPMENT = ITEMS.filter(i => i.category === 'Equipment');
 const LOOTS = ITEMS.filter(i => i.category === 'Loot');
 const FRUITS = ITEMS.filter(i => i.category === 'Fruit');
-const SHOP_ITEMS = ITEMS.filter(i => i.cost !== undefined);
+const SHOP_ITEMS = [...ITEMS, ...FOODS].filter(i => i.cost !== undefined);
 
 export const GameProvider = ({ children, user }) => {
   const [logs, setLogs] = useState(["Synchronizing with Metaverse..."]);
@@ -157,13 +157,21 @@ export const GameProvider = ({ children, user }) => {
     }
   }, [player?.uid]);
 
+  const lastSeenWalletRef = useRef(null);
+
   // --- GLOBAL SECURITY SENTRY ---
   // Watches for any wallet connection and triggers a blockade scan
   useEffect(() => {
     const triggerGlobalUplink = async () => {
-      // SECURITY FIX: Only auto-link if the player has NO wallet address entry at all (undefined).
-      // If the user just unlinked, the field becomes null/deleted, and we should NOT re-link immediately.
-      if (wallet.address && player && player.walletAddress === undefined) {
+      // SECURITY FIX: Auto-link if a wallet is connected to the browser but NOT linked to the player profile.
+      // We use lastSeenWalletRef to prevent the "Unlink Loop" where unlinking re-triggers the sentry.
+      const isNewConnection = wallet.address && wallet.address !== lastSeenWalletRef.current;
+      
+      if (wallet.address && player && (!player.walletAddress || isNewConnection)) {
+        // If we have an address but the player is unlinked (null) and it's NOT a new connection, 
+        // it means the user JUST unlinked. We should respect that and NOT re-link.
+        if (player.walletAddress === null && !isNewConnection) return;
+
         console.log("System V3: Global Security Sentry Detected New Node. Initiating Initial Sweep...");
         const result = await linkWallet(wallet.address);
         if (!result.success) {
@@ -174,9 +182,12 @@ export const GameProvider = ({ children, user }) => {
            addLog(`Security Alert: ${result.error}. Node Ejected.`);
         }
       }
+      
+      lastSeenWalletRef.current = wallet.address;
     };
+
     triggerGlobalUplink();
-  }, [wallet.address, player?.walletAddress]);
+  }, [wallet.address, player?.walletAddress, linkWallet]);
 
   // --- UPLINK SECURITY PROTOCOL ---
   // We no longer auto-sync browser wallets. 
