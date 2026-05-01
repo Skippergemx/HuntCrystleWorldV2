@@ -1,3 +1,19 @@
+// Game Constants and Math Utilities
+export const DIFFICULTY_MULTIPLIER = 1.04;
+export const XP_BASE = 60;
+export const getXpRequired = (level) => Math.floor(XP_BASE * Math.pow(level, 1.5));
+export const AP_PER_LEVEL = 5;
+export const MAX_CRIT_CHANCE = 0.25;
+export const BASE_CRIT_CHANCE = 0.05;
+export const CRIT_SCALING_PER_FLOOR = 0.01;
+
+export const PENALTY_DURATION = 30000;
+export const STUN_DURATION_NORMAL = 2000;
+export const STUN_DURATION_CRIT = 4000;
+export const DEFEAT_WINDOW_DURATION = 3000;
+export const AUTO_SCROLL_DURATION = 60000;
+export const COMPANION_BUFF_DURATION = 30000;
+
 /**
  * Monster Archetypes for tactical diversity
  */
