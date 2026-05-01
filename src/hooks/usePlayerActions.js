@@ -1050,6 +1050,15 @@ export const usePlayerActions = (
             if (setFaucetResult) {
                setFaucetResult({ success: true, txHash: data.txHash, message: data.message });
             }
+
+            // --- Update Daily Faucet Tracking ---
+            const today = new Date().toISOString().split('T')[0];
+            const lastDate = player.lastFaucetClaimDate || "";
+            let claims = (lastDate === today) ? (player.dailyFaucetClaims || 0) : 0;
+            syncPlayer({
+               dailyFaucetClaims: claims + 1,
+               lastFaucetClaimDate: today
+            });
          } else {
             // Silently log level or rate limit issues unless critical
             console.log(`🏙️ FAUCET_SIGNAL: ${data.message}`);
@@ -1202,6 +1211,15 @@ export const usePlayerActions = (
           if (setFaucetResult) {
             setFaucetResult({ success: true, txHash: data.txHash, message: "Neural Link Subsidy Authorized" });
           }
+
+          // --- Update Daily Faucet Tracking ---
+          const today = new Date().toISOString().split('T')[0];
+          const lastDate = player.lastFaucetClaimDate || "";
+          let claims = (lastDate === today) ? (player.dailyFaucetClaims || 0) : 0;
+          syncPlayer({
+             dailyFaucetClaims: claims + 1,
+             lastFaucetClaimDate: today
+          });
         }
       } catch (e) {
         console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);

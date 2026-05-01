@@ -195,6 +195,83 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
   );
 };
 
+const MissionBriefing = ({ player, setView }) => {
+  const today = new Date().toISOString().split('T')[0];
+  const claimsToday = player?.lastFaucetClaimDate === today ? (player?.dailyFaucetClaims || 0) : 0;
+  const remainingRolls = Math.max(0, 30 - claimsToday);
+  const isWalletLinked = !!player?.walletAddress;
+  
+  return (
+    <div className="w-full max-w-4xl mx-auto mb-10 animate-in slide-in-from-top duration-1000">
+      <div className={`border-[4px] border-black rounded-2xl p-4 md:p-6 shadow-[10px_10px_0_rgba(0,0,0,1)] relative overflow-hidden transform -rotate-1 hover:rotate-0 transition-all cursor-default group ${isWalletLinked ? 'bg-[#fff9c4]' : 'bg-red-50'}`}>
+        {/* Tape Decor */}
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-black/10 backdrop-blur-sm border-x-2 border-black/5 rotate-1 pointer-events-none z-20" />
+        
+        {/* Highlight Glow */}
+        <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl group-hover:opacity-30 transition-colors ${isWalletLinked ? 'bg-amber-400/20' : 'bg-red-500/10'}`} />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
+          {/* Visual Indicator */}
+          <div className="shrink-0 relative">
+             <div className="w-16 h-16 md:w-20 md:h-20 bg-black rounded-2xl flex items-center justify-center border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] transform rotate-3 group-hover:rotate-0 transition-all duration-500">
+                <Zap className={`${isWalletLinked ? 'text-yellow-400' : 'text-red-500'} animate-pulse`} size={32} />
+             </div>
+             <div className={`absolute -bottom-1 -right-2 text-white text-[8px] font-black px-2 py-1 rounded-lg border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] uppercase tracking-tighter italic ${isWalletLinked ? 'bg-emerald-600' : 'bg-red-600 animate-bounce'}`}>
+                {isWalletLinked ? 'SIGNAL_LIVE' : 'NODE_OFFLINE'}
+             </div>
+          </div>
+
+          <div className="flex-1 text-center md:text-left">
+            <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+               <span className="text-[10px] font-black bg-black text-white px-2 py-0.5 rounded-md tracking-[0.2em] uppercase italic leading-none">Directive</span>
+               <div className="w-1 h-1 rounded-full bg-black/20" />
+               <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isWalletLinked ? 'text-black/40' : 'text-red-600'}`}>REF: {isWalletLinked ? 'ETH_REWARD_UPLINK' : 'UPLINK_CRITICAL_FAILURE'}</span>
+            </div>
+            
+            <h3 className="text-lg md:text-2xl font-[1000] text-black uppercase italic leading-none tracking-tighter mb-2">
+              {isWalletLinked ? (
+                <>ETH <span className="text-amber-600 underline decoration-[4px] decoration-amber-600/30">DRIP</span> TRANSMISSION ACTIVE</>
+              ) : (
+                <>WALLET LINK <span className="text-red-600 underline decoration-[4px] decoration-red-600/30">REQUIRED</span></>
+              )}
+            </h3>
+            
+            <p className="text-[11px] md:text-sm font-bold text-black/80 uppercase leading-tight italic max-w-2xl">
+               {isWalletLinked ? (
+                 `"EARN ETH DRIPS & SUBSIDIES IN THE CRYSTLE TOWN & ILEARN SECTORS. RAID DUNGEONS, COMPLETE NPC QUESTS, AND CLAIM YOUR DAILY GAS REWARDS!"`
+               ) : (
+                 `"DRIP TRANSMISSION BLOCKED. CONNECT YOUR NODE IN THE IDENTITY CORE TO AUTHORIZE ETH SUBSIDIES. NO WALLET, NO DRIPS!"`
+               )}
+            </p>
+          </div>
+
+          <div className="shrink-0 flex flex-col items-center gap-3">
+             {isWalletLinked ? (
+               <>
+                 <div className="flex items-center gap-1.5 bg-black/5 px-3 py-2 rounded-full border border-black/10">
+                    <div className={`w-2 h-2 rounded-full ${remainingRolls > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                    <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">{remainingRolls}/30 CHANCES LEFT</span>
+                 </div>
+                 <div className="text-[10px] font-black text-black/30 uppercase italic tracking-tighter animate-pulse">Neural Link Stable</div>
+               </>
+             ) : (
+               <button 
+                 onClick={() => setView('avatars')}
+                 className="px-6 py-3 bg-black text-white font-black uppercase italic text-xs border-[3px] border-black shadow-[6px_6px_0_rgba(239,68,68,1)] hover:bg-red-600 hover:shadow-none transition-all active:translate-y-1"
+               >
+                 Link Node Now
+               </button>
+             )}
+          </div>
+        </div>
+        
+        {/* Subtle grid texture */}
+        <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }} />
+      </div>
+    </div>
+  );
+};
+
 export const MenuView = React.memo(() => {
   const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA, lowPerfMode, setLowPerfMode } = useGame();
   const { setView } = adventure;
@@ -294,6 +371,8 @@ export const MenuView = React.memo(() => {
       {/* SCROLLABLE MAIN BODY */}
       <div className="flex-1 flex flex-col items-center p-8 md:p-16 relative z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pb-40 pt-10">
          
+         <MissionBriefing player={player} setView={setView} />
+
          {/* THE CORE TRINITY (Responsive Flex) */}
          <div className="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-6 lg:gap-8 w-full max-w-6xl mx-auto">
             

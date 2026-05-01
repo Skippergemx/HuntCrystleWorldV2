@@ -158,6 +158,8 @@ export const usePlayerSync = (user, db, appId) => {
             selectedScrollId: data.selectedScrollId || 'auto_scroll',
             avatar: data.avatar || 1,
             unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+            dailyFaucetClaims: data.dailyFaucetClaims || 0,
+            lastFaucetClaimDate: data.lastFaucetClaimDate || "",
             // ID MIGRATION: 'dragon' -> 'hatchling_mate'
             hiredMate: data.hiredMate === 'dragon' ? 'hatchling_mate' : (data.hiredMate || null)
           };
@@ -220,6 +222,8 @@ export const usePlayerSync = (user, db, appId) => {
             platform: 'browser',
             level: 1, xp: 0, tokens: 100,
             hp: 150, maxHp: 150,
+            dailyFaucetClaims: 0,
+            lastFaucetClaimDate: "",
             baseStats: { str: 10, agi: 10, dex: 10 },
             abilityPoints: 5, potions: 5,
             autoScrolls: 0, autoUntil: 0,

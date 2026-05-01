@@ -54,16 +54,15 @@ export const useCombat = (
   const [penaltyRemaining, setPenaltyRemaining] = useState(0);
   const [floatingNumbers, setFloatingNumbers] = useState([]); // Phase 4: AAA UI Floating Numbers
 
-  const triggerFloatingNumber = useCallback((val, isCrit, side) => {
+  const triggerFloatingNumber = useCallback((val, resultType, side) => {
     const id = Date.now() + Math.random();
-    setFloatingNumbers(prev => [...prev.slice(-10), { id, val, isCrit, side }]);
+    setFloatingNumbers(prev => [...prev.slice(-10), { id, val, resultType, side }]);
     setTimeout(() => {
       setFloatingNumbers(prev => prev.filter(n => n.id !== id));
-    }, 1000);
+    }, 1200);
   }, []);
 
   // Phase 4: Session Hard-Reset Logic
-  // Ensures every time we enter the dungeon/boss from a menu, the loot stack is wiped fresh.
   const prevViewRef = useRef(view);
   useEffect(() => {
     const combatViews = ['dungeon', 'boss'];
@@ -71,7 +70,6 @@ export const useCombat = (
     const wasInCombat = combatViews.includes(prevViewRef.current);
 
     if (enteringCombat && !wasInCombat) {
-      console.log("🏙️ [DUNGEON_ENTRY] Resetting Session Rewards and Floor Kills.");
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
       setKillsInFloor(0);
     }
@@ -82,7 +80,7 @@ export const useCombat = (
   const missRef = useRef(0);
   const killsRef = useRef(0);
   const processingRef = useRef('IDLE');
-  const combatBusRef = useRef(false); // SYNCHRONOUS MUTEX: THE MASTER GATEKEEPER
+  const combatBusRef = useRef(false);
 
   useEffect(() => {
     if (currentTaunt) {
@@ -98,53 +96,8 @@ export const useCombat = (
     }
   }, [playerTaunt]);
 
-  // DERIVE PET METADATA FOR COMBAT BONUSES
-  const petMeta = (player?.activePet && PETS_METADATA) ? PETS_METADATA[player.activePet.id] : null;
-
-  useEffect(() => {
-    stunRef.current = stunTimeLeft;
-    missRef.current = missTimeLeft;
-    killsRef.current = killsInFloor;
-    processingRef.current = combatState;
-
-    // Heartbeat safety reset for stuck combat state
-    if (combatState !== 'IDLE' && combatState !== 'VICTORY' && combatState !== 'DEFEATED') {
-      const timer = setTimeout(() => {
-        if (processingRef.current === combatState) {
-          console.warn(`Combat Action Stalled in ${combatState}! Emergency Reset.`);
-          setCombatState('IDLE');
-          combatBusRef.current = false; // RELEASE LOCK ON STALL
-        }
-      }, 3500); 
-      return () => clearTimeout(timer);
-    }
-  }, [stunTimeLeft, missTimeLeft, killsInFloor, combatState]);
-
-  const triggerHitEffects = useCallback((dmg, isCrit, side = 'monster', triggerFlinch, triggerHurt) => {
-    const impactWords = ["BAM!", "POW!", "WHACK!", "SMASH!", "KABOOM!", "ZAP!", "SLAM!", "CRUNCH!", "KRAK!"];
-    const word = impactWords[Math.floor(Math.random() * impactWords.length)];
-    const id = Date.now();
-
-    if (side === 'monster') {
-      setImpactSplash({ text: word, dmg, isCrit, id });
-      setTimeout(() => setImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
-      triggerFlinch();
-      if (triggerHaptic) triggerHaptic(isCrit ? 'heavy' : 'medium');
-      const ouchWords = ["Ouch!", "Gah!", "No!", "Stop!", "Critical Hit!", "Ack!", "My circuits!", "System Failure!"];
-      setCurrentTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
-    } else {
-      setPlayerImpactSplash({ text: word, dmg, isCrit, id });
-      setTimeout(() => setPlayerImpactSplash(prev => (prev?.id === id ? null : prev)), 400);
-      triggerHurt();
-      if (triggerHaptic) triggerHaptic('rigid');
-      const ouchWords = ["Ugh!", "Ack!", "Too strong!", "Healing needed!", "Pain...", "Vision blurring!", "Armor cracked!"];
-      setPlayerTaunt(ouchWords[Math.floor(Math.random() * ouchWords.length)]);
-    }
-  }, [triggerHaptic]);
-
   const resetCombatEngine = useCallback(() => {
     setCombatState('IDLE');
-    processingRef.current = 'IDLE'; // Synchronous mirror reset
     setStunTimeLeft(0);
     setMissTimeLeft(0);
     if (stunRef) stunRef.current = 0;
@@ -153,7 +106,7 @@ export const useCombat = (
     setCritAlert(false);
     setShowVictoryWindow(false);
     setShowDefeatedWindow(false);
-    combatBusRef.current = false; // NUCLEAR RELEASE
+    combatBusRef.current = false;
   }, []);
 
   const enemyTurn = useCallback((target, isBoss = false) => {
@@ -178,12 +131,11 @@ export const useCombat = (
       setTimeout(() => setStrikingSide(null), 300);
     }, 400);
 
-    let hitChance = getHitChance(target.dex, stats.agi);
-    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); 
+    const hitResult = getHitChance(target.dex, stats.agi);
     
-    if (Math.random() * 100 < hitChance) {
-      const isCrit = Math.random() < (isBoss ? BOSS.critChance : target.critChance);
-      const dmg = Math.floor(getDamage(target.str, stats.agi, isCrit));
+    if (hitResult.isHit) {
+      const damageResult = getDamage(target.str, target.dex, stats.agi, isBoss ? BOSS.critChance : target.critChance);
+      const { damage, isCrit, resultType } = damageResult;
 
       if (isCrit) { 
         addLog(`⚠️ CRIT!`); 
@@ -194,16 +146,18 @@ export const useCombat = (
         setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
       }
 
-      addLog(`⚠️ ${target.name} hit you for ${dmg} DMG!`);
-      playSFX(SOUNDS.monsterAttack); // PLAY IMPACT SOUND ON HIT
+      if (resultType === 'GLANCING') addLog(`🛡️ Glancing Blow! You mitigated heavy damage.`);
+      addLog(`⚠️ ${target.name} ${resultType === 'CRITICAL' ? 'CRIT' : 'hit'} you for ${damage} DMG!`);
+      
+      playSFX(SOUNDS.monsterAttack);
       const taunts = target.taunts || ["Prepare to die!", "Too slow!", "Weakling!"];
       setCurrentTaunt(taunts[Math.floor(Math.random() * taunts.length)]);
 
-      triggerHitEffects(dmg, isCrit, 'player', triggerFlinch, triggerHurt);
-      triggerFloatingNumber(dmg, isCrit, 'player');
+      triggerHitEffects(damage, isCrit, 'player', triggerFlinch, triggerHurt);
+      triggerFloatingNumber(damage, resultType, 'player');
 
       setTimeout(() => {
-        const newHp = Math.floor(Math.max(0, (player?.hp || 0) - dmg));
+        const newHp = Math.floor(Math.max(0, (player?.hp || 0) - damage));
         if (newHp <= 0) {
           if (battleMode === 'GVG') {
             const e = enemyRef.current || enemy;
@@ -220,7 +174,7 @@ export const useCombat = (
           if (remainingAutoTime > 0) destructUpdates.autoTimeLeftSaved = remainingAutoTime;
           syncPlayer(destructUpdates);
           setTimeout(() => { 
-            resetCombatEngine(); // RESET ALL LOCKS AND STATES
+            resetCombatEngine();
             setDepth(1); 
             setView('menu'); 
           }, DEFEAT_WINDOW_DURATION);
@@ -228,17 +182,18 @@ export const useCombat = (
           syncPlayer({ hp: newHp });
           processingRef.current = 'IDLE';
           setCombatState('IDLE');
-          combatBusRef.current = false; // RELEASE LOCK AFTER ENEMY TURN
+          combatBusRef.current = false;
         }
       }, 500);
     } else {
-      addLog(`🛡️ Dodged ${target.name}'s strike!`);
+      addLog(`🛡️ EVADED ${target.name}'s strike!`);
+      triggerFloatingNumber(0, 'EVADE', 'player');
       setTimeout(() => {
         setCurrentTaunt("Drat! Slipped!");
-        setPlayerTaunt("Nice try!");
+        setPlayerTaunt("Too slow!");
         processingRef.current = 'IDLE';
         setCombatState('IDLE');
-        combatBusRef.current = false; // RELEASE LOCK AFTER ENEMY MISS
+        combatBusRef.current = false;
       }, 500);
     }
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber]);
@@ -255,15 +210,12 @@ export const useCombat = (
 
     const rewards = [];
     const updates = {};
-    
-    // Save remaining auto time if active right when treasury is reached for AFK safety
     const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
     if (remainingAutoTime > 0) {
       updates.autoTimeLeftSaved = remainingAutoTime;
       updates.autoUntil = 0;
     }
     
-    // REWARD: 5 random auto scrolls (weighted)
     const scrollPool = [
       { id: 'auto_scroll_3m', weight: 40 },
       { id: 'auto_scroll_6m', weight: 35 },
@@ -272,15 +224,6 @@ export const useCombat = (
     ];
     const totalScrollWeight = scrollPool.reduce((sum, s) => sum + s.weight, 0);
 
-    let totalMinutesGained = 0;
-    const scrollSpecs = {
-      'auto_scroll': 1,
-      'auto_scroll_3m': 3,
-      'auto_scroll_6m': 6,
-      'auto_scroll_9m': 9,
-      'auto_scroll_12m': 12
-    };
-
     for (let i = 0; i < 5; i++) {
       let rand = Math.random() * totalScrollWeight;
       let selectedId = 'auto_scroll_3m';
@@ -288,7 +231,6 @@ export const useCombat = (
         if (rand < s.weight) { selectedId = s.id; break; }
         rand -= s.weight;
       }
-      
       const scrollItem = ITEMS.find(item => item.id === selectedId);
       if (scrollItem) {
         const uniqueId = `${selectedId}_TREASURY_${Date.now()}_${Math.random().toString(36).slice(2, 6)}_${i}`;
@@ -296,16 +238,9 @@ export const useCombat = (
         rewards.push({ ...scrollItem, id: uniqueId });
       }
     }
-
     addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
-
-    setSessionRewards(prev => ({
-      ...prev,
-      loots: [...prev.loots, ...rewards]
-    }));
-
+    setSessionRewards(prev => ({ ...prev, loots: [...prev.loots, ...rewards] }));
     syncPlayer(updates);
-
   }, [ITEMS, syncPlayer, addLog, playSFX, SOUNDS, player?.autoUntil]);
 
   const handleCloseVictoryWindow = useCallback(() => {
@@ -320,23 +255,19 @@ export const useCombat = (
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
+    const petMeta = player.petId ? PETS_METADATA.find(p => p.id === player.petId) : null;
     const earnedXp = Math.floor(e.xp * (petMeta?.xpMult || 1.0));
     const earnedLoot = Math.floor(e.loot * (petMeta?.lootMult || 1.0));
     addLog(`Victory! Found ${earnedLoot} GX.`);
-    if (petMeta && (petMeta.xpMult > 1 || petMeta.lootMult > 1)) {
-        addLog(`✨ ${petMeta.name.toUpperCase()} PULSE: ${petMeta.xpMult > 1 ? `+${Math.round((petMeta.xpMult - 1) * 100)}% XP` : ''} ${petMeta.lootMult > 1 ? `+${Math.round((petMeta.lootMult - 1) * 100)}% GX` : ''} Bonus!`);
-    }
 
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000;
     let apGained = 0;
-    let didLevelUp = false;
     while (nextXp >= getXpRequired(nextLvl)) {
       nextXp -= getXpRequired(nextLvl);
       nextLvl++;
       nextMaxHp += 50;
       apGained += AP_PER_LEVEL;
       addLog(`LVL UP! +5 AP.`);
-      didLevelUp = true;
     }
 
     const updates = {
@@ -359,38 +290,25 @@ export const useCombat = (
           return true;
         });
 
-        // Add small chance for schematics in deep floors
-        if (depth >= 3 && Math.random() < 0.05) {
-           const schematics = LOOTS.filter(l => l.type === 'Schematic');
-           if (schematics.length > 0) pool.push(schematics[Math.floor(Math.random() * schematics.length)]);
-        }
-
         if (pool.length > 0) {
-          // WEIGHT-SUM ALGORITHM: Zero memory overhead
           const weights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
           const totalWeight = pool.reduce((sum, item) => sum + (weights[item.rarity] || 10), 0);
           let random = Math.random() * totalWeight;
-          
           let lootItem = null;
           for (const item of pool) {
             const weight = weights[item.rarity] || 10;
-            if (random < weight) {
-              lootItem = item;
-              break;
-            }
+            if (random < weight) { lootItem = item; break; }
             random -= weight;
           }
 
           if (lootItem) {
-            // Standardize: Only base 1m essentials go to numeric counters.
             const isPotion = lootItem.id === 'hp_potion';
             const isScroll = lootItem.id === 'auto_scroll';
             let dropToTrack = lootItem;
 
             if (isPotion) {
                updates.potions = (player?.potions || 0) + 1;
-            } else if (lootItem.id === 'auto_scroll') {
-                // Standardize: Pool base 1m scrolls into numeric counter for "Energy (Mins)" UI.
+            } else if (isScroll) {
                 updates.autoScrolls = (player?.autoScrolls || 0) + 1;
                 dropToTrack = { ...lootItem, id: `auto_scroll_pool_${Date.now()}` };
             } else if (lootItem.id?.startsWith('auto_scroll')) {
@@ -398,28 +316,15 @@ export const useCombat = (
                 updates[`inventory.${uniqueId}`] = { ...lootItem, id: uniqueId };
                 dropToTrack = { ...lootItem, id: uniqueId };
             } else {
-               // Unique Inventory Item
                const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
                updates[`inventory.${itemWithId.id}`] = itemWithId;
                setLastLoot(itemWithId);
                dropToTrack = itemWithId;
             }
-
             addLog(`🎁 LOOT: Found ${lootItem.name}!`);
             playSFX(SOUNDS.obtainLoot);
             setTimeout(() => setLastLoot(null), 3000);
-
-            setSessionRewards(prev => ({
-              tokens: prev.tokens + earnedLoot,
-              xp: prev.xp + earnedXp,
-              loots: [...prev.loots, dropToTrack]
-            }));
-          } else {
-            setSessionRewards(prev => ({
-              tokens: prev.tokens + earnedLoot,
-              xp: prev.xp + earnedXp,
-              loots: prev.loots
-            }));
+            setSessionRewards(prev => ({ ...prev, loots: [...prev.loots, dropToTrack] }));
           }
         }
       }
@@ -427,7 +332,7 @@ export const useCombat = (
 
     syncPlayer(updates);
 
-    const newKills = killsRef.current + 1;
+    const newKills = killsInFloor + 1;
     if (newKills >= 10 && depth >= MAX_DUNGEON_DEPTH) {
        handleTreasuryReached();
        return;
@@ -437,29 +342,18 @@ export const useCombat = (
     setCombatState('VICTORY');
 
     setTimeout(() => {
-      resetCombatEngine(); // RESET ALL LOCKS AND STATES
+      resetCombatEngine();
       if (newKills >= 10) {
         setKillsInFloor(0);
         const nextDepth = depth + 1;
         setDepth(nextDepth);
         addLog(`⬆️ FLOOR UP! Ascending to Floor ${nextDepth}...`);
         
-        // --- STRATEGIC DEPTH SCORING V4 ---
         const currentMapFactor = (selectedMap?.minLevel || 1) * 100000;
         const currentDepthScore = currentMapFactor + nextDepth;
-        const previousMaxScore = player?.maxDepthScore || 0;
-
-        if (currentDepthScore > previousMaxScore) {
-            const depthUpdates = {
-                maxDepthScore: currentDepthScore,
-                maxDepthMapName: selectedMap?.name || 'Neon Slums',
-                maxDepthMapMinLevel: selectedMap?.minLevel || 1,
-                maxDepthFloor: nextDepth,
-                maxDepth: nextDepth // Backwards compatibility
-            };
-            syncPlayer(depthUpdates);
+        if (currentDepthScore > (player?.maxDepthScore || 0)) {
+            syncPlayer({ maxDepthScore: currentDepthScore, maxDepthFloor: nextDepth, maxDepthMapName: selectedMap?.name || 'Neon Slums', maxDepth: nextDepth });
         }
-        
         spawnNewEnemy(nextDepth);
       } else {
         setKillsInFloor(newKills);
@@ -467,31 +361,25 @@ export const useCombat = (
       }
     }, 1500);
 
-    if (didLevelUp) {
-      // syncPlayer(updates) already called above
-    }
-
     if (battleMode === 'GVG') {
        recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, 100);
        setBattleMode('DUNGEON');
        setTimeout(() => setView('syndicate'), 1500);
     }
-  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsRef, playSFX, SOUNDS, handleTreasuryReached]);
+  }, [enemy, player, addLog, selectedMap, syncPlayer, spawnNewEnemy, getXpRequired, AP_PER_LEVEL, LOOTS, battleMode, gvgContext, recordWarResult, setView, setBattleMode, depth, setDepth, killsInFloor, playSFX, SOUNDS, handleTreasuryReached, PETS_METADATA, totalStats]);
 
   const processBossHit = useCallback(async (dmg, isCrit) => {
-    // BUG-14 FIX: Raise cap to account for AllInOne (4x) + DoubleStrike (2x) = 8x valid multiplier
     const maxTheoreticalDamage = Math.max(5000, (totalStats.str || 10) * 500); 
     if (dmg < 0 || dmg > maxTheoreticalDamage) {
        addLog("🚨 SYSTEM ANOMALY: Unauthorized payload detected. Strike dismissed!");
-       return; // Abort the hit injection
+       return;
     }
 
     const newTotal = (player?.totalBossDamage || 0) + dmg;
     const updates = { totalBossDamage: newTotal };
     
-    // 2. ECONOMY FIX: Hard Cap the exponential drop chance
     const milestoneMult = Math.pow(2, Math.floor(newTotal / 1000000));
-    const currentDropChance = Math.min(0.12, BOSS.baseDropRate * milestoneMult); // Capped at 12% max
+    const currentDropChance = Math.min(0.12, BOSS.baseDropRate * milestoneMult);
     if (Math.random() < currentDropChance) {
       const relics = EQUIPMENT.filter(e => e.type === 'Relic');
       if (relics.length > 0) {
@@ -503,53 +391,30 @@ export const useCombat = (
       }
     }
 
-    // Schematic drop gated to 5% in deep floors only
-    if (depth >= 5 && Math.random() < 0.05) {
-      const schematics = LOOTS.filter(l => l.type === 'Schematic');
-      if (schematics.length > 0) {
-        const drop = schematics[Math.floor(Math.random() * schematics.length)];
-        const dropId = `${drop.id}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-        updates[`inventory.${dropId}`] = { ...drop, id: dropId };
-        addLog(`📜 BLUEPRINT RECOVERED: ${drop.name}!`);
-        playSFX(SOUNDS.obtainLoot);
-      }
-    }
     syncPlayer(updates);
     enemyTurn(BOSS, true);
-  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS]);
+  }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS, playSFX, SOUNDS]);
 
   const handleAttack = useCallback((isBoss = false) => {
-    // --- SYNCHRONOUS MUTEX GATE ---
-    if (combatBusRef.current) return; // Discard parallel commands instantly
-    
-    // Use processingRef for synchronous state check — no closure/render lag
+    if (combatBusRef.current) return;
     const isBusy = player?.hp <= 0 || stunRef.current > 0 || missRef.current > 0 || showDefeatedWindow || showVictoryWindow || processingRef.current !== 'IDLE' || (!isBoss && !enemy);
-    
-    if (isBusy) {
-       return;
-    }
+    if (isBusy) return;
 
-    // LOCK ENGAGED
     combatBusRef.current = true;
-    processingRef.current = 'PLAYER_ATTACKING'; // Synchronous mirror
+    processingRef.current = 'PLAYER_ATTACKING';
     setCombatState('PLAYER_ATTACKING');
 
     let stats = { ...totalStats };
-    // Mate Proc Logic
     if (player?.hiredMate && (player?.buffUntil || 0) <= Date.now()) {
       const mate = TAVERN_MATES.find(m => m.id === player?.hiredMate);
       if (mate && (mate.procChance >= 1.0 || Math.random() < mate.procChance)) {
         const buffUntil = Date.now() + COMPANION_BUFF_DURATION;
         syncPlayer({ buffUntil });
         addLog(`✨ ${mate.name} activated their power!`);
-        
-        // Immediate Stat Injection: Apply multiplier to the local stats object 
-        // so the CURRENT attack (down the line at L452) benefits from it.
         const mult = mate.multiplier || 2;
         if (mate.type === 'STR') stats.str *= mult;
         if (mate.type === 'AGI') stats.agi *= mult;
         if (mate.type === 'DEX') stats.dex *= mult;
-        // NOTE: totalStats will catch up in the NEXT render via syncPlayer trigger.
       }
     }
 
@@ -560,131 +425,112 @@ export const useCombat = (
     if (monsterElement) {
         const playerElement = player?.gemxElement || 'Cosmic';
         const isEffective = playerElement && ELEMENT_ADVANTAGE[playerElement] === monsterElement;
-        
         if (!isEffective) {
             addLog(`⚠️ ELEMENTAL HANDICAP: Damage reduced by 75%!`);
             setPlayerTaunt("My element is weak here!");
             elementalMultiplier = 0.25;
-            // No longer returns; continues to attack with penalty
         }
     }
 
     setStrikingSide('player');
     setTimeout(() => setStrikingSide(null), 300);
 
-    let hitChance = getHitChance(stats.dex, target.agi);
-    if (battleMode === 'GVG') hitChance = Math.max(85, Math.min(100, hitChance * 1.5)); 
+    const hitResult = getHitChance(stats.dex, target.agi);
 
-    if (Math.random() * 100 < hitChance) {
-      const isCrit = Math.random() < 0.15;
-      let dmg = Math.floor(getDamage(stats.str, target.agi, isCrit) * elementalMultiplier);
+    if (hitResult.isHit) {
+      const damageResult = getDamage(stats.str, stats.dex, target.agi);
+      let { damage, isCrit, resultType } = damageResult;
+      damage = Math.floor(damage * elementalMultiplier);
 
       const effects = Object.values(player?.equipped || {}).filter(i => i?.effect).map(i => i.effect);
       const critSpike = effects.find(e => e?.type === 'CritSpike');
       if (isCrit && critSpike) {
-          dmg = Math.floor(dmg * (critSpike.mult / 2.5));
+          damage = Math.floor(damage * (critSpike.mult / 2.5));
           addLog(`✨ CRIT SPIKE!`);
       }
       const doubleStrike = effects.find(e => e?.type === 'DoubleStrike');
       if (doubleStrike && Math.random() < doubleStrike.chance) {
-          dmg *= 2;
+          damage *= 2;
           addLog(`⚔️ DOUBLE STRIKE!`);
       }
       const lifesteal = effects.find(e => e?.type === 'LifeSteal');
       if (lifesteal && Math.random() < lifesteal.chance) {
-          const heal = Math.floor(dmg * lifesteal.amount);
+          const heal = Math.floor(damage * lifesteal.amount);
           syncPlayer({ hp: Math.min(totalStats.maxHp, (player?.hp || 0) + heal) });
           addLog(`🩸 LIFESTEAL: +${heal} HP`);
       }
-      const allInOne = effects.find(e => e?.type === 'AllInOne');
-      if (allInOne && Math.random() < allInOne.chance) {
-          dmg *= 4;
-          addLog(`🧿 OMEGA OVERLOAD: 4x DMG!`);
+
+      if (isCrit) {
+          addLog(`🔥 CRITICAL HIT!`);
+          playSFX(SOUNDS.criticalHit);
+      } else {
+          playSFX(SOUNDS.playerAttack);
       }
 
-      triggerHitEffects(dmg, isCrit, 'monster', triggerFlinch, triggerHurt);
-      triggerFloatingNumber(dmg, isCrit, 'monster');
+      if (resultType === 'GLANCING') addLog(`🛡️ Enemy Glanced your strike! Low damage.`);
+      addLog(`⚔️ You ${resultType === 'CRITICAL' ? 'CRIT' : 'hit'} ${target.name} for ${damage} DMG!`);
+      
+      triggerHitEffects(damage, isCrit, 'monster', triggerFlinch, triggerHurt);
+      triggerFloatingNumber(damage, resultType, 'monster');
 
       const pTaunts = ["Take this!", "Direct strike!", "Weak!", "Begone!", "Target locked!", "Hunter's Fury!", "Maximum output!"];
       setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
-      addLog(`Struck ${target.name} for ${dmg} DMG.`);
-      playSFX(SOUNDS.playerAttack); // PLAY IMPACT SOUND ON HIT
 
       setTimeout(() => {
         if (isBoss) {
-          processBossHit(dmg, isCrit);
+          processBossHit(damage, isCrit);
         } else {
-          const newHp = Math.floor(Math.max(0, target.hp - dmg));
+          const newHp = Math.floor(Math.max(0, target.hp - damage));
           if (newHp <= 0) {
             setEnemy({ ...target, hp: 0 });
             processKill();
-            // processKill will handle the lock release
           } else {
             setEnemy({ ...target, hp: newHp });
             enemyTurn({ ...target, hp: newHp }, isBoss);
-            // enemyTurn will handle the lock release
           }
         }
       }, 500);
     } else {
-      addLog(`Missed strike on ${target.name}!`);
-      setMissTimeLeft(battleMode === 'GVG' ? 0.8 : 1.5);
-      setPlayerTaunt("Darn, missed!");
-      setCurrentTaunt("Ha! Too slow!");
-      enemyTurn(target, isBoss);
-      // enemyTurn will handle the lock release
+      addLog(`🛡️ ${target.name} EVADED your strike!`);
+      triggerFloatingNumber(0, 'EVADE', 'monster');
+      setTimeout(() => {
+        enemyTurn(target, isBoss);
+      }, 500);
     }
-  }, [player, enemy, showDefeatedWindow, combatState, totalStats, syncPlayer, addLog, triggerHitEffects, processBossHit, processKill, enemyTurn, setEnemy, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, selectedMap, triggerFlinch, triggerHurt, battleMode, recordWarResult, gvgContext, setView, setBattleMode, stunRef, missRef, showVictoryWindow, TAVERN_MATES, playSFX, SOUNDS]);
-
-  const recordGvGResult = useCallback(() => {
-    if (battleMode !== 'GVG') return;
-    const damagePercent = Math.min(100, Math.floor(((enemy.maxHp - enemy.hp) / enemy.maxHp) * 100));
-    recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, damagePercent);
-    setBattleMode('DUNGEON');
-    setTimeout(() => setView('syndicate'), 1500);
-  }, [battleMode, enemy, gvgContext, recordWarResult, setBattleMode, setView]);
+  }, [player, totalStats, enemy, TAVERN_MATES, COMPANION_BUFF_DURATION, syncPlayer, addLog, playSFX, SOUNDS, selectedMap, ELEMENT_ADVANTAGE, triggerHitEffects, triggerFloatingNumber, processKill, enemyTurn, showDefeatedWindow, showVictoryWindow, isTreasury, setEnemy, triggerFlinch, triggerHurt]);
 
   const handleRetreat = useCallback(() => {
     if (processingRef.current === 'RETREATING') return;
     
     if (battleMode === 'GVG') {
-      // BUG-13 FIX: Reset session rewards on GVG retreat
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
-      recordGvGResult();
+      const damagePercent = Math.min(100, Math.floor(((enemy.maxHp - enemy.hp) / enemy.maxHp) * 100));
+      recordWarResult(gvgContext.warId, 0, gvgContext.opponentId, damagePercent);
+      setBattleMode('DUNGEON');
+      setTimeout(() => setView('syndicate'), 1500);
     } else {
       processingRef.current = 'RETREATING';
-      // WIPE SESSION REWARDS FOR NEXT RUN
       setSessionRewards({ tokens: 0, xp: 0, loots: [] });
       setKillsInFloor(0);
-      resetCombatEngine(); // NUCLEAR RESET ON RETREAT
-      
-      // BUG-Fix: Clear enemy from state to prevent UI rendering stale data
+      resetCombatEngine();
       if (clearEnemy) clearEnemy();
-      
       setView('menu');
       setDepth(1);
-
-      // System Pulse: Critical State Sync must be immediate to prevent refresh-race-conditions
       const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
       const closingUpdates = { autoUntil: 0 };
       if (remainingAutoTime > 0) closingUpdates.autoTimeLeftSaved = remainingAutoTime;
       syncPlayer(closingUpdates, true);
-      
-      // Release retreat lock after transition
-      setTimeout(() => {
-        if (processingRef.current === 'RETREATING') processingRef.current = 'IDLE';
-      }, 500);
+      setTimeout(() => { if (processingRef.current === 'RETREATING') processingRef.current = 'IDLE'; }, 500);
     }
-  }, [battleMode, recordGvGResult, setView, setDepth, player?.autoUntil, syncPlayer, resetCombatEngine, clearEnemy]);
+  }, [battleMode, setView, setDepth, player?.autoUntil, syncPlayer, resetCombatEngine, clearEnemy, enemy, gvgContext, recordWarResult, setBattleMode]);
 
-  // SAFETY HEARTBEAT - Force release bus if stalled
   useEffect(() => {
     let safetyTimer;
     if (combatBusRef.current) {
       safetyTimer = setTimeout(() => {
         if (combatBusRef.current) {
           console.warn("🛡️ SAFETY ALERT: Combat strike stalling detected. Forcing auto-recovery.");
-          resetCombatEngine(); // NUCLEAR RELEASE
+          resetCombatEngine();
         }
       }, 4000);
     }
@@ -692,41 +538,13 @@ export const useCombat = (
   }, [combatBusRef.current, resetCombatEngine]);
 
   return {
-    critAlert,
-    stunTimeLeft,
-    missTimeLeft,
-    combatState,
-    impactSplash,
-    playerImpactSplash,
-    strikingSide,
-    currentTaunt,
-    playerTaunt,
-    showDefeatedWindow,
-    showVictoryWindow,
-    setShowVictoryWindow,
-    handleCloseVictoryWindow,
-    sessionRewards,
-    killsInFloor,
-    lastLoot,
-    penaltyRemaining,
-    setStunTimeLeft,
-    setMissTimeLeft,
-    setKillsInFloor,
-    setPenaltyRemaining,
-    setCombatState,
-    handleAttack,
-    enemyTurn,
-    processKill,
-    processBossHit,
-    triggerHitEffects,
-    setSessionRewards,
-    combatBusRef,
-    stunRef,
-    missRef,
-    enemyRef,
-    battleMode,
-    setBattleMode,
-    isTreasury,
-    handleRetreat
+    critAlert, stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash,
+    strikingSide, currentTaunt, playerTaunt, showDefeatedWindow, showVictoryWindow,
+    setShowVictoryWindow, handleCloseVictoryWindow, sessionRewards, killsInFloor,
+    lastLoot, penaltyRemaining, setStunTimeLeft, setMissTimeLeft, setKillsInFloor,
+    setPenaltyRemaining, setCombatState, handleAttack, enemyTurn, processKill,
+    processBossHit, triggerHitEffects, setSessionRewards, combatBusRef, stunRef,
+    missRef, enemyRef, battleMode, setBattleMode, isTreasury, handleRetreat,
+    floatingNumbers
   };
 };

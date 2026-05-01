@@ -1,37 +1,43 @@
-// Game Constants and Math Utilities
-
-export const DIFFICULTY_MULTIPLIER = 1.04;
-export const XP_BASE = 60; // Phase 4: Lowered from 100 for faster early-game pacing to Lv30
 /**
- * Calculates XP required for next level (Phase 3 Exponential Scaling)
+ * Monster Archetypes for tactical diversity
  */
-export const getXpRequired = (level) => Math.floor(XP_BASE * Math.pow(level, 1.5));
-export const AP_PER_LEVEL = 5;
-export const MAX_CRIT_CHANCE = 0.25; // Phase 4: Capped at 25% (was 50%) — prevents deep-floor perma-stun
-export const BASE_CRIT_CHANCE = 0.05;
-export const CRIT_SCALING_PER_FLOOR = 0.01;
-
-export const PENALTY_DURATION = 30000;
-export const STUN_DURATION_NORMAL = 2000;
-export const STUN_DURATION_CRIT = 4000;
-export const DEFEAT_WINDOW_DURATION = 3000;
-export const AUTO_SCROLL_DURATION = 60000;
-export const COMPANION_BUFF_DURATION = 30000; // Phase 4: Extended from 10s to 30s — buffs feel meaningful
+export const MONSTER_ARCHETYPES = {
+  TANK: 'TANK',           // High HP/Def, Slow
+  ASSASSIN: 'ASSASSIN',   // High AGI, High Crit, Low HP
+  SNIPER: 'SNIPER',       // High DEX/STR, Low AGI
+  BALANCED: 'BALANCED'    // Standard scaling
+};
 
 /**
- * Calculates a scaled monster based on floor depth
+ * Calculates a scaled monster based on floor depth and archetype
  */
 export const scaleMonster = (baseMonster, depth) => {
   const powerMultiplier = Math.pow(DIFFICULTY_MULTIPLIER, depth - 1);
-  // Phase 2: Softened monster AGI scaling (0.1 instead of 0.15) to keep DEX relevant.
-  const accuracyMultiplier = 1 + ((depth - 1) * 0.10);
+  
+  // Determine Archetype based on base stats
+  let archetype = MONSTER_ARCHETYPES.BALANCED;
+  if (baseMonster.hp >= 150) archetype = MONSTER_ARCHETYPES.TANK;
+  else if (baseMonster.agi >= baseMonster.str * 1.5) archetype = MONSTER_ARCHETYPES.ASSASSIN;
+  else if (baseMonster.dex >= baseMonster.str * 1.5) archetype = MONSTER_ARCHETYPES.SNIPER;
+
+  // Archetype Modifiers
+  const mods = {
+    hp: archetype === MONSTER_ARCHETYPES.TANK ? 1.6 : 1.0,
+    str: archetype === MONSTER_ARCHETYPES.SNIPER ? 1.3 : 1.0,
+    agi: archetype === MONSTER_ARCHETYPES.ASSASSIN ? 1.5 : (archetype === MONSTER_ARCHETYPES.TANK ? 0.6 : 1.0),
+    dex: archetype === MONSTER_ARCHETYPES.SNIPER ? 1.5 : 1.0
+  };
+
+  const accuracyMultiplier = 1 + ((depth - 1) * 0.12); // Slightly higher scaling to pressure AGI builds
   
   return {
     ...baseMonster,
-    hp: Math.floor(baseMonster.hp * powerMultiplier),
-    maxHp: Math.floor(baseMonster.hp * powerMultiplier),
-    str: Math.floor(baseMonster.str * powerMultiplier),
-    agi: Math.floor(baseMonster.agi * accuracyMultiplier),
+    archetype,
+    hp: Math.floor(baseMonster.hp * powerMultiplier * mods.hp),
+    maxHp: Math.floor(baseMonster.hp * powerMultiplier * mods.hp),
+    str: Math.floor(baseMonster.str * powerMultiplier * mods.str),
+    agi: Math.floor(baseMonster.agi * accuracyMultiplier * mods.agi),
+    dex: Math.floor(baseMonster.dex * accuracyMultiplier * mods.dex),
     xp: Math.floor(baseMonster.xp * powerMultiplier),
     loot: Math.floor(baseMonster.loot * powerMultiplier),
     critChance: Math.min(MAX_CRIT_CHANCE, BASE_CRIT_CHANCE + ((depth - 1) * CRIT_SCALING_PER_FLOOR)),
@@ -65,9 +71,7 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   if (player.hiredMate) {
     const mate = tavernMates.find(m => m.id === player.hiredMate);
     if (mate) {
-      // Phase 4: HP bonus is ALWAYS permanent — independent of buff timer
       if (mate.hpBonus) stats.maxHp += mate.hpBonus;
-      // Stat multipliers only apply when buff is actively proc'd
       if (mate.procChance >= 1.0 || buffActive) {
         const mult = mate.multiplier || 2;
         if (mate.type === 'STR') stats.str *= mult;
@@ -77,15 +81,15 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
     }
   }
 
-  // Apply Dragon Buffs (Requires Dragon to be Summoned)
+  // Apply Dragon Buffs
   if (player.dragon && player.dragon.level > 0 && dragonActive) {
-    const dragonBonus = 15 * player.dragon.level; // Phase 4: Raised from 5 to 15 — competitive vs Titan
+    const dragonBonus = 15 * player.dragon.level;
     stats.str += dragonBonus;
     stats.agi += dragonBonus;
     stats.dex += dragonBonus;
   }
 
-  // Apply GEMX Bonuses (New Elemental System)
+  // Apply Elemental Bonuses
   if (player.gemx && player.gemx.level > 0) {
     const lvl = player.gemx.level;
     const element = player.gemxElement;
@@ -95,18 +99,15 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
     else if (element === 'Gale') { stats.agi += 2 * lvl; }
   }
 
-  // Apply Crystle Pet Buffs & Set Bonuses
+  // Pet Multipliers
   let petStatsMult = 1.0;
   const unlockedPets = player.unlockedPets || [];
-  
   if (unlockedPets.length > 0) {
     const counts = { 'Pyro': 0, 'Hydro': 0, 'Gale': 0, 'Earthen': 0, 'Cosmic': 0 };
     unlockedPets.forEach(id => {
       const p = PETS_METADATA.find(pm => pm.id === id);
       if (p && counts[p.element] !== undefined) counts[p.element]++;
     });
-
-    // Calculate Highest Set Multiplier
     Object.values(counts).forEach(count => {
       if (count >= 10) petStatsMult = Math.max(petStatsMult, 1.20);
       else if (count >= 6) petStatsMult = Math.max(petStatsMult, 1.12);
@@ -117,10 +118,8 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   if (player.petId) {
     const activePet = PETS_METADATA.find(p => p.id === player.petId);
     if (activePet) {
-      // Pet level multiplier: +15% per level above 1
       const petLvl = player.petLevels?.[activePet.id] || player.petLevel || 1;
       const levelMult = 1 + ((petLvl - 1) * 0.15);
-
       stats.maxHp += Math.floor((activePet.hpBonus || 0) * levelMult);
       stats.str += Math.floor((activePet.strBonus || 0) * levelMult);
       stats.agi += Math.floor((activePet.agiBonus || 0) * levelMult);
@@ -132,7 +131,7 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   stats.agi *= petStatsMult;
   stats.dex *= petStatsMult;
 
-  // Apply Food Buff (short-term flat bonus)
+  // Food Effects
   const now = Date.now();
   if (player.activeFoodEffect && (player.activeFoodUntil || 0) > now) {
     const fx = player.activeFoodEffect;
@@ -144,7 +143,6 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
     else if (fx.stat2 === 'agi') stats.agi += fx.amount2 || 0;
   }
 
-  // Final Safety Rounding
   stats.str = Math.floor(stats.str);
   stats.agi = Math.floor(stats.agi);
   stats.dex = Math.floor(stats.dex);
@@ -153,89 +151,97 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
 };
 
 /**
- * Calculates Naga (Dragon) Combat Stats for Naga Wars
- * Factors in Dragon Level for base stats, and Gemx Level for Shield HP and bonus stats.
+ * Calculates Naga (Dragon) Combat Stats
  */
 export const calculateNagaStats = (player, labLevel = 0) => {
   const dragon = player?.dragon || { level: 1 };
   const gemx = player?.gemx || { level: 1 };
   const element = player?.gemxElement || 'Cosmic';
 
-  // Base Naga Stats
   let maxHp = dragon.level * 500;
   let str = dragon.level * 20; 
   let agi = dragon.level * 10;
   let dex = dragon.level * 15;
-
-  // Gemx acts as an HP Shield
   const shieldHp = gemx.level * 300;
 
-  // Modify base stats depending on the Element of the Gemx equipped
   if (element === 'Pyro') { str += gemx.level * 5; agi += gemx.level * 2; }
   else if (element === 'Earthen') { dex += gemx.level * 8; maxHp += gemx.level * 50; }
   else if (element === 'Hydro') { str += gemx.level * 3; dex += gemx.level * 5; }
   else if (element === 'Gale') { agi += gemx.level * 8; }
 
   if (labLevel > 0) {
-      const buffMultiplier = 1 + (labLevel * 0.05); // 5% per lab level
-      str *= buffMultiplier;
-      agi *= buffMultiplier;
-      dex *= buffMultiplier;
-      maxHp *= buffMultiplier;
+      const buffMultiplier = 1 + (labLevel * 0.05);
+      str *= buffMultiplier; agi *= buffMultiplier; dex *= buffMultiplier; maxHp *= buffMultiplier;
   }
 
   return {
-    level: dragon.level,
-    gemxLevel: gemx.level,
-    element: element,
-    maxHp: maxHp,
-    shieldHp: shieldHp,
-    totalMaxHp: maxHp + shieldHp,
-    str: Math.floor(str),
-    agi: Math.floor(agi),
-    dex: Math.floor(dex)
+    level: dragon.level, gemxLevel: gemx.level, element: element,
+    maxHp, shieldHp, totalMaxHp: maxHp + shieldHp,
+    str: Math.floor(str), agi: Math.floor(agi), dex: Math.floor(dex)
   };
 };
 
-/**
- * Elemental Affinity System
- */
 export const ELEMENT_ADVANTAGE = {
-  'Pyro': 'Earthen',
-  'Earthen': 'Hydro',
-  'Hydro': 'Gale',
-  'Gale': 'Pyro'
+  'Pyro': 'Earthen', 'Earthen': 'Hydro', 'Hydro': 'Gale', 'Gale': 'Pyro'
 };
 
 /**
  * Combat Math: Hit Chance
- * Optimized (Phase 1): Added 35% hit floor and tuned AGI weight to 0.35 instead of 0.4.
+ * AGI now acts as a significantly more powerful evasion stat.
+ * Returns { chance, resultType: 'HIT' | 'EVADE' }
  */
 export const getHitChance = (attackerDex, defenderAgi) => {
-  const chance = (attackerDex / (attackerDex + defenderAgi * 0.35)) * 100;
-  return Math.max(35, Math.min(98, Math.floor(chance)));
+  // AGI evasion scaling is more aggressive now (0.5 weight)
+  const chance = (attackerDex / (attackerDex + defenderAgi * 0.5)) * 100;
+  const finalChance = Math.max(25, Math.min(98, Math.floor(chance)));
+  
+  const roll = Math.random() * 100;
+  return {
+    chance: finalChance,
+    isHit: roll <= finalChance,
+    resultType: roll <= finalChance ? 'HIT' : 'EVADE'
+  };
 };
 
 /**
  * Combat Math: Damage
- * Optimized (Phase 1): Buffed STR multiplier (1.2x) and reduced AGI mitigation weight (0.1 instead of 0.2).
+ * Returns { damage, isCrit, resultType: 'NORMAL' | 'CRITICAL' | 'GLANCING' }
  */
-export const getDamage = (attackerStr, defenderAgi, isCrit = false) => {
-  // STR has more weight than AGI mitigation now (Phase 1 Balance)
-  const dmgBase = (attackerStr * 1.2) + Math.floor(Math.random() * 10) - (defenderAgi * 0.1);
-  const finalDmg = isCrit ? Math.floor(dmgBase * 2.5) : Math.floor(dmgBase);
-  return Math.max(5, finalDmg);
+export const getDamage = (attackerStr, attackerDex, defenderAgi, baseCritChance = 0.05) => {
+  // 1. Determine CRIT (Now heavily dependent on DEX)
+  // DEX provides up to +20% additional crit chance
+  const dexBonus = Math.min(0.20, attackerDex / 1000); 
+  const totalCritChance = Math.min(MAX_CRIT_CHANCE, baseCritChance + dexBonus);
+  const isCrit = Math.random() < totalCritChance;
+
+  // 2. Base Damage Calculation
+  const dmgBase = (attackerStr * 1.25) + Math.floor(Math.random() * 10);
+  
+  // 3. AGI Mitigation (Glancing Hits)
+  // If defender AGI is high relative to attacker STR, damage is "Glanced"
+  const mitigation = defenderAgi * 0.25; // 2.5x more effective mitigation than before
+  let finalDmg = dmgBase - mitigation;
+  
+  let resultType = isCrit ? 'CRITICAL' : 'NORMAL';
+  
+  // If mitigation reduced damage by more than 40%, it's a Glancing Hit
+  if (!isCrit && mitigation > (dmgBase * 0.4)) {
+    resultType = 'GLANCING';
+  }
+
+  if (isCrit) finalDmg *= 2.5;
+
+  return {
+    damage: Math.max(5, Math.floor(finalDmg)),
+    isCrit,
+    resultType
+  };
 };
 
 export const BOSS = {
   name: "The Core Guardian",
-  level: 500,
-  hp: 10000000,
-  str: 1000,
-  agi: 800,
-  dex: 700,
-  critChance: 0.25,
-  baseDropRate: 0.1, // 10% drop rate for Relics
+  level: 500, hp: 10000000, str: 1000, agi: 800, dex: 700, critChance: 0.25,
+  baseDropRate: 0.1,
   taunts: ["I am the final obstacle!", "Your journey ends here.", "Kneel before the Core!"]
 };
 

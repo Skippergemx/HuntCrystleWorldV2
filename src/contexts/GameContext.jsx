@@ -14,7 +14,8 @@ import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
   STUN_DURATION_NORMAL, STUN_DURATION_CRIT, DEFEAT_WINDOW_DURATION, PENALTY_DURATION,
   AUTO_SCROLL_DURATION, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE,
-  BOSS, BOSS_MEDIA_FILES, scaleMonster, calculateStats, getHitChance, getDamage
+  BOSS, BOSS_MEDIA_FILES, scaleMonster, calculateStats, getHitChance, getDamage,
+  MONSTER_ARCHETYPES
 } from '../utils/gameLogic';
 
 import { useAdventure } from '../hooks/useAdventure';
@@ -306,7 +307,7 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
-    BOSS, BOSS_MEDIA_FILES, SOUNDS
+    BOSS, BOSS_MEDIA_FILES, SOUNDS, MONSTER_ARCHETYPES
   };
 
   return (

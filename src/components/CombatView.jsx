@@ -7,13 +7,15 @@ import { useGame } from '../contexts/GameContext';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS
+    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS,
+    MONSTER_ARCHETYPES
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
   const { 
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
-    strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury 
+    strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury,
+    floatingNumbers
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -215,9 +217,28 @@ export const CombatView = React.memo(() => {
   return (
     <div 
       ref={arenaRef}
-      className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''} ${combat.critAlert ? 'animate-shake-heavy' : ''}`}
     >
       <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
+      
+      {/* --- AAA FLOATING BATTLE LABELS --- */}
+      {floatingNumbers?.map(n => (
+        <div 
+          key={n.id}
+          className={`absolute z-[100] pointer-events-none font-black italic uppercase tracking-tighter animate-float-label ${
+            n.side === 'player' ? 'left-[25%] top-[40%]' : 'right-[25%] top-[40%]'
+          } ${
+            n.resultType === 'CRITICAL' ? 'text-4xl md:text-7xl text-orange-500 drop-shadow-[0_4px_10px_rgba(249,115,22,0.8)]' :
+            n.resultType === 'EVADE' ? 'text-2xl md:text-4xl text-cyan-400 drop-shadow-[0_2px_5px_rgba(34,211,238,0.5)]' :
+            n.resultType === 'GLANCING' ? 'text-xl md:text-3xl text-slate-400 opacity-80' :
+            'text-2xl md:text-5xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'
+          }`}
+        >
+          {n.resultType === 'EVADE' ? 'EVADED!' : 
+           n.resultType === 'GLANCING' ? 'GLANCING' :
+           n.resultType === 'CRITICAL' ? `KAPOW! -${n.val}` : `-${n.val}`}
+        </div>
+      ))}
       {/* Dynamic Background Backdrop */}
       {arenaTheme.backdrop && (
         <div className="absolute inset-0 z-0 select-none">
@@ -456,9 +477,23 @@ export const CombatView = React.memo(() => {
           {/* ENEMY STATUS */}
           <div className="w-full flex flex-col items-center lg:items-end space-y-2 md:space-y-4">
               <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
-                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col transform -rotate-1">
-                  <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Threat Identified</span>
-                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate">{enemy.name}</h2>
+                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col transform -rotate-1 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-1 opacity-20 pointer-events-none transform rotate-12">
+                    <Skull size={40} className="text-black" />
+                  </div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none">Threat Identified</span>
+                    {enemy.archetype && (
+                      <span className={`text-[6px] md:text-[10px] font-black px-1.5 py-0.5 rounded border border-black shadow-[1px_1px_0_rgba(0,0,0,1)] uppercase italic ${
+                        enemy.archetype === 'TANK' ? 'bg-slate-700 text-white' :
+                        enemy.archetype === 'ASSASSIN' ? 'bg-red-950 text-red-500' :
+                        enemy.archetype === 'SNIPER' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black'
+                      }`}>
+                        [{enemy.archetype}]
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate relative z-10">{enemy.name}</h2>
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
@@ -936,6 +971,21 @@ export const CombatView = React.memo(() => {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
+        @keyframes float-label {
+          0% { transform: translateY(0) scale(0.5); opacity: 0; }
+          20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
+          100% { transform: translateY(-100px) scale(1); opacity: 0; }
+        }
+        .animate-float-label { animation: float-label 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes shake-heavy {
+          0%, 100% { transform: translate(0, 0) rotate(0); }
+          10% { transform: translate(-10px, -10px) rotate(-2deg); }
+          20% { transform: translate(10px, 5px) rotate(2deg); }
+          30% { transform: translate(-5px, 10px) rotate(-1deg); }
+          40% { transform: translate(10px, -5px) rotate(1deg); }
+          50% { transform: translate(-10px, 5px) rotate(-2deg); }
+        }
+        .animate-shake-heavy { animation: shake-heavy 0.4s ease-in-out; }
       `}</style>
     </div>
   );
