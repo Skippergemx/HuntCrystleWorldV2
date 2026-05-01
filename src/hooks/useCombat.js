@@ -62,6 +62,14 @@ export const useCombat = (
     }, 1200);
   }, []);
 
+  const triggerHitEffects = useCallback((dmg, isCrit, side) => {
+    if (side === 'monster') {
+      triggerFlinch();
+    } else {
+      triggerHurt();
+    }
+  }, [triggerFlinch, triggerHurt]);
+
   // Phase 4: Session Hard-Reset Logic
   const prevViewRef = useRef(view);
   useEffect(() => {
