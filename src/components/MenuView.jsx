@@ -25,7 +25,8 @@ import {
   Check,
   Brain,
   ShoppingCart,
-  Users
+  Users,
+  Newspaper
 } from 'lucide-react';
 import { 
   Header, 
@@ -333,6 +334,7 @@ export const MenuView = React.memo(() => {
   const UTILITY_LINKS = [
     { id: 'database', icon: <Book size={16} />, label: 'ARCHIVES' },
     { id: 'manual', icon: <BookOpen size={16} />, label: 'MANUAL' },
+    { id: 'articles', icon: <Newspaper size={16} />, label: 'ARTICLES' },
     { id: 'devlog', icon: <Radio size={16} />, label: 'DEVLOG' },
   ];
 

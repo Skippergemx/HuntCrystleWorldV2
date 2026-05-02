@@ -194,7 +194,7 @@ export const BattleParticles = forwardRef(({ lowPerfMode }, ref) => {
   return (
     <canvas 
       ref={canvasRef}
-      className="absolute inset-0 z-[101] pointer-events-none w-full h-full"
+      className="absolute inset-0 z-10 pointer-events-none w-full h-full"
     />
   );
 });
@@ -202,14 +202,19 @@ export const BattleParticles = forwardRef(({ lowPerfMode }, ref) => {
 export const ImpactSplash = React.memo(({ splash }) => {
   if (!splash) return null;
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-      <div className="animate-impact relative will-change-transform">
-        <div className="absolute inset-0 bg-amber-500 blur-xl opacity-50 scale-150"></div>
-        <div className="bg-amber-500 text-black font-black text-xl px-4 py-1 rounded-sm border-2 border-black transform -rotate-12 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="animate-impact relative will-change-transform flex flex-col items-center">
+        {/* Glow Effect */}
+        <div className="absolute inset-0 bg-amber-400 blur-2xl opacity-60 scale-150 rounded-full animate-pulse"></div>
+        
+        {/* Onomatopoeia (KAPOW, WHAM, etc.) */}
+        <div className="bg-amber-500 text-black font-black text-2xl md:text-3xl px-6 py-1.5 rounded-sm border-[4px] border-black transform -rotate-12 shadow-[6px_6px_0_rgba(0,0,0,1)] z-20 mb-[-10px] relative">
           {splash.text}
         </div>
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white text-black font-black text-xs px-2 py-0.5 rounded-sm border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)]">
-          -{Math.floor(splash.dmg)}
+        
+        {/* BIG DAMAGE NUMBER */}
+        <div className="bg-white text-black font-[1000] text-3xl md:text-5xl px-4 py-2 rounded-lg border-[4px] border-black shadow-[8px_8px_0_rgba(239,68,68,1)] z-30 transform rotate-3 animate-bounce-short">
+          <span className="text-red-600 mr-1">-</span>{Math.floor(splash.dmg)}
         </div>
       </div>
     </div>
@@ -219,14 +224,19 @@ export const ImpactSplash = React.memo(({ splash }) => {
 export const BossImpactSplash = React.memo(({ splash }) => {
   if (!splash) return null;
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none scale-[2.0]">
-      <div className="animate-impact relative will-change-transform">
-        <div className="absolute inset-0 bg-red-600 blur-xl opacity-50 scale-150"></div>
-        <div className="bg-red-600 text-white font-black text-2xl px-6 py-2 rounded-sm border-[4px] border-black transform -rotate-12 shadow-[8px_8px_0_rgba(0,0,0,1)]">
+    <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+      <div className="animate-impact relative will-change-transform flex flex-col items-center scale-[1.5] md:scale-[2.0]">
+        {/* Extreme Glow */}
+        <div className="absolute inset-0 bg-red-600 blur-3xl opacity-70 scale-[2.0] rounded-full animate-ping"></div>
+        
+        {/* BOSS IMPACT TEXT */}
+        <div className="bg-red-600 text-white font-[1000] text-3xl md:text-4xl px-8 py-3 rounded-sm border-[6px] border-black transform -rotate-12 shadow-[12px_12px_0_#000] z-20 mb-[-15px] relative uppercase italic">
           {splash.text}
         </div>
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white text-black font-black text-sm px-3 py-1 rounded-sm border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)]">
-          -{Math.floor(splash.dmg)}
+        
+        {/* COLOSSAL DAMAGE NUMBER */}
+        <div className="bg-black text-white font-[1000] text-4xl md:text-7xl px-8 py-4 rounded-xl border-[6px] border-red-600 shadow-[15px_15px_0_rgba(0,0,0,0.5)] z-30 transform rotate-6">
+          <span className="text-red-500 mr-2">-</span>{Math.floor(splash.dmg)}
         </div>
       </div>
     </div>

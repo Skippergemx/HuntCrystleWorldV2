@@ -59,11 +59,23 @@
     "name": "Colossal Guardian",
     "cost": 15000,
     "type": "STR",
-    "desc": "80% chance to double Strength. Permanent +1000 HP bonus regardless of proc.",
+    "desc": "Heavy Siege Specialist. 80% chance to double Strength. Permanent +1000 HP bonus.",
     "rarity": "Legendary",
     "icon": "🛡️",
     "multiplier": 2,
     "procChance": 0.8,
     "hpBonus": 1000
+  },
+  {
+    "id": "tactician",
+    "name": "Grand Tactician",
+    "cost": 15000,
+    "type": "DEX",
+    "desc": "Crit Mastery. 80% chance for triple Dexterity. Permanent +500 HP bonus.",
+    "rarity": "Legendary",
+    "icon": "📜",
+    "multiplier": 3,
+    "procChance": 0.8,
+    "hpBonus": 500
   }
 ]

@@ -41,6 +41,7 @@ import { PetsView } from './PetsView';
 import { ILearnView } from './ILearnView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
+import { ArticlesView } from './ArticlesView';
 import { CrystleTownView } from './CrystleTownView';
 import { CrystleBazaarView } from './CrystleBazaarView';
 import { BiometricCoreView } from './BiometricCoreView';
@@ -778,6 +779,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'devlog' && (
             <DevlogView />
+          )}
+
+          {view === 'articles' && (
+            <ArticlesView />
           )}
 
           {view === 'crystle_town' && (

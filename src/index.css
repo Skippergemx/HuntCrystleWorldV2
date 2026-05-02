@@ -425,3 +425,35 @@ body[data-perf-mode="low"] video {
 .animate-spin-slow {
     animation: spin-slow 12s linear infinite;
 }
+
+/* --- SKILL SYSTEM ANIMATIONS --- */
+@keyframes skill-sweep {
+    0% { transform: translateX(-150%) skewX(-25deg); opacity: 0; }
+    30% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { transform: translateX(150%) skewX(-25deg); opacity: 0; }
+}
+
+.animate-skill-sweep {
+    animation: skill-sweep 2s ease-in-out infinite;
+}
+
+@keyframes bounce-short {
+    0%, 100% { transform: translateY(0) scale(1) rotate(3deg); }
+    50% { transform: translateY(-15px) scale(1.15) rotate(6deg); }
+}
+
+.animate-bounce-short {
+    animation: bounce-short 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes skill-activate {
+    0% { transform: scaleX(0); opacity: 0; }
+    20% { transform: scaleX(1); opacity: 1; }
+    80% { transform: scaleX(1); opacity: 1; }
+    100% { transform: scaleX(0); opacity: 0; }
+}
+
+.animate-skill-activate {
+    animation: skill-activate 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}

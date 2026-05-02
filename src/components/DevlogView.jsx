@@ -23,25 +23,6 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
-    id: '1.15.0',
-    date: '2026-05-01',
-    title: 'ENTERTAINMENT KING: STAT ARCHETYPES & BATTLE LABELS',
-    category: 'COMBAT & UX OVERHAUL',
-    type: 'feature',
-    tag: 'NEW',
-    color: 'emerald',
-    description: 'A revolutionary overhaul of the core combat engine, shifting away from a STR-dominant meta towards a tactical, stat-driven ecosystem. We have introduced specialized Monster Archetypes and the "AAA Battle Label" engine for visceral visual feedback.',
-    changes: [
-      'Combat: Implemented specialized scaling for Juggernaut, Assassin, and Sniper monster archetypes',
-      'Stats: Overhauled DEX (Crit) and AGI (Evasion/Mitigation) to be mathematically essential for progression',
-      'Visuals: Deployed "AAA Battle Label" engine (KAPOW!, EVADED!, GLANCING) with kinetic animations',
-      'UX: Integrated "Screen-Shake" feedback for high-impact DEX-based critical hits',
-      'Menu: Added real-time "Mission Briefing" with daily ETH claim transparency and wallet alerts',
-      'Utility: Aligned Tavern Mate multipliers to counter specific dungeon archetypes'
-    ],
-    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
-  },
-  {
     id: '1.14.0',
     date: '2026-04-27',
     title: 'CRYSTLE TOWN TREASURY: THE GRIND PROTOCOL',

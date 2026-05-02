@@ -7,15 +7,15 @@ import { useGame } from '../contexts/GameContext';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS,
-    MONSTER_ARCHETYPES
+    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS, ELEMENTAL_SKILLS
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
   const { 
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury,
-    floatingNumbers
+    skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
+    monsterSkillActive
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -217,29 +217,56 @@ export const CombatView = React.memo(() => {
   return (
     <div 
       ref={arenaRef}
-      className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''} ${combat.critAlert ? 'animate-shake-heavy' : ''}`}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-2 animate-in fade-in relative overflow-hidden ${arenaTheme.bg} ${isHurt ? 'animate-damage' : ''}`}
     >
       <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
       
-      {/* --- AAA FLOATING BATTLE LABELS --- */}
-      {floatingNumbers?.map(n => (
-        <div 
-          key={n.id}
-          className={`absolute z-[100] pointer-events-none font-black italic uppercase tracking-tighter animate-float-label ${
-            n.side === 'player' ? 'left-[25%] top-[40%]' : 'right-[25%] top-[40%]'
-          } ${
-            n.resultType === 'CRITICAL' ? 'text-4xl md:text-7xl text-orange-500 drop-shadow-[0_4px_10px_rgba(249,115,22,0.8)]' :
-            n.resultType === 'EVADE' ? 'text-2xl md:text-4xl text-cyan-400 drop-shadow-[0_2px_5px_rgba(34,211,238,0.5)]' :
-            n.resultType === 'GLANCING' ? 'text-xl md:text-3xl text-slate-400 opacity-80' :
-            'text-2xl md:text-5xl text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]'
-          }`}
-        >
-          {n.resultType === 'EVADE' ? 'EVADED!' : 
-           n.resultType === 'GLANCING' ? 'GLANCING' :
-           n.resultType === 'CRITICAL' ? `KAPOW! -${n.val}` : `-${n.val}`}
+      {/* --- CINEMATIC SKILL OVERLAYS --- */}
+      {activeSkill && (
+        <div className={`absolute inset-0 z-[45] pointer-events-none transition-opacity duration-500 opacity-30 bg-gradient-to-t ${
+          activeSkill.name === 'IGNITION OVERDRIVE' ? 'from-orange-600/50 to-transparent' :
+          activeSkill.name === 'STASIS PROTOCOL' ? 'from-blue-600/50 to-transparent' :
+          activeSkill.name === 'PHANTOM VELOCITY' ? 'from-purple-600/50 to-transparent' :
+          activeSkill.name === 'TECTONIC FORTRESS' ? 'from-emerald-600/50 to-transparent' : 'from-indigo-600/50 to-transparent'
+        }`}></div>
+      )}
+
+      {/* SKILL CUT-IN BANNER */}
+      {skillDuration > 0 && skillDuration > (activeSkill?.duration - 1.5) && (
+        <div className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-300">
+           <div className="w-full bg-black/90 border-y-[6px] border-white py-8 md:py-12 transform -rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.3)]">
+             <div className="absolute inset-0 comic-halftone opacity-30 text-white"></div>
+             <div className={`absolute top-0 left-0 h-full bg-gradient-to-r ${activeSkill?.color} opacity-40 animate-skill-sweep w-[200%]`}></div>
+             <div className="relative z-10 flex flex-col items-center">
+                <span className="text-white font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 opacity-70">Sync-Drive Engaged</span>
+                <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,1)]">
+                  {activeSkill?.name}
+                </h2>
+                <div className="mt-4 flex items-center gap-4 bg-white text-black px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase">
+                   <span>{activeSkill?.icon}</span>
+                   <span>{activeSkill?.description}</span>
+                </div>
+             </div>
+           </div>
         </div>
-      ))}
-      {/* Dynamic Background Backdrop */}
+      )}
+      {/* MONSTER SKILL CUT-IN */}
+      {monsterSkillActive && (
+        <div className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-right duration-300">
+           <div className="w-full bg-red-950/90 border-y-[6px] border-red-500 py-8 md:py-12 transform rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,0,0,0.5)]">
+             <div className="absolute inset-0 bg-comic-dots opacity-40 text-red-500"></div>
+             <div className="relative z-10 flex flex-col items-center">
+                <span className="text-red-500 font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 animate-pulse">Monster Ability Detected</span>
+                <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+                  {monsterSkillActive.name}
+                </h2>
+                <div className="mt-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase shadow-lg">
+                   {monsterSkillActive.description}
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
       {arenaTheme.backdrop && (
         <div className="absolute inset-0 z-0 select-none">
           <img src={arenaTheme.backdrop} className="w-full h-full object-cover opacity-40 mix-blend-luminosity" alt="" />
@@ -310,11 +337,14 @@ export const CombatView = React.memo(() => {
         )}
 
         {isMissed && !isStunned && (
-          <div className="absolute inset-x-2 md:inset-x-12 top-[40%] -translate-y-1/2 bg-slate-400 border-[4px] md:border-[6px] border-black z-[110] flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.2)] transform rotate-1 animate-in zoom-in py-6 md:py-10">
+          <div className="absolute inset-x-2 md:inset-x-12 top-[40%] -translate-y-1/2 bg-amber-400 border-[4px] md:border-[6px] border-black z-[110] flex flex-col items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.4)] transform rotate-1 animate-in zoom-in py-6 md:py-10">
             <div className="absolute inset-0 comic-halftone opacity-20 text-black"></div>
-            <div className="flex items-center gap-4 md:gap-8">
-               <Activity size={32} className="md:w-12 md:h-12 text-black" />
-               <p className="font-black text-lg md:text-5xl uppercase italic text-black tracking-tight text-center">ATTACK DEFLECTED!</p>
+            <div className="flex items-center gap-4 md:gap-8 relative z-10">
+               <Shield size={32} className="md:w-12 md:h-12 text-black animate-bounce" />
+               <div className="flex flex-col">
+                 <p className="font-black text-lg md:text-5xl uppercase italic text-black tracking-tighter text-center">EVADED!</p>
+                 <p className="text-[8px] md:text-sm font-black text-black/60 uppercase tracking-widest text-center italic mt-1">Uplink Signal Lost - Target Too Fast</p>
+               </div>
             </div>
           </div>
         )}
@@ -324,9 +354,13 @@ export const CombatView = React.memo(() => {
           {/* ENEMY AVATAR */}
           <div className={`flex flex-col items-center lg:items-end transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
              <div className="relative">
+                {/* Elite Aura */}
+                {enemy?.isElite && (
+                  <div className="absolute inset-0 -m-8 bg-purple-600/30 blur-3xl rounded-full animate-pulse scale-125 z-0"></div>
+                )}
                 <div 
                   ref={enemyContainerRef}
-                  className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}
+                  className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-slate-900 border-[5px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] md:shadow-[12px_12px_0_rgba(0,0,0,1)] overflow-hidden relative transform -rotate-2 ${enemy?.isElite ? 'scale-125 drop-shadow-[0_0_30px_rgba(168,85,247,0.6)]' : ''} ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
                   <div className="absolute inset-0 opacity-20 comic-halftone text-red-500 z-0"></div>
@@ -477,23 +511,27 @@ export const CombatView = React.memo(() => {
           {/* ENEMY STATUS */}
           <div className="w-full flex flex-col items-center lg:items-end space-y-2 md:space-y-4">
               <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
-                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col transform -rotate-1 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-1 opacity-20 pointer-events-none transform rotate-12">
-                    <Skull size={40} className="text-black" />
-                  </div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none">Threat Identified</span>
-                    {enemy.archetype && (
-                      <span className={`text-[6px] md:text-[10px] font-black px-1.5 py-0.5 rounded border border-black shadow-[1px_1px_0_rgba(0,0,0,1)] uppercase italic ${
-                        enemy.archetype === 'TANK' ? 'bg-slate-700 text-white' :
-                        enemy.archetype === 'ASSASSIN' ? 'bg-red-950 text-red-500' :
-                        enemy.archetype === 'SNIPER' ? 'bg-yellow-500 text-black' : 'bg-cyan-500 text-black'
-                      }`}>
-                        [{enemy.archetype}]
+                <div className="bg-red-600 text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-between transform -rotate-1">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Threat Identified</span>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-black text-sm md:text-3xl italic drop-shadow-lg uppercase tracking-tighter">
+                          {enemy.name}
+                        </span>
+                        {enemy?.isElite && (
+                          <span className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[8px] md:text-xs px-2 py-0.5 rounded-full font-black border border-white/40 shadow-lg animate-pulse">
+                            CHAMPION
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-cyan-400 font-bold text-[10px] md:text-lg tracking-widest flex items-center gap-1">
+                        LVL {enemy.level} 
+                        <span className="w-1 h-1 bg-cyan-400 rounded-full"></span>
+                        {enemy.archetype}
                       </span>
-                    )}
+                    </div>
                   </div>
-                  <h2 className="text-xs md:text-2xl font-black uppercase tracking-tighter italic leading-none truncate relative z-10">{enemy.name}</h2>
                 </div>
 
                 <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
@@ -723,6 +761,53 @@ export const CombatView = React.memo(() => {
                 </div>
               </>
             )}
+
+            <div className="w-[2px] h-6 bg-white/10 mx-0.5 md:mx-1"></div>
+
+            {/* SYNC-DRIVE SKILL MODULE */}
+            <div className="flex items-center gap-1 md:gap-3 bg-slate-900/50 p-1 md:p-2 rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
+               {/* Energy Bar */}
+               <div className="w-2 md:w-4 h-10 md:h-16 bg-black border-2 border-black rounded-full overflow-hidden relative shadow-inner">
+                  <div 
+                    className={`absolute bottom-0 left-0 w-full transition-all duration-500 ease-out bg-gradient-to-t ${skillEnergy >= 100 ? 'from-white to-cyan-400 animate-pulse' : 'from-cyan-900 to-cyan-600'}`}
+                    style={{ height: `${skillEnergy}%` }}
+                  >
+                    {skillEnergy >= 100 && <div className="absolute inset-0 bg-white/40 animate-ping"></div>}
+                  </div>
+               </div>
+
+               {/* Trigger Button */}
+               <button
+                 onClick={triggerSkill}
+                 disabled={skillEnergy < 100 || !!activeSkill || skillCooldown > 0}
+                 className={`relative w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl border-[3px] border-black flex flex-col items-center justify-center transition-all shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:grayscale disabled:opacity-40 group overflow-hidden ${
+                   skillCooldown > 0 ? 'bg-red-950 border-red-500' :
+                   skillEnergy >= 100 ? `bg-gradient-to-br ${activeSkill ? 'from-slate-700 to-slate-900' : (ELEMENTAL_SKILLS[player.gemxElement || 'Cosmic']?.color || 'from-cyan-400 to-indigo-600')} animate-pulse ring-4 ring-white/50` : 'bg-slate-800'
+                 }`}
+               >
+                 {activeSkill ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] md:text-2xl font-black text-white italic">{skillDuration}s</span>
+                      <span className="text-[4px] md:text-[8px] font-black text-white/60 uppercase">ACTIVE</span>
+                    </div>
+                 ) : skillCooldown > 0 ? (
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] md:text-2xl font-black text-red-500 italic">{skillCooldown}s</span>
+                      <span className="text-[4px] md:text-[8px] font-black text-red-500/60 uppercase">REBOOT</span>
+                    </div>
+                 ) : (
+                    <>
+                      <span className={`text-xl md:text-4xl group-hover:scale-125 transition-transform ${skillEnergy >= 100 ? 'animate-bounce' : ''}`}>
+                        {ELEMENTAL_SKILLS[player.gemxElement || 'Cosmic']?.icon || '✨'}
+                      </span>
+                      <span className="text-[4px] md:text-[8px] font-black text-white uppercase italic tracking-tighter mt-1">SYNC DRIVE</span>
+                    </>
+                 )}
+                 {skillEnergy >= 100 && !activeSkill && (
+                    <div className="absolute inset-0 bg-white/20 animate-skill-sweep pointer-events-none"></div>
+                 )}
+               </button>
+            </div>
           </div>
         </div>
       </div>
@@ -971,21 +1056,6 @@ export const CombatView = React.memo(() => {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(100%); }
         }
-        @keyframes float-label {
-          0% { transform: translateY(0) scale(0.5); opacity: 0; }
-          20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
-          100% { transform: translateY(-100px) scale(1); opacity: 0; }
-        }
-        .animate-float-label { animation: float-label 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes shake-heavy {
-          0%, 100% { transform: translate(0, 0) rotate(0); }
-          10% { transform: translate(-10px, -10px) rotate(-2deg); }
-          20% { transform: translate(10px, 5px) rotate(2deg); }
-          30% { transform: translate(-5px, 10px) rotate(-1deg); }
-          40% { transform: translate(10px, -5px) rotate(1deg); }
-          50% { transform: translate(-10px, 5px) rotate(-2deg); }
-        }
-        .animate-shake-heavy { animation: shake-heavy 0.4s ease-in-out; }
       `}</style>
     </div>
   );

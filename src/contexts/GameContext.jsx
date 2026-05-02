@@ -14,8 +14,7 @@ import {
   DIFFICULTY_MULTIPLIER, getXpRequired, AP_PER_LEVEL, MAX_CRIT_CHANCE, BASE_CRIT_CHANCE, CRIT_SCALING_PER_FLOOR,
   STUN_DURATION_NORMAL, STUN_DURATION_CRIT, DEFEAT_WINDOW_DURATION, PENALTY_DURATION,
   AUTO_SCROLL_DURATION, COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE,
-  BOSS, BOSS_MEDIA_FILES, scaleMonster, calculateStats, getHitChance, getDamage,
-  MONSTER_ARCHETYPES
+  BOSS, BOSS_MEDIA_FILES, scaleMonster, calculateStats, getHitChance, getDamage, ELEMENTAL_SKILLS
 } from '../utils/gameLogic';
 
 import { useAdventure } from '../hooks/useAdventure';
@@ -261,15 +260,7 @@ export const GameProvider = ({ children, user }) => {
       const stack = event.reason?.stack || event.error?.stack || "No stack trace available.";
       
       console.error("🚀 [GLOBAL_SENTRY] Error Caught:", errorMsg);
-
-      setGlobalError({
-        message: errorMsg,
-        stack: stack,
-        timestamp: Date.now(),
-        // We capture these via refs to avoid closure stale state or dependency issues
-        view: sentryStateRef.current.view,
-        depth: sentryStateRef.current.depth
-      });
+      // We log but don't set state here to avoid infinite error-loops
     };
 
     window.addEventListener('error', handleError);
@@ -281,7 +272,7 @@ export const GameProvider = ({ children, user }) => {
     };
   }, []); // Only mount once
 
-  const engine = {
+  const engine = useMemo(() => ({
     user, player, syncPlayer, logs, addLog, currentTime,
     db, appId, functions,
     showGuide, setShowGuide, guideType, setGuideType,
@@ -299,7 +290,7 @@ export const GameProvider = ({ children, user }) => {
     gvgContext, setGvgContext,
     battleMode, setBattleMode,
     leaderboard: leaderboardObj.leaderboard,
-    updateLeaderboard: syncPlayer, // Alias for backward compatibility if needed, though they should call syncPlayer
+    updateLeaderboard: syncPlayer, 
     updateBoardTab: leaderboardObj.setActiveBoard,
     activeBoardTab: leaderboardObj.activeBoard,
 
@@ -307,8 +298,21 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
-    BOSS, BOSS_MEDIA_FILES, SOUNDS, MONSTER_ARCHETYPES
-  };
+    BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS
+  }), [
+    user, player, syncPlayer, logs, addLog, currentTime, db, appId, functions,
+    showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx,
+    showBossVideo, setShowBossVideo, showSuccessWindow, setShowSuccessWindow,
+    showBlockadeModal, setShowBlockadeModal, blockadeError, setBlockadeError,
+    collisionProfile, setCollisionProfile, sessionConflict, forgeResult, setForgeResult,
+    faucetResult, setFaucetResult, adventure, combat, actions, gameLoop, market, audio,
+    wallet, linkWallet, migrateProfile, network, gvgContext, setGvgContext,
+    battleMode, setBattleMode, leaderboardObj, dynamicStats, handleLogout, openGuide,
+    globalError, setGlobalError, submitErrorReport, lowPerfMode, setLowPerfMode,
+    TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES,
+    SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS, BOSS, BOSS_MEDIA_FILES,
+    SOUNDS, ELEMENTAL_SKILLS
+  ]);
 
   return (
     <GameContext.Provider value={engine}>
