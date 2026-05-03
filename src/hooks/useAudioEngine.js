@@ -14,7 +14,8 @@ export const SOUNDS = {
   playerAttack: '/assets/sounds/Player-Attack.wav',
   monsterAttack: '/assets/sounds/Monster-Attack.wav',
   obtainLoot: '/assets/sounds/Obtain-Loot.wav',
-  useHeal: '/assets/sounds/Use-Heal-Potion.wav'
+  useHeal: '/assets/sounds/Use-Heal-Potion.wav',
+  levelup: '/assets/sounds/Level-Up.wav'
 };
 
 export const useAudioEngine = (view, enemyIsBoss) => {

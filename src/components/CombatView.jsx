@@ -3,7 +3,8 @@ import { TrendingUp, MousePointer, Coffee, X, Skull, Lock, Activity, Shield, Swo
 import { ImpactSplash, BattleParticles } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
-
+import { getMonsterElement } from '../utils/gameLogic';
+import { SOUNDS } from '../hooks/useAudioEngine';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
@@ -15,7 +16,7 @@ export const CombatView = React.memo(() => {
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury,
     skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
-    monsterSkillActive
+    monsterSkillActive, squadStrikeActive
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -40,8 +41,25 @@ export const CombatView = React.memo(() => {
   const [isPossibleDropsModalOpen, setIsPossibleDropsModalOpen] = useState(false);
   const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
   const [showPurifyConfirm, setShowPurifyConfirm] = useState(false);
+  const [tameAnimation, setTameAnimation] = useState(null); // 'ATTEMPTING', 'SUCCESS', 'FAIL'
+  const [levelUpCinematic, setLevelUpCinematic] = useState(false);
   
   const battleParticlesRef = useRef(null);
+
+  // --- LEVEL UP VISUAL FEEDBACK ---
+  useEffect(() => {
+    if (combat.levelUpEffectTrigger > 0) {
+      setLevelUpCinematic(true);
+      if (battleParticlesRef.current?.triggerLevelUp) {
+        battleParticlesRef.current.triggerLevelUp();
+      }
+      setTimeout(() => setLevelUpCinematic(false), 2800);
+      if (audio?.playSFX) {
+         audio.playSFX(SOUNDS.levelup);
+      }
+    }
+  }, [combat.levelUpEffectTrigger, audio]);
+  
   const enemyContainerRef = useRef(null);
   const playerContainerRef = useRef(null);
   const arenaRef = useRef(null);
@@ -207,6 +225,25 @@ export const CombatView = React.memo(() => {
       );
     }
   }, [playerImpactSplash]);
+  
+  // Squad Support Particle Trigger
+  useEffect(() => {
+    if (squadStrikeActive && battleParticlesRef.current && enemyContainerRef.current && arenaRef.current) {
+      const rect = enemyContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      
+      // Intensive Burst
+      setTimeout(() => {
+        battleParticlesRef.current.emit(
+          (rect.left - arenaRect.left) + rect.width / 2, 
+          (rect.top - arenaRect.top) + rect.height / 2, 
+          squadStrikeActive.element || 'impact', 
+          { speed: 25, size: 20, gravity: 0.1, count: 60 }
+        );
+        if (audio) audio.playSFX('combat_hit');
+      }, 400); // Sync with banner animation
+    }
+  }, [squadStrikeActive]);
 
   if (!enemy) return (
     <div className="flex-1 flex items-center justify-center bg-black text-cyan-500 font-black italic uppercase tracking-widest animate-pulse">
@@ -237,14 +274,21 @@ export const CombatView = React.memo(() => {
            <div className="w-full bg-black/90 border-y-[6px] border-white py-8 md:py-12 transform -rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.3)]">
              <div className="absolute inset-0 comic-halftone opacity-30 text-white"></div>
              <div className={`absolute top-0 left-0 h-full bg-gradient-to-r ${activeSkill?.color} opacity-40 animate-skill-sweep w-[200%]`}></div>
-             <div className="relative z-10 flex flex-col items-center">
-                <span className="text-white font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 opacity-70">Sync-Drive Engaged</span>
-                <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,1)]">
-                  {activeSkill?.name}
-                </h2>
-                <div className="mt-4 flex items-center gap-4 bg-white text-black px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase">
-                   <span>{activeSkill?.icon}</span>
-                   <span>{activeSkill?.description}</span>
+             <div className="relative z-10 flex flex-row items-center justify-center gap-4 md:gap-12 px-4">
+                {player.avatar && (
+                  <div className="w-16 h-16 md:w-32 md:h-32 border-[4px] md:border-[6px] border-white shadow-[6px_6px_0_rgba(255,255,255,0.2)] overflow-hidden transform rotate-3 shrink-0">
+                    <AvatarMedia num={player.avatar} animated={true} className="w-full h-full object-cover object-top" />
+                  </div>
+                )}
+                <div className="flex flex-col items-center md:items-start">
+                  <span className="text-white font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 opacity-70">Sync-Drive Engaged</span>
+                  <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,1)]">
+                    {activeSkill?.name}
+                  </h2>
+                  <div className="mt-4 flex items-center gap-4 bg-white text-black px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase">
+                    <span>{activeSkill?.icon}</span>
+                    <span>{activeSkill?.description}</span>
+                  </div>
                 </div>
              </div>
            </div>
@@ -255,18 +299,64 @@ export const CombatView = React.memo(() => {
         <div className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-right duration-300">
            <div className="w-full bg-red-950/90 border-y-[6px] border-red-500 py-8 md:py-12 transform rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,0,0,0.5)]">
              <div className="absolute inset-0 bg-comic-dots opacity-40 text-red-500"></div>
-             <div className="relative z-10 flex flex-col items-center">
-                <span className="text-red-500 font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 animate-pulse">Monster Ability Detected</span>
-                <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
-                  {monsterSkillActive.name}
-                </h2>
-                <div className="mt-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase shadow-lg">
-                   {monsterSkillActive.description}
+             <div className="relative z-10 flex flex-row-reverse items-center justify-center gap-4 md:gap-12 px-4">
+                <div className="w-16 h-16 md:w-32 md:h-32 border-[4px] md:border-[6px] border-red-500 shadow-[6px_6px_0_rgba(255,0,0,0.2)] overflow-hidden transform -rotate-3 bg-slate-900 shrink-0">
+                  <img
+                    src={combat.battleMode === 'GVG' ? `/assets/playeravatar/CrystleHunterAvatar (${enemy.avatarNum || 1}).jpg` : `/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.baseName || enemy.name}.jpg`}
+                    className="w-full h-full object-cover"
+                    alt=""
+                    onError={(e) => { e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }}
+                  />
+                </div>
+                <div className="flex flex-col items-center md:items-end text-center md:text-right">
+                  <span className="text-red-500 font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 animate-pulse">Monster Ability Detected</span>
+                  <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+                    {monsterSkillActive.name}
+                  </h2>
+                  <div className="mt-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase shadow-lg">
+                    {monsterSkillActive.description}
+                  </div>
                 </div>
              </div>
            </div>
         </div>
       )}
+
+      {/* SQUAD SUPPORT CUT-IN BANNER */}
+      {squadStrikeActive && (
+        <div className="absolute inset-0 z-[140] flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-left duration-300">
+           <div className={`w-full bg-slate-900/90 border-y-[4px] border-white py-4 md:py-8 transform -rotate-1 relative overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.2)]`}>
+             <div className="absolute inset-0 comic-halftone opacity-20 text-white"></div>
+             <div className={`absolute top-0 left-0 h-full bg-gradient-to-r ${squadStrikeActive.color} opacity-40 animate-skill-sweep w-[200%]`}></div>
+             <div className="relative z-10 flex flex-row items-center justify-center gap-2 md:gap-8 px-4">
+                <div className="w-12 h-12 md:w-24 md:h-24 border-[3px] md:border-[4px] border-white shadow-lg overflow-hidden transform rotate-2 bg-black shrink-0">
+                  {squadStrikeActive.type === 'PET' ? (
+                     <div className="w-full h-full flex items-center justify-center text-4xl md:text-6xl bg-slate-800">
+                       {petElementIcon}
+                     </div>
+                  ) : squadStrikeActive.type === 'MATE' ? (
+                     <AvatarMedia num={squadStrikeActive.avatar || 1} animated={true} className="w-full h-full object-cover" />
+                  ) : (
+                     <div className="w-full h-full bg-red-900 flex items-center justify-center text-4xl md:text-6xl">🐲</div>
+                  )}
+                </div>
+                <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                  <span className="text-white font-black text-[8px] md:text-sm uppercase tracking-[0.4em] italic mb-1 opacity-70">Squad Tactical Intervention</span>
+                  <h2 className="text-xl md:text-4xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-md">
+                    {squadStrikeActive.name}
+                  </h2>
+                  <div className="mt-1 text-[8px] md:text-xs font-black text-white/60 uppercase tracking-widest italic">
+                    {squadStrikeActive.description}
+                  </div>
+                </div>
+                <div className="bg-white text-black px-2 py-1 rounded font-black text-[10px] md:text-xl transform rotate-12 shadow-lg animate-bounce">
+                  +{squadStrikeActive.energy}% ENERGY
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
+
       {arenaTheme.backdrop && (
         <div className="absolute inset-0 z-0 select-none">
           <img src={arenaTheme.backdrop} className="w-full h-full object-cover opacity-40 mix-blend-luminosity" alt="" />
@@ -323,7 +413,95 @@ export const CombatView = React.memo(() => {
            </div>
         </div>
 
-        {/* BATTLE LOCKOUT OVERLAYS */}
+        {/* LEVEL UP CINEMATIC OVERLAY */}
+        {levelUpCinematic && (
+          <div className="absolute inset-0 z-[200] flex items-center justify-center pointer-events-none overflow-hidden">
+            {/* Screen Flash */}
+            <div className="absolute inset-0 bg-white animate-out fade-out duration-[2000ms] z-0"></div>
+            
+            {/* Darkening Backdrop with Halftone */}
+            <div className="absolute inset-0 bg-cyan-950/80 backdrop-blur-sm animate-in fade-in duration-500 z-10">
+               <div className="absolute inset-0 comic-halftone opacity-30 text-cyan-400 mix-blend-overlay"></div>
+            </div>
+
+            {/* Vertical Power Pillar */}
+            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-64 md:w-96 bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent animate-pulse z-10 skew-x-[-15deg]"></div>
+            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-20 md:w-32 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-pulse z-10 skew-x-[-15deg]"></div>
+
+            {/* Main Cut-in Banner */}
+            <div className="w-[120%] py-12 md:py-20 bg-gradient-to-r from-cyan-900 via-cyan-500 to-cyan-900 border-y-[8px] border-white transform -rotate-3 animate-in slide-in-from-bottom-[50%] zoom-in-50 duration-500 shadow-[0_0_100px_rgba(34,211,238,0.8)] z-20 flex flex-col items-center justify-center">
+               
+               {/* Decorative Lines */}
+               <div className="absolute top-2 left-0 w-full h-1 bg-white/40"></div>
+               <div className="absolute bottom-2 left-0 w-full h-1 bg-white/40"></div>
+
+               <span className="text-white font-black text-sm md:text-3xl uppercase tracking-[1em] italic mb-2 animate-bounce drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">Power Overflow</span>
+               
+               <h2 className="text-6xl md:text-[140px] font-[1000] text-transparent bg-clip-text bg-gradient-to-b from-white via-cyan-200 to-cyan-600 italic uppercase tracking-tighter drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] leading-none animate-kapow">
+                 LEVEL UP!
+               </h2>
+               
+               <div className="mt-6 md:mt-10 flex items-center gap-6 md:gap-12 animate-in slide-in-from-left duration-700 delay-300">
+                  <div className="bg-black border-4 border-cyan-400 px-6 py-2 md:px-8 md:py-4 transform skew-x-12 shadow-[6px_6px_0_rgba(255,255,255,1)]">
+                     <span className="text-cyan-400 font-black text-xl md:text-4xl italic block leading-none">+5</span>
+                     <span className="text-white text-[10px] md:text-lg font-black uppercase tracking-widest mt-1 block">Ability Pts</span>
+                  </div>
+                  <div className="bg-white border-4 border-black px-6 py-2 md:px-8 md:py-4 transform -skew-x-12 shadow-[6px_6px_0_rgba(34,211,238,1)]">
+                     <span className="text-black font-black text-xl md:text-4xl italic block leading-none">+50</span>
+                     <span className="text-black/60 text-[10px] md:text-lg font-black uppercase tracking-widest mt-1 block">Max HP</span>
+                  </div>
+               </div>
+            </div>
+            
+            {/* Screen Shake overlay class wrapper equivalent */}
+            <div className="absolute inset-0 z-50 animate-shake pointer-events-none opacity-50"></div>
+          </div>
+        )}
+
+        {/* TAMING CINEMATIC OVERLAY */}
+        {tameAnimation && (
+          <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center pointer-events-none overflow-hidden">
+             {/* Dynamic Flash Layer */}
+             <div className={`absolute inset-0 z-20 transition-opacity duration-300 ${tameAnimation === 'SUCCESS' ? 'bg-white animate-out fade-out fill-mode-forwards' : 'bg-transparent'}`}></div>
+             <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px] animate-in fade-in duration-300"></div>
+             
+             {/* Energy Streaks Background */}
+             <div className="absolute inset-0 pointer-events-none opacity-30 overflow-hidden">
+                <div className="absolute top-1/4 left-0 w-[200%] h-0.5 bg-white/20 -rotate-45 animate-shimmer"></div>
+                <div className="absolute top-3/4 left-0 w-[200%] h-0.5 bg-white/20 -rotate-45 animate-shimmer delay-150"></div>
+             </div>
+             
+             <div className={`w-full py-2 md:py-6 border-y-2 md:border-y-4 border-black transform -rotate-1 shadow-[0_0_60px_rgba(0,0,0,0.8)] relative flex items-center justify-center animate-in slide-in-from-left duration-500 ${
+               tameAnimation === 'ATTEMPTING' ? 'bg-gradient-to-r from-emerald-950 via-emerald-600 to-emerald-950 animate-pulse' :
+               tameAnimation === 'SUCCESS' ? 'bg-gradient-to-r from-emerald-500 via-white to-emerald-500 scale-105' :
+               'bg-gradient-to-r from-red-950 via-red-600 to-red-950 animate-shake'
+             }`}>
+                <div className="absolute inset-0 comic-halftone opacity-40 mix-blend-overlay"></div>
+                
+                <div className="relative z-10 flex items-center gap-3 md:gap-8">
+                   <div className={`w-10 h-10 md:w-20 md:h-20 border-2 md:border-4 border-black bg-slate-900 shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center transform rotate-3 ${tameAnimation === 'ATTEMPTING' ? 'animate-spin-slow' : 'animate-bounce-heavy'}`}>
+                      <span className="text-xl md:text-4xl drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+                        {tameAnimation === 'ATTEMPTING' ? '💠' : tameAnimation === 'SUCCESS' ? '✨' : '🌫️'}
+                      </span>
+                   </div>
+
+                   <div className="flex flex-col">
+                      <p className={`font-black text-xl md:text-4xl uppercase italic tracking-tighter drop-shadow-[0_2px_0_rgba(0,0,0,1)] leading-none ${tameAnimation === 'SUCCESS' ? 'text-emerald-950 animate-pop' : 'text-white'}`}>
+                        {tameAnimation === 'ATTEMPTING' ? 'CORE_SCANNING...' : tameAnimation === 'SUCCESS' ? 'PURIFIED!' : 'STABILIZATION_FAILED'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 md:mt-1">
+                         <div className={`h-0.5 flex-1 bg-current opacity-30 ${tameAnimation === 'SUCCESS' ? 'bg-emerald-950' : 'bg-white'}`}></div>
+                         <p className={`font-black text-[7px] md:text-sm uppercase tracking-widest italic whitespace-nowrap ${tameAnimation === 'SUCCESS' ? 'text-emerald-900' : 'text-white/80'}`}>
+                           {tameAnimation === 'ATTEMPTING' ? 'RESONANCE_STABILIZING' : tameAnimation === 'SUCCESS' ? 'PET_SPIRIT_MANIFESTED' : 'ENERGY_DISSIPATED'}
+                         </p>
+                         <div className={`h-0.5 flex-1 bg-current opacity-30 ${tameAnimation === 'SUCCESS' ? 'bg-emerald-950' : 'bg-white'}`}></div>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
+
         {isStunned && (
           <div className="absolute inset-x-2 md:inset-x-12 top-[40%] -translate-y-1/2 bg-black/95 backdrop-blur-md border-[4px] md:border-[6px] border-red-600 z-[110] flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.5)] transform -rotate-1 animate-in zoom-in py-6 md:py-10">
             <div className="flex items-center gap-4 md:gap-8 animate-pulse">
@@ -372,12 +550,13 @@ export const CombatView = React.memo(() => {
                     />
                   ) : (
                     <img
-                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.name}.jpg`}
+                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.baseName || (enemy.name?.startsWith('CHAMPION ') ? enemy.name.replace('CHAMPION ', '') : enemy.name)}.jpg`}
                       alt={enemy.name}
-                      className="w-full h-full object-cover relative z-10 filter brightness-110 contrast-125"
+                      className={`w-full h-full object-cover relative z-10 transition-all duration-700 ${tameAnimation === 'ATTEMPTING' ? 'filter brightness-200 contrast-150 saturate-200 sepia-[0.3] hue-rotate-[90deg] scale-105' : 'filter brightness-110 contrast-125'}`}
                       onError={(e) => {
                         const folder = enemy.folder || 'Neon Slums';
-                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${enemy.name}.png`;
+                        const baseN = enemy.baseName || (enemy.name?.startsWith('CHAMPION ') ? enemy.name.replace('CHAMPION ', '') : enemy.name);
+                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${baseN}.png`;
                         else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
                       }}
                     />
@@ -407,18 +586,65 @@ export const CombatView = React.memo(() => {
                     <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-red-600 uppercase italic tracking-tighter leading-none mt-0.5">STRIKE</span>
                   </button>
 
-                  {/* SKIP TRIGGER OVERLAY */}
+                  {/* SKIP & TAME TRIGGER OVERLAY */}
                   {combat.battleMode !== 'GVG' && (
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSkip();
-                      }}
-                      className="absolute top-1 right-1 z-40 bg-blue-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
-                    >
-                      <span className="text-xs md:text-xl group-hover:animate-pulse">⏭️</span>
-                      <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-blue-600 uppercase italic tracking-tighter leading-none mt-0.5">SKIP</span>
-                    </button>
+                    <div className="absolute top-1 right-1 z-40 flex flex-col gap-1">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSkip();
+                        }}
+                        className="bg-blue-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
+                      >
+                        <span className="text-xs md:text-xl group-hover:animate-pulse">⏭️</span>
+                        <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-blue-600 uppercase italic tracking-tighter leading-none mt-0.5">SKIP</span>
+                      </button>
+
+                      {Object.values(player.inventory || {}).some(i => i?.id?.startsWith('taming_')) && (
+                        (() => {
+                          const targetElement = getMonsterElement(enemy);
+                          const matchingPrism = Object.values(player.inventory || {}).find(i => 
+                            i?.id?.startsWith(`taming_${targetElement.toLowerCase()}`)
+                          );
+                          const elementIcons = { 'Pyro': '🔥', 'Hydro': '💧', 'Gale': '🌪️', 'Earthen': '⛰️', 'Cosmic': '⚛️' };
+                          const chance = Math.floor((0.9 - ((enemy.hp / enemy.maxHp) * 0.6)) * 100);
+
+                          return (
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (tameAnimation || !matchingPrism) return;
+                                
+                                const cleanPrismId = matchingPrism.id.replace(/(_\d+)+$/, '').split('_').slice(0, 2).join('_');
+                                
+                                setTameAnimation('ATTEMPTING');
+                                const initialPetCount = (player.unlockedPets || []).length;
+                                await actions.handlePurify(enemy, cleanPrismId);
+                                
+                                setTimeout(() => {
+                                  const currentPetCount = (player.unlockedPets || []).length;
+                                  const isSuccess = currentPetCount > initialPetCount;
+                                  setTameAnimation(isSuccess ? 'SUCCESS' : 'FAIL');
+                                  setTimeout(() => {
+                                    setTameAnimation(null);
+                                    adventure.setEnemy(null);
+                                    handleSkip(); 
+                                  }, 2500);
+                                }, 1500);
+                              }}
+                              className={`bg-emerald-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${!matchingPrism ? 'opacity-30 grayscale cursor-not-allowed' : 'animate-pulse'}`}
+                            >
+                              <span className="text-xs md:text-xl group-hover:rotate-12 transition-transform">
+                                {elementIcons[targetElement] || '💠'}
+                              </span>
+                              <span className="text-[5px] md:text-[8px] font-black text-white group-hover:text-emerald-600 uppercase italic tracking-tighter leading-none mt-0.5 whitespace-nowrap">
+                                {!matchingPrism ? `NEED ${targetElement}` : `${chance}% TAME`}
+                              </span>
+                            </button>
+                          );
+                        })()
+                      )}
+                    </div>
                   )}
 
                   <ImpactSplash splash={impactSplash} />
@@ -648,8 +874,8 @@ export const CombatView = React.memo(() => {
         </div>
 
         {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
-        <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none">
-          <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
+        <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none pb-2">
+          <div className="flex items-center gap-1 md:gap-3 p-1.5 md:p-3 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
 
             {/* Potion Slot */}
             <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
@@ -662,7 +888,7 @@ export const CombatView = React.memo(() => {
               <button 
                 onClick={handleHeal} 
                 disabled={!potionCountData.hasSelected} 
-                className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+                className="h-8 md:h-12 px-2 md:px-6 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[3rem] md:min-w-[5rem]"
               >
                 <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
                 <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
@@ -703,7 +929,7 @@ export const CombatView = React.memo(() => {
                       <button 
                         onClick={() => activateAutoScroll(view)} 
                         disabled={!hasAnyScrolls}
-                        className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
+                        className="h-8 md:h-12 px-2 md:px-6 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[3rem] md:min-w-[5rem] disabled:opacity-30"
                       >
                         <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
                         <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>

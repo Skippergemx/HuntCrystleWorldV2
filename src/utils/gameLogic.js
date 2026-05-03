@@ -60,6 +60,7 @@ export const scaleMonster = (baseMonster, depth) => {
     archetype: archetype,
     powerLevel: powerMultiplier,
     isElite: isElite,
+    baseName: baseMonster.name,
     name: isElite ? `CHAMPION ${baseMonster.name}` : baseMonster.name,
     skill: MONSTER_SKILLS[archetype.charAt(0).toUpperCase() + archetype.slice(1)]
   };
@@ -176,6 +177,42 @@ export const calculateStats = (player, tavernMates, buffActive, dragonActive, PE
   stats.dex = Math.floor(stats.dex);
 
   return stats;
+};
+
+/**
+ * Maps a monster or dungeon folder to its corresponding element for taming
+ */
+export const getMonsterElement = (monster) => {
+  if (!monster) return 'Cosmic';
+  
+  const folderToElement = {
+    'Inferno Crater': 'Pyro',
+    'Tectonic Ridge': 'Earthen',
+    'Abyssal Trench': 'Hydro',
+    'Gale Empire': 'Gale',
+    'Void Sector 7': 'Cosmic',
+    'Neon Slums': 'Cosmic',
+    'Rust Canyon': 'Earthen',
+    'Crystal Peak': 'Gale',
+    'Shadow Fen': 'Cosmic'
+  };
+
+  if (monster.folder && folderToElement[monster.folder]) {
+    return folderToElement[monster.folder];
+  }
+  
+  // Fallback to ID-based prefix (e.g., pyro_slime -> Pyro)
+  const idPrefix = monster.id?.split('_')[0]?.toLowerCase();
+  const validElements = ['pyro', 'hydro', 'gale', 'earthen', 'cosmic'];
+  if (validElements.includes(idPrefix)) {
+    return idPrefix.charAt(0).toUpperCase() + idPrefix.slice(1);
+  }
+
+  // Explicit Cosmic list for specialty monsters
+  const cosmicIds = ['null_stalker', 'void_wraith', 'abyssal_crawler', 'singularity_orb', 'quantum_shade', 'gravity_eater', 'dimensional_shifter', 'entropy_golem', 'rift_lurker', 'paradox_husk'];
+  if (cosmicIds.includes(monster.id)) return 'Cosmic';
+  
+  return 'Cosmic'; // Default
 };
 
 /**
@@ -355,7 +392,9 @@ export const BOSS = {
   dex: 1200,    
   critChance: 0.30,
   baseDropRate: 0.1, 
-  taunts: ["I am the final obstacle!", "Your stats are inefficient.", "Kneel before the Core!"]
+  taunts: ["I am the final obstacle!", "Your stats are inefficient.", "Kneel before the Core!"],
+  archetype: 'Tank',
+  skill: MONSTER_SKILLS['Tank']
 };
 
 export const BOSS_MEDIA_FILES = [

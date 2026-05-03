@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-combat-effects-v2',
+    date: '2026-05-03',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Visceral Engagement: The Power Overflow Upgrade',
+    subtitle: 'Redefining tactical feedback with high-fidelity cinematic effects.',
+    category: 'DEVELOPMENT',
+    type: 'article',
+    tag: 'NEW',
+    color: 'cyan',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'A critical component of any extraction protocol is the visceral feedback you receive when pushing your Hunter to the limits. Up until now, leveling up during a high-stakes dungeon dive felt underwhelming—a mere sprinkle of upward arrows that failed to capture the sheer power of ascension.'
+      },
+      {
+        type: 'heading',
+        text: 'Enter: Power Overflow'
+      },
+      {
+        type: 'paragraph',
+        text: 'Today, we deployed a massive overhaul to the combat engine\'s visual feedback loops. The "Power Overflow" cinematic cut-in completely transforms the level-up experience. When your Hunter crosses that XP threshold, the grid responds: the arena flashes, the screen shakes violently, and a massive, skewed banner slams into view, flanked by glowing data cards detailing your stat increases.'
+      },
+      {
+        type: 'image',
+        src: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg',
+        caption: 'The Power Overflow sequence brings a premium cinematic feel to your mid-combat ascensions.'
+      },
+      {
+        type: 'paragraph',
+        text: 'We didn\'t just stop at visual flair. The auditory experience has been synchronized, tying specific sound hooks directly to these moments of triumph, creating a truly multi-sensory feedback loop.'
+      },
+      {
+        type: 'heading',
+        text: 'Engine Hardening & UI Stabilization'
+      },
+      {
+        type: 'paragraph',
+        text: 'Along with the visual upgrades, we performed a deep-dive stabilization of the underlying combat engine (`useCombat.js`). We squashed a critical regression that was causing confirmation modals to fail during tactical retreats. By cleaning up redundant state variables and restoring lost telemetry references, the UI is now significantly more robust.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Furthermore, we cleaned up the "Squad Strike" rendering pipeline. Hunters noticed a slight visual artifact where the tactical intervention banner was rendering twice. We have surgically removed the legacy duplicate, ensuring that your pet, mate, or dragon interventions look cleaner and more impactful than ever.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The grid is getting more dangerous, but your feedback loops are getting sharper. Keep hunting, and let the power flow.'
+      }
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: 'dwg-first-article',
     date: '2026-05-02',
     author: 'Commander Gemx',

@@ -84,7 +84,7 @@ export const DragonsGroundView = React.memo(() => {
     { name: 'Sky Razer', folder: 'Neon Slums' }
   ];
 
-  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i && i.id?.replace(/(_\d+)+$/, '') === 'crystle_shard').length || 0;
+  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith('crystle_shard')).length || 0;
   const fruitsInInventory = Object.values(player.inventory || {}).filter(i => i && i.type === 'Fruit').length || 0;
 
   const gemxNextLevelRequirement = gemx.level * 10;
@@ -114,7 +114,7 @@ export const DragonsGroundView = React.memo(() => {
       return;
     }
 
-    const crystalKey = Object.keys(player.inventory || {}).find(key => player.inventory[key]?.id?.replace(/(_\d+)+$/, '') === 'crystle_shard');
+    const crystalKey = Object.keys(player.inventory || {}).find(key => player.inventory[key]?.id?.startsWith('crystle_shard'));
     if (crystalKey) {
       let newCrystalsFed = gemx.crystalsFed + 1;
       let newLevel = gemx.level;

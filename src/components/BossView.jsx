@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, TrendingUp, Lock, HelpCircle, RefreshCw, Check, Sparkles, WandSparkles } from 'lucide-react';
+import { TrendingUp, MousePointer, Coffee, Wind, Zap, Skull, Swords, Activity, Shield, Target, Star, Lock, HelpCircle, RefreshCw, Check, Sparkles, WandSparkles, Search, List, ChevronRight, RotateCw, FlaskConical } from 'lucide-react';
 import { BossImpactSplash, ImpactSplash, BattleParticles } from './CombatEffects';
 import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { X } from 'lucide-react';
@@ -27,11 +27,17 @@ export const BossView = () => {
   const {
       player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState, 
       BOSS, BOSS_MEDIA_FILES, TAVERN_MATES, openGuide, syncPlayer, lowPerfMode, FOODS,
-      bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo
+      bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
+      LOOTS, ITEMS, PETS_METADATA, EQUIPMENT, ELEMENTAL_SKILLS
   } = useGame();
 
-  const { view, setView, enemyFlinch } = adventure;
-  const { stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt } = combat;
+  const { view, setView, enemyFlinch, isHurt } = adventure;
+  const { 
+    stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
+    strikingSide, currentTaunt, playerTaunt,
+    skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
+    monsterSkillActive, squadStrikeActive
+  } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, buffTimeLeft, foodTimeLeft } = gameLoop;
   const [showRetreatConfirm, setShowRetreatConfirm] = React.useState(false);
@@ -44,6 +50,15 @@ export const BossView = () => {
   const bossContainerRef = React.useRef(null);
   const playerContainerRef = React.useRef(null);
   const arenaRef = React.useRef(null);
+
+  const possibleDrops = React.useMemo(() => {
+    // Show top tier relics and blueprints as potential drops
+    const relics = EQUIPMENT?.filter(e => e.type === 'Relic').slice(0, 5) || [];
+    const schematics = LOOTS?.filter(l => l.type === 'Schematic').slice(0, 3) || [];
+    return [...relics, ...schematics];
+  }, [EQUIPMENT, LOOTS]);
+
+  const [isPossibleDropsModalOpen, setIsPossibleDropsModalOpen] = useState(false);
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_boss_tutorial') === 'true';
@@ -182,12 +197,128 @@ export const BossView = () => {
     }
   }, [playerImpactSplash]);
 
+  // Squad Support Particle Trigger
+  useEffect(() => {
+    if (squadStrikeActive && battleParticlesRef.current && bossContainerRef.current && arenaRef.current) {
+      const rect = bossContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      
+      // Intensive Burst
+      setTimeout(() => {
+        battleParticlesRef.current.emit(
+          (rect.left - arenaRect.left) + rect.width / 2, 
+          (rect.top - arenaRect.top) + rect.height / 2, 
+          squadStrikeActive.element || 'impact', 
+          { speed: 25, size: 20, gravity: 0.1, count: 80 }
+        );
+        if (audio) audio.playSFX('combat_hit');
+      }, 400); // Sync with banner animation
+    }
+  }, [squadStrikeActive]);
+
   return (
     <div 
       ref={arenaRef}
-      className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${(combatState !== 'IDLE' && strikingSide === 'player') ? 'animate-damage' : ''}`}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${isHurt ? 'animate-damage' : ''}`}
     >
       <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
+
+      {/* --- CINEMATIC SKILL OVERLAYS --- */}
+      {activeSkill && (
+        <div className={`absolute inset-0 z-[45] pointer-events-none transition-opacity duration-500 opacity-30 bg-gradient-to-t ${
+          activeSkill.name === 'IGNITION OVERDRIVE' ? 'from-orange-600/50 to-transparent' :
+          activeSkill.name === 'STASIS PROTOCOL' ? 'from-blue-600/50 to-transparent' :
+          activeSkill.name === 'PHANTOM VELOCITY' ? 'from-purple-600/50 to-transparent' :
+          activeSkill.name === 'TECTONIC FORTRESS' ? 'from-emerald-600/50 to-transparent' : 'from-indigo-600/50 to-transparent'
+        }`}></div>
+      )}
+
+      {/* SKILL CUT-IN BANNER */}
+      {skillDuration > 0 && skillDuration > (activeSkill?.duration - 1.5) && (
+        <div className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none animate-in fade-in zoom-in duration-300">
+           <div className="w-full bg-black/90 border-y-[6px] border-white py-8 md:py-12 transform -rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,255,255,0.3)]">
+             <div className="absolute inset-0 comic-halftone opacity-30 text-white"></div>
+             <div className={`absolute top-0 left-0 h-full bg-gradient-to-r ${activeSkill?.color} opacity-40 animate-skill-sweep w-[200%]`}></div>
+             <div className="relative z-10 flex flex-row items-center justify-center gap-4 md:gap-12 px-4">
+                {player.avatar && (
+                  <div className="w-16 h-16 md:w-32 md:h-32 border-[4px] md:border-[6px] border-white shadow-[6px_6px_0_rgba(255,255,255,0.2)] overflow-hidden transform rotate-3 shrink-0">
+                    <AvatarMedia num={player.avatar} animated={true} className="w-full h-full object-cover object-top" />
+                  </div>
+                )}
+                <div className="flex flex-col items-center md:items-start">
+                  <span className="text-white font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 opacity-70">Sync-Drive Engaged</span>
+                  <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,1)]">
+                    {activeSkill?.name}
+                  </h2>
+                  <div className="mt-4 flex items-center gap-4 bg-white text-black px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase">
+                    <span>{activeSkill?.icon}</span>
+                    <span>{activeSkill?.description}</span>
+                  </div>
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* SQUAD SUPPORT CUT-IN BANNER */}
+      {squadStrikeActive && (
+        <div className="absolute inset-0 z-[140] flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-left duration-300">
+           <div className={`w-full bg-slate-900/90 border-y-[4px] border-white py-4 md:py-8 transform -rotate-1 relative overflow-hidden shadow-[0_0_50px_rgba(255,255,255,0.2)]`}>
+             <div className="absolute inset-0 comic-halftone opacity-20 text-white"></div>
+             <div className={`absolute top-0 left-0 h-full bg-gradient-to-r ${squadStrikeActive.color} opacity-40 animate-skill-sweep w-[200%]`}></div>
+             <div className="relative z-10 flex flex-row items-center justify-center gap-2 md:gap-8 px-4">
+                <div className="w-12 h-12 md:w-24 md:h-24 border-[3px] md:border-[4px] border-white shadow-lg overflow-hidden transform rotate-2 bg-black shrink-0">
+                  {squadStrikeActive.type === 'PET' ? (
+                     <div className="w-full h-full flex items-center justify-center text-4xl md:text-6xl bg-slate-800">
+                       {PETS_METADATA.find(p => p.id === player.petId)?.element === 'Pyro' ? '🔥' :
+                        PETS_METADATA.find(p => p.id === player.petId)?.element === 'Hydro' ? '💧' :
+                        PETS_METADATA.find(p => p.id === player.petId)?.element === 'Gale' ? '⚡' : '⛰️'}
+                     </div>
+                  ) : squadStrikeActive.type === 'MATE' ? (
+                     <AvatarMedia num={squadStrikeActive.avatar || 1} animated={true} className="w-full h-full object-cover" />
+                  ) : (
+                     <div className="w-full h-full bg-red-900 flex items-center justify-center text-4xl md:text-6xl">🐲</div>
+                  )}
+                </div>
+                <div className="flex flex-col items-center md:items-start text-center md:text-left">
+                  <span className="text-white font-black text-[8px] md:text-sm uppercase tracking-[0.4em] italic mb-1 opacity-70">Squad Tactical Intervention</span>
+                  <h2 className="text-xl md:text-4xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-md">
+                    {squadStrikeActive.name}
+                  </h2>
+                  <div className="mt-1 text-[8px] md:text-xs font-black text-white/60 uppercase tracking-widest italic">
+                    {squadStrikeActive.description}
+                  </div>
+                </div>
+                <div className="bg-white text-black px-2 py-1 rounded font-black text-[10px] md:text-xl transform rotate-12 shadow-lg animate-bounce">
+                  +{squadStrikeActive.energy}% ENERGY
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
+
+      {/* MONSTER SKILL CUT-IN */}
+      {monsterSkillActive && (
+        <div className="absolute inset-0 z-[150] flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-right duration-300">
+           <div className="w-full bg-red-950/90 border-y-[6px] border-red-500 py-8 md:py-12 transform rotate-2 relative overflow-hidden shadow-[0_0_100px_rgba(255,0,0,0.5)]">
+             <div className="absolute inset-0 bg-comic-dots opacity-40 text-red-500"></div>
+             <div className="relative z-10 flex flex-row-reverse items-center justify-center gap-4 md:gap-12 px-4">
+                <div className="w-16 h-16 md:w-32 md:h-32 border-[4px] md:border-[6px] border-red-500 shadow-[6px_6px_0_rgba(255,0,0,0.2)] overflow-hidden transform -rotate-3 bg-slate-900 shrink-0">
+                  <BossAvatarMedia bossIdx={bossAvatarIdx} animated={true} className="w-full h-full object-cover contrast-125" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
+                </div>
+                <div className="flex flex-col items-center md:items-end text-center md:text-right">
+                  <span className="text-red-500 font-black text-xs md:text-xl uppercase tracking-[0.5em] italic mb-2 animate-pulse">Boss Ability Detected</span>
+                  <h2 className="text-3xl md:text-7xl font-[1000] text-white italic uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(255,0,0,0.8)]">
+                    {monsterSkillActive.name}
+                  </h2>
+                  <div className="mt-4 bg-red-600 text-white px-4 py-1 rounded-full font-black text-[10px] md:text-lg uppercase shadow-lg">
+                    {monsterSkillActive.description}
+                  </div>
+                </div>
+             </div>
+           </div>
+        </div>
+      )}
       {/* Dynamic Action Lines Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden sm:opacity-40">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-action-lines" style={{ backgroundImage: 'repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(239,68,68,0.05) 10deg 20deg)' }}></div>
@@ -206,6 +337,22 @@ export const BossView = () => {
            setShowTutorial(true);
         }}
       >
+        {/* --- TACTICAL MISSION COMMAND MODULE (BALANCED) --- */}
+        <div className="flex items-center bg-slate-950/40 border-[2px] border-white/5 rounded-xl p-1 md:p-1.5 backdrop-blur-sm transform -skew-x-2 md:-skew-x-6 animate-in slide-in-from-top-4 duration-700">
+           {/* Section 1: Data Stream Manifest */}
+           <button
+             onClick={() => setIsPossibleDropsModalOpen(true)}
+             className="group flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-1.5 focus:outline-none transform skew-x-2 md:skew-x-6"
+           >
+             <div className="bg-slate-900 border-2 border-red-500/30 p-1 md:p-1.5 rounded-lg group-hover:bg-red-500 group-hover:border-black transition-all">
+                <Search size={14} className="text-red-400 group-hover:text-black transition-colors md:w-5 md:h-5" />
+             </div>
+             <div className="flex flex-col items-start leading-none">
+                <span className="text-[6px] md:text-[8px] font-black text-white/40 uppercase tracking-widest group-hover:text-black/50 transition-colors">BIT_STREAM</span>
+                <span className="text-[10px] md:text-base font-black text-white group-hover:text-red-400 uppercase italic transition-colors">MANIFEST</span>
+             </div>
+           </button>
+        </div>
       </Header>
 
 
@@ -246,6 +393,9 @@ export const BossView = () => {
           {/* BOSS AVATAR */}
           <div className={`flex flex-col items-center lg:items-end transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
              <div className="relative group">
+                {/* Boss Aura */}
+                <div className="absolute inset-0 -m-8 bg-red-600/20 blur-3xl rounded-full animate-pulse scale-125 z-0"></div>
+                
                 <div 
                   ref={bossContainerRef}
                   className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(239,68,68,0.3)] md:shadow-[12px_12px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : 'animate-float'}`}
@@ -352,16 +502,32 @@ export const BossView = () => {
                     <div className="absolute -top-4 -right-2 md:-top-6 md:-right-4 bg-black text-white px-2 py-0.5 md:px-3 md:py-1 text-[8px] md:text-xs font-black border-2 border-white rotate-12 shadow-xl">LVL {BOSS.level}</div>
                 </div>
                 
-                <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden flex items-center transform rotate-1">
-                    <div className="h-full bg-gradient-to-r from-red-800 via-red-500 to-red-400 transition-all duration-300 relative" style={{ width: `100%` }}>
-                        <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
-                        <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+                <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
+                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-red-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">STR</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{BOSS.str}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-0.5 md:p-1 border-r border-white/10 text-emerald-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">AGI</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{BOSS.agi}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-0.5 md:p-1 text-cyan-500">
+                    <span className="text-[6px] md:text-[7px] font-black uppercase">DEX</span>
+                    <span className="text-[10px] md:text-xs font-black italic">{BOSS.dex}</span>
+                  </div>
+                </div>
+
+                <div className="w-full group">
+                  <div className="flex justify-between items-center mb-0.5 px-1">
+                    <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase italic">Power Core</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-white italic">IMMORTAL</span>
+                  </div>
+                  <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300 relative" style={{ width: `100%` }}>
+                      <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                     </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                       <span className="text-[7px] md:text-xs font-black text-white uppercase italic drop-shadow-[1px_1px_1px_rgba(0,0,0,1)] tracking-widest">
-                         IMMORTAL ENTITY
-                       </span>
-                    </div>
+                  </div>
                 </div>
 
                 <div className="bg-black/80 border-[4px] md:border-[6px] border-black p-2 md:p-4 shadow-[8px_8px_0_rgba(220,38,38,0.3)] transform -rotate-2">

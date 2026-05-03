@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.15.0',
+    date: '2026-05-03',
+    title: 'HIGH-FIDELITY COMBAT EFFECTS & SYNC-DRIVE STABILIZATION',
+    category: 'COMBAT UI & PERFORMANCE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'Today\'s deployment focused on pushing the combat engine\'s visual fidelity to the next level. We have introduced a massive, screen-shaking "Power Overflow" cinematic cut-in for level-ups and successfully stabilized the Sync-Drive and Squad Strike visual layers.',
+    changes: [
+      'Visuals: Deployed "Power Overflow" cinematic level-up cut-in with screen shake and dynamic halftones',
+      'Audio: Integrated new level-up sound effect hook',
+      'Stability: Fixed critical "onConfirm" crash in Retreat and Purification modules',
+      'UI: Cleaned up duplicate "Squad Strike" banners to prevent double-rendering',
+      'Engine: Leaner useCombat state object with redundant fields removed'
+    ],
+    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+  },
+  {
     id: '1.14.0',
     date: '2026-04-27',
     title: 'CRYSTLE TOWN TREASURY: THE GRIND PROTOCOL',

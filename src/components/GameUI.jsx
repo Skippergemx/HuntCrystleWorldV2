@@ -250,61 +250,69 @@ export const CitizenMedia = React.memo(({ num, className }) => {
 
 export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, orientation = 'vertical', isBuffActive = false, isPetActive = false }) => {
   const isHorizontal = orientation === 'horizontal';
-  const hasDragon = dragonTimeLeft > 0 || player?.dragonSummoned;
+  const hasDragon = dragonTimeLeft > 100 || (player?.dragon?.summonUntil && player.dragon.summonUntil > Date.now());
   
   return (
     <div className={`flex ${isHorizontal ? 'flex-row items-center gap-1.5 md:gap-2' : 'flex-col justify-center gap-1.5 md:gap-3'} shrink-0 py-1 scale-[0.8] md:scale-[0.9] z-20`}>
       {player?.hiredMate && (
-        <div className={`w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group ${isBuffActive ? 'animate-pulse ring-2 md:ring-4 ring-yellow-400 border-yellow-400' : 'bg-purple-600'}`} title={`Companion: ${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}`}>
-          <img
-            src={`/assets/partymemberavatar/${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}.jpg`}
-            className={`w-full h-full object-cover contrast-125 ${isBuffActive ? 'brightness-125 saturate-150' : 'grayscale-[0.2]'}`}
-            onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + player.hiredMate; }}
-            alt="Mate"
-          />
+        <div className={`w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group ${isBuffActive ? 'animate-pulse ring-2 md:ring-4 ring-yellow-400 border-yellow-400' : 'bg-purple-600'}`} title={`Companion: ${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}`}>
+          <div className="absolute inset-0 rounded-md md:rounded-lg overflow-hidden">
+            <img
+              src={`/assets/partymemberavatar/${TAVERN_MATES.find(m => m.id === player.hiredMate)?.name}.jpg`}
+              className={`w-full h-full object-cover contrast-125 ${isBuffActive ? 'brightness-125 saturate-150' : 'grayscale-[0.2]'}`}
+              onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + player.hiredMate; }}
+              alt="Mate"
+            />
+          </div>
           {isBuffActive && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
               <span className="text-[4px] md:text-[6px] font-black text-yellow-400 uppercase italic tracking-tighter bg-black/80 px-1 py-0.5 rounded border border-yellow-400/50 animate-bounce">BUFF ACTIVATED</span>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">MATE</div>
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none rounded-b-md">MATE</div>
         </div>
       )}
       {hasDragon && (
-        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-emerald-600 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title="Summoned Dragon Power">
-          <img
-             src="/assets/dragonsground/dragons/DragonAvatar (1).jpg"
-             className="w-full h-full object-cover grayscale-[0.2] contrast-125"
-             onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=dragon'; }}
-             alt="Drake"
-          />
-          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">DRAKE</div>
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-emerald-600 shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title="Summoned Dragon Power">
+          <div className="absolute inset-0 rounded-md md:rounded-lg overflow-hidden">
+            <img
+               src="/assets/dragonsground/dragons/DragonAvatar (1).jpg"
+               className="w-full h-full object-cover grayscale-[0.2] contrast-125"
+               onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=dragon'; }}
+               alt="Drake"
+            />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none rounded-b-md">DRAKE</div>
         </div>
       )}
       {player?.gemx?.level >= 1 && (
-        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-cyan-600 overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title={`GEMX Sentinel Level ${player.gemx.level}`}>
-          <img
-             src={`/assets/dragonsground/gemx/${player.gemxAvatar || player.gemxAvatar || 'gemx (1).gif'}`}
-             className="w-full h-full object-cover contrast-125"
-             onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=gemx'; }}
-             alt="Gemx"
-          />
-          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none">GEMX</div>
+        <div className="w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black bg-cyan-600 shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group" title={`GEMX Sentinel Level ${player.gemx.level}`}>
+          <div className="absolute inset-0 rounded-md md:rounded-lg overflow-hidden">
+            <img
+               src={`/assets/dragonsground/gemx/${player.gemxAvatar || 'gemx (1).gif'}`}
+               className="w-full h-full object-cover contrast-125"
+               onError={(e) => { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=gemx'; }}
+               alt="Gemx"
+            />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 bg-black/60 text-[4px] md:text-[5px] font-black text-white text-center py-0.5 truncate uppercase leading-none rounded-b-md">GEMX</div>
         </div>
       )}
       {player?.petId && (
-        <div className={`w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group ${isPetActive ? 'animate-pulse ring-2 md:ring-4 ring-emerald-400 border-emerald-400' : 'bg-cyan-900'}`} title={`Crystle Pet #${player.petId}`}>
-          <img
-             src={`/assets/pets/genesis-pets/Genesis Pets (${player.petId}).jpg`}
-             className={`w-full h-full object-cover contrast-125 ${isPetActive ? 'brightness-125 saturate-125' : 'brightness-110'}`}
-             alt="Pet"
-          />
+        <div className={`w-8 md:w-11 aspect-[9/16] rounded-md md:rounded-lg border-[1.5px] md:border-[2.5px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform hover:scale-110 transition-transform relative group ${isPetActive ? 'animate-pulse ring-2 md:ring-4 ring-emerald-400 border-emerald-400' : 'bg-cyan-900'}`} title={`Crystle Pet #${player.petId}`}>
+          <div className="absolute inset-0 rounded-md md:rounded-lg overflow-hidden">
+            <img
+               src={`/assets/pets/genesis-pets/Genesis Pets (${player.petId}).jpg`}
+               className={`w-full h-full object-cover contrast-125 ${isPetActive ? 'brightness-125 saturate-125' : 'brightness-110'}`}
+               alt="Pet"
+            />
+          </div>
           {isPetActive && (
             <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
               <span className="text-[4px] md:text-[6px] font-black text-emerald-400 uppercase italic tracking-tighter bg-black/80 px-1 py-0.5 rounded border border-emerald-400/50 animate-bounce">POWERUP</span>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-cyan-500 text-black text-[4px] md:text-[5px] font-black text-center py-0.5 truncate uppercase leading-none">CRYSTLE</div>
+          <div className="absolute inset-x-0 bottom-0 bg-cyan-500 text-black text-[4px] md:text-[5px] font-black text-center py-0.5 truncate uppercase leading-none rounded-b-md">CRYSTLE</div>
         </div>
       )}
     </div>

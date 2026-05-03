@@ -1,7 +1,7 @@
 import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
-import { calculateNagaStats, getXpRequired, AP_PER_LEVEL } from '../utils/gameLogic';
+import { calculateNagaStats, getXpRequired, AP_PER_LEVEL, getMonsterElement } from '../utils/gameLogic';
 
 /**
  * usePlayerActions V2: Unified Action Engine
@@ -388,19 +388,23 @@ export const usePlayerActions = (
     const targetTool = inventory.find(i => i && i.id?.startsWith(tamingItemId));
     if (!targetTool) return addLog(`❌ PURIFY FAILED: Missing ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism!`);
 
-    // Element check
-    const monsterElement = monster.id?.split('_')[0]?.charAt(0).toUpperCase() + monster.id?.split('_')[0]?.slice(1);
-    const cosmicMonsters = ['null_stalker', 'void_wraith', 'abyssal_crawler', 'singularity_orb', 'quantum_shade', 'gravity_eater', 'dimensional_shifter', 'entropy_golem', 'rift_lurker', 'paradox_husk'];
-    
-    let element = monsterElement;
-    if (cosmicMonsters.includes(monster.id)) element = 'Cosmic';
+    // --- SMART ELEMENT DETECTION ---
+    const element = getMonsterElement(monster);
 
+    // Verify Prism Element Match
     if (!tamingItemId.includes(element.toLowerCase())) {
-        return addLog(`❌ RESONANCE ERROR: Prism frequency doesn't match ${element} types.`);
+        return addLog(`❌ RESONANCE ERROR: This ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism cannot purify ${element} corruption!`);
     }
 
+    // --- DYNAMIC SUCCESS RATE (Addressing One-Hit Defeat issue) ---
+    // Success scales from ~30% at 100% HP up to ~90% at 1 HP
+    const hpFactor = (monster.hp / monster.maxHp);
+    const successChance = 0.9 - (hpFactor * 0.6); 
+    
     playSFX(SOUNDS.useHeal);
-    const success = Math.random() > 0.5;
+    addLog(`💠 ACTIVATING ${element.toUpperCase()} PRISM: Signal resonance at ${Math.floor(successChance * 100)}%...`);
+    
+    const success = Math.random() < successChance;
     
     const updates = {
         [`inventory.${targetTool.id}`]: deleteField()
@@ -409,38 +413,40 @@ export const usePlayerActions = (
     if (success) {
         // Find all pets of this element
         const elementPets = PETS_METADATA.filter(p => p.element === element);
+        if (elementPets.length === 0) {
+          addLog(`❌ VOID SIGNAL: No compatible pet spirits found for ${element}.`);
+          if (setEnemy) setEnemy(null);
+          if (setView) setView('menu');
+          return;
+        }
         
         // ROLL FOR RARITY: Weighted Distribution
-        // Common: 60%, Uncommon: 25%, Rare: 12%, Epic: 3%
         const roll = Math.random() * 100;
         let selectedRarity = 'Common';
-        if (roll < 3) selectedRarity = 'Epic';
+        if (roll < 5) selectedRarity = 'Epic';
         else if (roll < 15) selectedRarity = 'Rare';
         else if (roll < 40) selectedRarity = 'Uncommon';
         
         const rarityPool = elementPets.filter(p => p.rarity === selectedRarity);
-        // Fallback to any pet if pool is empty for some reason
         const poolToUse = rarityPool.length > 0 ? rarityPool : elementPets;
         const newPet = poolToUse[Math.floor(Math.random() * poolToUse.length)];
         
-        updates.petId = newPet.id;
-        updates.petLevel = 1;
-        updates.unlockedPets = arrayUnion(newPet.id);
+        if (newPet) {
+          updates.petId = newPet.id;
+          updates.petLevel = 1;
+          updates.unlockedPets = arrayUnion(newPet.id);
+          
+          addLog(`✨ SUCCESS: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
+          playSFX(SOUNDS.obtainLevel);
+          if (setForgeResult) setForgeResult({ success: true, item: { ...newPet, icon: '✨' } });
+        }
         
-        addLog(`✨ CORE PURIFIED: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
-        playSFX(SOUNDS.obtainLevel);
-        setForgeResult({ success: true, item: { ...newPet, icon: '✨' } });
-        
-        // Victory! End combat
-        if (setEnemy) setEnemy(null);
-        if (setView) setView('menu');
+        // Victory! End combat will be handled by UI after animation
     } else {
-        addLog(`🌫️ DISSIPATED: Purification failed! The corrupted energy vanished into the void.`);
+        addLog(`🌫️ DISSIPATED: The purification beam failed to stabilize. The monster vanished!`);
         playSFX(SOUNDS.monsterAttack);
         
-        // Vanish! End combat
-        if (setEnemy) setEnemy(null);
-        if (setView) setView('menu');
+        // Vanish! End combat will be handled by UI after animation
     }
     
     syncPlayer(updates);

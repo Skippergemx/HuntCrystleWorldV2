@@ -51,6 +51,7 @@ export const useCombat = (
   const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
   const [killsInFloor, setKillsInFloor] = useState(0);
   const [lastLoot, setLastLoot] = useState(null);
+  const [levelUpEffectTrigger, setLevelUpEffectTrigger] = useState(0);
   const [penaltyRemaining, setPenaltyRemaining] = useState(0);
   const [floatingNumbers, setFloatingNumbers] = useState([]); 
   const [skillEnergy, setSkillEnergy] = useState(0);
@@ -59,6 +60,7 @@ export const useCombat = (
   const [skillCooldown, setSkillCooldown] = useState(0);
   const [monsterSkillActive, setMonsterSkillActive] = useState(null);
   const [monsterTurnCount, setMonsterTurnCount] = useState(0);
+  const [squadStrikeActive, setSquadStrikeActive] = useState(null); // { type, name, avatar, color, element }
 
   const triggerFloatingNumber = useCallback((val, isCrit, side) => {
     const id = Date.now() + Math.random();
@@ -120,7 +122,7 @@ export const useCombat = (
         });
       }, 1000);
     }
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [skillDuration, addLog]);
 
   // Sync-Drive Reboot Timer
@@ -131,7 +133,7 @@ export const useCombat = (
         setSkillCooldown(prev => prev <= 1 ? 0 : prev - 1);
       }, 1000);
     }
-    return () => clearInterval(timer);
+    return () => clearTimeout(timer);
   }, [skillCooldown]);
 
   const triggerSkill = useCallback(() => {
@@ -178,7 +180,7 @@ export const useCombat = (
     playSFX(SOUNDS.monsterAttack);
 
     if (skill.stunPlayer) {
-      setStunTimeLeft(STUN_DURATION_NORMAL);
+      setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
       addLog(`😵 You are STUNNED by the impact!`);
     }
 
@@ -578,7 +580,7 @@ export const useCombat = (
     }, 1500);
 
     if (didLevelUp) {
-      // syncPlayer(updates) already called above
+      setLevelUpEffectTrigger(prev => prev + 1);
     }
 
     if (battleMode === 'GVG') {
@@ -627,6 +629,93 @@ export const useCombat = (
     syncPlayer(updates);
     enemyTurn(BOSS, true);
   }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS, depth, LOOTS, playSFX, SOUNDS]);
+
+  const processSquadSupport = useCallback((target, isBoss) => {
+    if (activeSkill || monsterSkillActive || squadStrikeActive) return;
+    
+    // Squad trigger conditions
+    const hasDragon = (player?.dragon?.summonUntil || 0) > Date.now();
+    const hasMate = !!player?.hiredMate;
+    const hasPet = !!player?.petId;
+
+    if (!hasDragon && !hasMate && !hasPet) {
+      return;
+    }
+
+    let triggerType = null;
+    const rand = Math.random();
+    if (hasDragon && rand < 0.25) triggerType = 'DRAGON';
+    else if (hasMate && rand < 0.30) triggerType = 'MATE';
+    else if (hasPet && rand < 0.35) triggerType = 'PET';
+
+    // DEBUG LOG
+    if (triggerType) {
+      console.log(`🎯 SQUAD_TRIGGER: ${triggerType} (Rand: ${rand.toFixed(2)})`);
+    }
+
+    if (!triggerType) return;
+
+    let supportData = null;
+    if (triggerType === 'DRAGON') {
+      supportData = {
+        type: 'NAGA',
+        name: 'TITAN CRUSH',
+        description: 'MASSIVE IMPACT + DEFENSE DOWN',
+        color: 'from-red-600 to-black',
+        element: 'impact',
+        energy: 15,
+        dmgMult: 0.8 // 80% of player damage
+      };
+    } else if (triggerType === 'MATE') {
+      const mate = TAVERN_MATES.find(m => m.id === player.hiredMate);
+      supportData = {
+        type: 'MATE',
+        name: `${mate?.name || 'ALLY'} ASSIST`,
+        description: 'COMBO STRIKE + ENERGY SURGE',
+        color: 'from-blue-600 to-indigo-900',
+        element: 'tech',
+        energy: 8,
+        dmgMult: 0.4,
+        avatar: mate?.id
+      };
+    } else if (triggerType === 'PET') {
+      const pet = Array.isArray(PETS_METADATA) ? PETS_METADATA.find(p => p.id === player.petId) : PETS_METADATA[player.petId];
+      supportData = {
+        type: 'PET',
+        name: `${pet?.name || 'PET'} BURST`,
+        description: `ELEMENTAL ${pet?.element?.toUpperCase() || 'PULSE'}`,
+        color: 'from-emerald-500 to-teal-800',
+        element: pet?.element?.toLowerCase() === 'pyro' ? 'fire' : pet?.element?.toLowerCase() === 'hydro' ? 'ice' : 'spark',
+        energy: 5,
+        dmgMult: 0.2
+      };
+    }
+
+    if (supportData) {
+      setSquadStrikeActive(supportData);
+      setTimeout(() => setSquadStrikeActive(null), 800);
+
+      // Apply effects
+      const supportDmg = Math.floor(getDamage(totalStats.str, target.agi, false) * supportData.dmgMult);
+      
+      // Update energy
+      if (skillCooldown <= 0 && !activeSkill) {
+        setSkillEnergy(prev => Math.min(100, prev + supportData.energy));
+      }
+
+      addLog(`✨ SQUAD SUPPORT: ${supportData.name}! (-${supportDmg} DMG)`);
+      
+      // Delay the actual damage impact to match cut-in
+      setTimeout(() => {
+        const newHp = Math.max(0, target.hp - supportDmg);
+        setEnemy(prev => ({ ...prev, hp: newHp }));
+        triggerFloatingNumber(supportDmg, false, 'monster');
+        if (newHp <= 0 && !isBoss) {
+           processKill();
+        }
+      }, 400);
+    }
+  }, [player, activeSkill, monsterSkillActive, squadStrikeActive, TAVERN_MATES, PETS_METADATA, totalStats, skillCooldown, addLog, triggerFloatingNumber, setEnemy, processKill]);
 
   const handleAttack = useCallback((isBoss = false) => {
     // --- SYNCHRONOUS MUTEX GATE ---
@@ -680,9 +769,7 @@ export const useCombat = (
         
         if (!isEffective) {
             addLog(`⚠️ ELEMENTAL HANDICAP: Damage reduced by 75%!`);
-            setPlayerTaunt("My element is weak here!");
             elementalMultiplier = 0.25;
-            // No longer returns; continues to attack with penalty
         }
     }
 
@@ -740,6 +827,9 @@ export const useCombat = (
       setPlayerTaunt(pTaunts[Math.floor(Math.random() * pTaunts.length)]);
       addLog(`Struck ${target.name} for ${dmg} DMG.`);
       playSFX(SOUNDS.playerAttack); // PLAY IMPACT SOUND ON HIT
+
+      // --- SQUAD TACTICAL SUPPORT ---
+      processSquadSupport(target, isBoss);
 
       setTimeout(() => {
         if (isBoss) {
@@ -839,11 +929,13 @@ export const useCombat = (
     sessionRewards,
     killsInFloor,
     lastLoot,
+    levelUpEffectTrigger,
     penaltyRemaining,
     floatingNumbers,
     skillEnergy,
     activeSkill,
     skillDuration,
+    skillCooldown,
     setStunTimeLeft,
     setMissTimeLeft,
     setKillsInFloor,
@@ -862,6 +954,9 @@ export const useCombat = (
     battleMode,
     setBattleMode,
     isTreasury,
-    handleRetreat
+    handleRetreat,
+    triggerSkill,
+    monsterSkillActive,
+    squadStrikeActive
   };
 };
