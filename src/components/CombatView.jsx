@@ -45,10 +45,12 @@ export const CombatView = React.memo(() => {
   const [levelUpCinematic, setLevelUpCinematic] = useState(false);
   
   const battleParticlesRef = useRef(null);
+  const prevLevelUpRef = useRef(0);
 
   // --- LEVEL UP VISUAL FEEDBACK ---
   useEffect(() => {
-    if (combat.levelUpEffectTrigger > 0) {
+    if (combat.levelUpEffectTrigger > prevLevelUpRef.current) {
+      prevLevelUpRef.current = combat.levelUpEffectTrigger;
       setLevelUpCinematic(true);
       if (battleParticlesRef.current?.triggerLevelUp) {
         battleParticlesRef.current.triggerLevelUp();
