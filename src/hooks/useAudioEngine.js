@@ -13,9 +13,11 @@ export const SOUNDS = {
   bossBGM: ['/assets/sounds/Boss-BGM01.mp3', '/assets/sounds/Boss-BMG02.mp3'],
   playerAttack: '/assets/sounds/Player-Attack.wav',
   monsterAttack: '/assets/sounds/Monster-Attack.wav',
+  monsterSkill: '/assets/sounds/Monster-Skill.wav',
   obtainLoot: '/assets/sounds/Obtain-Loot.wav',
   useHeal: '/assets/sounds/Use-Heal-Potion.wav',
-  levelup: '/assets/sounds/Level-Up.wav'
+  levelup: '/assets/sounds/Level-Up.wav',
+  skillTrigger: '/assets/sounds/Gemx-Skill.wav'
 };
 
 export const useAudioEngine = (view, enemyIsBoss) => {

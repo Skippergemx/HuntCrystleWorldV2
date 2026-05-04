@@ -4,14 +4,15 @@ import { Users, X, Trophy, Skull, Sword, Shield, Zap, Target, Flame, Heart, Send
 import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, getFirestore, increment, updateDoc, getDoc } from 'firebase/firestore';
 import { Header, AvatarMedia, SquadHUD } from './GameUI';
 import { useGame } from '../contexts/GameContext';
+import { SOUNDS } from '../hooks/useAudioEngine';
 import React from 'react';
 
 /**
  * PvpRoomView V2: Real-time Combat Arena
  * Unified root-level collections for 'pvp_room' and 'global_chat'.
  */
-const PlayerCard = React.memo(({ p, isSelf, combatAnim, onAttack }) => {
-  const hpPercent = Math.max(0, (p.hp / (p.maxHp || 100)) * 100);
+const PlayerCard = React.memo(({ p, isSelf, combatAnim, floatingNums = [], onAttack }) => {
+  const hpPercent = Math.min(100, Math.max(0, (p.hp / (p.maxHp || 100)) * 100));
   const isTarget = !!combatAnim;
   return (
     <div onClick={() => !isSelf && onAttack()} className={`relative group cursor-pointer transition-all duration-300 ${(p.isDefeated || p.hp <= 0) ? 'opacity-30' : ''} ${isTarget ? 'scale-105' : ''}`}>
@@ -40,28 +41,38 @@ const PlayerCard = React.memo(({ p, isSelf, combatAnim, onAttack }) => {
             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none transition-all ${
               combatAnim.type === 'hit' ? 'animate-bounce' : 'animate-pulse'
             }`}>
-              <div className={`text-2xl md:text-3xl font-black italic uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center gap-1 ${
-                combatAnim.type === 'hit' ? 'text-yellow-400 scale-125 rotate-[-15deg]' : 'text-slate-300 scale-90 rotate-[10deg]'
+              <div className={`font-black italic uppercase drop-shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col items-center gap-0.5 ${
+                combatAnim.type === 'hit' ? 'text-yellow-400 text-2xl md:text-3xl scale-125 rotate-[-15deg]' : 'text-slate-300 text-2xl md:text-3xl scale-90 rotate-[10deg]'
               }`} style={{ WebkitTextStroke: '1px black' }}>
                 {combatAnim.text}
+                {combatAnim.damage && <span className="text-red-400 text-lg md:text-2xl">-{combatAnim.damage}</span>}
               </div>
             </div>
           )}
+          {floatingNums.map(n => (
+            <div key={n.id} className={`absolute top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none pvp-float-up font-black italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)] ${
+              n.isCrit ? 'text-yellow-400 text-xl' : 'text-red-400 text-lg'
+            }`}>-{n.value}</div>
+          ))}
       </div>
     </div>
   );
 });
 
 export const PvpRoomView = React.memo(() => {
-  const { player, syncPlayer, adventure, gameLoop, TAVERN_MATES, totalStats, db, user, addLog, openGuide } = useGame();
+  const { player, syncPlayer, adventure, gameLoop, TAVERN_MATES, totalStats, db, user, addLog, openGuide, audio } = useGame();
   const { setView } = adventure;
   const { dragonTimeLeft } = gameLoop;
+  const { playSFX } = audio;
 
   const [players, setPlayers] = useState([]);
   const [penaltyTime, setPenaltyTime] = useState(0);
   const attackCooldownRef = useRef(false);
-  const [combatAnim, setCombatAnim] = useState(null); 
+  const [combatAnim, setCombatAnim] = useState(null);
   const [isJoining, setIsJoining] = useState(true);
+  const [floatingNumbers, setFloatingNumbers] = useState([]);
+  const [pvpKills, setPvpKills] = useState(0);
+  const [defeatSummaryData, setDefeatSummaryData] = useState(null);
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -152,8 +163,8 @@ export const PvpRoomView = React.memo(() => {
           name: player.name,
           level: player.level,
           avatar: player.avatar,
-          hp: player.maxHp,
-          maxHp: player.maxHp,
+          hp: totalStats.maxHp,
+          maxHp: totalStats.maxHp,
           stats: totalStats,
           hiredMate: player.hiredMate,
           dragonSummoned: dragonTimeLeft > 0,
@@ -188,8 +199,8 @@ export const PvpRoomView = React.memo(() => {
       name: player.name,
       level: player.level,
       avatar: player.avatar,
-      hp: player.hp || player.maxHp,
-      maxHp: player.maxHp,
+      hp: player.hp || totalStats.maxHp,
+      maxHp: totalStats.maxHp,
       stats: totalStats,
       hiredMate: player.hiredMate,
       dragonSummoned: dragonTimeLeft > 0,
@@ -231,7 +242,7 @@ export const PvpRoomView = React.memo(() => {
         }
 
         if (self.hp <= 0 && !self.isDefeated) {
-          handleDefeatState();
+          handleDefeatState(self);
         } else if (self.lastHitBy && self.lastHitId !== lastProcessedHitId) {
           const hitId = self.lastHitId;
           const attackerId = self.lastHitBy;
@@ -288,20 +299,30 @@ export const PvpRoomView = React.memo(() => {
     } catch (err) { console.error("Chat Error:", err); }
   };
 
-  const handleDefeatState = async () => {
+  const handleDefeatState = useCallback(async (selfData) => {
     if (!user?.uid) return;
     const targetRef = doc(db, 'pvp_room', user.uid);
     await updateDoc(targetRef, { isDefeated: true, hp: 0 });
-    
+
     const until = Date.now() + 30000;
     await syncPlayer({ [pvpPenaltyKey]: until });
 
+    const killer = players.find(p => p.uid === selfData?.lastHitBy);
+    setDefeatSummaryData({
+      killerName: killer?.name || 'Unknown Hunter',
+      gridId,
+      kills: pvpKills,
+    });
+
     addLog("💀 DISCONNECTED: You have been neutralized in the Grid.");
-    setTimeout(() => {
-      deleteDoc(targetRef).catch(() => {});
-      adventure.goBack();
-    }, 4000);
-  };
+    setTimeout(() => deleteDoc(targetRef).catch(() => {}), 1000);
+  }, [user?.uid, db, syncPlayer, players, gridId, pvpKills, addLog]);
+
+  const triggerFloatingNumber = useCallback((value, isCrit, targetId) => {
+    const id = Date.now() + Math.random();
+    setFloatingNumbers(prev => [...prev, { id, value, isCrit, targetId }]);
+    setTimeout(() => setFloatingNumbers(prev => prev.filter(n => n.id !== id)), 1200);
+  }, []);
 
   const attackPlayer = useCallback(async (target) => {
     if (attackCooldownRef.current || !user?.uid || target.uid === user.uid || target.isDefeated || target.hp <= 0) return;
@@ -312,29 +333,43 @@ export const PvpRoomView = React.memo(() => {
     const hitChance = Math.min(98, (totalStats.dex / (totalStats.dex + target.stats.agi * 0.4)) * 100);
     const isHit = Math.random() * 100 < hitChance;
     const targetRef = doc(db, 'pvp_room', target.uid);
-
     const hitTextOptions = ['BAM!', 'POW!', 'WHACK!', 'SPLAT!'];
     const missTextOptions = ['SWOOSH!', 'DODGE!', 'MISS!', 'WHOOSH!'];
-    const feedbackText = isHit 
-      ? hitTextOptions[Math.floor(Math.random() * hitTextOptions.length)]
-      : missTextOptions[Math.floor(Math.random() * missTextOptions.length)];
-
-    setCombatAnim({ targetId: target.uid, type: isHit ? 'hit' : 'miss', text: feedbackText });
-    setTimeout(() => setCombatAnim(null), 800);
 
     if (isHit) {
-      const dmg = Math.max(5, totalStats.str - Math.floor(target.stats.agi / 6));
+      const baseDmg = Math.max(5, totalStats.str - Math.floor(target.stats.agi / 6));
+      const isCrit = Math.random() < 0.1;
+      const dmg = isCrit ? Math.floor(baseDmg * 1.5) : baseDmg;
+      const feedbackText = isCrit ? '💥 CRIT!' : hitTextOptions[Math.floor(Math.random() * hitTextOptions.length)];
+
+      setCombatAnim({ targetId: target.uid, type: 'hit', text: feedbackText, damage: dmg });
+      setTimeout(() => setCombatAnim(null), 800);
+
+      triggerFloatingNumber(dmg, isCrit, target.uid);
+      playSFX(SOUNDS.playerAttack);
+
+      const isKill = (target.hp - dmg) <= 0;
+      if (isKill) {
+        playSFX(SOUNDS.skillTrigger);
+        setPvpKills(prev => prev + 1);
+        addLog(`☠️ ELIMINATED: ${target.name} neutralized! (+1 Kill)`);
+      } else {
+        addLog(`⚔️ STRIKE: Dealt ${dmg}${isCrit ? ' (CRIT)' : ''} DMG to ${target.name}.`);
+      }
+
       await updateDoc(targetRef, {
         hp: increment(-dmg),
         lastHitBy: user.uid,
         lastHitId: Date.now() + Math.random(),
         lastAction: Date.now()
       });
-      addLog(`⚔️ STRIKE: Dealt ${dmg} DMG to ${target.name}.`);
     } else {
+      const feedbackText = missTextOptions[Math.floor(Math.random() * missTextOptions.length)];
+      setCombatAnim({ targetId: target.uid, type: 'miss', text: feedbackText });
+      setTimeout(() => setCombatAnim(null), 800);
       addLog(`🛡️ DEFLECTED: Strike avoided by ${target.name}.`);
     }
-  }, [user?.uid, db, totalStats, addLog]);
+  }, [user?.uid, db, totalStats, addLog, playSFX, triggerFloatingNumber]);
 
   const processCounterAttack = useCallback(async (attackerId, currentPlayers) => {
     // Determine the attacker from the current snapshot data
@@ -395,6 +430,7 @@ export const PvpRoomView = React.memo(() => {
                  isSelf={p.uid === user.uid} 
                  isTarget={false}
                  combatAnim={combatAnim?.targetId === p.uid ? combatAnim : null}
+                 floatingNums={floatingNumbers.filter(n => n.targetId === p.uid)}
                  onAttack={() => attackPlayer(p)} 
                />
              ))}
@@ -544,11 +580,67 @@ export const PvpRoomView = React.memo(() => {
         document.body
       )}
 
+      {/* PVP Defeat Summary Modal */}
+      {defeatSummaryData && (
+        <div className="absolute inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in zoom-in duration-300">
+          <div className="relative max-w-sm w-full">
+            <div className="absolute inset-0 bg-red-800 rounded-3xl transform translate-x-2 translate-y-2" />
+            <div className="relative bg-slate-950 border-[4px] border-black rounded-3xl overflow-hidden flex flex-col">
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f87171 1px, transparent 1px)', backgroundSize: '8px 8px' }} />
+
+              {/* Header */}
+              <div className="w-full bg-red-600 py-5 border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg">
+                <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">NEUTRALIZED</h2>
+                <div className="absolute -bottom-3 right-6 bg-black text-white px-3 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] transform rotate-2 border-2 border-white">Grid Ejection</div>
+              </div>
+
+              {/* Stats */}
+              <div className="p-6 space-y-4 relative z-10">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">Sector</span>
+                    <span className="text-sm font-black text-white italic">Grid {defeatSummaryData.gridId}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">Kills</span>
+                    <span className="text-sm font-black text-amber-400 italic">{defeatSummaryData.kills}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">Penalty</span>
+                    <span className="text-sm font-black text-red-400 italic">30s</span>
+                  </div>
+                </div>
+
+                <div className="bg-red-950/40 border border-red-500/20 rounded-xl p-3">
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Eliminated by</p>
+                  <p className="text-base font-black text-white uppercase italic tracking-tighter">{defeatSummaryData.killerName}</p>
+                </div>
+
+                <p className="text-[8px] text-slate-500 font-black uppercase tracking-widest text-center italic">30-second re-entry lockout now active</p>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => { setDefeatSummaryData(null); adventure.goBack(); }}
+                    className="py-3 bg-slate-800 text-white font-black uppercase italic text-xs rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-y-1 active:shadow-none transition-all"
+                  >🏠 Return to Hub</button>
+                  <button
+                    onClick={() => { setDefeatSummaryData(null); setView('pvp'); }}
+                    className="py-3 bg-purple-700 text-white font-black uppercase italic text-xs rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-purple-600 active:translate-y-1 active:shadow-none transition-all"
+                  >⚡ Re-Enter Grid</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
        <style>{`
          .custom-scrollbar::-webkit-scrollbar { width: 5px; }
          .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
          .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.1); border-radius: 10px; }
          .font-comic { font-family: 'Inter', sans-serif; font-weight: 900; }
+         @keyframes pvp-float { 0% { transform: translateX(-50%) translateY(0); opacity: 1; } 100% { transform: translateX(-50%) translateY(-48px); opacity: 0; } }
+         .pvp-float-up { animation: pvp-float 1.2s ease-out forwards; }
        `}</style>
     </div>
   );

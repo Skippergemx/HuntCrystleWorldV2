@@ -61,6 +61,7 @@ export const useCombat = (
   const [monsterSkillActive, setMonsterSkillActive] = useState(null);
   const [monsterTurnCount, setMonsterTurnCount] = useState(0);
   const [squadStrikeActive, setSquadStrikeActive] = useState(null); // { type, name, avatar, color, element }
+  const [defeatData, setDefeatData] = useState(null); // Raid summary snapshot on defeat
 
   const triggerFloatingNumber = useCallback((val, isCrit, side) => {
     const id = Date.now() + Math.random();
@@ -166,7 +167,7 @@ export const useCombat = (
     }
 
     addLog(`💎 SYNC-DRIVE: ${skill.name} ACTIVATED!`);
-    playSFX(SOUNDS.levelup);
+    playSFX(SOUNDS.skillTrigger);
   }, [skillEnergy, activeSkill, player, totalStats, syncPlayer, addLog, playSFX, SOUNDS, enemy, setEnemy, ELEMENTAL_SKILLS, view]);
 
   // DERIVE PET METADATA FOR COMBAT BONUSES
@@ -177,7 +178,7 @@ export const useCombat = (
     setTimeout(() => setMonsterSkillActive(null), 1800);
     
     addLog(`👹 MONSTER SKILL: ${skill.name}!`);
-    playSFX(SOUNDS.monsterAttack);
+    playSFX(SOUNDS.monsterSkill);
 
     if (skill.stunPlayer) {
       setStunTimeLeft(STUN_DURATION_NORMAL / 1000);
@@ -319,17 +320,24 @@ export const useCombat = (
             setTimeout(() => setView('syndicate'), 1500);
           }
 
+          // Capture run snapshot for Raid Summary Modal
+          setDefeatData({
+            killerName: target.name,
+            killerDmg: dmg,
+            floor: depth,
+            kills: killsRef.current,
+            sessionGX: sessionRewards?.tokens || 0,
+            sessionXP: sessionRewards?.xp || 0,
+            sessionLoots: sessionRewards?.loots || [],
+          });
+
           setShowDefeatedWindow(true);
           setCombatState('DEFEATED');
           const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
           const destructUpdates = { hp: player?.maxHp || 1000, penaltyUntil: Date.now() + PENALTY_DURATION, hiredMate: null, buffUntil: 0, autoUntil: 0 };
           if (remainingAutoTime > 0) destructUpdates.autoTimeLeftSaved = remainingAutoTime;
           syncPlayer(destructUpdates);
-          setTimeout(() => { 
-            resetCombatEngine(); // RESET ALL LOCKS AND STATES
-            setDepth(1); 
-            setView('menu'); 
-          }, DEFEAT_WINDOW_DURATION);
+          // No auto-redirect — player dismisses the Raid Summary Modal manually
         } else {
           syncPlayer({ hp: newHp });
           processingRef.current = 'IDLE';
@@ -357,7 +365,7 @@ export const useCombat = (
     setCombatState('VICTORY');
     if (setShowSuccessWindow) setShowSuccessWindow(true);
     addLog(`💎 TREASURY REACHED! Sector Node Cleared.`);
-    playSFX(SOUNDS.obtainLoot);
+    playSFX(SOUNDS.levelup);
 
     const rewards = [];
     const updates = {};
@@ -423,6 +431,17 @@ export const useCombat = (
     setView('menu');
     addLog("🏁 Mission Parameters Met. Returning to Command Center.");
   }, [resetCombatEngine, setDepth, setView, addLog, setShowSuccessWindow]);
+
+  // Raid Summary Modal: player manually dismisses after defeat
+  const handleDismissDefeat = useCallback((reenter = false) => {
+    setDefeatData(null);
+    resetCombatEngine();
+    setDepth(1);
+    setKillsInFloor(0);
+    const isBossMode = view === 'boss';
+    addLog(reenter ? "🔁 Re-entering sector..." : "🏃 Extraction confirmed. Returning to Command Center.");
+    setView(reenter ? (isBossMode ? 'boss' : 'dungeon') : 'menu');
+  }, [resetCombatEngine, setDepth, setView, addLog, view]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
@@ -957,6 +976,9 @@ export const useCombat = (
     handleRetreat,
     triggerSkill,
     monsterSkillActive,
-    squadStrikeActive
+    squadStrikeActive,
+    defeatData,
+    setDefeatData,
+    handleDismissDefeat
   };
 };

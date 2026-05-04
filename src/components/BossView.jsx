@@ -5,6 +5,7 @@ import { BossImpactSplash, ImpactSplash, BattleParticles } from './CombatEffects
 import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
+import { SOUNDS } from '../hooks/useAudioEngine';
 
 const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => {
   const media = BOSS_MEDIA_FILES[bossIdx] || BOSS_MEDIA_FILES[0];
@@ -36,7 +37,8 @@ export const BossView = () => {
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt,
     skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
-    monsterSkillActive, squadStrikeActive
+    monsterSkillActive, squadStrikeActive,
+    defeatData, handleDismissDefeat
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -211,7 +213,7 @@ export const BossView = () => {
           squadStrikeActive.element || 'impact', 
           { speed: 25, size: 20, gravity: 0.1, count: 80 }
         );
-        if (audio) audio.playSFX('combat_hit');
+        if (audio) audio.playSFX(SOUNDS.skillTrigger);
       }, 400); // Sync with banner animation
     }
   }, [squadStrikeActive]);
@@ -839,6 +841,58 @@ export const BossView = () => {
           </div>
         </div>,
         document.body
+      )}
+      {/* Boss Defeat — Raid Summary Modal */}
+      {defeatData && (
+        <div className="absolute inset-0 z-[300] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in zoom-in duration-300">
+          <div className="relative max-w-sm w-full">
+            <div className="absolute inset-0 bg-red-800 rounded-3xl transform translate-x-2 translate-y-2" />
+            <div className="relative bg-slate-950 border-[4px] border-black rounded-3xl overflow-hidden flex flex-col">
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #f87171 1px, transparent 1px)', backgroundSize: '8px 8px' }} />
+
+              {/* Header */}
+              <div className="w-full bg-red-600 py-5 border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg">
+                <h2 className="text-4xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">HUNTER DOWN</h2>
+                <div className="absolute -bottom-3 right-6 bg-black text-white px-3 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] transform rotate-2 border-2 border-white">Boss Room Ejection</div>
+              </div>
+
+              {/* Stats */}
+              <div className="p-6 space-y-4 relative z-10">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">Kills</span>
+                    <span className="text-sm font-black text-amber-400 italic">{defeatData.kills ?? 0}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">GX Earned</span>
+                    <span className="text-sm font-black text-amber-400 italic">{(defeatData.sessionGX || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-black/40 rounded-xl p-2 border border-white/5">
+                    <span className="text-[7px] font-black text-slate-500 uppercase">XP Earned</span>
+                    <span className="text-sm font-black text-white italic">{(defeatData.sessionXP || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+
+                <div className="bg-red-950/40 border border-red-500/20 rounded-xl p-3">
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Defeated by</p>
+                  <p className="text-base font-black text-white uppercase italic tracking-tighter">{defeatData.killerName}</p>
+                  {defeatData.killerDmg && <p className="text-[9px] text-red-400 font-black uppercase">Fatal blow: {defeatData.killerDmg} DMG</p>}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleDismissDefeat(false)}
+                    className="py-3 bg-slate-800 text-white font-black uppercase italic text-xs rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-y-1 active:shadow-none transition-all"
+                  >🏠 Return to Menu</button>
+                  <button
+                    onClick={() => handleDismissDefeat(true)}
+                    className="py-3 bg-red-700 text-white font-black uppercase italic text-xs rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                  >🔁 Re-Challenge Boss</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -46,7 +46,7 @@ export const DungeonMenuView = React.memo(() => {
       title: "Combat Modes",
       npc: 11,
       visualType: 'combat',
-      text: "Raiding Dungeons earns you resources, while the Boss Room offers legendary wealth. PvP and GVG sectors are currently undergoing neural-link maintenance.",
+      text: "Raiding Dungeons earns you resources, while the Boss Room offers legendary wealth. The PvP Arena is now live — enter the Neon Grid for real-time combat.",
       hint: "Strategy: Focus on Dungeons and Bosses for Sector 7 growth."
     },
     {
@@ -100,11 +100,10 @@ export const DungeonMenuView = React.memo(() => {
       name: 'PVP ARENA',
       sub: 'P2P COMBAT',
       icon: <Swords size={24} />,
-      color: 'bg-slate-700',
+      color: 'bg-purple-600',
       npc: 16,
-      status: 'OFFLINE',
-      disabled: true,
-      action: () => {}
+      status: isPenalized ? 'LOCKED' : 'LIVE',
+      action: () => !isPenalized && setView('pvp')
     },
     {
       id: 'gvg',

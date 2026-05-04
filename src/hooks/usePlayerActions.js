@@ -74,7 +74,7 @@ export const usePlayerActions = (
     const healAmt = Math.floor(totalStats.maxHp * spec.mult);
     playSFX(SOUNDS.useHeal);
     
-    const updates = { hp: Math.min(totalStats.maxHp, player.hp + healAmt) };
+    const updates = { hp: Math.min(player.maxHp, player.hp + healAmt) };
     if (useCounter) {
       updates.potions = (player.potions || 0) - 1;
     } else {

@@ -16,7 +16,7 @@ export const CombatView = React.memo(() => {
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury,
     skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
-    monsterSkillActive, squadStrikeActive
+    monsterSkillActive, squadStrikeActive, defeatData, handleDismissDefeat
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -242,7 +242,7 @@ export const CombatView = React.memo(() => {
           squadStrikeActive.element || 'impact', 
           { speed: 25, size: 20, gravity: 0.1, count: 60 }
         );
-        if (audio) audio.playSFX('combat_hit');
+        if (audio) audio.playSFX(SOUNDS.skillTrigger);
       }, 400); // Sync with banner animation
     }
   }, [squadStrikeActive]);
@@ -842,11 +842,11 @@ export const CombatView = React.memo(() => {
                 <div className="w-full group">
                   <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
                     <span className="text-[8px] md:text-[9px] font-black text-cyan-500 uppercase italic">Biological Core</span>
-                    <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(totalStats.maxHp)}</span>
                   </div>
                   <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] transition-all overflow-hidden flex items-center">
-                    <div className="absolute h-full bg-cyan-400 opacity-30 transition-all duration-700 ease-out right-0" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}></div>
-                    <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
+                    <div className="absolute h-full bg-cyan-400 opacity-30 transition-all duration-700 ease-out right-0" style={{ width: `${Math.min(100, (player.hp / totalStats.maxHp) * 100)}%` }}></div>
+                    <div className="h-full bg-gradient-to-l from-cyan-800 to-cyan-500 transition-all duration-300 relative ml-auto" style={{ width: `${Math.min(100, (player.hp / totalStats.maxHp) * 100)}%` }}>
                       <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
                       <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
                     </div>
@@ -1269,6 +1269,138 @@ export const CombatView = React.memo(() => {
                 </div>
              </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ===== RAID SUMMARY MODAL (DEFEAT) ===== */}
+      {defeatData && (
+        <div className="fixed inset-0 z-[300] flex items-end md:items-center justify-center p-0 md:p-6 bg-black/95 backdrop-blur-xl animate-in fade-in duration-500">
+          <div className="absolute inset-0 comic-halftone opacity-10 text-red-500 pointer-events-none" />
+
+          {/* Animated blood-red diagonal lines */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+            <div className="absolute top-0 left-0 w-[200%] h-0.5 bg-red-600 -rotate-6 origin-left animate-pulse" />
+            <div className="absolute top-1/4 left-0 w-[200%] h-0.5 bg-red-800 -rotate-6 origin-left animate-pulse delay-300" />
+            <div className="absolute top-1/2 left-0 w-[200%] h-0.5 bg-red-600 -rotate-6 origin-left animate-pulse delay-500" />
+          </div>
+
+          <div className="relative w-full md:max-w-lg bg-slate-950 border-[5px] border-black shadow-[0_0_80px_rgba(220,38,38,0.4)] animate-in slide-in-from-bottom-8 zoom-in-95 duration-500 flex flex-col overflow-hidden rounded-none md:rounded-2xl max-h-[100dvh] md:max-h-[90vh]">
+
+            {/* Shadow offset */}
+            <div className="absolute inset-x-0 bottom-0 top-0 bg-red-800 translate-x-1.5 translate-y-1.5 -z-10 rounded-none md:rounded-2xl" />
+
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-red-900 via-red-600 to-red-900 border-b-[5px] border-black p-4 md:p-6 relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 comic-halftone opacity-20 text-black" />
+              <div className="relative z-10 flex items-center gap-4">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-black border-4 border-white shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center transform -rotate-6 flex-shrink-0">
+                  <span className="text-3xl md:text-5xl">💀</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] md:text-xs font-black text-red-300 uppercase tracking-[0.4em] italic">Signal Lost</span>
+                  <h2 className="text-2xl md:text-4xl font-[1000] text-white italic uppercase tracking-tighter leading-none drop-shadow-[0_0_20px_rgba(239,68,68,0.6)]">
+                    HUNTER DOWN
+                  </h2>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="text-[8px] md:text-[10px] font-black text-white/50 uppercase tracking-widest">Eliminated by</span>
+                    <span className="bg-red-600 text-white text-[8px] md:text-[10px] font-black px-2 py-0.5 border border-black uppercase italic shadow-[2px_2px_0_rgba(0,0,0,1)] truncate max-w-[140px] md:max-w-none">
+                      {defeatData.killerName}
+                    </span>
+                    <span className="text-[8px] md:text-[10px] font-black text-red-400 italic">(-{defeatData.killerDmg} DMG)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar">
+
+              {/* Run Metrics */}
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
+                <div className="bg-black/60 border-[3px] border-black p-2 md:p-3 flex flex-col items-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1">
+                  <span className="text-[7px] md:text-[9px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Floor Reached</span>
+                  <span className="text-2xl md:text-4xl font-[1000] text-cyan-400 italic leading-none">{defeatData.floor}</span>
+                  <span className="text-[6px] md:text-[8px] font-black text-white/30 uppercase tracking-widest mt-0.5">of 40</span>
+                </div>
+                <div className="bg-black/60 border-[3px] border-black p-2 md:p-3 flex flex-col items-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1">
+                  <span className="text-[7px] md:text-[9px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Kills</span>
+                  <span className="text-2xl md:text-4xl font-[1000] text-red-400 italic leading-none">{defeatData.kills}</span>
+                  <span className="text-[6px] md:text-[8px] font-black text-white/30 uppercase tracking-widest mt-0.5">Nodes</span>
+                </div>
+                <div className="bg-black/60 border-[3px] border-black p-2 md:p-3 flex flex-col items-center shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1">
+                  <span className="text-[7px] md:text-[9px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Loot Drops</span>
+                  <span className="text-2xl md:text-4xl font-[1000] text-amber-400 italic leading-none">{defeatData.sessionLoots.length}</span>
+                  <span className="text-[6px] md:text-[8px] font-black text-white/30 uppercase tracking-widest mt-0.5">Items</span>
+                </div>
+              </div>
+
+              {/* Rewards Earned */}
+              <div className="bg-black/40 border-[3px] border-white/10 p-3 md:p-4 shadow-[3px_3px_0_rgba(0,0,0,1)] space-y-2">
+                <span className="text-[8px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Rewards Secured Before Extraction</span>
+                <div className="flex items-center gap-3 md:gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg md:text-2xl">💰</span>
+                    <div className="flex flex-col">
+                      <span className="text-[8px] md:text-[9px] font-black text-white/40 uppercase tracking-none">GX Collected</span>
+                      <span className="text-base md:text-xl font-[1000] text-amber-400 italic">{defeatData.sessionGX.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="w-[1px] h-8 bg-white/10" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg md:text-2xl">⭐</span>
+                    <div className="flex flex-col">
+                      <span className="text-[8px] md:text-[9px] font-black text-white/40 uppercase">XP Gained</span>
+                      <span className="text-base md:text-xl font-[1000] text-cyan-400 italic">{defeatData.sessionXP.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Loot List */}
+              {defeatData.sessionLoots.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-[8px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Items Recovered</span>
+                  <div className="grid grid-cols-2 gap-1.5 md:gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+                    {defeatData.sessionLoots.slice(0, 12).map((item, idx) => (
+                      <div key={idx} className="bg-black/50 border border-white/10 p-1.5 md:p-2 flex items-center gap-2 rounded">
+                        <span className="text-base md:text-lg flex-shrink-0">{item.icon || '📦'}</span>
+                        <span className="text-[8px] md:text-[9px] font-black text-white uppercase italic truncate">{item.name}</span>
+                      </div>
+                    ))}
+                    {defeatData.sessionLoots.length > 12 && (
+                      <div className="col-span-2 text-center text-[8px] font-black text-white/30 uppercase italic py-1">+{defeatData.sessionLoots.length - 12} more items</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Penalty Notice */}
+              <div className="bg-red-950/40 border-[2px] border-red-800/40 p-2 md:p-3 flex items-center gap-2">
+                <span className="text-base md:text-lg flex-shrink-0">⚠️</span>
+                <p className="text-[8px] md:text-[9px] font-black text-red-400 uppercase italic tracking-wide">
+                  30-second re-entry penalty applied. HP restored to full.
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex-shrink-0 p-3 md:p-4 bg-black/80 border-t-[4px] border-black flex flex-col md:flex-row gap-2 md:gap-3">
+              <button
+                id="raid-summary-reenter-btn"
+                onClick={() => handleDismissDefeat(true)}
+                className="flex-1 bg-cyan-500 border-[3px] border-black py-3 md:py-4 font-black text-black text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              >
+                <span className="text-lg">🔁</span> Re-Enter Dungeon
+              </button>
+              <button
+                id="raid-summary-menu-btn"
+                onClick={() => handleDismissDefeat(false)}
+                className="flex-1 bg-slate-800 border-[3px] border-black py-3 md:py-4 font-black text-white text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              >
+                <span className="text-lg">🏠</span> Return to Menu
+              </button>
+            </div>
           </div>
         </div>
       )}
