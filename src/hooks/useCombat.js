@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { BOSS, getHitChance, getDamage, getCritChance, ELEMENTAL_SKILLS, SKILL_ENERGY_PER_HIT, SKILL_ENERGY_PER_KILL, SKILL_ENERGY_PER_CRIT, SKILL_COOLDOWN_DURATION } from '../utils/gameLogic';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase';
 
 export const useCombat = (
   user,
@@ -370,6 +372,40 @@ export const useCombat = (
     const rewards = [];
     const updates = {};
     
+    // --- Daily ETH Faucet Reward ---
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = player?.lastTreasuryFaucetClaimDate || "";
+    
+    if (lastDate !== today) {
+      if (functions && player?.walletAddress) {
+        console.log("💎 TREASURY FAUCET: Attempting reward transmission sequence...");
+        const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+        claimFaucet({ targetWalletAddress: player.walletAddress })
+          .then((result) => {
+            const data = result.data;
+            if (data.success) {
+              addLog(`💎 TREASURY REWARD: ETH subsidy transmitted!`);
+              playSFX(SOUNDS.obtainLoot);
+              syncPlayer({
+                lastTreasuryFaucetClaimDate: today
+              });
+            } else {
+              console.log(`💎 TREASURY_SIGNAL: ${data.message}`);
+            }
+          })
+          .catch((e) => {
+            console.warn("💎 TREASURY_FAUCET_ERROR:", e.message);
+            if (e.message.includes("depleted")) {
+               addLog("💎 FAUCET: The treasury is temporarily dry.");
+            }
+          });
+      } else if (!player?.walletAddress) {
+        addLog(`⚠️ TREASURY: No Wallet Uplink detected. ETH reward skipped.`);
+      }
+    } else {
+      addLog(`⚠️ TREASURY: Daily ETH Claim already exhausted.`);
+    }
+    
     // Save remaining auto time if active right when treasury is reached for AFK safety
     const remainingAutoTime = (player?.autoUntil || 0) > Date.now() ? player.autoUntil - Date.now() : 0;
     if (remainingAutoTime > 0) {
@@ -441,7 +477,10 @@ export const useCombat = (
     const isBossMode = view === 'boss';
     addLog(reenter ? "🔁 Re-entering sector..." : "🏃 Extraction confirmed. Returning to Command Center.");
     setView(reenter ? (isBossMode ? 'boss' : 'dungeon') : 'menu');
-  }, [resetCombatEngine, setDepth, setView, addLog, view]);
+    if (reenter && !isBossMode) {
+      spawnNewEnemy(1);
+    }
+  }, [resetCombatEngine, setDepth, setView, addLog, view, spawnNewEnemy]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
@@ -461,7 +500,12 @@ export const useCombat = (
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000;
     let apGained = 0;
     let didLevelUp = false;
-    while (nextXp >= getXpRequired(nextLvl)) {
+    
+    const MAX_LEVEL = 100;
+    const GX_PER_XP = 0.5;
+    let overflowGx = 0;
+
+    while (nextXp >= getXpRequired(nextLvl) && nextLvl < MAX_LEVEL) {
       nextXp -= getXpRequired(nextLvl);
       nextLvl++;
       nextMaxHp += 50;
@@ -470,8 +514,13 @@ export const useCombat = (
       didLevelUp = true;
     }
 
+    if (nextLvl >= MAX_LEVEL) {
+      overflowGx = nextXp * GX_PER_XP;
+      nextXp = 0;
+    }
+
     const updates = {
-      tokens: (player?.tokens || 0) + earnedLoot,
+      tokens: (player?.tokens || 0) + earnedLoot + overflowGx,
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,

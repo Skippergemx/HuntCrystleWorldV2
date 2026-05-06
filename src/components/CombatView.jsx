@@ -1358,22 +1358,36 @@ export const CombatView = React.memo(() => {
               </div>
 
               {/* Loot List */}
-              {defeatData.sessionLoots.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-[8px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Items Recovered</span>
-                  <div className="grid grid-cols-2 gap-1.5 md:gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-1">
-                    {defeatData.sessionLoots.slice(0, 12).map((item, idx) => (
-                      <div key={idx} className="bg-black/50 border border-white/10 p-1.5 md:p-2 flex items-center gap-2 rounded">
-                        <span className="text-base md:text-lg flex-shrink-0">{item.icon || '📦'}</span>
-                        <span className="text-[8px] md:text-[9px] font-black text-white uppercase italic truncate">{item.name}</span>
-                      </div>
-                    ))}
-                    {defeatData.sessionLoots.length > 12 && (
-                      <div className="col-span-2 text-center text-[8px] font-black text-white/30 uppercase italic py-1">+{defeatData.sessionLoots.length - 12} more items</div>
-                    )}
+              {(() => {
+                const stackedLoots = Object.values((defeatData.sessionLoots || []).reduce((acc, item) => {
+                  const key = item.name;
+                  if (!acc[key]) acc[key] = { ...item, count: 0 };
+                  acc[key].count += 1;
+                  return acc;
+                }, {}));
+
+                return stackedLoots.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-[8px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Items Recovered</span>
+                    <div className="grid grid-cols-2 gap-1.5 md:gap-2 max-h-32 overflow-y-auto custom-scrollbar pr-1">
+                      {stackedLoots.slice(0, 12).map((item, idx) => (
+                        <div key={idx} className="bg-black/50 border border-white/10 p-1.5 md:p-2 flex items-center gap-2 rounded relative">
+                          <span className="text-base md:text-lg flex-shrink-0">{item.icon || '📦'}</span>
+                          <span className="text-[8px] md:text-[9px] font-black text-white uppercase italic truncate">{item.name}</span>
+                          {item.count > 1 && (
+                            <span className="absolute -top-1 -right-1 bg-amber-500 text-black text-[7px] md:text-[8px] font-black px-1.5 py-0.5 rounded-sm border border-black shadow-md">
+                              x{item.count}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {stackedLoots.length > 12 && (
+                        <div className="col-span-2 text-center text-[8px] font-black text-white/30 uppercase italic py-1">+{stackedLoots.length - 12} more unique items</div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Penalty Notice */}
               <div className="bg-red-950/40 border-[2px] border-red-800/40 p-2 md:p-3 flex items-center gap-2">

@@ -1123,7 +1123,11 @@ export const usePlayerActions = (
         nextMaxHp = player.maxHp || 1000,
         apGained = 0;
 
-    while (nextXp >= getXpRequired(nextLvl)) {
+    const MAX_LEVEL = 100;
+    const GX_PER_XP = 0.5;
+    let overflowGx = 0;
+
+    while (nextXp >= getXpRequired(nextLvl) && nextLvl < MAX_LEVEL) {
       nextXp -= getXpRequired(nextLvl);
       nextLvl++;
       nextMaxHp += 50;
@@ -1131,11 +1135,20 @@ export const usePlayerActions = (
       addLog(`🛡️ LVL UP! +5 AP gained through knowledge syncing.`);
     }
 
+    if (nextLvl >= MAX_LEVEL) {
+      overflowGx = nextXp * GX_PER_XP;
+      nextXp = 0;
+      if (overflowGx > 0) {
+        addLog(`✨ LEVEL CAP: ${quiz.xpReward} XP converted to ${Math.floor(overflowGx)} GX!`);
+      }
+    }
+
     const updates = {
       xp: nextXp,
       level: nextLvl,
       maxHp: nextMaxHp,
       hp: Math.min(nextMaxHp, (player.hp || 0) + (apGained > 0 ? 50 : 0)),
+      tokens: (player.tokens || 0) + overflowGx,
       [`completedQuizzes.${quiz.id}`]: Date.now()
     };
     

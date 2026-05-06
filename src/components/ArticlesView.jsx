@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-economy-overflow',
+    date: '2026-05-06',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Endgame Economy: Level 100 Cap & XP Overflow',
+    subtitle: 'Breaking down the new Level 100 Hard Cap and how XP Overflow converts time into wealth.',
+    category: 'ECONOMY & BALANCE',
+    type: 'article',
+    tag: 'NEW',
+    color: 'emerald',
+    readingTime: '3 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The grid is getting more competitive, and with it, the necessity for a balanced economy. Today, we are introducing a hard Level 100 Cap for all Hunters.'
+      },
+      {
+        type: 'heading',
+        text: 'The Level 100 Cap'
+      },
+      {
+        type: 'paragraph',
+        text: 'We noticed that infinite scaling of base stats eventually trivializes the importance of equipment, tactical party combinations, and premium items. By capping the maximum level at 100, we\'ve shifted the endgame meta. At Level 100, your base stats are locked. The only way to push further into the hardest sectors (like Tectonic Ridge or the Abyssal Trench) is to upgrade your Arsenal through the Forge, rely on powerful Syndicate Labs, and engage with the marketplace.'
+      },
+      {
+        type: 'heading',
+        text: 'XP Overflow: Turning Time into Wealth'
+      },
+      {
+        type: 'paragraph',
+        text: 'We didn\'t want the XP earned by our elite max-level Hunters to go to waste. That\'s why we built the XP Overflow Protocol. Any XP you earn after reaching Level 100 is instantly intercepted and converted into GX at a 1:0.5 ratio. This means every dungeon run and every completed iLearn quiz now directly funds your economic empire.'
+      },
+      {
+        type: 'image',
+        src: '/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg',
+        caption: 'With the XP Overflow Protocol, grinding in high-level zones yields massive GX returns.'
+      },
+      {
+        type: 'heading',
+        text: 'Quality of Life Upgrades'
+      },
+      {
+        type: 'paragraph',
+        text: 'We also refined the tactical UI. Defeat screens will now cleanly stack identical loot drops, complete with a quantity badge, so you can easily review your haul at a glance. Additionally, the Cyber Commerce shop now features direct typing for quantity inputs, making bulk item requisition seamless.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Good hunting, and enjoy the new economic engine!'
+      }
+    ],
+    media: '/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg'
+  },
+  {
     id: 'dwg-combat-effects-v2',
     date: '2026-05-03',
     author: 'Commander Gemx',
@@ -39,7 +92,7 @@ const ARTICLES_DATA = [
     subtitle: 'Redefining tactical feedback with high-fidelity cinematic effects.',
     category: 'DEVELOPMENT',
     type: 'article',
-    tag: 'NEW',
+    tag: 'FEATURED',
     color: 'cyan',
     readingTime: '4 min',
     content: [

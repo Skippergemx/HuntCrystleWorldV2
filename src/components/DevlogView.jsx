@@ -23,12 +23,30 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.16.0',
+    date: '2026-05-06',
+    title: 'THE LEVEL 100 CAP & UI REFINEMENT',
+    category: 'ECONOMY & UI',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'We have completely overhauled the endgame progression logic by introducing a Level 100 Hard Cap, paired with an XP-to-GX Overflow Protocol. Alongside this, we have pushed massive Quality of Life updates to the Raid Summary and Shop modules.',
+    changes: [
+      'Level Cap: Implemented a hard limit of Level 100 to prioritize equipment over base stats',
+      'Overflow Economy: Max-level XP is now instantly converted to GX at a 1:0.5 ratio',
+      'UI/UX: Raid Summary Modals now beautifully stack identical loot drops with a quantity badge',
+      'UI/UX: Cyber Commerce shop quantities can now be typed directly for bulk purchasing',
+      'Logic: Ensured defeat re-entry dynamically spawns new enemies to prevent grid-lock'
+    ],
+    media: '/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg'
+  },
+  {
     id: '1.15.0',
     date: '2026-05-03',
     title: 'HIGH-FIDELITY COMBAT EFFECTS & SYNC-DRIVE STABILIZATION',
     category: 'COMBAT UI & PERFORMANCE',
     type: 'feature',
-    tag: 'NEW',
+    tag: 'STABLE',
     color: 'cyan',
     description: 'Today\'s deployment focused on pushing the combat engine\'s visual fidelity to the next level. We have introduced a massive, screen-shaking "Power Overflow" cinematic cut-in for level-ups and successfully stabilized the Sync-Drive and Squad Strike visual layers.',
     changes: [

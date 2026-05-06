@@ -369,8 +369,8 @@ const IndustrialMarket = ({ player, items, getIndustrialData, onBuy }) => {
 };
 
 const PurchaseModal = ({ item, player, qty, setQty, txStatus, txCountdown, onConfirm, onCancel, onReset, getOwnedQty }) => {
-   const totalCost = item.cost * qty;
-   const canAfford = (player.tokens || 0) >= totalCost;
+   const totalCost = item.cost * (Number(qty) || 0);
+   const canAfford = (player.tokens || 0) >= totalCost && qty !== '' && qty > 0;
 
    return (
       <div className="relative w-full max-w-sm bg-slate-950 border-[4px] border-black shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-[2.5rem] p-6 flex flex-col gap-5 overflow-hidden">
@@ -400,10 +400,26 @@ const PurchaseModal = ({ item, player, qty, setQty, txStatus, txCountdown, onCon
                <div className="bg-white/5 p-5 rounded-3xl border border-white/10 space-y-4">
                   <div className="flex items-center justify-between">
                      <span className="text-[10px] font-black text-slate-400 uppercase italic">Transaction Qty</span>
-                     <div className="flex items-center gap-4">
-                        <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 font-black hover:bg-red-500 hover:text-black transition-all">-</button>
-                        <span className="text-xl font-black text-white w-8 text-center">{qty}</span>
-                        <button onClick={() => setQty(q => q + 1)} className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 font-black hover:bg-emerald-500 hover:text-black transition-all">+</button>
+                     <div className="flex items-center gap-2 md:gap-4">
+                        <button onClick={() => setQty(q => Math.max(1, (Number(q) || 1) - 1))} className="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 border border-red-500/30 font-black hover:bg-red-500 hover:text-black transition-all flex justify-center items-center">-</button>
+                        <input 
+                           type="number" 
+                           min="1"
+                           value={qty} 
+                           onChange={(e) => {
+                              const val = parseInt(e.target.value, 10);
+                              if (!isNaN(val) && val >= 1) {
+                                 setQty(val);
+                              } else if (e.target.value === '') {
+                                 setQty('');
+                              }
+                           }}
+                           onBlur={() => {
+                              if (qty === '' || qty < 1) setQty(1);
+                           }}
+                           className="text-xl font-black text-white w-16 text-center bg-transparent border-b-2 border-slate-700 focus:border-cyan-500 focus:outline-none transition-colors"
+                        />
+                        <button onClick={() => setQty(q => (Number(q) || 0) + 1)} className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 font-black hover:bg-emerald-500 hover:text-black transition-all flex justify-center items-center">+</button>
                      </div>
                   </div>
 
