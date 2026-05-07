@@ -457,3 +457,13 @@ body[data-perf-mode="low"] video {
 .animate-skill-activate {
     animation: skill-activate 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
+
+/* --- HIDE NATIVE INPUT SPINNERS --- */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}

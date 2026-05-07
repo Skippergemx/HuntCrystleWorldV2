@@ -589,16 +589,40 @@ export const useCombat = (
             playSFX(SOUNDS.obtainLoot);
             setTimeout(() => setLastLoot(null), 3000);
 
+            // --- AETHER SPARK PROTOCOL (Lv100 Elite Drops) ---
+            let finalLootItems = [dropToTrack];
+            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
+              const spark = LOOTS.find(l => l.id === 'aether_spark');
+              if (spark) {
+                const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                updates[`inventory.${sId}`] = { ...spark, id: sId };
+                addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
+                finalLootItems.push({ ...spark, id: sId });
+              }
+            }
+
             setSessionRewards(prev => ({
               tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
-              loots: [...prev.loots, dropToTrack]
+              loots: [...prev.loots, ...finalLootItems]
             }));
           } else {
+            // Check for Aether Spark even if normal loot roll fails
+            let extraLoot = [];
+            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
+              const spark = LOOTS.find(l => l.id === 'aether_spark');
+              if (spark) {
+                const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                updates[`inventory.${sId}`] = { ...spark, id: sId };
+                addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
+                extraLoot.push({ ...spark, id: sId });
+              }
+            }
+
             setSessionRewards(prev => ({
               tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
-              loots: prev.loots
+              loots: [...prev.loots, ...extraLoot]
             }));
           }
         }

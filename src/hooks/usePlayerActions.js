@@ -1251,11 +1251,54 @@ export const usePlayerActions = (
     return { xp: quiz.xpReward, item: dropData };
   }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions, setFaucetResult]);
 
+  const exchangeAetherSparks = useCallback(async () => {
+    if (!player || !functions) return;
+    
+    const inventory = player.inventory || {};
+    const sparks = Object.entries(inventory)
+      .filter(([id, item]) => item && item.id && item.id.startsWith('aether_spark'));
+    
+    if (sparks.length < 4) {
+      addLog(`🚨 INSUFFICIENT SPARKS: You need 4 Aether Sparks. You have ${sparks.length}.`);
+      return;
+    }
+    
+    // Deduct 4 sparks
+    const updates = {};
+    sparks.slice(0, 4).forEach(([uniqueId]) => {
+      updates[`inventory.${uniqueId}`] = deleteField();
+    });
+    
+    addLog("✨ AETHER EXCHANGE: Harmonizing sparks... Initiating Treasury Signal.");
+    
+    try {
+      // Use blocking sync to ensure inventory is updated before payout
+      await syncPlayer(updates, true); 
+      
+      const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+      const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
+      const data = result.data;
+      
+      if (data.success) {
+        addLog(`🎁 AETHER REWARD: ${data.message}`);
+        playSFX(SOUNDS.obtainLoot);
+        if (setFaucetResult) {
+          setFaucetResult({ success: true, txHash: data.txHash, message: "Aether Exchange Authorized" });
+        }
+      } else {
+        addLog(`🏙️ EXCHANGE SIGNAL: ${data.message}`);
+      }
+    } catch (e) {
+      console.warn("✨ EXCHANGE_ERROR:", e.message);
+      addLog("🏙️ EXCHANGE: The signal failed. Try again later.");
+    }
+  }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
-    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz
+    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks
   };
 };

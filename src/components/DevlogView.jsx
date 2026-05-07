@@ -23,6 +23,23 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.17.0',
+    date: '2026-05-07',
+    title: 'THE AETHER EXCHANGE & ENDGAME ECONOMY',
+    category: 'ECONOMY',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'We have introduced the Aether Spark protocol, a new high-tier loot system designed specifically for our Level 100 hunters. This update establishes a direct path from dungeon mastery to crypto rewards through a secure exchange terminal in Crystle Town.',
+    changes: [
+      'Aether Sparks: Rare drops exclusively from Elite Champions for players who have reached Level 100',
+      'Aether Exchange: A new premium terminal in Crystle Town allowing hunters to burn 4 Sparks for ETH rewards',
+      'Drop Balancing: Calibrated spark drop rates to ensure economic stability and reward long-term dedication',
+      'Secure Sync: Implemented blocking inventory synchronization during the exchange process to prevent exploitation'
+    ],
+    media: '/assets/monsters/Inferno Crater/Fire Pet 0-0.jpg'
+  },
+  {
     id: '1.16.0',
     date: '2026-05-06',
     title: 'THE LEVEL 100 CAP & UI REFINEMENT',

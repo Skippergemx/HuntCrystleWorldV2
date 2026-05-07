@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-aether-exchange',
+    date: '2026-05-07',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Aether Sparks: Bridging Dungeon Mastery and Rewards',
+    subtitle: 'The introduction of Aether Sparks and the premium exchange system for Level 100 hunters.',
+    category: 'ENDGAME ECONOMY',
+    type: 'article',
+    tag: 'NEW',
+    color: 'cyan',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The endgame has evolved. As our first wave of hunters approaches the Level 100 milestone, we are deploying the Aether Spark protocol—a high-stakes reward system that translates combat excellence into tangible value.'
+      },
+      {
+        type: 'heading',
+        text: 'The Aether Spark Discovery'
+      },
+      {
+        type: 'paragraph',
+        text: 'Aether Sparks are rare, high-energy fragments discovered only within the bodies of Elite Champions. These sparks are invisible to lower-level hunters, but for those who have reached Level 100, they manifest as rare loot drops after successful hunts.'
+      },
+      {
+        type: 'heading',
+        text: 'Elite Champions Only'
+      },
+      {
+        type: 'paragraph',
+        text: 'To maintain the rarity and value of Aether, these sparks only drop from Champion-class monsters. Every time a Level 100 hunter defeats an Elite Champion, there is a calibrated 10% chance for an Aether Spark to be extracted. This encourages tactical targeting of higher-tier enemies in the deepest sectors of the grid.'
+      },
+      {
+        type: 'image',
+        src: '/assets/monsters/Inferno Crater/Fire Pet 0-0.jpg',
+        caption: 'Only the most powerful Elite Champions carry the volatile Aether Sparks.'
+      },
+      {
+        type: 'heading',
+        text: 'The Crystle Town Exchange'
+      },
+      {
+        type: 'paragraph',
+        text: 'Once a hunter has collected 4 Aether Sparks, they can head to the newly established Aether Exchange Terminal in Crystle Town. By harmonizing these sparks with the town\'s core energy, hunters can authorize a premium ETH subsidy. This system ensures that our most dedicated players have a sustainable and rewarding path forward beyond the level cap.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The Aether Exchange represents the next step in our vision for a player-driven, rewarding economy. Good luck out there, hunters!'
+      }
+    ],
+    media: '/assets/monsters/Inferno Crater/Fire Pet 0-0.jpg'
+  },
+  {
     id: 'dwg-economy-overflow',
     date: '2026-05-06',
     author: 'Commander Gemx',
@@ -39,7 +92,7 @@ const ARTICLES_DATA = [
     subtitle: 'Breaking down the new Level 100 Hard Cap and how XP Overflow converts time into wealth.',
     category: 'ECONOMY & BALANCE',
     type: 'article',
-    tag: 'NEW',
+    tag: 'LATEST',
     color: 'emerald',
     readingTime: '3 min',
     content: [

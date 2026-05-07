@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronRight, CheckCircle, AlertCircle, Coins, ExternalLink, Sparkles, Zap, Trophy } from 'lucide-react';
+import { X, ChevronRight, CheckCircle, AlertCircle, Coins, ExternalLink, Sparkles, Zap, Trophy, Cpu } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard as AmbientNPCCard } from './NPCCard';
@@ -304,6 +304,11 @@ export const CrystleTownView = () => {
   const [sessionReward, setSessionReward] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const sparkCount = useMemo(() => {
+    if (!player?.inventory) return 0;
+    return Object.values(player.inventory).filter(item => item && item.id && item.id.startsWith('aether_spark')).length;
+  }, [player?.inventory]);
+
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 3000;
     const colors = ['#10b981', '#f59e0b', '#06b6d4', '#ffffff'];
@@ -566,6 +571,55 @@ export const CrystleTownView = () => {
                 />
               );
             })}
+          </div>
+        )}
+
+        {/* AETHER EXCHANGE TERMINAL (Level 100 Exclusive) */}
+        {player?.level >= 100 && (
+          <div className="mt-4 mb-8 relative group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="relative bg-slate-900 border-[3px] border-cyan-500/30 rounded-3xl p-6 overflow-hidden">
+              {/* Background Decor */}
+              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                <Cpu size={120} className="text-cyan-400 rotate-12" />
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                {/* Visual Terminal */}
+                <div className="w-24 h-24 bg-black/50 rounded-2xl border-2 border-cyan-500/50 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent"></div>
+                  <Sparkles className="text-cyan-400 animate-pulse mb-1" size={32} />
+                  <span className="text-2xl font-black text-white italic">{sparkCount}<span className="text-xs text-cyan-400/60 ml-0.5">/4</span></span>
+                  <div className="absolute bottom-0 w-full h-1 bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center gap-2 mb-1 justify-center md:justify-start">
+                    <span className="px-2 py-0.5 bg-cyan-500/10 border border-cyan-500/30 rounded text-[10px] font-black text-cyan-400 uppercase tracking-widest">Endgame Protocol</span>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded text-[10px] font-black text-emerald-400 uppercase tracking-widest">ETH Reward</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none mb-2">Aether Exchange Terminal</h3>
+                  <p className="text-sm text-slate-400 font-bold leading-tight max-w-lg">
+                    Burn 4 collected Aether Sparks to harmonize with the town's core and authorize a premium ETH subsidy. Sparks drop from Elite Champions.
+                  </p>
+                </div>
+
+                {/* Action */}
+                <button
+                  onClick={() => actions.exchangeAetherSparks()}
+                  disabled={sparkCount < 4}
+                  className={`px-8 py-4 rounded-2xl font-black uppercase italic text-lg transition-all flex items-center gap-3 shrink-0 ${
+                    sparkCount >= 4 
+                      ? 'bg-cyan-500 text-black border-[4px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none' 
+                      : 'bg-slate-800 text-slate-500 border-[4px] border-slate-700 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  {sparkCount >= 4 ? 'INITIATE EXCHANGE' : 'LOCKED'}
+                  <Zap size={20} className={sparkCount >= 4 ? 'animate-bounce' : ''} />
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
