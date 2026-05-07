@@ -31,6 +31,71 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-totality-audit',
+    date: '2026-05-07',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'The State of the Grid: The Totality of DWGX',
+    subtitle: 'A comprehensive deep-dive into the systems, economy, and genre-defying nature of Dungeons With Gems.',
+    category: 'SYSTEM AUDIT',
+    type: 'article',
+    tag: 'NEW',
+    color: 'emerald',
+    readingTime: '6 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'DWGX is more than just an extraction protocol. It is a living terminal, a complete ecosystem where every mechanic carries weight. Today, we audit the totality of the system.'
+      },
+      {
+        type: 'heading',
+        text: 'The Identity: "Edu-Fi"'
+      },
+      {
+        type: 'paragraph',
+        text: 'The most innovative part of DWGX is the iLearn system. By bridging real-world knowledge (quizzes) with in-game progression and ETH subsidies, we’ve created a "Learn-to-Earn" loop that feels organic rather than forced. It’s a game that actually makes the player smarter while they play.'
+      },
+      {
+        type: 'heading',
+        text: 'The Genre Fusion'
+      },
+      {
+        type: 'paragraph',
+        text: 'DWGX defies a single label. It is an Idle/Incremental RPG that respects the player\'s time through Auto-Hunt scrolls and XP-to-GX overflow. It is a Tactical Dungeon Crawler where the Sync-Drive Elemental system and Champion mechanics ensure combat requires skill and timing. Finally, it is a Social Strategy hub where Syndicate Wars and Naga Wars transform solo play into community competition.'
+      },
+      {
+        type: 'heading',
+        text: 'The Economic Loop: The Golden Circle'
+      },
+      {
+        type: 'paragraph',
+        text: 'We have achieved a Closed-Loop Economy. GX is drained through Sinks like Potion/Scroll purchases, the Laboratory, and the Forge, while being replenished through Faucets like combat and iLearn. The "Endgame Valve"—the Level 100 cap and Aether Exchange—ensures the game transitions from "growth" to "harvesting" for elite players.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Command Center: A fusion of gaming, education, and finance.'
+      },
+      {
+        type: 'heading',
+        text: 'The Aesthetic Polish'
+      },
+      {
+        type: 'paragraph',
+        text: 'Beyond the code, the Premium Cyber-Comic aesthetic—with its heavy borders, vibrant HSL gradients, and cinematic "Sync-Drive" cut-ins—gives the game a high-production feel that stands out in the browser.'
+      },
+      {
+        type: 'heading',
+        text: 'Final Thoughts'
+      },
+      {
+        type: 'paragraph',
+        text: 'DWGX feels like a living terminal. It’s part game, part educational tool, and part crypto-economy. Every mechanic—from eating a food buff to burning an Aether Spark—feels heavy and meaningful. It is a complete, stable, and highly addictive ecosystem. Commander Gemx, the grid is officially yours.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-aether-exchange',
     date: '2026-05-07',
     author: 'Commander Gemx',
@@ -39,7 +104,7 @@ const ARTICLES_DATA = [
     subtitle: 'The introduction of Aether Sparks and the premium exchange system for Level 100 hunters.',
     category: 'ENDGAME ECONOMY',
     type: 'article',
-    tag: 'NEW',
+    tag: 'LATEST',
     color: 'cyan',
     readingTime: '4 min',
     content: [
@@ -65,7 +130,7 @@ const ARTICLES_DATA = [
       },
       {
         type: 'image',
-        src: '/assets/monsters/Inferno Crater/Fire Pet 0-0.jpg',
+        src: '/assets/monsters/Neon Slums/Azure Glider.jpg',
         caption: 'Only the most powerful Elite Champions carry the volatile Aether Sparks.'
       },
       {
@@ -81,7 +146,7 @@ const ARTICLES_DATA = [
         text: 'The Aether Exchange represents the next step in our vision for a player-driven, rewarding economy. Good luck out there, hunters!'
       }
     ],
-    media: '/assets/monsters/Inferno Crater/Fire Pet 0-0.jpg'
+    media: '/assets/monsters/Neon Slums/Azure Glider.jpg'
   },
   {
     id: 'dwg-economy-overflow',
@@ -118,7 +183,7 @@ const ARTICLES_DATA = [
       },
       {
         type: 'image',
-        src: '/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg',
+        src: '/assets/monsters/Abyssal Trench/Trench Terror.jpg',
         caption: 'With the XP Overflow Protocol, grinding in high-level zones yields massive GX returns.'
       },
       {
@@ -134,7 +199,7 @@ const ARTICLES_DATA = [
         text: 'Good hunting, and enjoy the new economic engine!'
       }
     ],
-    media: '/assets/monsters/Rust Canyon/Rust Cat 3-2.jpg'
+    media: '/assets/monsters/Abyssal Trench/Trench Terror.jpg'
   },
   {
     id: 'dwg-combat-effects-v2',
@@ -163,7 +228,7 @@ const ARTICLES_DATA = [
       },
       {
         type: 'image',
-        src: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg',
+        src: '/assets/gamescreenshot/battlegamescreenshot.png',
         caption: 'The Power Overflow sequence brings a premium cinematic feel to your mid-combat ascensions.'
       },
       {
@@ -187,7 +252,7 @@ const ARTICLES_DATA = [
         text: 'The grid is getting more dangerous, but your feedback loops are getting sharper. Keep hunting, and let the power flow.'
       }
     ],
-    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+    media: '/assets/gamescreenshot/battlegamescreenshot.png'
   },
   {
     id: 'dwg-first-article',
@@ -216,8 +281,8 @@ const ARTICLES_DATA = [
       },
       {
         type: 'image',
-        src: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg',
-        caption: 'Vortex Vanguard: A prime example of the elemental threats lurking in the upper sectors.'
+        src: '/assets/dungeonsground/GaleGroundBackdrop.jpg',
+        caption: 'Gale Empire: One of the high-altitude sectors requiring advanced tactical maneuvering.'
       },
       {
         type: 'paragraph',
@@ -265,7 +330,7 @@ const ARTICLES_DATA = [
         text: 'Stay vigilant, Hunters. The grid is full of gems, but it’s also full of danger. We’ll see you in the next floor.'
       }
     ],
-    media: '/assets/monsters/Gale Empire/Vortex Vanguard.jpg'
+    media: '/assets/dungeonsground/GaleGroundBackdrop.jpg'
   }
 ];
 
