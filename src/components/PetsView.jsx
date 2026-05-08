@@ -161,11 +161,11 @@ export const PetsView = () => {
                                 <Star size={14} className="text-amber-400" />
                                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest">Ascension Lvl {player.petLevels?.[selectedPetMeta.id] || 1}</span>
                              </div>
-                             <span className="text-[10px] font-bold text-amber-500/70">{player.petExp?.[selectedPetMeta.id] || 0} / {(player.petLevels?.[selectedPetMeta.id] || 1) * 50} EXP</span>
+                             <span className="text-[10px] font-bold text-amber-500/70">{(player.petLevels?.[selectedPetMeta.id] || 1) >= 100 ? 'MAX LEVEL' : `${player.petExp?.[selectedPetMeta.id] || 0} / ${(player.petLevels?.[selectedPetMeta.id] || 1) * 50} EXP`}</span>
                           </div>
                           
                           <div className="h-1 w-full bg-black rounded-full overflow-hidden mb-4">
-                             <div className="h-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-500" style={{ width: `${Math.min(100, ((player.petExp?.[selectedPetMeta.id] || 0) / ((player.petLevels?.[selectedPetMeta.id] || 1) * 50)) * 100)}%` }} />
+                             <div className="h-full bg-gradient-to-r from-amber-500 to-orange-400 transition-all duration-500" style={{ width: (player.petLevels?.[selectedPetMeta.id] || 1) >= 100 ? '100%' : `${Math.min(100, ((player.petExp?.[selectedPetMeta.id] || 0) / ((player.petLevels?.[selectedPetMeta.id] || 1) * 50)) * 100)}%` }} />
                           </div>
 
                           <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
@@ -188,13 +188,20 @@ export const PetsView = () => {
                                     setLoading(true);
                                     let currentExp = player.petExp?.[selectedPetMeta.id] || 0;
                                     let currentLvl = player.petLevels?.[selectedPetMeta.id] || 1;
+                                    
+                                    if (currentLvl >= 100) {
+                                       addLog(`✨ ${selectedPetMeta.name} is already at maximum Ascension!`);
+                                       setLoading(false);
+                                       return;
+                                    }
+
                                     const expGained = group.exp || 10;
                                     currentExp += expGained;
                                     const requiredExp = currentLvl * 50;
                                     
                                     if (currentExp >= requiredExp) {
                                        currentExp -= requiredExp;
-                                       currentLvl++;
+                                       currentLvl = Math.min(100, currentLvl + 1);
                                        addLog(`🌟 ASCENSION: ${selectedPetMeta.name} reached Level ${currentLvl}!`);
                                     } else {
                                        addLog(`🍒 ${selectedPetMeta.name} gained +${expGained} EXP`);

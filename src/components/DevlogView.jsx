@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.18.0',
+    date: '2026-05-08',
+    title: 'COMPANION ASCENSION & SYSTEM STABILIZATION',
+    category: 'BALANCE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'purple',
+    description: 'We have finalized the system-wide balancing protocol by implementing a hard Level 100 Cap for all companions, including the Dragon, GEMX Sentinel, and Crystle Pets. This ensures that stat progression remains meaningful and competitive without spiraling into infinite scaling.',
+    changes: [
+      'Companion Caps: Dragon and GEMX levels are now hard-capped at Level 100',
+      'Pet Caps: All Crystle Pets now have a maximum Ascension level of 100',
+      'UI Refinement: Progress bars and requirement labels now clearly indicate "MAX LEVEL" when the cap is reached',
+      'Resource Management: Feeding logic now blocks resource consumption once a companion reaches peak resonance',
+      'Economy: Standardized all progression systems to align with the Level 100 Hunter cap'
+    ],
+    media: '/assets/dragonsground/dragons/DragonAvatar (1).jpg'
+  },
+  {
     id: '1.17.0',
     date: '2026-05-07',
     title: 'THE AETHER EXCHANGE & ENDGAME ECONOMY',

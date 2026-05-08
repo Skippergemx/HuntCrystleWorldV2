@@ -69,7 +69,7 @@ const ARTICLES_DATA = [
       },
       {
         type: 'paragraph',
-        text: 'We have achieved a Closed-Loop Economy. GX is drained through Sinks like Potion/Scroll purchases, the Laboratory, and the Forge, while being replenished through Faucets like combat and iLearn. The "Endgame Valve"—the Level 100 cap and Aether Exchange—ensures the game transitions from "growth" to "harvesting" for elite players.'
+        text: 'We have achieved a Closed-Loop Economy. GX is drained through Sinks like Potion/Scroll purchases, the Laboratory, and the Forge, while being replenished through Faucets like combat and iLearn. The "Endgame Valve"—the Level 100 cap for Hunters, Dragons, GEMX, and Pets—ensures the game transitions from "growth" to "harvesting" for elite players.'
       },
       {
         type: 'image',

@@ -109,6 +109,10 @@ export const DragonsGroundView = React.memo(() => {
   const nagaStats = calculateNagaStats(player);
 
   const feedGem = () => {
+    if (gemx.level >= 100) {
+      setMessage({ type: 'info', text: 'GEMX is at maximum resonance!' });
+      return;
+    }
     if (crystalsInInventory <= 0) {
       setMessage({ type: 'error', text: 'You need Crystle Shards to feed GEMX!' });
       return;
@@ -120,7 +124,7 @@ export const DragonsGroundView = React.memo(() => {
       let newLevel = gemx.level;
 
       if (newCrystalsFed >= gemxNextLevelRequirement) {
-        newLevel += 1;
+        newLevel = Math.min(100, newLevel + 1);
         newCrystalsFed = 0;
         setMessage({ type: 'success', text: `GEMX reached Level ${newLevel}!` });
         addLog(`🌟 GEMX ASCENSION: Reached Level ${newLevel}!`);
@@ -139,6 +143,10 @@ export const DragonsGroundView = React.memo(() => {
   };
 
   const feedDragon = () => {
+    if (dragonStats.level >= 100) {
+      setMessage({ type: 'info', text: 'The Dragon is at maximum power!' });
+      return;
+    }
     const dragonFruit = Object.values(player.inventory || {}).find(i => i?.type === 'Fruit');
     if (!dragonFruit) {
       setMessage({ type: 'error', text: 'You need Dragon Fruits to feed the Dragon!' });
@@ -151,7 +159,7 @@ export const DragonsGroundView = React.memo(() => {
     let newLevel = dragonStats.level;
 
     if (newFruitsFed >= dragonNextLevelRequirement) {
-      newLevel += 1;
+      newLevel = Math.min(100, newLevel + 1);
       newFruitsFed = 0;
       setMessage({ type: 'success', text: `Dragon reached Level ${newLevel}!` });
       addLog(`🐉 DRAGON ASCENSION: Reached Level ${newLevel}!`);
@@ -361,7 +369,7 @@ export const DragonsGroundView = React.memo(() => {
                 <span className={`text-[8px] font-black text-white bg-${activeGemx.color}-600 px-1 rounded`}>LVL {gemx.level}</span>
               </div>
               <div className="h-1.5 bg-black rounded-full border border-white/10 overflow-hidden">
-                <div className={`h-full bg-${activeGemx.color}-500 transition-all duration-500`} style={{ width: `${(gemx.crystalsFed / gemxNextLevelRequirement) * 100}%` }}></div>
+                <div className={`h-full bg-${activeGemx.color}-500 transition-all duration-500`} style={{ width: gemx.level >= 100 ? '100%' : `${(gemx.crystalsFed / gemxNextLevelRequirement) * 100}%` }}></div>
               </div>
               <div className="flex gap-1 mt-1.5 overflow-x-auto py-0.5 no-scrollbar">
                 {GEMX_AVATARS.map(avatar => (
@@ -394,11 +402,11 @@ export const DragonsGroundView = React.memo(() => {
                 <span className={`text-[8px] font-black text-white bg-${activeGemx.color}-600 px-1 rounded`}>LVL {dragonStats.level}</span>
               </div>
               <div className="h-1.5 bg-black rounded-full border border-white/10 overflow-hidden">
-                <div className={`h-full bg-${activeGemx.color}-500 transition-all duration-500`} style={{ width: `${(dragonStats.fruitsFed / dragonNextLevelRequirement) * 100}%` }}></div>
+                <div className={`h-full bg-${activeGemx.color}-500 transition-all duration-500`} style={{ width: dragonStats.level >= 100 ? '100%' : `${(dragonStats.fruitsFed / dragonNextLevelRequirement) * 100}%` }}></div>
               </div>
               <div className="mt-2 flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 5} ALL STATS</p>
+                  <p className={`text-[8px] font-black text-${activeGemx.color}-400`}>+{dragonStats.level * 15} ALL STATS</p>
                   {dragonTimeLeft > 0 ? (
                     <div className={`flex items-center gap-1 text-[8px] font-black text-white bg-black/40 px-2 py-0.5 rounded border border-${activeGemx.color}-500/30 animate-pulse`}>
                       <Clock size={10} className="text-white" />
