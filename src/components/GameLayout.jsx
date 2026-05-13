@@ -42,6 +42,7 @@ import { ILearnView } from './ILearnView';
 import { ManualView } from './ManualView';
 import { DevlogView } from './DevlogView';
 import { ArticlesView } from './ArticlesView';
+import { TokenomicsView } from './TokenomicsView';
 import { CrystleTownView } from './CrystleTownView';
 import { CrystleBazaarView } from './CrystleBazaarView';
 import { BiometricCoreView } from './BiometricCoreView';
@@ -783,6 +784,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'articles' && (
             <ArticlesView />
+          )}
+
+          {view === 'tokenomics' && (
+            <TokenomicsView />
           )}
 
           {view === 'crystle_town' && (
