@@ -141,13 +141,14 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
   return (
     <div className="w-full flex items-center justify-center p-2 relative z-50">
       {/* TACTICAL COMMAND BANNER - SLIM & WIDE */}
-      <div className="w-full max-w-4xl bg-[#faf6f0] border-[4px] border-black rounded-2xl p-2 px-4 flex items-center gap-4 md:gap-6 shadow-[8px_8px_0_rgba(0,0,0,1)] relative overflow-hidden transform rotate-0.5 transition-all hover:rotate-0 hover:-translate-y-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)] group cursor-pointer" onClick={pickMessage}>
+      <div className="w-full max-w-4xl bg-white border-[4px] border-black rounded-2xl p-2 px-4 flex items-center gap-4 md:gap-6 shadow-[10px_10px_0px_0px_var(--neon-pink)] relative overflow-hidden transform rotate-0.5 transition-all hover:rotate-0 hover:-translate-y-1 hover:shadow-[14px_14px_0px_0px_var(--neon-cyan)] group cursor-pointer" onClick={pickMessage}>
+         <div className="halftone-overlay absolute inset-0 opacity-5 pointer-events-none"></div>
          {/* Top Hanging Tape */}
-         <div className="absolute -top-3 left-1/4 w-32 h-6 bg-slate-400/20 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+         <div className="absolute -top-3 left-1/4 w-32 h-6 bg-black/5 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
          
          <div className="relative shrink-0 flex items-center">
             {/* Slim Avatar Slot */}
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-black border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2 group-hover:rotate-0 transition-transform">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-black border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_black] transform -rotate-2 group-hover:rotate-0 transition-transform">
                <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top scale-110" />
             </div>
             {currentPet && (
@@ -168,12 +169,13 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
             </div>
 
             {/* Horizontal Intelligence Stream */}
-            <div className="flex-1 h-12 overflow-hidden relative bg-black/5 rounded-lg border border-black/5 p-2 flex items-center">
-               <p className="text-[10px] md:text-xs font-black text-slate-700 uppercase leading-snug italic line-clamp-2">
-                 <span className={`${isPetTalking ? 'text-amber-600' : 'text-cyan-600'} drop-shadow-sm`}>{isPetTalking ? '[PET_LINK]:' : '[COMM_LINK]:'}</span> {cleanDisplayMsg}
+             <div className="flex-1 h-12 overflow-hidden relative bg-black rounded-lg border-2 border-black p-2 flex items-center shadow-inner">
+               <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
+               <p className="text-[10px] md:text-xs font-black text-white uppercase leading-snug italic line-clamp-2 relative z-10">
+                 <span className={`${isPetTalking ? 'text-[var(--neon-lime)]' : 'text-[var(--neon-cyan)]'} drop-shadow-sm bungee`}>{isPetTalking ? '[PET_LINK]:' : '[COMM_LINK]:'}</span> {cleanDisplayMsg}
                </p>
                {/* Pulse Cursor */}
-               <div className="w-1.5 h-3 bg-cyan-500 animate-pulse ml-1 shrink-0" />
+               <div className="w-1.5 h-3 bg-[var(--neon-cyan)] animate-pulse ml-1 shrink-0" />
             </div>
          </div>
 
@@ -205,7 +207,8 @@ const MissionBriefing = ({ player, setView }) => {
   
   return (
     <div className="w-full max-w-4xl mx-auto mb-10 animate-in slide-in-from-top duration-1000">
-      <div className={`border-[4px] border-black rounded-2xl p-4 md:p-6 shadow-[10px_10px_0_rgba(0,0,0,1)] relative overflow-hidden transform -rotate-1 hover:rotate-0 transition-all cursor-default group ${isWalletLinked ? 'bg-[#fff9c4]' : 'bg-red-50'}`}>
+      <div className={`border-[4px] border-black rounded-2xl p-4 md:p-6 shadow-[10px_10px_0px_0px_black] relative overflow-hidden transform -rotate-1 hover:rotate-0 transition-all cursor-default group ${isWalletLinked ? 'bg-white' : 'bg-red-50'}`}>
+        <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
         {/* Tape Decor */}
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-32 h-10 bg-black/10 backdrop-blur-sm border-x-2 border-black/5 rotate-1 pointer-events-none z-20" />
         
@@ -230,9 +233,9 @@ const MissionBriefing = ({ player, setView }) => {
                <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${isWalletLinked ? 'text-black/40' : 'text-red-600'}`}>REF: {isWalletLinked ? 'ETH_REWARD_UPLINK' : 'UPLINK_CRITICAL_FAILURE'}</span>
             </div>
             
-            <h3 className="text-lg md:text-2xl font-[1000] text-black uppercase italic leading-none tracking-tighter mb-2">
+            <h3 className="text-lg md:text-2xl font-[1000] text-black uppercase italic leading-none tracking-tighter mb-2 bungee">
               {isWalletLinked ? (
-                <>ETH <span className="text-amber-600 underline decoration-[4px] decoration-amber-600/30">DRIP</span> TRANSMISSION ACTIVE</>
+                <>ETH <span className="text-[var(--neon-pink)] underline decoration-[4px] decoration-[var(--neon-pink)]/30">DRIP</span> TRANSMISSION ACTIVE</>
               ) : (
                 <>WALLET LINK <span className="text-red-600 underline decoration-[4px] decoration-red-600/30">REQUIRED</span></>
               )}
@@ -341,7 +344,7 @@ export const MenuView = React.memo(() => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col relative overflow-hidden bg-[#e2d7c5]">
+    <div className="flex-1 flex flex-col relative overflow-hidden bg-[#0f051d]">
       {/* BACKGROUND DECOR: Floating Citizen Intelligence Files */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         {/* Subtle Grid Base */}
@@ -382,9 +385,10 @@ export const MenuView = React.memo(() => {
             
             {/* 1. RAID DUNGEON */}
             <div className="relative group cursor-pointer animate-in zoom-in duration-500 flex flex-col items-center" onClick={startDungeon}>
-               <div className={`w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-1 group-hover:rotate-0 overflow-hidden relative`}>
+               <div className={`w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_var(--neon-pink)] hover:shadow-[12px_12px_0px_0px_var(--neon-cyan)] hover:-translate-y-2 active:scale-95 transform -rotate-1 group-hover:rotate-0 overflow-hidden relative`}>
+                  <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
                   {/* Step Badge */}
-                  <div className="absolute top-4 -left-8 bg-red-600 text-white px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 01</div>
+                  <div className="absolute top-4 -left-8 bg-[var(--neon-pink)] text-white px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest bungee">Step 01</div>
                   
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-2 z-50 backdrop-blur-sm pointer-events-none" />
                   
@@ -396,11 +400,11 @@ export const MenuView = React.memo(() => {
 
                   {/* UI OVERLAY */}
                   <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
-                     <div className={`p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-3 mb-1 group-hover:rotate-0 transition-all ${isPenalized ? 'bg-red-600' : 'bg-red-700'}`}>
+                     <div className={`p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_black] transform rotate-3 mb-1 group-hover:rotate-0 transition-all ${isPenalized ? 'bg-red-600' : 'bg-[var(--neon-pink)]'}`}>
                         {isPenalized ? <Clock className="text-white animate-spin-slow" size={20} /> : <span className="text-xl drop-shadow-md">⚔️</span>}
                      </div>
-                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
-                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap">{isPenalized ? 'LOCKDOWN' : 'RAID DUNGEON'}</h3>
+                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap bungee">{isPenalized ? 'LOCKDOWN' : 'RAID DUNGEON'}</h3>
                      </div>
                   </div>
                </div>
@@ -409,24 +413,25 @@ export const MenuView = React.memo(() => {
 
             {/* 2. CRYSTLE TOWN QUEST */}
             <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('crystle_town')}>
-               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform rotate-2 group-hover:rotate-0 overflow-hidden relative">
+               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_var(--neon-cyan)] hover:shadow-[12px_12px_0px_0px_var(--neon-lime)] hover:-translate-y-2 active:scale-95 transform rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
                   {/* Step Badge */}
-                  <div className="absolute top-4 -left-8 bg-amber-500 text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 02</div>
+                  <div className="absolute top-4 -left-8 bg-[var(--neon-cyan)] text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest bungee">Step 02</div>
 
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 -rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black/10 border-x-2 border-black/5 -rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
                   <div className="absolute inset-0 z-0">
                      <CitizenMedia num={18} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
-                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-amber-950/90 via-amber-950/30 to-transparent" />
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                   </div>
    
                   <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
-                     <div className="p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-3 mb-1 group-hover:rotate-0 transition-all bg-amber-600">
-                        <span className="text-xl drop-shadow-md">🏙️</span>
+                     <div className="p-3 bg-[var(--neon-cyan)] rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_black] transform -rotate-3 mb-1 group-hover:rotate-0 transition-all">
+                        <span className="text-xl drop-shadow-md">🏘️</span>
                      </div>
-                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] rotate-1 transform group-hover:rotate-0 transition-transform w-full flex flex-col items-center">
-                        <h3 className="text-[8px] md:text-[9px] font-[1000] text-black uppercase italic tracking-tighter leading-none text-center">CRYSTLE TOWN QUEST</h3>
+                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full flex flex-col items-center">
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none text-center bungee">CRYSTLE TOWN</h3>
                      </div>
                   </div>
                </div>
@@ -434,24 +439,25 @@ export const MenuView = React.memo(() => {
 
             {/* 3. iLEARN QUEST */}
             <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('ilearn')}>
-               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-slate-900 rounded-2xl border-[4px] border-black transition-all shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:-translate-y-2 active:scale-95 transform -rotate-2 group-hover:rotate-0 overflow-hidden relative">
+               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_var(--neon-lime)] hover:shadow-[12px_12px_0px_0px_var(--neon-pink)] hover:-translate-y-2 active:scale-95 transform -rotate-2 group-hover:rotate-0 overflow-hidden relative">
+                  <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
                   {/* Step Badge */}
-                  <div className="absolute top-4 -left-8 bg-blue-600 text-white px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest">Step 03</div>
+                  <div className="absolute top-4 -left-8 bg-[var(--neon-lime)] text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest bungee">Step 03</div>
 
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-slate-400/20 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black/10 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
                   <div className="absolute inset-0 z-0">
                      <CitizenMedia num={22} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
-                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-blue-950/90 via-blue-950/30 to-transparent" />
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                   </div>
    
                   <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
-                     <div className="p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-6 mb-1 group-hover:rotate-0 transition-all bg-blue-700">
+                     <div className="p-3 bg-[var(--neon-lime)] rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_black] transform rotate-6 mb-1 group-hover:rotate-0 transition-all">
                         <span className="text-xl drop-shadow-md">🧠</span>
                      </div>
-                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
-                        <h3 className="text-[10px] md:text-[11px] font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap">ILEARN QUEST</h3>
+                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap bungee">ILEARN QUEST</h3>
                      </div>
                   </div>
                </div>
@@ -465,17 +471,16 @@ export const MenuView = React.memo(() => {
                 <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-800 italic">Operations & Logistics</span>
                 <div className="w-12 h-[2px] bg-black opacity-10" />
             </div>
-            
             <div className="flex items-center justify-center gap-4 md:gap-8">
                {[
-                 { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS AND EQUIPS', sub: 'SYSTEM', color: 'bg-cyan-700', npc: 10, grad: 'from-cyan-950/90' },
-                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'TRADE', color: 'bg-amber-700', npc: 11, grad: 'from-amber-950/90' },
-                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: "DRAGON'S GROUND", sub: 'RELICS', color: 'bg-emerald-700', npc: 14, grad: 'from-emerald-950/90' }
+                 { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'SYSTEM', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
+                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'TRADE', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
+                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'RELICS', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
                ].map((token, i) => (
                   <button
                     key={token.id}
                     onClick={() => setView(token.id)}
-                    className={`group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-slate-900 border-[4px] border-black shadow-[6px_6px_0_rgba(0,0,0,1)] rounded-xl ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative overflow-hidden`}
+                    className={`group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] rounded-xl ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative overflow-hidden`}
                   >
                      {/* FULL ART PREVIEW */}
                      <div className="absolute inset-0 z-0">
@@ -484,36 +489,37 @@ export const MenuView = React.memo(() => {
                      </div>
 
                      <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
-                        <div className={`w-10 h-10 flex items-center justify-center ${token.color} border-[2px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rounded-lg transition-all group-hover:rotate-6`}>
+                        <div className={`w-10 h-10 flex items-center justify-center ${token.color} border-[3px] border-black shadow-[4px_4px_0px_0px_black] rounded-lg transition-all group-hover:rotate-6`}>
                            {token.icon}
                         </div>
-                        <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
-                           <div className="text-[7px] md:text-[8px] font-black text-black uppercase italic leading-none text-center break-words">{token.label}</div>
+                        <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
+                           <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">{token.label}</div>
                         </div>
                      </div>
                   </button>
                ))}
             </div>
+          </div>
          </div>
-      </div>
 
       {/* SYSTEM UTILITY FOOTER */}
-      <div className="bg-black border-t-[4px] border-slate-900 p-3 md:p-4 flex items-center justify-center gap-3 md:gap-6 relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-900 text-slate-500 border-x-[3px] border-t-[3px] border-black px-4 py-0.5 rounded-t-xl text-[8px] font-black uppercase tracking-[0.3em] italic">Utility Uplink</div>
+      <div className="bg-black border-t-[4px] border-white p-3 md:p-4 flex items-center justify-center gap-3 md:gap-6 relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
+         <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white text-black border-2 border-black px-4 py-0.5 rounded-t-xl text-[8px] font-black uppercase tracking-[0.3em] italic bungee">Utility Uplink</div>
          {UTILITY_LINKS.map(link => (
-            <button key={link.id} onClick={() => setView(link.id)} className="group flex flex-col items-center gap-1 text-slate-500 hover:text-cyan-400 transition-all active:scale-95">
-               <div className="p-2 md:p-3 bg-slate-900 border-2 border-slate-800 rounded-xl group-hover:border-cyan-500 transition-all">
-                 {link.icon}
+            <button key={link.id} onClick={() => setView(link.id)} className="group flex flex-col items-center gap-1.5 transition-all active:scale-95">
+               <div className="p-2 md:p-3 bg-black border-2 border-white rounded-xl group-hover:border-[var(--neon-cyan)] group-hover:shadow-[0_0_15px_var(--neon-cyan)] transition-all relative overflow-hidden">
+                  <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                  {React.cloneElement(link.icon, { size: 16, className: 'text-white' })}
                </div>
-               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest">{link.label}</span>
+               <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-white group-hover:text-[var(--neon-cyan)] bungee">{link.label}</span>
             </button>
          ))}
          {isAdmin && (
-           <button onClick={() => setView('admin')} className="group flex flex-col items-center gap-1 text-red-600 hover:text-red-400 transition-all active:scale-95">
-              <div className="p-2 md:p-3 bg-red-950/20 border-2 border-red-900/40 rounded-xl group-hover:border-red-500 transition-all">
-                <ShieldAlert size={16} />
+           <button onClick={() => setView('admin')} className="group flex flex-col items-center gap-1.5 transition-all active:scale-95">
+              <div className="p-2 md:p-3 bg-black border-2 border-[var(--neon-pink)] rounded-xl group-hover:shadow-[0_0_15px_var(--neon-pink)] transition-all">
+                <ShieldAlert size={16} className="text-[var(--neon-pink)]" />
               </div>
-              <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest">ADMIN</span>
+              <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-[var(--neon-pink)] bungee">ADMIN</span>
            </button>
          )}
       </div>

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { auth } from '../firebase';
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut, signInAnonymously } from 'firebase/auth';
 import { useAccount, useDisconnect } from 'wagmi';
+import sdk from '@farcaster/frame-sdk';
 
 /**
- * useUnifiedAuth V3: Google-Only Identity Hub
- * Manages Firebase Google Auth. Wallet state is handled separately by useWallet.
- * Farcaster and Telegram integrations have been removed.
+ * useUnifiedAuth V4: Hybrid Identity Hub (Google + Farcaster)
+ * Manages Firebase Google Auth and intercepts Farcaster Native Mini App sessions.
  */
 export const useUnifiedAuth = () => {
   const [user, setUser] = useState(null);
@@ -15,27 +15,88 @@ export const useUnifiedAuth = () => {
   const { address } = useAccount();
   const { disconnect } = useDisconnect();
 
-  // Identity Sync: Firebase Auth State → Application State
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      if (u) {
-        console.log("System V3: Google Identity Verified. UID:", u.uid);
-        const unifiedUser = {
-          uid: u.uid,
-          email: u.email || null,
-          username: u.displayName || u.email?.split('@')[0],
-          pfp: u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
-          platform: 'browser',
-          walletAddress: address ? address.toLowerCase() : null
-        };
-        setUser(unifiedUser);
-      } else {
-        console.log("System V3: Identity Nullified.");
-        setUser(null);
+    let unsubscribe = () => {};
+    let isMounted = true;
+
+    const init = async () => {
+      let isFarcaster = false;
+      let fcUser = null;
+
+      try {
+        const context = await sdk.context;
+        if (context && context.user) {
+          isFarcaster = true;
+          fcUser = context.user;
+          console.log(`System V4: Farcaster Native Context Detected. FID: ${fcUser.fid}`);
+        }
+      } catch (e) {
+        // Not running in Farcaster Frame
       }
-      setLoading(false);
-    });
-    return () => unsubscribe();
+
+      if (!isMounted) return;
+
+      unsubscribe = onAuthStateChanged(auth, async (u) => {
+        if (isFarcaster && fcUser) {
+          // In Farcaster: We need an anonymous session to talk to Firestore securely.
+          if (!u) {
+            console.log("System V4: Initiating Anonymous Firebase Bridge for Farcaster...");
+            try {
+              await signInAnonymously(auth);
+              return; // wait for the next auth state change trigger
+            } catch (error) {
+              console.error("Anonymous Auth Failed:", error);
+            }
+          }
+
+          // Use the FID to synthesize the user profile matching the 'FC_.*' Firestore rule
+          const unifiedUser = {
+            uid: `FC_${fcUser.fid}`,
+            email: null,
+            username: fcUser.username || `FC_Hunter_${fcUser.fid}`,
+            pfp: fcUser.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=FC_${fcUser.fid}`,
+            platform: 'farcaster',
+            walletAddress: address ? address.toLowerCase() : null
+          };
+          setUser(unifiedUser);
+          setLoading(false);
+          return;
+        }
+
+        // Standard Google Auth Path
+        if (u) {
+          // Security: if they are anon but NOT farcaster, log them out
+          if (u.isAnonymous && !isFarcaster) {
+            await signOut(auth);
+            setUser(null);
+            setLoading(false);
+            return;
+          }
+
+          console.log("System V4: Google Identity Verified. UID:", u.uid);
+          const unifiedUser = {
+            uid: u.uid,
+            email: u.email || null,
+            username: u.displayName || u.email?.split('@')[0],
+            pfp: u.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${u.uid}`,
+            platform: 'browser',
+            walletAddress: address ? address.toLowerCase() : null
+          };
+          setUser(unifiedUser);
+        } else {
+          console.log("System V4: Identity Nullified.");
+          setUser(null);
+        }
+        setLoading(false);
+      });
+    };
+
+    init();
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [address]);
 
   const loginWithGoogle = async () => {

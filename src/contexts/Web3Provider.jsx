@@ -1,22 +1,33 @@
 import '@rainbow-me/rainbowkit/styles.css';
-import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
+import { RainbowKitProvider, darkTheme, connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { WagmiProvider, createConfig, http } from 'wagmi';
 import { metaMaskWallet, rainbowWallet, walletConnectWallet, coinbaseWallet } from '@rainbow-me/rainbowkit/wallets';
 import { base } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import { farcasterFrame } from '@farcaster/frame-wagmi-connector';
 
-// Web-only config: Base Mainnet via RainbowKit (EVM wallets — MetaMask, Coinbase, etc.)
-// Farcaster frame connector and TonConnect have been removed.
-const config = getDefaultConfig({
-  appName: 'Dungeons With Gems',
-  projectId: '61b0a0a65bcb71e672d99fc2204fc914',
-  chains: [base],
-  wallets: [
+const projectId = '61b0a0a65bcb71e672d99fc2204fc914';
+
+const connectors = connectorsForWallets(
+  [
     {
       groupName: 'Recommended',
       wallets: [metaMaskWallet, coinbaseWallet, rainbowWallet, walletConnectWallet],
     },
   ],
+  {
+    appName: 'Dungeons With Gems',
+    projectId: projectId,
+  }
+);
+
+// Hybrid config: RainbowKit EVM wallets + Farcaster Frame native connector
+const config = createConfig({
+  chains: [base],
+  transports: {
+    [base.id]: http()
+  },
+  connectors: [farcasterFrame(), ...connectors],
   ssr: false,
 });
 

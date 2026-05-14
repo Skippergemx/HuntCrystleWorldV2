@@ -221,9 +221,13 @@ export const BossView = () => {
   return (
     <div 
       ref={arenaRef}
-      className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-slate-950 ${isHurt ? 'animate-damage' : ''}`}
+      className={`flex-1 p-4 flex flex-col items-center justify-between gap-4 animate-in fade-in relative overflow-hidden bg-[#0f051d] ${isHurt ? 'animate-damage' : ''}`}
     >
       <BattleParticles ref={battleParticlesRef} lowPerfMode={lowPerfMode} />
+
+      {/* ANIME POP Overlay: Grid & Scanlines */}
+      <div className="fixed inset-0 pointer-events-none z-[2] opacity-10 bg-scanline"></div>
+      <div className="fixed inset-0 pointer-events-none z-[1] opacity-5 bg-cyber-grid"></div>
 
       {/* --- CINEMATIC SKILL OVERLAYS --- */}
       {activeSkill && (
@@ -329,7 +333,7 @@ export const BossView = () => {
       {/* Halftone Overlay HUD */}
       <div className="absolute inset-0 opacity-20 pointer-events-none z-10 comic-halftone text-red-500"></div>
 
-      {/* --- HUD TOP: CONSOLIDATED MISSION COMMAND ARRAY --- */}
+      {/* --- HUD TOP: CONSOLIDATED MISSION COMM --- */}
       <Header 
         title="ABYSSAL BREACH: SECTOR Ω" 
         onClose={() => setShowRetreatConfirm(true)} 
@@ -340,18 +344,18 @@ export const BossView = () => {
         }}
       >
         {/* --- TACTICAL MISSION COMMAND MODULE (BALANCED) --- */}
-        <div className="flex items-center bg-slate-950/40 border-[2px] border-white/5 rounded-xl p-1 md:p-1.5 backdrop-blur-sm transform -skew-x-2 md:-skew-x-6 animate-in slide-in-from-top-4 duration-700">
+        <div className="flex items-center bg-black border-[3px] border-white rounded-xl p-1 md:p-1.5 backdrop-blur-sm transform -rotate-1 animate-in slide-in-from-top-4 duration-700 shadow-[6px_6px_0px_0px_var(--neon-pink)]">
            {/* Section 1: Data Stream Manifest */}
            <button
              onClick={() => setIsPossibleDropsModalOpen(true)}
-             className="group flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-1.5 focus:outline-none transform skew-x-2 md:skew-x-6"
+             className="group flex items-center gap-2 md:gap-3 px-2 md:px-4 py-1 md:py-1.5 focus:outline-none"
            >
-             <div className="bg-slate-900 border-2 border-red-500/30 p-1 md:p-1.5 rounded-lg group-hover:bg-red-500 group-hover:border-black transition-all">
-                <Search size={14} className="text-red-400 group-hover:text-black transition-colors md:w-5 md:h-5" />
+             <div className="bg-black border-2 border-[var(--neon-cyan)] p-1 md:p-1.5 rounded-lg group-hover:bg-[var(--neon-cyan)] group-hover:border-black transition-all shadow-[2px_2px_0px_0px_var(--neon-cyan)]">
+                <Search size={14} className="text-[var(--neon-cyan)] group-hover:text-black transition-colors md:w-5 md:h-5" />
              </div>
              <div className="flex flex-col items-start leading-none">
-                <span className="text-[6px] md:text-[8px] font-black text-white/40 uppercase tracking-widest group-hover:text-black/50 transition-colors">BIT_STREAM</span>
-                <span className="text-[10px] md:text-base font-black text-white group-hover:text-red-400 uppercase italic transition-colors">MANIFEST</span>
+                <span className="text-[6px] md:text-[8px] font-black text-[#ccff00] uppercase tracking-widest group-hover:text-black/50 transition-colors bungee">STREAM</span>
+                <span className="text-[10px] md:text-base font-black text-white group-hover:text-[var(--neon-cyan)] uppercase italic transition-colors bungee">MANIFEST</span>
              </div>
            </button>
         </div>
@@ -396,13 +400,14 @@ export const BossView = () => {
           <div className={`flex flex-col items-center lg:items-end transition-all duration-300 ${strikingSide === 'monster' ? 'animate-strike-right' : ''}`}>
              <div className="relative group">
                 {/* Boss Aura */}
-                <div className="absolute inset-0 -m-8 bg-red-600/20 blur-3xl rounded-full animate-pulse scale-125 z-0"></div>
+                <div className="absolute inset-0 -m-8 bg-[var(--neon-pink)]/20 blur-3xl rounded-full animate-pulse scale-125 z-0"></div>
                 
                 <div 
                   ref={bossContainerRef}
-                  className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[8px_8px_0_rgba(239,68,68,0.3)] md:shadow-[12px_12px_0_rgba(239,68,68,0.3)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : 'animate-float'}`}
+                  className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-black border-[6px] md:border-[8px] border-white shadow-[6px_6px_0px_0px_var(--neon-pink)] md:shadow-[12px_12px_0px_0px_var(--neon-pink)] overflow-hidden relative transform -rotate-3 ${enemyFlinch || impactSplash ? 'animate-flinch' : 'animate-float'}`}
                 >
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#450a0a_0%,transparent_80%)] opacity-60 z-20"></div>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-20"></div>
+                    <div className="halftone-overlay absolute inset-0 opacity-20 text-red-500 z-10 pointer-events-none"></div>
                     <BossAvatarMedia bossIdx={bossAvatarIdx} animated={showBossVideo && !lowPerfMode} className="w-full h-full object-cover relative z-10 contrast-125 brightness-75 drop-shadow-[0_0_30px_rgba(239,68,68,0.2)]" BOSS_MEDIA_FILES={BOSS_MEDIA_FILES} />
                     
                     <button 
@@ -447,10 +452,10 @@ export const BossView = () => {
                 <div className="flex items-center gap-3 md:gap-8">
                   <div 
                     ref={playerContainerRef}
-                    className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-slate-950 flex items-center justify-center border-[6px] md:border-[8px] border-black shadow-[6px_6px_0_rgba(8,145,178,0.3)] md:shadow-[12px_12px_0_rgba(8,145,178,0.3)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}
+                    className={`w-36 h-36 sm:w-44 sm:h-44 md:w-64 md:h-64 bg-black border-[6px] md:border-[8px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] md:shadow-[12px_12px_0px_0px_var(--neon-cyan)] overflow-hidden relative transform rotate-3 ${strikingSide === 'monster' && playerImpactSplash ? 'animate-flinch' : 'animate-float'}`}
                   >
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#064e3b_0%,transparent_80%)] opacity-50 z-20"></div>
-                      <div className="absolute inset-0 opacity-20 comic-halftone text-cyan-500 z-10 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-20"></div>
+                      <div className="halftone-overlay absolute inset-0 opacity-20 text-cyan-500 z-10 pointer-events-none"></div>
                       {player.avatar && (
                         <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover relative z-10 contrast-125" />
                       )}
@@ -498,10 +503,13 @@ export const BossView = () => {
           {/* BOSS STATUS */}
           <div className="w-full flex flex-col items-center lg:items-end space-y-2 md:space-y-4">
               <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
-                <div className="bg-red-600 text-white px-4 py-1.5 md:px-6 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] relative flex flex-col transform -rotate-1">
-                    <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Threat Identified</span>
-                    <h2 className="text-sm md:text-3xl font-black uppercase tracking-tighter italic leading-none truncate drop-shadow-md">{BOSS.name}</h2>
-                    <div className="absolute -top-4 -right-2 md:-top-6 md:-right-4 bg-black text-white px-2 py-0.5 md:px-3 md:py-1 text-[8px] md:text-xs font-black border-2 border-white rotate-12 shadow-xl">LVL {BOSS.level}</div>
+                <div className="bg-black text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-white shadow-[6px_6px_0px_0px_var(--neon-pink)] flex items-center justify-between transform -rotate-1 relative overflow-hidden">
+                    <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                    <div className="flex flex-col min-w-0 relative z-10">
+                      <span className="text-[7px] md:text-[8px] font-black uppercase text-[var(--neon-lime)] tracking-widest italic leading-none mb-0.5 bungee">Threat Identified</span>
+                      <h2 className="text-sm md:text-3xl font-black uppercase tracking-tighter italic leading-none truncate bungee">{BOSS.name}</h2>
+                    </div>
+                    <div className="absolute -top-4 -right-2 md:-top-6 md:-right-4 bg-white text-black px-2 py-0.5 md:px-3 md:py-1 text-[8px] md:text-xs font-black border-2 border-black rotate-12 shadow-[3px_3px_0px_0px_black] z-20 bungee">LVL {BOSS.level}</div>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-1 md:gap-2 bg-black/60 border-[3px] md:border-4 border-black p-1 md:p-2 shadow-[4px_4px_0_rgba(0,0,0,1)] transform rotate-1">
@@ -521,23 +529,24 @@ export const BossView = () => {
 
                 <div className="w-full group">
                   <div className="flex justify-between items-center mb-0.5 px-1">
-                    <span className="text-[8px] md:text-[9px] font-black text-red-500 uppercase italic">Power Core</span>
-                    <span className="text-[8px] md:text-[10px] font-black text-white italic">IMMORTAL</span>
+                    <span className="text-[8px] md:text-[9px] font-black text-[var(--neon-pink)] uppercase italic bungee">Power Core</span>
+                    <span className="text-[8px] md:text-[10px] font-black text-white italic bungee">IMMORTAL</span>
                   </div>
-                  <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-red-800 to-red-500 transition-all duration-300 relative" style={{ width: `100%` }}>
-                      <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
+                  <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-white p-0.5 relative shadow-[4px_4px_0px_0px_black] flex items-center overflow-hidden">
+                    <div className="h-full bg-[var(--neon-pink)] transition-all duration-300 relative shadow-[0_0_15px_var(--neon-pink)]" style={{ width: `100%` }}>
+                      <div className="absolute inset-0 halftone-overlay opacity-30 pointer-events-none text-black"></div>
                       <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-black/80 border-[4px] md:border-[6px] border-black p-2 md:p-4 shadow-[8px_8px_0_rgba(220,38,38,0.3)] transform -rotate-2">
-                   <div className="flex justify-between items-center mb-1">
-                      <span className="text-[6px] md:text-[10px] font-black text-red-500 uppercase italic tracking-[0.2em]">Total Damage Uploaded</span>
-                      <Activity size={12} className="text-red-500 animate-pulse" />
+                <div className="bg-black border-[4px] md:border-[6px] border-white p-2 md:p-4 shadow-[8px_8px_0px_0px_var(--neon-pink)] transform -rotate-2 relative overflow-hidden">
+                   <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                   <div className="flex justify-between items-center mb-1 relative z-10">
+                      <span className="text-[6px] md:text-[10px] font-black text-[var(--neon-pink)] uppercase italic tracking-[0.2em] bungee">Total Damage Uploaded</span>
+                      <Activity size={12} className="text-[var(--neon-pink)] animate-pulse" />
                    </div>
-                   <div className="text-xl md:text-4xl font-[1000] text-white italic drop-shadow-[0_0_15px_rgba(239,68,68,0.4)] tracking-tighter">
+                   <div className="text-xl md:text-4xl font-[1000] text-white italic drop-shadow-[0_0_15px_rgba(239,68,68,0.4)] tracking-tighter relative z-10 bungee">
                       {Math.floor(player.totalBossDamage || 0).toLocaleString()}
                    </div>
                 </div>
@@ -547,20 +556,21 @@ export const BossView = () => {
           {/* PLAYER STATUS */}
           <div className="w-full flex flex-col items-center lg:items-start space-y-2 md:space-y-4">
               <div className="w-full max-w-[280px] md:max-w-[320px] flex flex-col gap-2">
-                <div className="bg-cyan-600 text-white px-4 py-1.5 md:px-5 md:py-2 border-[4px] md:border-[5px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col items-end transform rotate-1 relative">
-                    <span className="text-[7px] md:text-[8px] font-black uppercase opacity-70 tracking-widest italic leading-none mb-0.5">Assigned Hunter</span>
-                    <h2 className="text-xs md:text-3xl font-black uppercase tracking-tighter italic leading-none truncate">{player.name}</h2>
-                    <div className="absolute -top-3 -left-2 md:-top-5 md:-left-4 bg-black text-cyan-400 px-1.5 py-0.5 md:px-3 md:py-1 text-[7px] md:text-xs font-black border-2 md:border-cyan-400 rotate-12 shadow-xl shrink-0">RANK: S</div>
+                <div className="bg-black text-white px-3 md:px-5 py-1 md:py-2 border-[4px] md:border-[5px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] flex flex-col items-end transform rotate-1 relative overflow-hidden">
+                    <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                    <span className="text-[7px] md:text-[8px] font-black uppercase text-[var(--neon-lime)] tracking-widest italic leading-none mb-0.5 relative z-10 bungee">Assigned Hunter</span>
+                    <h2 className="text-xs md:text-3xl font-black uppercase tracking-tighter italic leading-none truncate relative z-10 bungee">{player.name}</h2>
+                    <div className="absolute -top-3 -left-2 md:-top-5 md:-left-4 bg-white text-black px-1.5 py-0.5 md:px-3 md:py-1 text-[7px] md:text-xs font-black border-2 border-black rotate-12 shadow-[3px_3px_0px_0px_black] z-20 bungee">RANK: S</div>
                 </div>
                 
                 <div className="w-full group transform -rotate-1">
                    <div className="flex justify-between items-center mb-0.5 px-1 flex-row-reverse">
-                      <span className="text-[8px] md:text-[10px] font-black text-cyan-500 uppercase italic">Biological Core</span>
-                      <span className="text-[8px] md:text-[10px] font-black text-white italic">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-[var(--neon-cyan)] uppercase italic bungee">Biological Core</span>
+                      <span className="text-[8px] md:text-[10px] font-black text-white italic bungee">{Math.floor(player.hp)}/{Math.floor(player.maxHp)}</span>
                    </div>
-                   <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-black p-0.5 relative shadow-[-4px_4px_0_rgba(0,0,0,1)] transition-all overflow-hidden flex items-center">
-                      <div className="h-full bg-gradient-to-r from-cyan-800 via-cyan-500 to-cyan-400 transition-all duration-300 relative ml-auto" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
-                         <div className="absolute inset-0 comic-halftone opacity-30 pointer-events-none text-black"></div>
+                   <div className="w-full h-4 md:h-8 bg-black border-[3px] md:border-[5px] border-white p-0.5 relative shadow-[-4px_4px_0px_0px_black] transition-all overflow-hidden flex items-center">
+                      <div className="h-full bg-[var(--neon-cyan)] transition-all duration-300 relative ml-auto shadow-[0_0_15px_var(--neon-cyan)]" style={{ width: `${(player.hp / player.maxHp) * 100}%` }}>
+                         <div className="absolute inset-0 halftone-overlay opacity-30 pointer-events-none text-black"></div>
                          <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
                       </div>
                    </div>
@@ -610,29 +620,31 @@ export const BossView = () => {
 
       {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
       <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none relative pb-4">
-        <div className="flex items-center gap-1 md:gap-3 p-1 md:p-2 bg-slate-900/90 border-[3px] border-black rounded-xl shadow-[5px_5px_0_rgba(0,0,0,1)] backdrop-blur-md pointer-events-auto transform -rotate-1">
+        <div className="flex items-center gap-1 md:gap-3 p-1.5 md:p-3 bg-black border-[3px] border-white rounded-xl shadow-[5px_5px_0px_0px_var(--neon-pink)] backdrop-blur-md pointer-events-auto transform -rotate-1 relative overflow-hidden">
+           <div className="halftone-overlay absolute inset-0 opacity-5 pointer-events-none"></div>
 
           {/* Potion Slot */}
           <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
             <button 
               onClick={cyclePotion} 
-              className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-red-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+              className="w-7 h-7 md:w-10 md:h-10 bg-black border-2 border-white text-white hover:text-[var(--neon-pink)] rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               <RefreshCw size={12} className="md:w-5 md:h-5" />
             </button>
             <button 
               onClick={handleHeal} 
               disabled={!potionCountData.hasSelected} 
-              className="h-8 md:h-12 px-1.5 md:px-4 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+              className="h-8 md:h-12 px-2 md:px-6 bg-[var(--neon-pink)] border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[3rem] md:min-w-[5rem]"
             >
               <span className="text-xs md:text-xl group-hover:scale-125 transition-transform">🧪</span>
-              <span className="text-[10px] md:text-xl font-black text-white italic">{potionCountData.count}</span>
+              <span className="text-[10px] md:text-xl font-black text-black italic bungee">{potionCountData.count}</span>
             </button>
-            <div className="w-12 md:w-24 h-8 md:h-12 bg-red-600 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
-               <span className="text-[5px] md:text-[9px] font-black text-white/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+            <div className="w-12 md:w-24 h-8 md:h-12 bg-white border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex flex-col items-center justify-center transform -rotate-1 shrink-0 relative overflow-hidden">
+               <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+               <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5 bungee">
                  {potionCountData.selected === 'hp_potion' ? 'POT' : potionCountData.selected === 'mega_hp_potion' ? 'MEGA' : 'ULTRA'}
                </span>
-               <span className="text-[8px] md:text-xl font-black text-white italic leading-none">
+               <span className="text-[8px] md:text-xl font-black text-black italic leading-none bungee">
                  {potionCountData.selected === 'hp_potion' ? '10%' : potionCountData.selected === 'mega_hp_potion' ? '50%' : '100%'}
                </span>
             </div>
@@ -643,11 +655,11 @@ export const BossView = () => {
           {/* Scroll Slot */}
           <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
             {isAutoActive ? (
-              <div className="h-8 md:h-12 px-2 md:px-6 bg-cyan-600 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+              <div className="h-8 md:h-12 px-2 md:px-6 bg-[var(--neon-cyan)] border-2 border-black rounded-md md:rounded-xl shadow-[3px_3px_0px_0px_black] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
                 <WandSparkles size={12} className="text-black animate-spin-slow md:w-5 md:h-5" />
                 <div className="flex items-baseline gap-0.5 md:gap-1">
-                   <span className="text-[10px] md:text-2xl font-black text-black italic">{autoTimeLeft}</span>
-                   <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap">s</span>
+                   <span className="text-[10px] md:text-2xl font-black text-black italic bungee">{autoTimeLeft}</span>
+                   <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap bungee">s</span>
                 </div>
               </div>
             ) : (
@@ -655,23 +667,24 @@ export const BossView = () => {
                 <button 
                   onClick={cycleScroll} 
                   disabled={!hasAnyScrolls}
-                  className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-cyan-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
+                  className="w-7 h-7 md:w-10 md:h-10 bg-black border-2 border-white text-white hover:text-[var(--neon-cyan)] rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30"
                 >
                   <RefreshCw size={12} className="md:w-5 md:h-5" />
                 </button>
                 <button 
                   onClick={() => activateAutoScroll(view)} 
                   disabled={!hasAnyScrolls}
-                  className="h-8 md:h-12 px-1.5 md:px-4 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[2.5rem] md:min-w-[4.5rem] disabled:opacity-30"
+                  className="h-8 md:h-12 px-2 md:px-6 bg-[var(--neon-cyan)] border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center gap-1 md:gap-2 transition-all hover:bg-cyan-300 active:translate-x-0.5 active:translate-y-0.5 active:shadow-none group min-w-[3rem] md:min-w-[5rem] disabled:opacity-30"
                 >
                   <WandSparkles size={12} className="text-black group-hover:rotate-12 transition-transform md:w-5 md:h-5" />
-                  <span className="text-[10px] md:text-xl font-black text-black italic">{scrollCountData.count}</span>
+                  <span className="text-[10px] md:text-xl font-black text-black italic bungee">{scrollCountData.count}</span>
                 </button>
-                <div className="w-12 md:w-24 h-8 md:h-12 bg-cyan-400 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform rotate-1 shrink-0">
-                   <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">
+                <div className="w-12 md:w-24 h-8 md:h-12 bg-white border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex flex-col items-center justify-center transform rotate-1 shrink-0 relative overflow-hidden">
+                   <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                   <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5 bungee">
                      {scrollCountData.selected === 'auto_scroll' ? '1M' : scrollCountData.selected === 'auto_scroll_3m' ? '3M' : scrollCountData.selected === 'auto_scroll_6m' ? '6M' : scrollCountData.selected === 'auto_scroll_9m' ? '9M' : '12M'}
                    </span>
-                   <span className="text-[8px] md:text-xl font-black text-black italic leading-none">
+                   <span className="text-[8px] md:text-xl font-black text-black italic leading-none bungee">
                      {scrollCountData.selected === 'auto_scroll' ? '1m' : scrollCountData.selected === 'auto_scroll_3m' ? '3m' : scrollCountData.selected === 'auto_scroll_6m' ? '6m' : scrollCountData.selected === 'auto_scroll_9m' ? '9m' : '12m'}
                    </span>
                 </div>
@@ -684,13 +697,13 @@ export const BossView = () => {
           {/* Food Slot */}
           <div className="flex items-center gap-0.5 md:gap-2 bg-slate-900/50 p-0.5 md:p-1.5 rounded-lg md:rounded-2xl border-2 border-white/10 shadow-lg shrink-0">
             {isFoodActive ? (
-              <div className="h-8 md:h-12 px-2 md:px-6 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
+              <div className="h-8 md:h-12 px-2 md:px-6 bg-[var(--neon-lime)] border-2 border-black rounded-md md:rounded-xl shadow-[3px_3px_0px_0px_black] flex items-center justify-center gap-1 md:gap-3 animate-pulse">
                 <span className="text-sm md:text-2xl leading-none">
                   {player.activeFoodEffect?.stat === 'str' ? '💪' : player.activeFoodEffect?.stat === 'dex' ? '🎯' : '⚡'}
                 </span>
                 <div className="flex items-baseline gap-0.5 md:gap-1">
-                   <span className="text-[10px] md:text-2xl font-black text-white italic">{foodTimeLeft}</span>
-                   <span className="text-[5px] md:text-xs font-black text-white/60 italic uppercase whitespace-nowrap">s</span>
+                   <span className="text-[10px] md:text-2xl font-black text-black italic bungee">{foodTimeLeft}</span>
+                   <span className="text-[5px] md:text-xs font-black text-black/60 italic uppercase whitespace-nowrap bungee">s</span>
                 </div>
               </div>
             ) : (
@@ -699,7 +712,7 @@ export const BossView = () => {
                   {foodInventory.length > 1 && (
                     <button
                       onClick={cycleFoodSelection}
-                      className="w-7 h-7 md:w-10 md:h-10 bg-slate-800 border-2 border-black text-white hover:text-emerald-400 rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                      className="w-7 h-7 md:w-10 md:h-10 bg-black border-2 border-white text-white hover:text-[var(--neon-lime)] rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
                     >
                       <RefreshCw size={12} className="md:w-5 md:h-5" />
                     </button>
@@ -707,14 +720,15 @@ export const BossView = () => {
                   <button
                     onClick={() => selectedFood && eatFood(selectedFood)}
                     disabled={!selectedFood}
-                    className="h-8 md:h-12 px-1.5 md:px-4 bg-emerald-700 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
+                    className="h-8 md:h-12 px-1.5 md:px-4 bg-[var(--neon-lime)] border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex items-center justify-center gap-1 md:gap-2 transition-all active:translate-x-0.5 active:translate-y-0.5 active:shadow-none disabled:opacity-30 disabled:grayscale group min-w-[2.5rem] md:min-w-[4.5rem]"
                   >
                     <span className="text-sm md:text-2xl leading-none group-hover:scale-125 transition-transform">{selectedFood?.icon || '🍽️'}</span>
-                    <span className="text-[10px] md:text-xl font-black text-white italic">{selectedFood?.count || 0}</span>
+                    <span className="text-[10px] md:text-xl font-black text-black italic bungee">{selectedFood?.count || 0}</span>
                   </button>
-                  <div className="w-12 md:w-24 h-8 md:h-12 bg-emerald-500 border-2 border-black rounded-md md:rounded-xl shadow-[1px_1px_0_rgba(0,0,0,1)] md:shadow-[3px_3px_0_rgba(0,0,0,1)] flex flex-col items-center justify-center transform -rotate-1 shrink-0">
-                     <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5">EAT</span>
-                     <span className="text-[8px] md:text-xl font-black text-black italic leading-none">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
+                  <div className="w-12 md:w-24 h-8 md:h-12 bg-white border-2 border-black rounded-md md:rounded-xl shadow-[2px_2px_0px_0px_black] flex flex-col items-center justify-center transform -rotate-1 shrink-0 relative overflow-hidden">
+                     <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
+                     <span className="text-[5px] md:text-[9px] font-black text-black/60 uppercase tracking-tighter leading-none mb-0.5 truncate w-full text-center px-0.5 bungee">EAT</span>
+                     <span className="text-[8px] md:text-xl font-black text-black italic leading-none bungee">{selectedFood?.effect?.amount ? `+${selectedFood.effect.amount}` : 'BUFF'}</span>
                   </div>
                 </>
               )
@@ -740,16 +754,16 @@ export const BossView = () => {
             {/* The Comic Panel Shadow */}
             <div className="absolute inset-x-0 top-0 bottom-0 bg-red-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
             
-            <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+            <div className="relative bg-black border-[3px] md:border-[4px] border-white rounded-3xl z-10 flex flex-col items-center overflow-hidden shadow-[8px_8px_0px_0px_var(--neon-pink)]">
               {/* Halftone Overlay Background */}
-              <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+              <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none rounded-3xl"></div>
 
               {/* Header Banner */}
-              <div className="w-full bg-red-600 py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
-                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(255,255,255,0.3)]">
+              <div className="w-full bg-[var(--neon-pink)] py-2 md:py-3 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+                <h2 className="text-xl md:text-2xl font-black text-black text-center uppercase tracking-tighter italic bungee">
                   {tutorialSteps[tutorialStep].title}
                 </h2>
-                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none">
+                <div className="absolute -bottom-1.5 right-2 bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-[0.2em] transform rotate-3 border-2 border-white leading-none bungee">
                   Step {tutorialStep + 1} / {tutorialSteps.length}
                 </div>
               </div>
@@ -789,10 +803,10 @@ export const BossView = () => {
               {/* Dialogue Box */}
               <div className="px-4 pb-3 w-full relative z-10 flex flex-col min-h-0">
                 <div className="bg-white text-black p-3 md:p-3.5 rounded-xl border-[3px] border-black relative mb-3 shadow-[3px_3px_0_rgba(0,0,0,1)] shrink-0">
-                  <div className="absolute -top-3 -left-1 bg-red-400 text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm">
+                  <div className="absolute -top-3 -left-1 bg-[var(--neon-lime)] text-[8px] font-black px-2 py-0.5 border-2 border-black uppercase italic shadow-sm bungee">
                     Incoming Transmission
                   </div>
-                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic">
+                  <p className="text-[10px] md:text-sm font-bold text-slate-800 uppercase leading-[1.3] md:leading-[1.4] tracking-tight italic bungee">
                     "{tutorialSteps[tutorialStep].text}"
                   </p>
                   

@@ -2,10 +2,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit, onSnapshot, updateDoc, increment, arrayUnion, arrayRemove, deleteField } from 'firebase/firestore';
 
 /**
- * usePlayerSync V3: The Primary Data Hub — Web-Only Build
+ * usePlayerSync V4: Hybrid Data Hub (Google + Farcaster)
  * Responsible for ALL database interactions for player profiles.
- * Telegram Mini App and Farcaster integrations have been removed.
- * All player document IDs now use the Firebase Google Auth UID directly.
+ * Seamlessly routes documents using either Google UID or Farcaster FC_FID.
  */
 export const usePlayerSync = (user, db, appId) => {
   const [player, setPlayer] = useState(null);
@@ -132,6 +131,8 @@ export const usePlayerSync = (user, db, appId) => {
             email: user?.email || data.email || null,
             name: (data.name || user?.username || "").trim() || `Hunter_${(user?.uid || '0000').toString().slice(0, 4)}`,
             pfp: data.pfp || user?.pfp || null,
+            platform: user?.platform || data.platform || 'browser',
+            farcasterData: user?.farcasterData || data.farcasterData || null,
 
             walletAddress: data.walletAddress,
             walletConflict: walletConflict || null,
@@ -202,7 +203,7 @@ export const usePlayerSync = (user, db, appId) => {
             fsSetDoc(fsDoc(db, 'leaderboard', primaryAuthId), {
               name: sanitized.name || "Unknown",
               avatar: sanitized.avatar || 1,
-              platform: 'browser',
+              platform: sanitized.platform || 'browser',
               level: sanitized.level || 1,
               totalBossDamage: sanitized.totalBossDamage || 0,
               maxDepthScore: sanitized.maxDepthScore || 0,
@@ -219,7 +220,8 @@ export const usePlayerSync = (user, db, appId) => {
             email: user?.email || null,
             name: (user?.username || "").trim() || `Hunter_${(user?.uid || '0000').toString().slice(0, 4)}`,
             pfp: user?.pfp || null,
-            platform: 'browser',
+            platform: user?.platform || 'browser',
+            farcasterData: user?.farcasterData || null,
             level: 1, xp: 0, tokens: 100,
             hp: 150, maxHp: 150,
             dailyFaucetClaims: 0,

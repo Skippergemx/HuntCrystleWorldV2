@@ -6,19 +6,19 @@ export const Header = React.memo(({ title, onClose, onHelp, npcNum, icon, childr
   <div className="w-full z-[100] px-2 md:px-0 pt-1 md:pt-2 flex flex-row items-center relative gap-1 md:gap-4">
     {/* 1. Left: NPC Badge */}
     <div className="flex-shrink-0 relative z-10 group max-w-[120px] md:max-w-none">
-      <div className="bg-black border-[2px] md:border-[3px] border-white/20 rounded-lg md:rounded-xl p-1 md:p-4 shadow-[2px_2px_0_rgba(255,255,255,0.05)] transform -skew-x-1 md:-skew-x-2 flex items-center gap-1.5 md:gap-4 transition-all">
+      <div className="bg-black border-[3px] border-white rounded-lg md:rounded-xl p-1 md:p-3 shadow-[6px_6px_0px_0px_var(--neon-pink)] transform -rotate-1 flex items-center gap-1.5 md:gap-4 transition-all">
         {npcNum ? (
-          <div className="w-7 h-7 md:w-12 md:h-12 bg-white/10 rounded border border-white/20 overflow-hidden relative shrink-0">
+          <div className="w-7 h-7 md:w-12 md:h-12 bg-black rounded border-2 border-white overflow-hidden relative shrink-0 shadow-[0_0_10px_var(--neon-cyan)]">
              <CitizenMedia num={npcNum} className="w-full h-full object-cover object-top" />
           </div>
         ) : icon ? (
-          <div className="p-1 md:p-3 bg-white/5 rounded border border-white/10 text-white shrink-0">
+          <div className="p-1 md:p-3 bg-black rounded border-2 border-white text-white shrink-0 shadow-[0_0_10px_var(--neon-pink)]">
              {icon}
           </div>
         ) : null}
         <div className="flex flex-col min-w-0">
-          <span className="text-[4px] md:text-[8px] font-black text-white/50 uppercase tracking-[0.2em] md:tracking-[0.4em] mb-0.5 leading-none italic truncate">{npcNum ? 'REPRESENTATIVE' : 'SIGNAL'}</span>
-          <h1 className="text-[9px] md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-cyan-400 transition-colors truncate">{title || 'COMMAND'}</h1>
+          <span className="text-[5px] md:text-[8px] font-black text-[#ccff00] uppercase tracking-[0.2em] md:tracking-[0.4em] mb-0.5 leading-none italic truncate bungee">Transmission</span>
+          <h1 className="text-[10px] md:text-2xl font-black text-white italic uppercase tracking-tighter leading-none group-hover:text-[var(--neon-cyan)] transition-colors truncate bungee">{title || 'COMMAND'}</h1>
         </div>
       </div>
     </div>
@@ -126,7 +126,7 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
     <button 
       onClick={onClick} 
       disabled={disabled} 
-      className={`flex flex-col items-center justify-center p-3 md:p-7 border-[3px] md:border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-visible shadow-[4px_4px_0_rgba(0,0,0,1)] md:shadow-[8px_8px_0_rgba(0,0,0,1)] ${rotation} ${disabled ? 'bg-slate-200 cursor-not-allowed' : 'bg-[#faf6f0] hover:border-black hover:-translate-y-1 hover:shadow-[12px_12px_0_rgba(0,0,0,1)]'} transition-all duration-300`}
+      className={`flex flex-col items-center justify-center p-3 md:p-7 border-[4px] border-black rounded-xl md:rounded-2xl transition-all active:scale-95 group relative overflow-visible shadow-[8px_8px_0px_0px_var(--neon-pink)] ${rotation} ${disabled ? 'bg-slate-200 cursor-not-allowed opacity-50' : 'bg-white hover:border-black hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_var(--neon-cyan)]'} transition-all duration-300`}
     >
       {/* Physical Tape Accent */}
       {!disabled && (
@@ -176,11 +176,11 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
       </div>
       
       <div className="relative z-30 text-center w-full mt-auto flex flex-col items-center">
-        <div className={`bg-white/95 border-[2px] md:border-[3px] border-black py-1.5 md:py-3 px-1 md:px-2 shadow-[4px_4px_0_rgba(0,0,0,1)] -rotate-1 transform group-hover:rotate-0 transition-transform ${disabled ? 'opacity-50' : ''}`}>
-          <h3 className={`font-black text-[10px] md:text-xs lg:text-sm uppercase tracking-tighter italic leading-none transition-colors ${disabled ? 'text-slate-500' : 'text-black'}`}>
+        <div className={`bg-black border-[3px] border-white py-1.5 md:py-3 px-1 md:px-2 shadow-[4px_4px_0px_0px_var(--neon-lime)] -rotate-1 transform group-hover:rotate-0 transition-transform ${disabled ? 'opacity-50' : ''}`}>
+          <h3 className={`font-black text-[10px] md:text-xs lg:text-sm uppercase tracking-tighter italic leading-none transition-colors bungee ${disabled ? 'text-slate-500' : 'text-white'}`}>
             {title}
           </h3>
-          <div className={`text-[6px] md:text-[8px] font-black uppercase mt-1 md:mt-1.5 tracking-widest italic leading-none transition-colors ${disabled ? 'text-slate-400' : 'text-black/50'}`}>
+          <div className={`text-[6px] md:text-[8px] font-black uppercase mt-1 md:mt-1.5 tracking-widest italic leading-none transition-colors ${disabled ? 'text-slate-400' : 'text-[#ccff00]'}`}>
             {sub}
           </div>
         </div>
@@ -193,7 +193,7 @@ export const NavBtn = React.memo(({ onClick, icon, title, sub, color, disabled, 
 });
 
 export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed, activeFoodEffect, isFoodActive }) => (
-  <div className={`border-[3px] md:border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[3px_3px_0_rgba(0,0,0,1)] md:shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all h-full transform md:-rotate-1 relative overflow-visible ${isBuffed ? 'bg-purple-900/40 border-purple-500 animate-pulse' : 'bg-slate-900 hover:bg-slate-800'}`}>
+  <div className={`border-[4px] border-black p-2.5 md:p-4 rounded-lg md:rounded-xl flex flex-col justify-center gap-1.5 md:gap-2 shadow-[6px_6px_0px_0px_black] hover:-translate-y-1 hover:shadow-[8px_8px_0px_0px_var(--neon-pink)] transition-all h-full transform md:-rotate-1 relative overflow-visible ${isBuffed ? 'bg-[#1a0b2e] border-[var(--neon-pink)] neon-glow-pink animate-pulse' : 'bg-black border-white'}`}>
     {isBuffed && (
        <div className="absolute top-0 right-0 p-1 bg-purple-500 text-white leading-none z-10">
           <Sparkles size={8} className="animate-spin" />
@@ -209,10 +209,10 @@ export const StatTile = React.memo(({ icon, label, value, color, desc, isBuffed,
     )}
 
     <div className="flex items-center gap-2 md:gap-3">
-      <div className={`${color} bg-black p-1.5 md:p-2 rounded-lg border-[2px] border-white/20 shrink-0 shadow-lg ${isBuffed ? 'ring-2 ring-purple-500' : ''}`}>{icon}</div>
+      <div className={`${color} bg-black p-1.5 md:p-2 rounded-lg border-2 border-white shrink-0 shadow-[0_0_10px_var(--neon-cyan)] ${isBuffed ? 'ring-2 ring-[var(--neon-pink)]' : ''}`}>{icon}</div>
       <div className="min-w-0">
-        <p className={`text-[8px] md:text-[10px] font-black uppercase leading-none mb-0.5 md:mb-1 tracking-tighter italic truncate ${isBuffed ? 'text-purple-300' : 'text-slate-500'}`}>{label} {isBuffed && 'BOOST'}</p>
-        <p className={`text-base md:text-xl font-black leading-none tracking-tight italic ${isBuffed ? 'text-white' : ''}`}>{typeof value === 'object' ? '???' : value}</p>
+        <p className={`text-[8px] md:text-[10px] font-black uppercase leading-none mb-0.5 md:mb-1 tracking-tighter italic truncate bungee ${isBuffed ? 'text-[var(--neon-pink)]' : 'text-[#ccff00]'}`}>{label} {isBuffed && 'BOOST'}</p>
+        <p className={`text-base md:text-xl font-black leading-none tracking-tight italic bungee ${isBuffed ? 'text-white' : 'text-white'}`}>{typeof value === 'object' ? '???' : value}</p>
       </div>
     </div>
     {desc && <p className="text-[7px] md:text-[8px] text-slate-500 font-black leading-tight tracking-tighter uppercase border-t border-black/50 pt-1.5 md:pt-2 italic line-clamp-2">{desc}</p>}

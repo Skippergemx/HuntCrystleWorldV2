@@ -207,12 +207,12 @@ export const GameLayout = ({ onLogout }) => {
   if (!player) return <LoadingScreen />;
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 overflow-x-hidden transition-colors relative`}>
+    <div className={`min-h-screen bg-[#0f051d] text-white font-sans selection:bg-[#ff00ff]/30 overflow-x-hidden transition-colors relative`}>
       <AnimatedBackground MONSTERS={MONSTERS} performanceMode={lowPerfMode} />
       
-      {/* AAA Premium Overlay: Grid & Scanlines */}
-      <div className="fixed inset-0 pointer-events-none z-[999] opacity-20 bg-scanline"></div>
-      <div className="fixed inset-0 pointer-events-none z-[998] opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '32px 32px' }}></div>
+      {/* ANIME POP Overlay: Grid & Scanlines */}
+      <div className="fixed inset-0 pointer-events-none z-[999] opacity-10 bg-scanline"></div>
+      <div className="fixed inset-0 pointer-events-none z-[998] opacity-5 bg-cyber-grid"></div>
 
       {showDefeatedWindow && (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center animate-in zoom-in duration-300 p-4">
@@ -443,10 +443,10 @@ export const GameLayout = ({ onLogout }) => {
             {/* Identity Row */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-1 mb-1 md:mb-2">
               <div className="flex flex-row items-center gap-1.5 md:gap-3 shrink-0">
-                <div className="bg-white text-black px-2 md:px-5 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform -rotate-1 relative overflow-hidden min-w-0">
-                  <div className="absolute inset-0 bg-cyan-500/10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px)' }}></div>
-                  <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10 flex items-center">
-                    <span className="text-[8px] md:text-sm font-black text-cyan-400 mr-2 md:mr-3 border-[2px] border-cyan-500/30 px-1 md:px-2 py-0.5 rounded-sm bg-black/60 shadow-[2px_2px_0_rgba(6,182,212,0.2)]">LVL {player.level}</span>
+                <div className="bg-black text-white px-2 md:px-5 py-0.5 md:py-1.5 border-[3px] border-white shadow-[6px_6px_0px_0px_var(--neon-pink)] transform -rotate-1 relative overflow-hidden min-w-0">
+                  <div className="halftone-overlay absolute inset-0 pointer-events-none"></div>
+                  <h1 className="font-black text-[9px] md:text-xl uppercase tracking-tighter italic leading-none truncate relative z-10 flex items-center bungee">
+                    <span className="text-[8px] md:text-sm font-black text-[#00ffff] mr-2 md:mr-3 border-[2px] border-[#00ffff]/30 px-1 md:px-2 py-0.5 rounded-sm bg-black shadow-[2px_2px_0px_0px_var(--neon-cyan)]">LVL {player.level}</span>
                     {player.name}
                   </h1>
                 </div>
@@ -473,11 +473,11 @@ export const GameLayout = ({ onLogout }) => {
                         onClick={() => setView('avatars')}
                         className="flex items-center gap-1 shrink-0 cursor-pointer group"
                       >
-                        <div className="bg-white text-black px-2 md:px-4 py-0.5 md:py-1.5 border-[2px] md:border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] transform rotate-1 relative overflow-hidden">
-                          <div className="absolute inset-0 bg-emerald-500/10 pointer-events-none"></div>
+                        <div className="bg-black text-white px-2 md:px-4 py-0.5 md:py-1.5 border-[3px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] transform rotate-1 relative overflow-hidden">
+                          <div className="halftone-overlay absolute inset-0 pointer-events-none"></div>
                           <div className="flex items-center gap-2 relative z-10">
-                            <div className="w-1.5 h-1.5 bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,1)] rounded-full animate-pulse"></div>
-                            <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none">
+                            <div className="w-1.5 h-1.5 bg-[#00ffff] shadow-[0_0_10px_var(--neon-cyan)] rounded-full animate-pulse"></div>
+                            <span className="font-black text-[7px] md:text-xs uppercase tracking-tighter italic leading-none bungee text-[var(--neon-cyan)]">
                               {linkedAddress.slice(0, 6)}...{linkedAddress.slice(-4)}
                             </span>
                           </div>
@@ -604,27 +604,27 @@ export const GameLayout = ({ onLogout }) => {
           </div>
 
           {/* Vitals Progress */}
-          <div className="space-y-1 md:space-y-1.5 mb-1.5 md:mb-2">
+          <div className="space-y-2 md:space-y-3 mb-1.5 md:mb-2">
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-red-500/10 border border-red-500/20 rounded px-1.5 py-0.5">
-                  <Heart size={10} md:size={14} className="text-red-500" fill="currentColor" />
-                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none">{Math.floor(player.hp)} / {totalStats.maxHp}</span>
+                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-black border-2 border-white rounded px-1.5 py-1 shadow-[4px_4px_0px_0px_var(--neon-pink)]">
+                  <Heart size={10} md:size={14} className="text-[var(--neon-pink)]" fill="currentColor" />
+                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none bungee">{Math.floor(player.hp)}</span>
                 </div>
-                <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                  <div className={`h-full transition-all duration-300 ${player.hp / totalStats.maxHp <= 0.25 ? 'bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.3)]'}`} style={{ width: `${(player.hp / totalStats.maxHp) * 100}%` }} />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                <div className="flex-1 h-3 md:h-4 bg-black border-2 border-white p-0.5 relative overflow-hidden rounded-sm">
+                  <div className={`h-full transition-all duration-300 ${player.hp / totalStats.maxHp <= 0.25 ? 'bg-[var(--neon-pink)] animate-pulse shadow-[0_0_15px_var(--neon-pink)]' : 'bg-[var(--neon-pink)] shadow-[0_0_10px_var(--neon-pink)]'}`} style={{ width: `${(player.hp / totalStats.maxHp) * 100}%` }} />
+                  <div className="absolute inset-0 halftone-overlay opacity-30"></div>
                 </div>
               </div>
               <div className="flex items-center gap-2 md:gap-3">
-                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[120px] bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
-                  <Star size={10} md:size={14} className="text-cyan-400" fill="currentColor" />
-                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none">
-                    {Math.floor(player.xp)} / {getXpRequired(player.level)}
+                <div className="flex items-center gap-1.5 min-w-[55px] md:min-w-[80px] bg-black border-2 border-white rounded px-1.5 py-1 shadow-[4px_4px_0px_0px_var(--neon-cyan)]">
+                  <Star size={10} md:size={14} className="text-[var(--neon-cyan)]" fill="currentColor" />
+                  <span className="text-[9px] md:text-sm font-black italic text-white leading-none bungee">
+                    {Math.floor(player.xp)}
                   </span>
                 </div>
-                <div className="flex-1 h-2 md:h-3 bg-black border-[1.5px] border-white/10 p-0.5 relative overflow-hidden rounded-sm">
-                  <div className="h-full bg-blue-500 transition-all duration-300 shadow-[0_0_5px_rgba(59,130,246,0.3)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none"></div>
+                <div className="flex-1 h-3 md:h-4 bg-black border-2 border-white p-0.5 relative overflow-hidden rounded-sm">
+                  <div className="h-full bg-[var(--neon-cyan)] transition-all duration-300 shadow-[0_0_10px_var(--neon-cyan)]" style={{ width: `${Math.min(100, (player.xp / getXpRequired(player.level)) * 100)}%` }} />
+                  <div className="absolute inset-0 halftone-overlay opacity-30"></div>
                 </div>
               </div>
             </div>
