@@ -24,19 +24,29 @@ export const useUnifiedAuth = () => {
       let fcUser = null;
 
       try {
-        const context = await sdk.context;
+        // Add a timeout to sdk.context to prevent hanging if not in Farcaster environment
+        const contextPromise = sdk.context;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Farcaster SDK Timeout")), 1500)
+        );
+        
+        const context = await Promise.race([contextPromise, timeoutPromise]);
+        
         if (context && context.user) {
           isFarcaster = true;
           fcUser = context.user;
           console.log(`System V4: Farcaster Native Context Detected. FID: ${fcUser.fid}`);
         }
       } catch (e) {
-        // Not running in Farcaster Frame
+        // Silent fail for non-Farcaster environments
+        console.log("System V4: Farcaster Context check completed (Native: False)");
       }
 
       if (!isMounted) return;
 
       unsubscribe = onAuthStateChanged(auth, async (u) => {
+        if (!isMounted) return;
+
         if (isFarcaster && fcUser) {
           // In Farcaster: We need an anonymous session to talk to Firestore securely.
           if (!u) {
@@ -46,6 +56,9 @@ export const useUnifiedAuth = () => {
               return; // wait for the next auth state change trigger
             } catch (error) {
               console.error("Anonymous Auth Failed:", error);
+              // Even if it fails, we should stop loading to show at least something
+              setLoading(false);
+              return;
             }
           }
 
@@ -60,6 +73,13 @@ export const useUnifiedAuth = () => {
           };
           setUser(unifiedUser);
           setLoading(false);
+          
+          // CRITICAL: Tell Farcaster client we are ready to hide its native loading screen
+          try {
+            sdk.actions.ready();
+          } catch (err) {
+            console.warn("Farcaster ready() failed:", err);
+          }
           return;
         }
 
@@ -88,6 +108,11 @@ export const useUnifiedAuth = () => {
           setUser(null);
         }
         setLoading(false);
+        
+        // Also call ready for browser version if running as a frame
+        try {
+          sdk.actions.ready();
+        } catch (err) {}
       });
     };
 
@@ -97,7 +122,14 @@ export const useUnifiedAuth = () => {
       isMounted = false;
       unsubscribe();
     };
-  }, [address]);
+  }, []); // Only run once on mount
+
+  // Separate effect to sync wallet address updates without re-running auth logic
+  useEffect(() => {
+    if (user && address && user.walletAddress !== address.toLowerCase()) {
+      setUser(prev => prev ? { ...prev, walletAddress: address.toLowerCase() } : null);
+    }
+  }, [address, user]);
 
   const loginWithGoogle = async () => {
     try {
