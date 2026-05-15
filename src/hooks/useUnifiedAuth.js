@@ -25,9 +25,10 @@ export const useUnifiedAuth = () => {
 
       try {
         // Add a timeout to sdk.context to prevent hanging if not in Farcaster environment
+        // Increased to 3000ms to be more resilient to slow network/clients
         const contextPromise = sdk.context;
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Farcaster SDK Timeout")), 1500)
+          setTimeout(() => reject(new Error("Farcaster SDK Timeout")), 3000)
         );
         
         const context = await Promise.race([contextPromise, timeoutPromise]);
@@ -44,6 +45,14 @@ export const useUnifiedAuth = () => {
 
       if (!isMounted) return;
 
+      // CRITICAL: Signal readiness as soon as environment check is done.
+      // This hides the Farcaster native splash screen and shows our own LoadingScreen.
+      try {
+        sdk.actions.ready();
+      } catch (err) {
+        console.warn("Farcaster ready() early signal failed:", err);
+      }
+
       unsubscribe = onAuthStateChanged(auth, async (u) => {
         if (!isMounted) return;
 
@@ -56,13 +65,11 @@ export const useUnifiedAuth = () => {
               return; // wait for the next auth state change trigger
             } catch (error) {
               console.error("Anonymous Auth Failed:", error);
-              // Even if it fails, we should stop loading to show at least something
               setLoading(false);
               return;
             }
           }
 
-          // Use the FID to synthesize the user profile matching the 'FC_.*' Firestore rule
           const unifiedUser = {
             uid: `FC_${fcUser.fid}`,
             email: null,
@@ -73,19 +80,11 @@ export const useUnifiedAuth = () => {
           };
           setUser(unifiedUser);
           setLoading(false);
-          
-          // CRITICAL: Tell Farcaster client we are ready to hide its native loading screen
-          try {
-            sdk.actions.ready();
-          } catch (err) {
-            console.warn("Farcaster ready() failed:", err);
-          }
           return;
         }
 
         // Standard Google Auth Path
         if (u) {
-          // Security: if they are anon but NOT farcaster, log them out
           if (u.isAnonymous && !isFarcaster) {
             await signOut(auth);
             setUser(null);
@@ -108,11 +107,6 @@ export const useUnifiedAuth = () => {
           setUser(null);
         }
         setLoading(false);
-        
-        // Also call ready for browser version if running as a frame
-        try {
-          sdk.actions.ready();
-        } catch (err) {}
       });
     };
 

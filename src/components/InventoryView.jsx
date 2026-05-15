@@ -9,7 +9,8 @@ import {
   TrendingUp,
   Activity,
   Check,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard } from './NPCCard';

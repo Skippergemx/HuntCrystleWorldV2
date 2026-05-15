@@ -3,7 +3,7 @@ import { Sparkles, Terminal } from 'lucide-react';
 
 export const LoadingScreen = () => {
   // We'll use a selection of avatar indices to display
-  const displayAvatars = [1, 5, 12, 18, 25, 33];
+  const displayAvatars = [1, 12, 25];
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center overflow-hidden relative font-sans">

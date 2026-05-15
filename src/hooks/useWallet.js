@@ -19,14 +19,18 @@ export const useWallet = (addLog) => {
   useEffect(() => {
     const initFrame = async () => {
       try {
-        const context = await sdk.context;
+        // Add a safety timeout for frame context
+        const contextPromise = sdk.context;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 2000)
+        );
+        
+        const context = await Promise.race([contextPromise, timeoutPromise]);
         if (context) {
           setIsFarcaster(true);
         }
-        // Signal to Warpcast that the UI is ready
-        sdk.actions.ready();
       } catch (e) {
-        console.warn("Farcaster SDK init skipped: Not running in a frame.");
+        console.warn("Farcaster SDK init skipped in useWallet.");
       }
     };
     initFrame();
