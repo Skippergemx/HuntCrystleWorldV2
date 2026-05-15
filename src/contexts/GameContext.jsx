@@ -109,7 +109,7 @@ export const GameProvider = ({ children, user }) => {
     functions, setFaucetResult
   );
 
-  const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, appId);
+  const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, functions, setPlayer);
   const wallet = useWallet(addLog);
 
   const combat = useCombat(
@@ -120,7 +120,7 @@ export const GameProvider = ({ children, user }) => {
     COMPANION_BUFF_DURATION, ELEMENT_ADVANTAGE, getXpRequired, AP_PER_LEVEL, EQUIPMENT, LOOTS, ITEMS,
     adventure.depth, adventure.setDepth, adventure.view, adventure.setView, 
     adventure.triggerFlinch, adventure.triggerHurt, TAVERN_MATES, PETS_METADATA,
-    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, setShowSuccessWindow }
+    { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult: actions.recordWarResult, setShowSuccessWindow, setPlayer }
   );
   
   const gameLoop = useGameLoop({

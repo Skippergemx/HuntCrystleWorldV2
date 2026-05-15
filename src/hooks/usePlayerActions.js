@@ -102,7 +102,7 @@ export const usePlayerActions = (
     addLog(`Tactical Swap: Selected ${scrolls[nextIdx].replace(/_/g, ' ')}.`);
   };
 
-  const hireMate = (mate) => {
+  const hireMate = async (mate) => {
     if (player.tokens < mate.cost) return addLog("Out of GX!");
     
     if (player.hiredMate) {
@@ -110,8 +110,19 @@ export const usePlayerActions = (
        addLog(`Replacing ${old?.name || 'Party Member'} with ${mate.name}...`);
     }
 
-    syncPlayer({ tokens: player.tokens - mate.cost, hiredMate: mate.id, buffUntil: 0 });
-    addLog(`Contract signed: ${mate.name} joined!`);
+    setPlayer(prev => ({ ...prev, tokens: prev.tokens - mate.cost, hiredMate: mate.id, buffUntil: 0 }));
+    
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'HIRE_MATE', 
+        payload: { mateId: mate.id, cost: mate.cost } 
+      });
+      addLog(`Contract signed: ${mate.name} joined!`);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Contract failed.");
+    }
   };
 
   const dismissMate = () => {
@@ -121,17 +132,30 @@ export const usePlayerActions = (
     addLog(`Contract terminated. ${mate?.name || 'Party member'} has left the team.`);
   };
 
-  const summonDragon = () => {
+  const summonDragon = async () => {
     if (!player.dragon || player.dragon.level <= 0) return addLog("No dragon to summon!");
     const cost = 1000 * player.dragon.level;
     if (player.tokens < cost) return addLog(`Insufficient GX! Need ${cost.toLocaleString()} GX.`);
     
-    syncPlayer({ 
-      tokens: player.tokens - cost, 
-      dragon: { ...player.dragon, summonUntil: Date.now() + 86400000 } 
-    });
-    addLog(`✨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
-    playSFX(SOUNDS.obtainLoot);
+    const summonUntil = Date.now() + 86400000;
+    setPlayer(prev => ({
+      ...prev,
+      tokens: prev.tokens - cost,
+      dragon: { ...prev.dragon, summonUntil }
+    }));
+
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'SUMMON_DRAGON', 
+        payload: { cost, summonUntil } 
+      });
+      addLog(`✨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
+      playSFX(SOUNDS.obtainLoot);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Summon failed.");
+    }
   };
 
   const sellItem = useCallback(async (itemId) => {
@@ -148,13 +172,25 @@ export const usePlayerActions = (
     }
 
     playSFX(SOUNDS.sellItem);
-    addLog(`💰 Sold ${master.name || item.name} for ${value} GX`);
     
-    syncPlayer({ 
-      tokens: (player.tokens || 0) + value,
-      [`inventory.${itemId}`]: deleteField()
+    setPlayer(prev => {
+      const nextInv = { ...prev.inventory };
+      delete nextInv[itemId];
+      return { ...prev, tokens: (prev.tokens || 0) + value, inventory: nextInv };
     });
-  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS]);
+
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'SELL_ITEM', 
+        payload: { itemId, value } 
+      });
+      addLog(`💰 Sold ${master.name || item.name} for ${value} GX`);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Sale failed.");
+    }
+  }, [player, ITEMS, setPlayer, playSFX, SOUNDS]);
 
   const equipItem = useCallback(async (itemOrId) => {
     const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
@@ -166,45 +202,89 @@ export const usePlayerActions = (
         return addLog("This item cannot be equipped.");
     }
 
-    const updates = {};
-    if (player.equipped?.[slot]) {
-        const oldItem = player.equipped[slot];
-        updates[`inventory.${oldItem.id || `OLD_${slot}`}`] = oldItem;
-    }
-
-    // Use Dot-Notation for safety to prevent wiping other slots
-    updates[`equipped.${slot}`] = item;
-    updates[`inventory.${itemId}`] = deleteField();
-
-    syncPlayer(updates);
     playSFX(SOUNDS.equipItem);
-    addLog(`Installed Tech: ${item.name}`);
-  }, [player, syncPlayer, playSFX, SOUNDS]);
+    
+    // Optimistic UI update
+    setPlayer(prev => {
+      const nextInv = { ...prev.inventory };
+      const nextEquipped = { ...prev.equipped };
+      if (nextEquipped[slot]) {
+        const oldItem = nextEquipped[slot];
+        nextInv[oldItem.id || `OLD_${slot}`] = oldItem;
+      }
+      nextEquipped[slot] = item;
+      delete nextInv[itemId];
+      return { ...prev, inventory: nextInv, equipped: nextEquipped };
+    });
+
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'EQUIP_ITEM', 
+        payload: { itemId, slot } 
+      });
+      addLog(`Installed Tech: ${item.name}`);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Install failed.");
+    }
+  }, [player, setPlayer, playSFX, SOUNDS]);
 
   const unequipItem = useCallback(async (slot) => {
     if (!player.equipped?.[slot]) return;
     const item = player.equipped[slot];
     
-    syncPlayer({
-        [`inventory.${item.id || `RET_${slot}`}`]: item,
-        [`equipped.${slot}`]: deleteField()
-    });
-    
     playSFX(SOUNDS.unequipItem);
-    addLog(`Uninstalled Tech: ${item.name}`);
-  }, [player, syncPlayer, playSFX, SOUNDS]);
+    
+    // Optimistic UI update
+    setPlayer(prev => {
+      const nextInv = { ...prev.inventory };
+      const nextEquipped = { ...prev.equipped };
+      nextInv[item.id || `RET_${slot}`] = item;
+      delete nextEquipped[slot];
+      return { ...prev, inventory: nextInv, equipped: nextEquipped };
+    });
 
-  const allocateStat = (statName) => {
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'UNEQUIP_ITEM', 
+        payload: { slot } 
+      });
+      addLog(`Uninstalled Tech: ${item.name}`);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Uninstall failed.");
+    }
+  }, [player, setPlayer, playSFX, SOUNDS]);
+
+  const allocateStat = async (statName) => {
     // Guard: synchronous ref prevents rapid-click over-spending before React re-renders
     if (remainingApRef.current <= 0) return;
     remainingApRef.current -= 1;
 
-    // Compute new plain-number values — no Firestore sentinels
+    // OPTIMISTIC UI: Update locally first for responsiveness
     const newStat = (player?.baseStats?.[statName] ?? 0) + 1;
     const newAP   = Math.max(0, (player?.abilityPoints ?? 0) - 1);
+    
+    // We update local state, but Firestore update will now happen via Cloud Function
+    setPlayer(prev => ({
+      ...prev,
+      baseStats: { ...prev.baseStats, [statName]: newStat },
+      abilityPoints: newAP
+    }));
 
-    // syncPlayer handles both local state update AND the Firestore write
-    syncPlayer({ [`baseStats.${statName}`]: newStat, abilityPoints: newAP });
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'ALLOCATE_STAT', 
+        payload: { statName } 
+      });
+      addLog(`Upgraded ${statName.toUpperCase()} via Secure Uplink.`);
+    } catch (e) {
+      console.error("Secure Stat Allocation Failed:", e);
+      addLog("🚨 UPLINK ERROR: Stat synchronization failed. Please refresh.");
+    }
   };
 
   const buyItem = async (item, qty = 1) => {
@@ -247,10 +327,19 @@ export const usePlayerActions = (
     }
 
     try {
-      syncPlayer(updates, true);
-      addLog(`Acquired ${qty > 1 ? qty + 'x ' : ''}${item.name}! Check your Storage Bag.`);
-      playSFX(SOUNDS.obtainLoot);
-      return true;
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      const result = await callAction({ 
+        action: 'BUY_ITEM', 
+        payload: { item, qty } 
+      });
+      
+      const data = result.data || {};
+      if (data.success) {
+        addLog(`Acquired ${qty > 1 ? qty + 'x ' : ''}${item.name}! Check your Storage Bag.`);
+        playSFX(SOUNDS.obtainLoot);
+        return true;
+      }
+      return false;
     } catch (e) {
       console.error(e);
       addLog("🚨 UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
@@ -258,7 +347,7 @@ export const usePlayerActions = (
     }
   };
 
-  const activateAutoScroll = (view) => {
+  const activateAutoScroll = async (view) => {
     const inventory = Object.entries(player.inventory || {});
     const selection = player.selectedScrollId || 'auto_scroll';
 
@@ -287,23 +376,33 @@ export const usePlayerActions = (
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
 
-    playSFX(SOUNDS.useHeal);
-    const updates = { 
-      autoUntil: Date.now() + spec.ms,
-      autoMode: view || 'dungeon'
-    };
+    // Optimistic UI
+    setPlayer(prev => {
+      const nextInv = { ...prev.inventory };
+      const updates = { 
+        autoUntil: Date.now() + spec.ms,
+        autoMode: view || 'dungeon'
+      };
+      if (targetItemEntry) {
+        delete nextInv[targetItemEntry[0]];
+        updates.inventory = nextInv;
+      } else {
+        updates.autoScrolls = (prev.autoScrolls || 0) - spec.val;
+      }
+      return { ...prev, ...updates };
+    });
 
-    if (targetItemEntry) {
-      // Consume the physical item
-      updates[`inventory.${targetItemEntry[0]}`] = deleteField();
-      addLog(`LOCK-ON ACTIVATED! (Used Item: ${spec.label})`);
-    } else {
-      // Deduct from legacy pool
-      updates.autoScrolls = (player.autoScrolls || 0) - spec.val;
-      addLog(`LOCK-ON ACTIVATED! (Used Energy: ${spec.label})`);
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({ 
+        action: 'ACTIVATE_SCROLL', 
+        payload: { selection, ms: spec.ms, val: spec.val, view } 
+      });
+      addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
+    } catch (e) {
+      console.error(e);
+      addLog("🚨 UPLINK ERROR: Activation failed.");
     }
-
-    syncPlayer(updates);
   };
 
   const mixLaboratoryItem = async (recipe) => {

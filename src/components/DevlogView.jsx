@@ -23,6 +23,24 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.19.0',
+    date: '2026-05-15',
+    title: 'NEURAL SHIELD & SERVER-SIDE ARCHITECTURE',
+    category: 'SECURITY & INFRASTRUCTURE',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'amber',
+    description: 'A massive security overhaul transitioning the game engine to a server-side "Secure Game Action" architecture. We have successfully integrated Firebase App Check and ReCaptcha Enterprise to eliminate bot manipulation and protect the economy.',
+    changes: [
+      'Security: Deployed Firebase App Check (ReCaptcha Enterprise) to block unauthorized API access',
+      'Architecture: Migrated all critical game logic (Buy, Market, Payout, Combat) to Secure Cloud Functions',
+      'Hardening: Implemented field-level Firestore rules to prevent client-side tampering of player stats',
+      'Optimization: Lazy-initialized database connections in Functions to resolve deployment timeouts',
+      'UX: Integrated frictionless "Neural Handshake" verification for real players'
+    ],
+    media: '/assets/monsters/Void Sector 7/Null Stalker.jpg'
+  },
+  {
     id: '1.18.0',
     date: '2026-05-08',
     title: 'COMPANION ASCENSION & SYSTEM STABILIZATION',

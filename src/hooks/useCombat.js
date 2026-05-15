@@ -38,7 +38,7 @@ export const useCombat = (
   PETS_METADATA,
   gvgActions = {}
 ) => {
-  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic, setShowSuccessWindow } = gvgActions;
+  const { battleMode, setBattleMode, gvgContext, setGvgContext, recordWarResult, triggerHaptic, setShowSuccessWindow, setPlayer } = gvgActions;
   const [critAlert, setCritAlert] = useState(false);
   const [stunTimeLeft, setStunTimeLeft] = useState(0);
   const [missTimeLeft, setMissTimeLeft] = useState(0);
@@ -449,12 +449,35 @@ export const useCombat = (
 
     addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
 
+    const secureCommit = async () => {
+      try {
+        const callAction = httpsCallable(functions, 'secureGameAction');
+        await callAction({
+          action: 'CLAIM_TREASURY_REWARDS',
+          payload: {
+            rewards,
+            autoTimeLeftSaved: updates.autoTimeLeftSaved
+          }
+        });
+      } catch (e) {
+        console.error("Treasury Secure Claim Failed:", e);
+      }
+    };
+
     setSessionRewards(prev => ({
       ...prev,
       loots: [...prev.loots, ...rewards]
     }));
 
-    syncPlayer(updates);
+    // Optimistic UI
+    setPlayer(prev => ({
+      ...prev,
+      inventory: { ...prev.inventory, ...Object.fromEntries(rewards.map(r => [r.id, r])) },
+      autoUntil: 0,
+      autoTimeLeftSaved: updates.autoTimeLeftSaved || prev.autoTimeLeftSaved
+    }));
+
+    secureCommit();
 
   }, [ITEMS, syncPlayer, addLog, playSFX, SOUNDS, player?.autoUntil]);
 
@@ -629,7 +652,41 @@ export const useCombat = (
       }
     }
 
-    syncPlayer(updates);
+    // --- SECURE UPLINK: TRANSITION TO SERVER-SIDE STATE COMMIT ---
+    const secureCommit = async () => {
+      try {
+        const callAction = httpsCallable(functions, 'secureGameAction');
+        await callAction({
+          action: 'PROCESS_KILL_REWARDS',
+          payload: {
+            earnedLoot,
+            earnedXp,
+            nextXp,
+            nextLvl,
+            nextMaxHp,
+            apGained,
+            loots: sessionRewards.loots.filter(l => !updates[`inventory.${l.id}`]) // Only include new loots
+              .concat(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => v))
+          }
+        });
+      } catch (e) {
+        console.error("Secure Reward Sync Failed:", e);
+        addLog("🚨 UPLINK ERROR: Reward synchronization failed.");
+      }
+    };
+
+    // We still update local state for immediate feedback
+    setPlayer(prev => ({
+      ...prev,
+      tokens: (prev?.tokens || 0) + earnedLoot + overflowGx,
+      xp: nextXp,
+      level: nextLvl,
+      maxHp: nextMaxHp,
+      hp: updates.hp,
+      abilityPoints: updates.abilityPoints || prev?.abilityPoints || 0
+    }));
+
+    secureCommit();
 
     const newKills = killsRef.current + 1;
     if (newKills >= 10 && depth >= MAX_DUNGEON_DEPTH) {
@@ -718,7 +775,22 @@ export const useCombat = (
         playSFX(SOUNDS.obtainLoot);
       }
     }
-    syncPlayer(updates);
+    // Optimistic UI
+    setPlayer(prev => ({ ...prev, totalBossDamage: newTotal, inventory: { ...prev.inventory, ...Object.fromEntries(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => [(k.split('.')[1]), v])) } }));
+
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      await callAction({
+        action: 'PROCESS_BOSS_HIT',
+        payload: {
+          dmg,
+          lootUpdates: Object.fromEntries(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => [(k.split('.')[1]), v]))
+        }
+      });
+    } catch (e) {
+      console.error("Boss Hit Sync Failed:", e);
+    }
+    
     enemyTurn(BOSS, true);
   }, [player, addLog, syncPlayer, enemyTurn, EQUIPMENT, totalStats, BOSS, depth, LOOTS, playSFX, SOUNDS]);
 

@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-neural-shield-deployment',
+    date: '2026-05-15',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Neural Shield Protocol: The ReCaptcha Revolution',
+    subtitle: 'Enforcing a bot-free ecosystem with the new Neural Handshake and Secure Game Action architecture.',
+    category: 'SECURITY ENFORCEMENT',
+    type: 'article',
+    tag: 'NEW',
+    color: 'amber',
+    readingTime: '5 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The grid is under constant siege. Automated script-bots and headless browsers have long attempted to infiltrate our resource pools. Today, we fight back with the deployment of the Neural Shield Protocol.'
+      },
+      {
+        type: 'heading',
+        text: 'The Neural Handshake'
+      },
+      {
+        type: 'paragraph',
+        text: 'We have integrated Google ReCaptcha Enterprise (Firebase App Check) directly into the game\'s neural link. This "Neural Handshake" verifies every single hunter in the background. If you’re human, you won’t even feel it. If you’re a bot, you hit a brick wall.'
+      },
+      {
+        type: 'heading',
+        text: 'Secure Game Actions (SGA)'
+      },
+      {
+        type: 'paragraph',
+        text: 'We’ve moved the game\'s brain. Critical actions—Buying items, claiming Market payouts, and processing Boss rewards—no longer happen solely on your device. They are now processed via Secure Game Action (SGA) Cloud Functions. This ensures that every transaction is validated on the server side, making it impossible to "spoof" wealth or levels.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Neural Shield is now active across all major command hubs.'
+      },
+      {
+        type: 'heading',
+        text: 'Bot-Free Economy'
+      },
+      {
+        type: 'paragraph',
+        text: 'By enforcing App Check, we ensure that every GX token and every piece of loot is earned by a real player. This protects the value of your inventory and keeps the leaderboard competitive for everyone.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The grid is now safer, faster, and fairer. Keep hunting, and let the shield hold.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-totality-audit',
     date: '2026-05-07',
     author: 'Commander Gemx',

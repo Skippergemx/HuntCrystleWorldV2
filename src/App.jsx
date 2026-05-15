@@ -6,6 +6,57 @@ import { LoginView } from './components/LoginView';
 import { NetworkAlert } from './components/NetworkAlert';
 import { useUnifiedAuth } from './hooks/useUnifiedAuth';
 
+// Dedicated component to isolate Ad lifecycle and prevent DOM sync errors
+const AdContainer = React.memo(({ loading }) => {
+  if (loading) return null;
+  
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const publisher = "0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786";
+  const appId = "f87d7e04-7be5-4fff-a5f5-ad1e5976574b";
+
+  return (
+    <div id="ad-bridge-container">
+      <link 
+        rel="stylesheet" 
+        href={`https://api.openads.world/api/v1/serve/dynamic-css?publisher=${publisher}&parent_url=${encodeURIComponent(origin)}`} 
+      />
+      <iframe 
+        key="ad-float"
+        className="openads-floating" 
+        src={`https://api.openads.world/serve?publisher=${publisher}&placement=64x64-${publisher}&position=floating&parent_url=${encodeURIComponent(origin)}&app_id=${appId}`} 
+        title="Advertisement" 
+        width="64" height="64" 
+        style={{display:'none', position:'fixed', top:'20px', right:'20px', width:'64px', height:'64px', border:'none', borderRadius:'50%', zIndex:999999}} 
+        frameBorder="0" scrolling="no" 
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" 
+        allow="clipboard-write"
+      />
+      <iframe 
+        key="ad-top"
+        className="openads-top-banner" 
+        src={`https://api.openads.world/serve?publisher=${publisher}&placement=320x50_top-${publisher}&position=top&parent_url=${encodeURIComponent(origin)}&app_id=${appId}`} 
+        title="Advertisement" 
+        width="320" height="50" 
+        style={{display:'none', border:'none', margin:'0 auto'}} 
+        frameBorder="0" scrolling="no" 
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" 
+        allow="clipboard-write"
+      />
+      <iframe 
+        key="ad-bottom"
+        className="openads-banner" 
+        src={`https://api.openads.world/serve?publisher=${publisher}&placement=320x50-${publisher}&position=bottom&parent_url=${encodeURIComponent(origin)}&app_id=${appId}`} 
+        title="Advertisement" 
+        width="320" height="50" 
+        style={{display:'none', border:'none', margin:'0 auto'}} 
+        frameBorder="0" scrolling="no" 
+        sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" 
+        allow="clipboard-write"
+      />
+    </div>
+  );
+});
+
 export const App = () => {
   const { user, loading, loginWithGoogle, logout } = useUnifiedAuth();
 
@@ -27,15 +78,7 @@ export const App = () => {
         </GameProvider>
       )}
 
-      {!loading && (
-        <>
-          {/* OpenAds Network (Zero-JS Integration) */}
-          <link rel="stylesheet" href={`https://api.openads.world/api/v1/serve/dynamic-css?publisher=0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&parent_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}`} />
-          <iframe className="openads-floating" src={`https://api.openads.world/serve?publisher=0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&placement=64x64-0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&position=floating&parent_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}&app_id=f87d7e04-7be5-4fff-a5f5-ad1e5976574b`} title="Advertisement" width="64" height="64" style={{display:'none', position:'fixed', top:'20px', right:'20px', width:'64px', height:'64px', border:'none', borderRadius:'50%', zIndex:999999}} frameBorder="0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
-          <iframe className="openads-top-banner" src={`https://api.openads.world/serve?publisher=0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&placement=320x50_top-0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&position=top&parent_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}&app_id=f87d7e04-7be5-4fff-a5f5-ad1e5976574b`} title="Advertisement" width="320" height="50" style={{display:'none', border:'none', margin:'0 auto'}} frameBorder="0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
-          <iframe className="openads-banner" src={`https://api.openads.world/serve?publisher=0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&placement=320x50-0xdfde5b79d5f53e9d13948e1bb7e1cb3e89fc8786&position=bottom&parent_url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.origin : '')}&app_id=f87d7e04-7be5-4fff-a5f5-ad1e5976574b`} title="Advertisement" width="320" height="50" style={{display:'none', border:'none', margin:'0 auto'}} frameBorder="0" scrolling="no" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox" allow="clipboard-write"></iframe>
-        </>
-      )}
+      <AdContainer loading={loading} />
     </div>
   );
 };

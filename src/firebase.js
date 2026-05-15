@@ -3,6 +3,7 @@ import { getAnalytics } from 'firebase/analytics';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,6 +16,20 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
+
+// Initialize App Check
+if (typeof window !== 'undefined') {
+  // Allow local debugging
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  }
+
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+    isTokenAutoRefreshEnabled: true
+  });
+}
+
 export const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
