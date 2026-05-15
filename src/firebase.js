@@ -19,15 +19,22 @@ export const app = initializeApp(firebaseConfig);
 
 // Initialize App Check
 if (typeof window !== 'undefined') {
-  // Allow local debugging
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  }
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  
+  if (siteKey) {
+    // Allow local debugging
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      console.log("🛡️ Neural Shield: Local Debug Mode Active");
+    }
 
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-    isTokenAutoRefreshEnabled: true
-  });
+    initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(siteKey),
+      isTokenAutoRefreshEnabled: true
+    });
+  } else {
+    console.warn("🛡️ Neural Shield Warning: VITE_RECAPTCHA_SITE_KEY is missing from .env! Shield is offline.");
+  }
 }
 
 export const analytics = getAnalytics(app);
