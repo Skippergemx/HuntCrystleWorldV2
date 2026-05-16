@@ -158,10 +158,10 @@ export const usePlayerActions = (
     }
   };
 
-  const sellItem = useCallback(async (itemId) => {
+  const sellItem = useCallback(async (itemId, qty = 1) => {
     if (!player.inventory || !player.inventory[itemId]) return;
     const item = player.inventory[itemId];
-    const itemBaseId = item.id?.replace(/(_\d+)+$/, '');
+    const itemBaseId = item.id?.replace(/_([a-z0-9]+)+$/, '');
     const master = ITEMS.find(i => i.id === itemBaseId) || item;
     
     let value = 0;
@@ -171,26 +171,33 @@ export const usePlayerActions = (
       value = master.sellValue || item.sellValue || 0;
     }
 
+    const totalValue = value * qty;
     playSFX(SOUNDS.sellItem);
     
-    setPlayer(prev => {
-      const nextInv = { ...prev.inventory };
-      delete nextInv[itemId];
-      return { ...prev, tokens: (prev.tokens || 0) + value, inventory: nextInv };
-    });
+    // --- OPTIMISTIC UI UPLINK ---
+    const nextInv = { ...(player.inventory || {}) };
+    let removed = 0;
+    const entries = Object.entries(nextInv);
+    for (const [key, invItem] of entries) {
+      if (invItem?.id?.replace(/_([a-z0-9]+)+$/, '') === itemBaseId && removed < qty) {
+        delete nextInv[key];
+        removed++;
+      }
+    }
+    syncPlayer({ tokens: (player.tokens || 0) + totalValue, inventory: nextInv });
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       await callAction({ 
         action: 'SELL_ITEM', 
-        payload: { itemId, value } 
+        payload: { itemId, value: totalValue, qty } 
       });
-      addLog(`💰 Sold ${master.name || item.name} for ${value} GX`);
+      addLog(`💰 Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
     } catch (e) {
       console.error(e);
       addLog("🚨 UPLINK ERROR: Sale failed.");
     }
-  }, [player, ITEMS, setPlayer, playSFX, SOUNDS]);
+  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions]);
 
   const equipItem = useCallback(async (itemOrId) => {
     const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
@@ -205,17 +212,15 @@ export const usePlayerActions = (
     playSFX(SOUNDS.equipItem);
     
     // Optimistic UI update
-    setPlayer(prev => {
-      const nextInv = { ...prev.inventory };
-      const nextEquipped = { ...prev.equipped };
-      if (nextEquipped[slot]) {
-        const oldItem = nextEquipped[slot];
-        nextInv[oldItem.id || `OLD_${slot}`] = oldItem;
-      }
-      nextEquipped[slot] = item;
-      delete nextInv[itemId];
-      return { ...prev, inventory: nextInv, equipped: nextEquipped };
-    });
+    const nextInv = { ...(player.inventory || {}) };
+    const nextEquipped = { ...(player.equipped || {}) };
+    if (nextEquipped[slot]) {
+      const oldItem = nextEquipped[slot];
+      nextInv[oldItem.id || `OLD_${slot}`] = oldItem;
+    }
+    nextEquipped[slot] = item;
+    delete nextInv[itemId];
+    syncPlayer({ inventory: nextInv, equipped: nextEquipped });
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -228,7 +233,7 @@ export const usePlayerActions = (
       console.error(e);
       addLog("🚨 UPLINK ERROR: Install failed.");
     }
-  }, [player, setPlayer, playSFX, SOUNDS]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions]);
 
   const unequipItem = useCallback(async (slot) => {
     if (!player.equipped?.[slot]) return;
@@ -237,13 +242,11 @@ export const usePlayerActions = (
     playSFX(SOUNDS.unequipItem);
     
     // Optimistic UI update
-    setPlayer(prev => {
-      const nextInv = { ...prev.inventory };
-      const nextEquipped = { ...prev.equipped };
-      nextInv[item.id || `RET_${slot}`] = item;
-      delete nextEquipped[slot];
-      return { ...prev, inventory: nextInv, equipped: nextEquipped };
-    });
+    const nextInv = { ...(player.inventory || {}) };
+    const nextEquipped = { ...(player.equipped || {}) };
+    nextInv[item.id || `RET_${slot}`] = item;
+    delete nextEquipped[slot];
+    syncPlayer({ inventory: nextInv, equipped: nextEquipped });
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -256,7 +259,7 @@ export const usePlayerActions = (
       console.error(e);
       addLog("🚨 UPLINK ERROR: Uninstall failed.");
     }
-  }, [player, setPlayer, playSFX, SOUNDS]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions]);
 
   const allocateStat = async (statName) => {
     // Guard: synchronous ref prevents rapid-click over-spending before React re-renders
@@ -268,11 +271,10 @@ export const usePlayerActions = (
     const newAP   = Math.max(0, (player?.abilityPoints ?? 0) - 1);
     
     // We update local state, but Firestore update will now happen via Cloud Function
-    setPlayer(prev => ({
-      ...prev,
-      baseStats: { ...prev.baseStats, [statName]: newStat },
+    syncPlayer({
+      baseStats: { ...(player.baseStats || {}), [statName]: newStat },
       abilityPoints: newAP
-    }));
+    });
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -326,6 +328,10 @@ export const usePlayerActions = (
       }
     }
 
+    // --- OPTIMISTIC UI UPLINK ---
+    // Synchronize local state immediately for zero-friction feedback.
+    syncPlayer(updates);
+
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       const result = await callAction({ 
@@ -376,21 +382,18 @@ export const usePlayerActions = (
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
 
-    // Optimistic UI
-    setPlayer(prev => {
-      const nextInv = { ...prev.inventory };
-      const updates = { 
-        autoUntil: Date.now() + spec.ms,
-        autoMode: view || 'dungeon'
-      };
-      if (targetItemEntry) {
-        delete nextInv[targetItemEntry[0]];
-        updates.inventory = nextInv;
-      } else {
-        updates.autoScrolls = (prev.autoScrolls || 0) - spec.val;
-      }
-      return { ...prev, ...updates };
-    });
+    const updates = { 
+      autoUntil: Date.now() + spec.ms,
+      autoTimeLeftSaved: 0
+    };
+    if (targetItemEntry) {
+      updates[`inventory.${targetItemEntry[0]}`] = deleteField();
+    } else {
+      updates.autoScrolls = (player.autoScrolls || 0) - spec.val;
+    }
+
+    // --- OPTIMISTIC UI UPLINK ---
+    syncPlayer(updates);
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -462,18 +465,33 @@ export const usePlayerActions = (
       }
 
       await syncPlayer(updates, true);
-      if (setForgeResult) {
-        setForgeResult({ success: true, item: masterData });
-      }
 
-      addLog(`✅ SUCCESS: Created ${masterData.name}!`);
-      playSFX(SOUNDS.obtainLoot);
+      try {
+        const callAction = httpsCallable(functions, 'secureGameAction');
+        const result = await callAction({ 
+          action: 'MIX_ITEM', 
+          payload: { recipe, itemsToConsumeKeys: itemsToConsume.map(c => c.key) } 
+        });
+
+        if (result.data?.success) {
+          if (setForgeResult) {
+            setForgeResult({ success: true, item: masterData });
+          }
+          addLog(`✅ SUCCESS: Created ${masterData.name}!`);
+          playSFX(SOUNDS.obtainLoot);
+        } else {
+          throw new Error(result.data?.message || "Fusion failed.");
+        }
+      } catch (e) {
+        console.error(e);
+        if (setForgeResult) {
+          setForgeResult({ success: false, error: "Molecular fusion destabilized." });
+        }
+        addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
+      }
     } catch (e) {
       console.error(e);
-      if (setForgeResult) {
-        setForgeResult({ success: false, error: "Molecular fusion destabilized." });
-      }
-      addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
+      addLog("🚨 LAB ERROR: Formula calculation error.");
     }
   };
 
@@ -1393,11 +1411,62 @@ export const usePlayerActions = (
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
 
+  const exchangeHuntSparks = useCallback(async (tokenChoice = 'DWGX') => {
+    if (!player || !functions) return;
+    
+    const inventory = player.inventory || {};
+    const sparks = Object.entries(inventory)
+      .filter(([id, item]) => item && item.id && item.id.startsWith('hunt_spark'));
+    
+    if (sparks.length < 4) {
+      addLog(`🚨 INSUFFICIENT SPARKS: You need 4 Hunt Sparks. You have ${sparks.length}.`);
+      return;
+    }
+    
+    // Deduct 4 sparks
+    const updates = {};
+    sparks.slice(0, 4).forEach(([uniqueId]) => {
+      updates[`inventory.${uniqueId}`] = deleteField();
+    });
+    
+    addLog(`⚡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
+    
+    try {
+      // Use blocking sync to ensure inventory is updated before payout
+      await syncPlayer(updates, true); 
+      
+      const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
+      const result = await claimFaucet({ 
+        targetWalletAddress: player.walletAddress,
+        rewardType: tokenChoice, // 'HUNT' or 'DWGX'
+        sparksType: 'HUNT'
+      });
+      const data = result.data;
+      
+      if (data.success) {
+        addLog(`🎁 HUNT REWARD: ${data.message}`);
+        playSFX(SOUNDS.obtainLoot);
+        if (setFaucetResult) {
+          setFaucetResult({ 
+            success: true, 
+            txHash: data.txHash, 
+            message: `${tokenChoice} Transmission Authorized` 
+          });
+        }
+      } else {
+        addLog(`🏙️ EXCHANGE SIGNAL: ${data.message}`);
+      }
+    } catch (e) {
+      console.warn("⚡ HUNT_EXCHANGE_ERROR:", e.message);
+      addLog("🏙️ EXCHANGE: The signal failed. Treasury may be dry.");
+    }
+  }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
-    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks
+    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks
   };
 };

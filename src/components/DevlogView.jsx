@@ -23,6 +23,25 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.20.0',
+    date: '2026-05-16',
+    title: 'HUNT SPARK ECONOMY & MULTI-TOKEN EXCHANGE',
+    category: 'TOKEN ECONOMY',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'We have successfully integrated a beginner-friendly reward tier via the Hunt Spark protocol. This update enables players of all levels to earn on-chain rewards ($HUNT and $DWGX) by participating in tactical combat and utilizing the new Decision Terminal in Crystle Town.',
+    changes: [
+      'Economy: Launched Hunt Sparks (Rare Artifact) as a universal combat drop',
+      'Combat: Implemented tiered drop logic: Bosses (100%), Elites (20%), Normal Mobs (2%)',
+      'Balancing: Increased Elite enemy spawn rates from 10% to 15% for aggressive reward distribution',
+      'UI/UX: Added the Hunt Spark Decision Terminal to Crystle Town for dual-token claiming',
+      'Backend: Upgraded claimFaucetReward Cloud Function to support automated ERC20 transfers for $HUNT and $DWGX',
+      'Infrastructure: Refactored Cloud Functions into modular components (gameActions.ts) to improve deployment stability'
+    ],
+    media: '/assets/monsters/Rust Canyon/Iron Pet 0-0.jpg'
+  },
+  {
     id: '1.19.0',
     date: '2026-05-15',
     title: 'NEURAL SHIELD & SERVER-SIDE ARCHITECTURE',

@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-hunt-spark-economy',
+    date: '2026-05-16',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'The Spark Economy: Distributing the $HUNT',
+    subtitle: 'Breaking the barrier: How Hunt Sparks are decentralizing rewards for every level of hunter.',
+    category: 'TOKEN ECONOMY',
+    type: 'article',
+    tag: 'NEW',
+    color: 'emerald',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'Until now, the bridge between the grid and the decentralized treasury was reserved for the elite. But the grid is expanding. Today, we announce the Hunt Spark Protocol—a system designed to put $HUNT and $DWGX directly into the hands of every hunter, from the newest recruit to the seasoned veteran.'
+      },
+      {
+        type: 'heading',
+        text: 'Hunt Sparks: The Beginner\'s Gateway'
+      },
+      {
+        type: 'paragraph',
+        text: 'Unlike the elusive Aether Sparks, Hunt Sparks are obtainable by hunters of all levels. We’ve calibrated the dungeon resonators to drop these rare artifacts from every enemy type. Bosses now carry a 100% drop rate, while Elite Champions hold a 20% resonance. Even normal mobs have a small chance to yield a Spark for the lucky hunter.'
+      },
+      {
+        type: 'heading',
+        text: 'The Decision Terminal'
+      },
+      {
+        type: 'paragraph',
+        text: 'At the heart of Crystle Town, a new terminal has been activated. Here, you hold the power of choice. By burning 4 Hunt Sparks, you can initiate a transmission for either 0.01 $HUNT or 0.1 $DWGX. This direct-to-wallet transfer is processed via our secure Cloud infrastructure, ensuring that your rewards are as safe as they are earned.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Decision Terminal: Choose your path, claim your reward.'
+      },
+      {
+        type: 'heading',
+        text: 'Aggressive Distribution'
+      },
+      {
+        type: 'paragraph',
+        text: 'We are increasing Elite spawn rates by 50% to ensure the grid is saturated with opportunities. This isn\'t just an update; it\'s an economic shift. By rewarding tactical combat and dungeon mastery, we are building a more robust, active, and rewarding ecosystem for everyone.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The treasury is open. The sparks are flying. Good hunting.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-neural-shield-deployment',
     date: '2026-05-15',
     author: 'Commander Gemx',

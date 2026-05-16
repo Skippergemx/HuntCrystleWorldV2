@@ -43,7 +43,7 @@ export const scaleMonster = (baseMonster, depth) => {
   const globalAccuracyMultiplier = 1 + ((depth - 1) * 0.08);
   
   // Elite Logic
-  const isElite = Math.random() < 0.10; // 10% Elite Chance
+  const isElite = Math.random() < 0.15; // 15% Elite Chance (Increased for Spark Distribution)
   const eliteHpMult = isElite ? 2.0 : 1;
   const eliteStrMult = isElite ? 1.5 : 1;
   

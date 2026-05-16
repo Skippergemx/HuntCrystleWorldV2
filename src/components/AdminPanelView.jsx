@@ -21,6 +21,7 @@ export const AdminPanelView = React.memo(() => {
   const [errorReports, setErrorReports] = useState([]);
   const [faucetBalance, setFaucetBalance] = useState(null);
   const faucetAddress = "0x8dca8d7B35004630F460B85F70d1189795CDe6Fc";
+  const [viewAllWallets, setViewAllWallets] = useState(false);
   const itemsPerPage = 10;
 
   const isAdmin = userEmail === 'skippergemx@gmail.com';
@@ -829,6 +830,9 @@ export const AdminPanelView = React.memo(() => {
                               <div className="flex flex-col gap-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-black text-white italic leading-none truncate max-w-[150px]">{player.name || 'Anonymous Hunter'}</p>
+                                  {player.platform === 'farcaster' && (
+                                    <span className="text-[8px] font-black text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/30">FID: {player.id.replace('FC_', '')}</span>
+                                  )}
                                 </div>
 
                                 <div className="flex flex-col gap-0.5">
@@ -851,7 +855,11 @@ export const AdminPanelView = React.memo(() => {
 
                                 <div className="flex items-center gap-2 mt-0.5">
                                    <span className="text-[7px] text-slate-600 font-bold uppercase tracking-tighter">ID: {player.id.substring(0, 10)}...</span>
-                                   <span className="px-1.5 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Google</span>
+                                   {player.platform === 'farcaster' ? (
+                                     <span className="px-1.5 py-0 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Farcaster</span>
+                                   ) : (
+                                     <span className="px-1.5 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded-[2px] text-[6px] font-black italic uppercase">Google</span>
+                                   )}
                                 </div>
                               </div>
                             </div>
@@ -948,28 +956,55 @@ export const AdminPanelView = React.memo(() => {
             </div>
             
             <div className="flex flex-wrap gap-2 w-full md:w-auto">
-               <div className="relative w-full md:w-64">
+               <div className="relative w-full md:w-48">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                    <input 
                      type="text" 
-                     placeholder="Filter by Name, ID, or Address..." 
+                     placeholder="Filter..." 
                      className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-amber-500 outline-none font-black italic"
                      value={searchQuery}
                      onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                    />
                </div>
                <button 
+                 onClick={() => setViewAllWallets(!viewAllWallets)}
+                 className={`px-4 py-2 border-2 font-black uppercase italic text-[10px] transition-all ${viewAllWallets ? 'bg-amber-500 text-black border-black' : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-amber-500'}`}
+               >
+                 {viewAllWallets ? 'Paginate' : 'Show All Units'}
+               </button>
+               <button 
                  onClick={() => {
-                   const addresses = players.filter(p => p.walletAddress && p.walletAddress.startsWith('0x')).map(p => p.walletAddress).join('\n');
-                   navigator.clipboard.writeText(addresses);
-                   setMessage({ type: 'success', text: `COPIED TO CLIPBOARD: ${addresses.split('\n').filter(a => a).length} wallet addresses secured.` });
+                   const evm = players.filter(p => p.walletAddress).map(p => `EVM: ${p.walletAddress} (${p.name || p.id})`);
+                   const ton = players.filter(p => p.tonWalletAddress).map(p => `TON: ${p.tonWalletAddress} (${p.name || p.id})`);
+                   const report = [...evm, ...ton].join('\n');
+                   navigator.clipboard.writeText(report);
+                   setMessage({ type: 'success', text: `MANIFEST SECURED: ${evm.length + ton.length} node addresses copied.` });
                  }}
                  className="px-6 py-2 bg-amber-500 text-black font-black uppercase italic text-xs flex items-center gap-2 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:scale-105 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all"
                >
                  <Copy size={16} />
-                 Capture All Addresses
+                 Capture Manifest
                </button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+             <div className="bg-slate-900/50 p-3 border border-white/5 rounded-lg text-center">
+                <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Subjects</p>
+                <p className="text-xl font-black text-white italic">{players.length}</p>
+             </div>
+             <div className="bg-amber-950/20 p-3 border border-amber-500/20 rounded-lg text-center">
+                <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest">EVM Bound</p>
+                <p className="text-xl font-black text-amber-500 italic">{players.filter(p => p.walletAddress).length}</p>
+             </div>
+             <div className="bg-blue-950/20 p-3 border border-blue-500/20 rounded-lg text-center">
+                <p className="text-[8px] font-black text-blue-400 uppercase tracking-widest">TON Bound</p>
+                <p className="text-xl font-black text-blue-400 italic">{players.filter(p => p.tonWalletAddress).length}</p>
+             </div>
+             <div className="bg-red-950/20 p-3 border border-red-500/20 rounded-lg text-center">
+                <p className="text-[8px] font-black text-red-500 uppercase tracking-widest">Unbound</p>
+                <p className="text-xl font-black text-red-500 italic">{players.filter(p => !p.walletAddress && !p.tonWalletAddress).length}</p>
+             </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -978,15 +1013,16 @@ export const AdminPanelView = React.memo(() => {
                 <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest px-4">
                   <th className="py-2 px-4">Subject identity</th>
                   <th className="py-2 px-4">Origin Hub</th>
-                  <th className="py-2 px-4">Bound Wallet Address (Base Chain)</th>
-                  <th className="py-2 px-4 text-center">Status</th>
+                  <th className="py-2 px-4">EVM Address (Base)</th>
+                  <th className="py-2 px-4">TON Address</th>
                 </tr>
               </thead>
               <tbody className="space-y-4">
                 {(() => {
+                  const displaySet = viewAllWallets ? filteredPlayers : paginatedPlayers;
                   return (
                     <>
-                      {paginatedPlayers.map((player) => (
+                      {displaySet.map((player) => (
                         <tr key={player.id} className="bg-slate-900/40 border-2 border-slate-800 hover:border-amber-500/50 transition-all group">
                           <td className="py-4 px-4 text-left rounded-l-xl">
                             <div className="flex items-center gap-3">
@@ -1005,34 +1041,45 @@ export const AdminPanelView = React.memo(() => {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-1.5">
-                               <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-red-500">
-                                  <FileText size={10} />
-                                  <span className="text-[8px] font-black uppercase">Google</span>
-                               </div>
+                               {player.platform === 'farcaster' ? (
+                                 <div className="flex items-center gap-1 px-2 py-0.5 bg-purple-950/40 border border-purple-500/30 rounded text-purple-500">
+                                    <Activity size={10} />
+                                    <span className="text-[8px] font-black uppercase">Farcaster</span>
+                                 </div>
+                               ) : (
+                                 <div className="flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-red-500">
+                                    <FileText size={10} />
+                                    <span className="text-[8px] font-black uppercase">Google</span>
+                                 </div>
+                               )}
                             </div>
                           </td>
                           <td className="py-4 px-4">
                             {player.walletAddress ? (
                                <div className="flex items-center gap-2">
-                                  <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 text-amber-500 font-mono text-[10px] transition-all group-hover:border-amber-500/30 group-hover:text-amber-400">
+                                  <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 text-amber-500 font-mono text-[9px] truncate max-w-[120px]">
                                      {player.walletAddress}
                                   </code>
-                                  <button 
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(player.walletAddress);
-                                      setMessage({ type: 'success', text: `ADAPTOR PINNED: ${player.walletAddress.slice(0, 10)} copied.` });
-                                    }}
-                                    className="p-1 px-2 bg-slate-800 hover:bg-amber-500 hover:text-black text-slate-500 transition-all rounded text-[8px] font-black uppercase"
-                                  >
-                                     <Copy size={10} />
-                                  </button>
+                                  <button onClick={() => { navigator.clipboard.writeText(player.walletAddress); setMessage({type:'success', text:'EVM Node Pinned'}); }} className="p-1 bg-slate-800 rounded hover:text-amber-500 transition-all active:scale-95"><Copy size={10}/></button>
                                </div>
                             ) : (
-                               <span className="text-[8px] font-black text-slate-700 uppercase italic tracking-tighter">Unbound Signal: Waiting for Web3 Uplink</span>
+                               <span className="text-[8px] font-black text-slate-700 uppercase italic">Unbound</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-4">
+                            {player.tonWalletAddress ? (
+                               <div className="flex items-center gap-2">
+                                  <code className="bg-black/60 px-3 py-1.5 rounded-lg border border-white/5 text-blue-400 font-mono text-[9px] truncate max-w-[120px]">
+                                     {player.tonWalletAddress}
+                                  </code>
+                                  <button onClick={() => { navigator.clipboard.writeText(player.tonWalletAddress); setMessage({type:'success', text:'TON Node Pinned'}); }} className="p-1 bg-slate-800 rounded hover:text-blue-400 transition-all active:scale-95"><Copy size={10}/></button>
+                               </div>
+                            ) : (
+                               <span className="text-[8px] font-black text-slate-700 uppercase italic">Unbound</span>
                             )}
                           </td>
                           <td className="py-4 px-4 text-center rounded-r-xl">
-                             <div className={`w-2 h-2 rounded-full mx-auto ${player.walletAddress ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`}></div>
+                             <div className={`w-2 h-2 rounded-full mx-auto ${player.walletAddress || player.tonWalletAddress ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`}></div>
                           </td>
                         </tr>
                       ))}

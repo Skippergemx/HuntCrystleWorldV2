@@ -67,7 +67,7 @@ export const InventoryView = React.memo(() => {
   // Robust Item Data Resolver - Now powered by unified ITEMS list
   const getMasterData = (item) => {
     if (!item) return null;
-    const cleanId = item.id?.replace(/(_\d+)+$/, '');
+    const cleanId = item.id?.replace(/_([a-z0-9]+)+$/, '');
     
     // 1. Check Master Items DB
     const fromItems = ITEMS.find(i => i.id === cleanId);
@@ -136,7 +136,7 @@ export const InventoryView = React.memo(() => {
     Object.values(player.inventory || {}).forEach(i => {
       if (!i) return;
       const master = getMasterData(i);
-      const cleanId = master?.id || i.id?.replace(/(_\d+)+$/, '');
+      const cleanId = master?.id || i.id?.replace(/_([a-z0-9]+)+$/, '');
       c[cleanId] = (c[cleanId] || 0) + 1;
     });
     return c;
@@ -252,7 +252,7 @@ export const InventoryView = React.memo(() => {
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
              {(() => {
                  const stacked = processedInventory.reduce((acc, item) => {
-                   const cleanId = item.id?.replace(/(_\d+)+$/, '');
+                   const cleanId = item.id?.replace(/_([a-z0-9]+)+$/, '');
                    const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
                    const baseId = master?.id || cleanId || item.name;
                    

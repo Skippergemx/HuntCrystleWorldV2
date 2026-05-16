@@ -24,7 +24,8 @@ if (typeof window !== 'undefined') {
   if (siteKey) {
     // Allow local debugging
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      const debugToken = import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG_TOKEN;
+      window.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken || true;
       console.log("🛡️ Neural Shield: Local Debug Mode Active");
     }
 

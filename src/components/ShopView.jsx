@@ -50,7 +50,8 @@ export const ShopView = React.memo(() => {
 
     const inventoryCount = Object.values(player.inventory || {}).filter(i => {
        if (!i) return false;
-       const cleanId = i.id?.replace(/(_\d+)+$/, '');
+       // Alphanumeric suffix cleaning (matches _1234, _abcd, etc)
+       const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
        return cleanId === item.id || i.id === item.id;
     }).length;
 

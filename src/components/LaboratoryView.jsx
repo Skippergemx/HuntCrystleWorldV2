@@ -75,7 +75,7 @@ export const LaboratoryView = React.memo(() => {
   const getMaterialCount = (matId) => {
     return materials.filter(i => {
       if (!i) return false;
-      const cleanId = i.id?.replace(/(_\d+)+$/, '');
+      const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
       const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
       return (cleanId === matId) || (master?.id === matId);
     }).length;
@@ -239,7 +239,7 @@ export const LaboratoryView = React.memo(() => {
           const hasMaterials = materials.every(mat => {
             const countInInv = Object.values(player.inventory || {}).filter(i => {
                if (!i) return false;
-               const cleanId = i.id?.replace(/(_\d+)+$/, '');
+               const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
                const itemMaster = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                return (cleanId === mat.id) || (itemMaster?.id === mat.id);
             }).length || 0;
@@ -283,7 +283,7 @@ export const LaboratoryView = React.memo(() => {
                   const masterLoot = ITEMS.find(l => l.id === mat.id);
                   const countInInv = Object.values(player.inventory || {}).filter(i => {
                     if (!i) return false;
-                    const cleanId = i.id?.replace(/(_\d+)+$/, '');
+                    const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
                     const itemMaster = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
                     return (cleanId === mat.id) || (itemMaster?.id === mat.id);
                   }).length || 0;

@@ -35,7 +35,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         const { success, total } = result.data || { success: false, total: 0 };
 
         if (success && total > 0) {
-          setPlayer(prev => ({ ...prev, tokens: (prev.tokens || 0) + total }));
+          syncPlayer({ tokens: (player.tokens || 0) + total });
           addLog(`💸 MARKET UPLINK: +${total.toLocaleString()} GX secured from your sales!`);
           playSFX(SOUNDS.obtainLoot);
         }
@@ -57,21 +57,19 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       const callAction = httpsCallable(functions, 'secureGameAction');
       
       // Optimistic UI
-      setPlayer(prev => {
-        const nextInv = { ...prev.inventory };
-        const updates = { tokens: prev.tokens - totalCost };
-        if (listing.item.id?.startsWith('hp_potion')) {
-           updates.potions = (prev.potions || 0) + qty;
-        } else {
-           for (let i = 0; i < qty; i++) {
-             const suffix = Math.random().toString(36).slice(2, 6);
-             const uniqueId = `${listing.item.id?.replace(/(_\d+)+$/, '')}_${Date.now()}_${suffix}_${i}`;
-             nextInv[uniqueId] = { ...listing.item, id: uniqueId };
-           }
-           updates.inventory = nextInv;
-        }
-        return { ...prev, ...updates };
-      });
+      const nextInv = { ...(player.inventory || {}) };
+      const updates = { tokens: player.tokens - totalCost };
+      if (listing.item.id?.startsWith('hp_potion')) {
+         updates.potions = (player.potions || 0) + qty;
+      } else {
+         for (let i = 0; i < qty; i++) {
+           const suffix = Math.random().toString(36).slice(2, 6);
+           const uniqueId = `${listing.item.id?.replace(/_([a-z0-9]+)+$/, '')}_${Date.now()}_${suffix}_${i}`;
+           nextInv[uniqueId] = { ...listing.item, id: uniqueId };
+         }
+         updates.inventory = nextInv;
+      }
+      syncPlayer(updates);
 
       const result = await callAction({ 
         action: 'MARKET_PURCHASE', 
@@ -99,23 +97,21 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       const callAction = httpsCallable(functions, 'secureGameAction');
       
       // Optimistic UI
-      setPlayer(prev => {
-        const nextInv = { ...prev.inventory };
-        const baseId = item.id?.replace(/(_\d+)+$/, '');
-        const entries = Object.entries(nextInv);
-        let removed = 0;
-        for (const [key, invItem] of entries) {
-           if (invItem?.id?.replace(/(_\d+)+$/, '') === baseId && removed < quantity) {
-              delete nextInv[key];
-              removed++;
-           }
-        }
-        const updates = { inventory: nextInv };
-        if (removed < quantity && baseId === 'hp_potion') {
-           updates.potions = (prev.potions || 0) - (quantity - removed);
-        }
-        return { ...prev, ...updates };
-      });
+      const nextInv = { ...(player.inventory || {}) };
+      const baseId = item.id?.replace(/_([a-z0-9]+)+$/, '');
+      const entries = Object.entries(nextInv);
+      let removed = 0;
+      for (const [key, invItem] of entries) {
+         if (invItem?.id?.replace(/_([a-z0-9]+)+$/, '') === baseId && removed < quantity) {
+            delete nextInv[key];
+            removed++;
+         }
+      }
+      const updates = { inventory: nextInv };
+      if (removed < quantity && baseId === 'hp_potion') {
+         updates.potions = (player.potions || 0) - (quantity - removed);
+      }
+      syncPlayer(updates);
 
       await callAction({ 
         action: 'MARKET_LIST', 
@@ -137,23 +133,22 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
       const callAction = httpsCallable(functions, 'secureGameAction');
       
       // Optimistic UI (approximate return to inventory)
-      setPlayer(prev => {
-        const nextInv = { ...prev.inventory };
-        const listing = marketplace.find(l => l.id === listingId);
-        if (!listing) return prev;
-        const qty = listing.quantity || 1;
-        const baseId = listing.item.id?.replace(/(_\d+)+$/, '');
-        if (baseId === 'hp_potion') {
-           return { ...prev, potions: (prev.potions || 0) + qty };
-        } else {
-           for (let i = 0; i < qty; i++) {
-             const suffix = Math.random().toString(36).slice(2, 6);
-             const newId = `${baseId}_${Date.now()}_${suffix}_${i}`;
-             nextInv[newId] = { ...listing.item, id: newId };
-           }
-           return { ...prev, inventory: nextInv };
-        }
-      });
+      const listing = marketplace.find(l => l.id === listingId);
+      if (!listing) return;
+      
+      const qty = listing.quantity || 1;
+      const baseId = listing.item.id?.replace(/_([a-z0-9]+)+$/, '');
+      if (baseId === 'hp_potion') {
+         syncPlayer({ potions: (player.potions || 0) + qty });
+      } else {
+         const nextInv = { ...(player.inventory || {}) };
+         for (let i = 0; i < qty; i++) {
+           const suffix = Math.random().toString(36).slice(2, 6);
+           const newId = `${baseId}_${Date.now()}_${suffix}_${i}`;
+           nextInv[newId] = { ...listing.item, id: newId };
+         }
+         syncPlayer({ inventory: nextInv });
+      }
 
       await callAction({ 
         action: 'MARKET_CANCEL', 

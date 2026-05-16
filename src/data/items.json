@@ -207,5 +207,6 @@
   { "id": "genesis_gravity_boots", "name": "Genesis Gravity Boots", "cost": 45000, "sellValue": 18000, "reqLvl": 100, "icon": "🚀", "stats": { "str": 80, "dex": 180, "agi": 300 }, "type": "Footwear", "category": "Equipment", "rarity": "Legendary", "description": "Allows the wearer to walk through the fabric of space." },
 
   { "id": "magnetic_coil", "name": "Magnetic Coil", "rarity": "Uncommon", "icon": "🧲", "description": "Used in static-energy gear.", "type": "Material", "category": "Loot", "sellValue": 85 },
-  { "id": "aether_spark", "name": "Aether Spark", "rarity": "Legendary", "icon": "✨", "description": "A rare fragment of pure Aether. 4 sparks can be exchanged for ETH rewards in Crystle Town.", "type": "Artifact", "category": "Loot", "sellValue": 1000 }
+  { "id": "aether_spark", "name": "Aether Spark", "rarity": "Legendary", "icon": "✨", "description": "A rare fragment of pure Aether. 4 sparks can be exchanged for ETH rewards in Crystle Town.", "type": "Artifact", "category": "Loot", "sellValue": 1000 },
+  { "id": "hunt_spark", "name": "Hunt Spark", "rarity": "Rare", "icon": "⚡", "description": "A beginner's catalyst for wealth. 4 sparks can be exchanged for $HUNT or $DWGX in Crystle Town.", "type": "Artifact", "category": "Loot", "sellValue": 250 }
 ]

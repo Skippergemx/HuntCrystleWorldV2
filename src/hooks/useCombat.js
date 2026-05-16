@@ -498,12 +498,24 @@ export const useCombat = (
     setDepth(1);
     setKillsInFloor(0);
     const isBossMode = view === 'boss';
-    addLog(reenter ? "🔁 Re-entering sector..." : "🏃 Extraction confirmed. Returning to Command Center.");
-    setView(reenter ? (isBossMode ? 'boss' : 'dungeon') : 'menu');
-    if (reenter && !isBossMode) {
-      spawnNewEnemy(1);
+    
+    if (reenter) {
+      // --- AUTO-RESUME PROTOCOL ---
+      // If the player had auto-time remaining when they fell, restore it now.
+      if ((player?.autoTimeLeftSaved || 0) > 0) {
+        syncPlayer({
+          autoUntil: Date.now() + player.autoTimeLeftSaved,
+          autoTimeLeftSaved: 0
+        });
+      }
+      addLog("🔁 Re-entering sector...");
+      setView(isBossMode ? 'boss' : 'dungeon');
+      if (!isBossMode) spawnNewEnemy(1);
+    } else {
+      addLog("🏃 Extraction confirmed. Returning to Command Center.");
+      setView('menu');
     }
-  }, [resetCombatEngine, setDepth, setView, addLog, view, spawnNewEnemy]);
+  }, [resetCombatEngine, setDepth, setView, addLog, view, spawnNewEnemy, player?.autoTimeLeftSaved, syncPlayer]);
 
   const processKill = useCallback(() => {
     const e = enemyRef.current || enemy;
@@ -624,6 +636,29 @@ export const useCombat = (
               }
             }
 
+            // --- HUNT SPARK PROTOCOL (Beginner-Level Drops) ---
+            const isBoss = view === 'boss' || enemy?.id?.includes('boss');
+            const sparkRoll = Math.random();
+            let huntSparkDrop = false;
+
+            if (isBoss) {
+              huntSparkDrop = true; // 100% from Bosses
+            } else if (enemy?.isElite && sparkRoll < 0.20) {
+              huntSparkDrop = true; // 20% from Elites
+            } else if (sparkRoll < 0.02) {
+              huntSparkDrop = true; // 2% from Normals
+            }
+
+            if (huntSparkDrop) {
+              const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
+              if (hSpark) {
+                const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                updates[`inventory.${hId}`] = { ...hSpark, id: hId };
+                addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
+                finalLootItems.push({ ...hSpark, id: hId });
+              }
+            }
+
             setSessionRewards(prev => ({
               tokens: prev.tokens + earnedLoot,
               xp: prev.xp + earnedXp,
@@ -639,6 +674,29 @@ export const useCombat = (
                 updates[`inventory.${sId}`] = { ...spark, id: sId };
                 addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
                 extraLoot.push({ ...spark, id: sId });
+              }
+            }
+
+            // --- HUNT SPARK FALLBACK ---
+            const isBoss = view === 'boss' || enemy?.id?.includes('boss');
+            const sparkRoll = Math.random();
+            let huntSparkDrop = false;
+
+            if (isBoss) {
+              huntSparkDrop = true;
+            } else if (enemy?.isElite && sparkRoll < 0.20) {
+              huntSparkDrop = true;
+            } else if (sparkRoll < 0.02) {
+              huntSparkDrop = true;
+            }
+
+            if (huntSparkDrop) {
+              const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
+              if (hSpark) {
+                const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                updates[`inventory.${hId}`] = { ...hSpark, id: hId };
+                addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
+                extraLoot.push({ ...hSpark, id: hId });
               }
             }
 

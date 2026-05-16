@@ -332,7 +332,7 @@ export const MenuView = React.memo(() => {
 
   const SECONDARY_TOKENS = [
     { onClick: () => setView('crystle_town'), icon: <span className="text-2xl">🏙️</span>, title: "TOWN", color: "bg-amber-800", npcNum: 18 },
-    { onClick: () => setView('dragons_ground'), icon: <Trees size={28} />, title: "RELICS", color: "bg-emerald-700", npcNum: 14 },
+    { onClick: () => setView('dragons_ground'), icon: <Trees size={28} />, title: "DRAGONS GROUND", color: "bg-emerald-700", npcNum: 14 },
     { onClick: () => setView('ilearn'), icon: <Brain size={28} />, title: "LEARN", color: "bg-blue-800", npcNum: 22 },
   ];
   const UTILITY_LINKS = [
@@ -473,9 +473,9 @@ export const MenuView = React.memo(() => {
             </div>
             <div className="flex items-center justify-center gap-4 md:gap-8">
                {[
-                 { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'SYSTEM', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
-                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'TRADE', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
-                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'RELICS', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
+                 { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS & GEAR', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
+                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
+                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
                ].map((token, i) => (
                   <button
                     key={token.id}

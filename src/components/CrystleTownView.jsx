@@ -309,6 +309,11 @@ export const CrystleTownView = () => {
     return Object.values(player.inventory).filter(item => item && item.id && item.id.startsWith('aether_spark')).length;
   }, [player?.inventory]);
 
+  const huntSparkCount = useMemo(() => {
+    if (!player?.inventory) return 0;
+    return Object.values(player.inventory).filter(item => item && item.id && item.id.startsWith('hunt_spark')).length;
+  }, [player?.inventory]);
+
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 3000;
     const colors = ['#10b981', '#f59e0b', '#06b6d4', '#ffffff'];
@@ -575,7 +580,7 @@ export const CrystleTownView = () => {
         )}
 
         {/* AETHER EXCHANGE TERMINAL */}
-        <div className="mt-4 mb-8 relative group">
+        <div className="mt-4 mb-4 relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-indigo-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
           <div className={`relative bg-slate-900 border-[3px] border-cyan-500/30 rounded-3xl p-6 overflow-hidden ${player?.level < 100 ? 'grayscale-[0.5]' : ''}`}>
             {/* Background Decor */}
@@ -627,6 +632,65 @@ export const CrystleTownView = () => {
                 {player?.level < 100 ? 'ENCRYPTED' : sparkCount >= 4 ? 'INITIATE EXCHANGE' : 'INSUFFICIENT SPARKS'}
                 <Zap size={20} className={sparkCount >= 4 && player?.level >= 100 ? 'animate-bounce' : ''} />
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* HUNT SPARK EXCHANGE TERMINAL */}
+        <div className="mt-4 mb-8 relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-amber-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+          <div className="relative bg-slate-900 border-[3px] border-purple-500/30 rounded-3xl p-6 overflow-hidden">
+            {/* Background Decor */}
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <Zap size={120} className="text-amber-400 -rotate-12" />
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+              {/* Visual Terminal */}
+              <div className="w-24 h-24 bg-black/50 rounded-2xl border-2 border-purple-500/50 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent"></div>
+                <Zap className="text-amber-400 animate-pulse mb-1" size={32} />
+                <span className="text-2xl font-black text-white italic">{huntSparkCount}<span className="text-xs text-purple-400/60 ml-0.5">/4</span></span>
+                <div className="absolute bottom-0 w-full h-1 bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]"></div>
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 text-center md:text-left">
+                <div className="flex items-center gap-2 mb-1 justify-center md:justify-start">
+                  <span className="px-2 py-0.5 bg-purple-500/10 border border-purple-500/30 rounded text-[10px] font-black text-purple-400 uppercase tracking-widest">Beginner Protocol</span>
+                  <span className="px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded text-[10px] font-black text-amber-400 uppercase tracking-widest">Token Choice</span>
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none mb-2">Hunt Spark Terminal</h3>
+                <p className="text-sm text-slate-400 font-bold leading-tight max-w-lg">
+                  Exchange 4 Hunt Sparks for on-chain rewards. Sparks drop from Elites and Bosses. Choose your transmission asset below.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2 shrink-0">
+                <button
+                  onClick={() => actions.exchangeHuntSparks('HUNT')}
+                  disabled={huntSparkCount < 4}
+                  className={`px-6 py-2.5 rounded-xl font-black uppercase italic text-xs transition-all flex items-center justify-center gap-2 ${
+                    huntSparkCount >= 4
+                      ? 'bg-purple-600 text-white border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none' 
+                      : 'bg-slate-800 text-slate-500 border-2 border-slate-700 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  TRANSMIT $HUNT
+                </button>
+                <button
+                  onClick={() => actions.exchangeHuntSparks('DWGX')}
+                  disabled={huntSparkCount < 4}
+                  className={`px-6 py-2.5 rounded-xl font-black uppercase italic text-xs transition-all flex items-center justify-center gap-2 ${
+                    huntSparkCount >= 4
+                      ? 'bg-amber-500 text-black border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none' 
+                      : 'bg-slate-800 text-slate-500 border-2 border-slate-700 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  TRANSMIT $DWGX
+                </button>
+              </div>
             </div>
           </div>
         </div>

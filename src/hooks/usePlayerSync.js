@@ -270,7 +270,7 @@ export const usePlayerSync = (user, db, appId) => {
     loadUnifiedProfile();
   }, [user?.uid, db, appId]);
 
-  // 2. LIVE SESSION MONITORING (Multi-Device Kick)
+  // 2. LIVE DATA & SESSION MONITORING
   useEffect(() => {
     if (!activeDocId || sessionConflict) return;
 
@@ -278,9 +278,44 @@ export const usePlayerSync = (user, db, appId) => {
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
+        
+        // --- SESSION CONFLICT CHECK ---
         if (hasHydratedSession && data.sessionId && data.sessionId !== localSessionId) {
-          console.warn(`🚨 SECURITY_ALERT: Remote Session Takeover Detected! [L:${localSessionId}] vs [R:${data.sessionId}]`);
+          console.warn(`🚨 SECURITY_ALERT: Remote Session Takeover Detected!`);
           setSessionConflict(true);
+          return;
+        }
+
+        // --- STATE SYNCHRONIZATION ---
+        // We only update if we have a valid session and the data exists
+        if (hasHydratedSession) {
+          const sanitized = {
+            ...data,
+            inventory: Array.isArray(data.inventory) 
+              ? Object.fromEntries(data.inventory.filter(i => i).map(i => [i.id || `ITEM_${Date.now()}`, i])) 
+              : (data.inventory || {}),
+          };
+
+          // Re-apply local pending updates to prevent "Wipeout" flicker
+          const pending = pendingUpdatesRef.current || {};
+          const fullySanitized = { ...sanitized };
+
+          Object.entries(pending).forEach(([key, value]) => {
+            if (key === 'updatedAt') return;
+            if (key.includes('.')) {
+              const parts = key.split('.');
+              let cursor = fullySanitized;
+              for (let i = 0; i < parts.length - 1; i++) {
+                cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+                cursor = cursor[parts[i]];
+              }
+              cursor[parts[parts.length - 1]] = value;
+            } else {
+              fullySanitized[key] = value;
+            }
+          });
+
+          setPlayer(fullySanitized);
         }
       }
     });
