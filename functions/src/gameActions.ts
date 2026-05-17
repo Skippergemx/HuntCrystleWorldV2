@@ -626,6 +626,7 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
       const targetKey = Object.keys(inventory).find(key => {
         const item = inventory[key];
+        if (!item || typeof item.id !== 'string') return false;
         const itemBaseId = possibleScrollIds.find(baseId => item.id.startsWith(baseId));
         return itemBaseId === selection;
       });
