@@ -94,6 +94,7 @@ export const useCombat = (
   const killsRef = useRef(0);
   const processingRef = useRef('IDLE');
   const combatBusRef = useRef(false); // SYNCHRONOUS MUTEX: THE MASTER GATEKEEPER
+  const processingKillRef = useRef(false); // Lock to prevent double-kill triggers!
 
   useEffect(() => {
     if (currentTaunt) {
@@ -231,6 +232,7 @@ export const useCombat = (
   const resetCombatEngine = useCallback(() => {
     setCombatState('IDLE');
     processingRef.current = 'IDLE'; 
+    processingKillRef.current = false; // Reset the kill lock!
     setStunTimeLeft(0);
     setMissTimeLeft(0);
     setMonsterTurnCount(0); // Reset turn count for new monsters
@@ -518,6 +520,9 @@ export const useCombat = (
   }, [resetCombatEngine, setDepth, setView, addLog, view, spawnNewEnemy, player?.autoTimeLeftSaved, syncPlayer]);
 
   const processKill = useCallback(() => {
+    if (processingKillRef.current) return;
+    processingKillRef.current = true;
+
     const e = enemyRef.current || enemy;
     const earnedXp = Math.floor(e.xp * (petMeta?.xpMult || 1.0));
     const earnedLoot = Math.floor(e.loot * (petMeta?.lootMult || 1.0));
