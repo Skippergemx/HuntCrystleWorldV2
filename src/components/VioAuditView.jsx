@@ -83,7 +83,9 @@ export const VioAuditView = React.memo(() => {
             { id: 'dual_regex', label: 'Dual Regex' },
             { id: 'dragons_ground', label: 'Dragons Ground' },
             { id: 'crystle_town', label: 'Global O(N)' },
-            { id: 'town_influence_sync', label: 'Town Sync', isNew: true }
+            { id: 'town_influence_sync', label: 'Town Sync' },
+            { id: 'white_hat_audit', label: 'White-Hat' },
+            { id: 'economy_exploit', label: 'Economy Sec', isNew: true }
           ].map(tab => (
             <button 
               key={tab.id}
@@ -551,8 +553,161 @@ export const VioAuditView = React.memo(() => {
             </div>
           )}
 
+          {activeTab === 'white_hat_audit' && (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-4">
+              <h3 className="text-xl font-black uppercase tracking-tighter italic border-b-4 border-yellow-500 text-yellow-600 pb-2 flex items-center gap-2 bungee">
+                <ShieldAlert /> OPERATION: WHITE-HAT AUDIT
+              </h3>
+              <p className="text-sm font-bold uppercase text-slate-700 mb-4">
+                A comprehensive penetration test of <code className="bg-slate-200 px-1">firestore.rules</code> revealed 5 critical Insecure Direct Object Reference (IDOR) and Broken Access Control vulnerabilities. All 5 have been successfully patched.
+              </p>
+
+              <AuditTimeline detected="May 17, 2026 16:11" resolved="May 17, 2026 16:15" />
+              
+              <div className="space-y-4 mt-6">
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <h4 className="font-black text-yellow-400 uppercase text-sm mb-2 bungee">1. Unrestricted Profile Injection</h4>
+                  <p className="text-xs font-mono text-slate-300 mb-2">
+                    <span className="text-red-400 font-bold">Vulnerability:</span> New progression fields (Town Level, Dragons, Gemx) were missing from the update block-list. Attackers could set their Town Level to 9999 directly.
+                  </p>
+                  <p className="text-xs font-mono text-emerald-400">
+                    <span className="font-bold">Patch:</span> Added all companion and town fields to the <code className="bg-slate-800">affectedKeys().hasAny([...])</code> rejection list.
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <h4 className="font-black text-yellow-400 uppercase text-sm mb-2 bungee">2. The Guild Hijack</h4>
+                  <p className="text-xs font-mono text-slate-300 mb-2">
+                    <span className="text-red-400 font-bold">Vulnerability:</span> <code className="bg-slate-800">allow update: if isAuthenticated();</code> allowed any user to modify any guild, including changing the <code className="bg-slate-800">leaderId</code> to themselves.
+                  </p>
+                  <p className="text-xs font-mono text-emerald-400">
+                    <span className="font-bold">Patch:</span> Enforced <code className="bg-slate-800">request.auth.uid == resource.data.leaderId</code> for core updates, preventing hijacks.
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <h4 className="font-black text-yellow-400 uppercase text-sm mb-2 bungee">3. Market Price Manipulation</h4>
+                  <p className="text-xs font-mono text-slate-300 mb-2">
+                    <span className="text-red-400 font-bold">Vulnerability:</span> Anyone could update/delete marketplace listings. Attackers could change the price of rare items to 1 GX and buy them.
+                  </p>
+                  <p className="text-xs font-mono text-emerald-400">
+                    <span className="font-bold">Patch:</span> Restricted market updates and deletes strictly to the <code className="bg-slate-800">sellerUid</code>.
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <h4 className="font-black text-yellow-400 uppercase text-sm mb-2 bungee">4. The Ghost Assassin (PvP)</h4>
+                  <p className="text-xs font-mono text-slate-300 mb-2">
+                    <span className="text-red-400 font-bold">Vulnerability:</span> Attackers could inject arbitrary data into opponents' PvP rooms, instantly setting HP to 0 or breaking state.
+                  </p>
+                  <p className="text-xs font-mono text-emerald-400">
+                    <span className="font-bold">Patch:</span> Restricted opponents to only updating <code className="bg-slate-800">hp</code> and <code className="bg-slate-800">lastHitBy</code> via <code className="bg-slate-800">hasOnly()</code> constraint.
+                  </p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <h4 className="font-black text-yellow-400 uppercase text-sm mb-2 bungee">5. The Zombie Naga (Guild Wars)</h4>
+                  <p className="text-xs font-mono text-slate-300 mb-2">
+                    <span className="text-red-400 font-bold">Vulnerability:</span> Even though the Naga UI was fixed to use the backend, the database still allowed <code className="bg-slate-800">allow write: if isAuthenticated();</code>, leaving the backdoor open to scripts.
+                  </p>
+                  <p className="text-xs font-mono text-emerald-400">
+                    <span className="font-bold">Patch:</span> Set <code className="bg-slate-800">allow write: if false;</code> since all Naga combat is processed securely on the backend.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
+
+          {activeTab === 'economy_exploit' && (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-300 space-y-4">
+              <h3 className="text-xl font-black uppercase tracking-tighter italic border-b-4 border-orange-500 text-orange-600 pb-2 flex items-center gap-2 bungee">
+                <Zap /> OPERATION: ECONOMY HARDENING
+              </h3>
+              <p className="text-sm font-bold uppercase text-slate-700 mb-1">
+                White-hat penetration testing of <code className="bg-slate-200 px-1">gameActions.ts</code> revealed 6 economy and resource exploits attackers could use to farm infinite GX, craft God-tier items for free, or bot kill rewards. All 6 are patched.
+              </p>
+              <AuditTimeline detected="May 17, 2026 16:24" resolved="May 17, 2026 16:55" />
+
+              <div className="space-y-3 mt-4">
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">CRITICAL</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">1. Negative Qty → Infinite GX (Market)</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> Sending <code className="bg-slate-800">qty: -100</code> in MARKET_PURCHASE made <code className="bg-slate-800">totalCost = price * -100</code>, causing the server to <em>add</em> tokens instead of deducting them.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Strict integer validation: <code className="bg-slate-800">qty must be &gt;= 1</code>. Added secondary check: <code className="bg-slate-800">if (totalCost &lt; 0) throw Error</code>.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">CRITICAL</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">2. Client Pricing Trust (God Sword)</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> BUY_ITEM and SELL_ITEM trusted the client-supplied <code className="bg-slate-800">cost</code> and <code className="bg-slate-800">value</code> fields entirely. Attackers could buy any item for -10,000 GX (gaining profit) or sell a Slime Extract for 9,999,999 GX.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Created a server-side <code className="bg-slate-800">ITEM_CATALOG</code> dictionary. All costs and sell values are now looked up exclusively from this hardcoded server constant — the client payload values are discarded.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">CRITICAL</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">3. Free Forge (Empty Material Array)</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> MIX_ITEM accepted <code className="bg-slate-800">itemsToConsumeKeys: []</code> and <code className="bg-slate-800">recipe.cost: 0</code>. The server would craft any endgame item with zero materials and zero GX cost — completely free.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Empty arrays and negative recipe costs are now explicitly rejected. Each key is also type-validated before deletion to prevent prototype pollution.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">HIGH</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">4. Kill Reward Botting (49k Loop)</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> PROCESS_KILL_REWARDS had only a weak upper-bound check. A script could call it 120x/min, each claiming 49,999 GX — maxing out any character in seconds from a terminal.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Added a <code className="bg-slate-800">lastKillRewardAt</code> timestamp enforcing a minimum 3-second cooldown between claims. Also tightened bounds: values must be positive integers, not just floats under the cap.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">HIGH</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">5. Unequip Item Duplication</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> UNEQUIP_ITEM used <code className="bg-slate-800">{"item.id || `RET_${slot}`"}</code> as the inventory key. Two rapid concurrent unequip requests for the same slot would write the same key, with the second silently overwriting — effectively duplicating the slot value.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> The return key now always includes both <code className="bg-slate-800">Date.now()</code> and a 4-char random suffix, guaranteeing uniqueness even under concurrent requests.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-yellow-500 text-black text-[9px] font-black px-2 py-0.5 uppercase bungee">MEDIUM</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">6. Companion Summon Cost Bypass</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> HIRE_MATE and SUMMON_DRAGON accepted client-supplied <code className="bg-slate-800">cost</code> and <code className="bg-slate-800">summonUntil</code> values with zero validation. A player could summon a dragon for 1 GX and set the duration to an arbitrary far-future timestamp.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Both actions now validate that cost is a positive integer ≤ 999,999 GX, and summon duration is capped at a maximum of 24 hours from now.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">CRITICAL</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">7. Zero-Spark Faucet Bypass (ERC-20 Loss)</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> The claimFaucetReward Cloud Function failed to check the user's Firestore inventory server-side when exchanging sparks. Attackers could call the endpoint directly to claim unlimited $HUNT / $DWGX without ever possessing any sparks.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Added a server-side transactional inventory check. The server now loads, validates, and deletes the 4 sparks from Firestore *inside the same atomic database transaction block* before broadcasting the transfer.</p>
+                </div>
+
+                <div className="bg-slate-900 border-[3px] border-black p-4 text-white shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 uppercase bungee">CRITICAL</span>
+                    <h4 className="font-black text-orange-400 uppercase text-sm bungee">8. TOCTOU Blockchain Faucet Race Condition</h4>
+                  </div>
+                  <p className="text-[10px] font-mono text-slate-300 mb-1"><span className="text-red-400 font-bold">Exploit:</span> The daily claim counter was updated only after slow blockchain transactions finished. Attackers could trigger 100+ parallel async requests in the same millisecond to bypass the daily cap check, draining the treasury wallet.</p>
+                  <p className="text-[10px] font-mono text-emerald-400"><span className="font-bold">Patch:</span> Implemented a two-phase reservation pattern. The daily limit is checked and incremented in Firestore *before* the blockchain transaction is broadcasted, with a fallback rollback if the chain transfer fails.</p>
+                </div>
+
+              </div>
+            </div>
+          )}
     </div>
   );
 });

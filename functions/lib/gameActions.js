@@ -3,6 +3,84 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleSecureGameAction = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
+// ============================================================
+// SERVER-SIDE CATALOG — The ONLY source of truth for pricing.
+// Client-supplied 'cost' and 'value' fields are NEVER trusted.
+// ============================================================
+const ITEM_CATALOG = {
+    'hp_potion': { cost: 50, sellValue: 20, reqLvl: 1 },
+    'auto_scroll': { cost: 300, sellValue: 120, reqLvl: 1 },
+    'mega_hp_potion': { sellValue: 100 },
+    'ultra_hp_potion': { sellValue: 500 },
+    'auto_scroll_3m': { sellValue: 350 },
+    'auto_scroll_6m': { sellValue: 700 },
+    'auto_scroll_9m': { sellValue: 1000 },
+    'auto_scroll_12m': { sellValue: 1400 },
+    'steel_edge': { cost: 100, sellValue: 40, reqLvl: 2 },
+    'breaker_hammer': { cost: 400, sellValue: 160, reqLvl: 8 },
+    'scout_vest': { cost: 150, sellValue: 60, reqLvl: 3 },
+    'heavy_plate': { cost: 600, sellValue: 240, reqLvl: 10 },
+    'leather_cap': { cost: 80, sellValue: 32, reqLvl: 1 },
+    'iron_helm': { cost: 250, sellValue: 100, reqLvl: 5 },
+    'leather_boots': { cost: 80, sellValue: 32, reqLvl: 1 },
+    'swift_sandals': { cost: 300, sellValue: 120, reqLvl: 6 },
+    'war_boots': { cost: 500, sellValue: 200, reqLvl: 12 },
+    'dragon_apple': { cost: 200, sellValue: 50, reqLvl: 1 },
+    'ember_grapes': { cost: 200, sellValue: 50, reqLvl: 1 },
+    'sky_berry': { cost: 500, sellValue: 100, reqLvl: 10 },
+    'void_cherry': { cost: 500, sellValue: 100, reqLvl: 10 },
+    'golden_peach': { cost: 2000, sellValue: 500, reqLvl: 20 },
+    'plasma_lemon': { cost: 2000, sellValue: 500, reqLvl: 20 },
+    'neon_orange': { cost: 5000, sellValue: 1200, reqLvl: 30 },
+    'crystle_pear': { cost: 25000, sellValue: 5000, reqLvl: 40 },
+    'taming_hydro': { cost: 2500, sellValue: 500, reqLvl: 25 },
+    'taming_pyro': { cost: 2500, sellValue: 500, reqLvl: 25 },
+    'taming_gale': { cost: 2500, sellValue: 500, reqLvl: 25 },
+    'taming_earthen': { cost: 2500, sellValue: 500, reqLvl: 25 },
+    'taming_cosmic': { cost: 2500, sellValue: 500, reqLvl: 25 },
+    'enforcer_blade': { cost: 3000, sellValue: 1200, reqLvl: 35 },
+    'enforcer_plate': { cost: 3200, sellValue: 1280, reqLvl: 35 },
+    'enforcer_helm': { cost: 2800, sellValue: 1120, reqLvl: 35 },
+    'enforcer_boots': { cost: 2800, sellValue: 1120, reqLvl: 35 },
+    'vanguard_halberd': { cost: 8000, sellValue: 3200, reqLvl: 50 },
+    'vanguard_suit': { cost: 8500, sellValue: 3400, reqLvl: 50 },
+    'vanguard_visor': { cost: 7500, sellValue: 3000, reqLvl: 50 },
+    'vanguard_treads': { cost: 7500, sellValue: 3000, reqLvl: 50 },
+    'apex_striker': { cost: 20000, sellValue: 8000, reqLvl: 75 },
+    'apex_carapace': { cost: 22000, sellValue: 8800, reqLvl: 75 },
+    'apex_crown': { cost: 18000, sellValue: 7200, reqLvl: 75 },
+    'apex_striders': { cost: 18000, sellValue: 7200, reqLvl: 75 },
+    'genesis_edge': { cost: 50000, sellValue: 20000, reqLvl: 100 },
+    'genesis_core_armor': { cost: 55000, sellValue: 22000, reqLvl: 100 },
+    'genesis_halo': { cost: 45000, sellValue: 18000, reqLvl: 100 },
+    'genesis_gravity_boots': { cost: 45000, sellValue: 18000, reqLvl: 100 },
+    // Loot sell values (client can never inflate these)
+    'crystle_shard': { sellValue: 10 }, 'beast_hide': { sellValue: 15 },
+    'void_essence': { sellValue: 50 }, 'ancient_gear': { sellValue: 200 },
+    'core_pulse': { sellValue: 1000 }, 'omega_crystle': { sellValue: 5000 },
+    'singularity': { sellValue: 10000 }, 'black_hole_shard': { sellValue: 15000 },
+    'aether_spark': { sellValue: 1000 }, 'hunt_spark': { sellValue: 250 },
+    'void_edge': { sellValue: 2000 }, 'guardian_core': { sellValue: 2000 },
+    'void_capacitor': { sellValue: 1800 }, 'omega_sigil': { sellValue: 3200 },
+    'magma_blade': { sellValue: 5000 }, 'tidal_plate': { sellValue: 5000 },
+    'storm_boots': { sellValue: 5000 }, 'quake_helm': { sellValue: 5000 },
+    'void_relic': { sellValue: 8000 }, 'event_horizon': { sellValue: 4000 },
+    'time_drift': { sellValue: 3500 }, 'glowing_eye': { sellValue: 1200 },
+    'void_crystal': { sellValue: 800 }, 'crystle_blade': { sellValue: 400 },
+    'neon_plate': { sellValue: 600 }, 'tech_visor': { sellValue: 320 },
+    'kinetic_boots': { sellValue: 480 },
+};
+// Helper: look up sell value by stripping unique suffixes (e.g., 'crystle_shard_1234_abc' -> 'crystle_shard')
+const getSellValue = (itemId) => {
+    const baseId = itemId.replace(/_[a-z0-9]{4,}(_TOWN_\d+_[a-z0-9]+)?$/i, '').replace(/_\d+$/, '');
+    return ITEM_CATALOG[baseId]?.sellValue ?? ITEM_CATALOG[itemId]?.sellValue ?? 0;
+};
+const getCatalogEntry = (itemId) => {
+    const baseId = itemId.replace(/_\d+(_[a-z0-9]+)*$/, '');
+    return ITEM_CATALOG[baseId] ?? ITEM_CATALOG[itemId] ?? null;
+};
+// Rate limit helper: max 1 kill reward per 3 seconds
+const MIN_KILL_INTERVAL_MS = 3000;
 const handleSecureGameAction = async (request, db) => {
     if (!request.auth || !request.auth.uid) {
         throw new https_1.HttpsError('unauthenticated', 'Security Clearance Denied.');
@@ -30,11 +108,17 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'BUY_ITEM') {
             const { item, qty } = payload;
-            const totalCost = item.cost * qty;
+            // SECURITY PATCH: Never trust client-supplied 'cost'. Look up from server catalog.
+            const catalogEntry = getCatalogEntry(item.id);
+            if (!catalogEntry || catalogEntry.cost === undefined)
+                throw new https_1.HttpsError('not-found', 'Item not available for purchase.');
+            if (!Number.isInteger(qty) || qty <= 0 || qty > 99)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid quantity.');
+            const totalCost = catalogEntry.cost * qty;
             const currentTokens = userData.tokens || 0;
             if (currentTokens < totalCost)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient GX.');
-            if (userData.level < (item.reqLvl || 1))
+            if (userData.level < (catalogEntry.reqLvl || 1))
                 throw new https_1.HttpsError('failed-precondition', 'Level too low.');
             const updates = {
                 tokens: currentTokens - totalCost,
@@ -60,17 +144,28 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'MIX_ITEM') {
             const { recipe, itemsToConsumeKeys } = payload;
+            // SECURITY PATCH: Validate recipe cost from server; reject empty material arrays (Free Forge exploit).
+            if (!recipe?.id || typeof recipe.id !== 'string')
+                throw new https_1.HttpsError('invalid-argument', 'Invalid recipe.');
+            if (!Array.isArray(itemsToConsumeKeys) || itemsToConsumeKeys.length === 0)
+                throw new https_1.HttpsError('invalid-argument', 'No materials provided for fusion.');
+            const recipeCost = typeof recipe.cost === 'number' && Number.isInteger(recipe.cost) && recipe.cost >= 0
+                ? recipe.cost : 0; // cost is allowed to be 0 for material-only recipes, but NEVER negative
+            if (recipe.cost < 0)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid recipe cost.');
             const currentTokens = userData.tokens || 0;
-            if (currentTokens < (recipe.cost || 0))
+            if (currentTokens < recipeCost)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient GX.');
             const inventory = userData.inventory || {};
             itemsToConsumeKeys.forEach((key) => {
+                if (typeof key !== 'string')
+                    throw new https_1.HttpsError('invalid-argument', 'Invalid material key.');
                 if (!inventory[key])
                     throw new https_1.HttpsError('not-found', `Missing material: ${key}`);
                 delete inventory[key];
             });
             const updates = {
-                tokens: currentTokens - (recipe.cost || 0),
+                tokens: currentTokens - recipeCost,
                 inventory: inventory,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             };
@@ -91,15 +186,22 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'PROCESS_KILL_REWARDS') {
             const { earnedLoot, earnedXp, nextXp, nextLvl, nextMaxHp, apGained, loots } = payload;
-            if (earnedLoot > 50000 || earnedXp > 100000) {
-                throw new https_1.HttpsError('out-of-range', 'Payload Integrity Compromised.');
-            }
+            // SECURITY PATCH: Validate all numeric inputs are positive integers within bounds.
+            if (!Number.isInteger(earnedLoot) || earnedLoot < 0 || earnedLoot > 49999)
+                throw new https_1.HttpsError('out-of-range', 'Invalid loot payload.');
+            if (!Number.isInteger(earnedXp) || earnedXp < 0 || earnedXp > 99999)
+                throw new https_1.HttpsError('out-of-range', 'Invalid XP payload.');
+            // SECURITY PATCH: Rate limiting - enforce minimum 3s between kill reward claims.
+            const lastKillReward = userData.lastKillRewardAt || 0;
+            if (Date.now() - lastKillReward < MIN_KILL_INTERVAL_MS)
+                throw new https_1.HttpsError('resource-exhausted', 'Kill reward rate limit exceeded.');
             const updates = {
                 tokens: (userData.tokens || 0) + earnedLoot,
                 xp: nextXp,
                 level: nextLvl,
                 maxHp: nextMaxHp,
                 hp: Math.min(nextMaxHp, (userData.hp || 0) + 25),
+                lastKillRewardAt: Date.now(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             };
             if (apGained > 0) {
@@ -124,27 +226,39 @@ const handleSecureGameAction = async (request, db) => {
             return { success: true };
         }
         if (action === 'SELL_ITEM') {
-            const { itemId, value, qty } = payload;
+            const { itemId, qty } = payload;
+            // SECURITY PATCH: 'value' is NEVER accepted from client — looked up server-side.
+            if (!Number.isInteger(qty) || qty <= 0 || qty > 99)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid quantity.');
             const inventory = userData.inventory || {};
             const targetItem = inventory[itemId];
             if (!targetItem)
                 throw new https_1.HttpsError('not-found', 'Item not in inventory.');
-            const baseId = targetItem.id?.replace(/_([a-z0-9]+)+$/, '');
-            const sellQty = qty || 1;
+            // Look up canonical sell value from server catalog
+            const trueSellValue = getSellValue(targetItem.id || itemId);
+            if (trueSellValue <= 0)
+                throw new https_1.HttpsError('failed-precondition', 'This item cannot be sold.');
+            const baseId = targetItem.id?.replace(/_[a-z0-9]{4,}$/i, '').replace(/_\d+$/, '') || itemId;
+            const sellQty = qty;
             const entries = Object.entries(inventory);
             let removed = 0;
             for (const [key, invItem] of entries) {
-                if (invItem.id?.replace(/_([a-z0-9]+)+$/, '') === baseId && removed < sellQty) {
+                if (removed >= sellQty)
+                    break;
+                const invBaseId = invItem.id?.replace(/_[a-z0-9]{4,}$/i, '').replace(/_\d+$/, '');
+                if (invBaseId === baseId) {
                     delete inventory[key];
                     removed++;
                 }
             }
+            if (removed === 0)
+                throw new https_1.HttpsError('not-found', 'No matching items found.');
             transaction.update(userRef, {
-                tokens: (userData.tokens || 0) + value,
+                tokens: (userData.tokens || 0) + (trueSellValue * removed),
                 inventory: inventory,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
-            return { success: true, message: `Sold ${removed} units.` };
+            return { success: true, message: `Sold ${removed} item(s) for ${trueSellValue * removed} GX.` };
         }
         if (action === 'COMPLETE_TOWN_QUEST') {
             const { quest, rewardFood } = payload;
@@ -220,7 +334,10 @@ const handleSecureGameAction = async (request, db) => {
             const item = equipped[slot];
             if (!item)
                 throw new https_1.HttpsError('failed-precondition', 'Slot is empty.');
-            inventory[item.id || `RET_${slot}`] = item;
+            // SECURITY PATCH: Always generate a guaranteed-unique key to prevent key collision
+            // duplication (the 'RET_slot' fallback could be overwritten on rapid concurrent calls).
+            const returnKey = `${(item.id || slot).replace(/(_[a-z0-9]{4,})+$/i, '')}_RET_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            inventory[returnKey] = { ...item, id: returnKey };
             delete equipped[slot];
             transaction.update(userRef, {
                 inventory: inventory,
@@ -231,9 +348,14 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'HIRE_MATE') {
             const { mateId, cost } = payload;
+            // SECURITY PATCH: Validate cost is a positive integer; cap at a sane maximum.
+            if (!Number.isInteger(cost) || cost <= 0 || cost > 999999)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid hire cost.');
             const currentTokens = userData.tokens || 0;
             if (currentTokens < cost)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient GX.');
+            if (typeof mateId !== 'string' || mateId.length > 64)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid mate selection.');
             transaction.update(userRef, {
                 tokens: currentTokens - cost,
                 hiredMate: mateId,
@@ -244,6 +366,11 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'SUMMON_DRAGON') {
             const { cost, summonUntil } = payload;
+            // SECURITY PATCH: Validate inputs; prevent client from passing cost: 0 or negative.
+            if (!Number.isInteger(cost) || cost <= 0 || cost > 999999)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid summon cost.');
+            if (typeof summonUntil !== 'number' || summonUntil <= Date.now() || summonUntil > Date.now() + 86400000)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid summon duration.');
             const currentTokens = userData.tokens || 0;
             if (currentTokens < cost)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient GX.');
@@ -353,6 +480,9 @@ const handleSecureGameAction = async (request, db) => {
         }
         if (action === 'MARKET_PURCHASE') {
             const { listingId, qty } = payload;
+            // SECURITY PATCH: Ensure qty is a positive integer. Negative qty = infinite GX exploit.
+            if (!Number.isInteger(qty) || qty <= 0 || qty > 9999)
+                throw new https_1.HttpsError('invalid-argument', 'Invalid purchase quantity.');
             const marketRef = db.collection('marketplace').doc(listingId);
             const marketSnap = await transaction.get(marketRef);
             if (!marketSnap.exists)
@@ -361,6 +491,8 @@ const handleSecureGameAction = async (request, db) => {
             if (listing.quantity < qty)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient quantity.');
             const totalCost = listing.price * qty;
+            if (totalCost < 0)
+                throw new https_1.HttpsError('invalid-argument', 'Corrupt listing data.');
             if ((userData.tokens || 0) < totalCost)
                 throw new https_1.HttpsError('failed-precondition', 'Insufficient GX.');
             const payoutRef = db.collection('payouts').doc();

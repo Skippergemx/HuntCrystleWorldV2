@@ -923,8 +923,10 @@ export const CrystleTownView = () => {
 
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-emerald-400/60 uppercase tracking-[0.2em] leading-none mb-1">Crystle Hunter Subsidy</p>
-                     <h3 className="text-4xl font-black text-white italic tracking-tighter leading-none">0.0000035 ETH</h3>
-                     <p className="text-xs font-bold text-slate-400 uppercase tracking-tight italic mt-2">"Your dedication to the district has attracted a Faucet Drop."</p>
+                     <h3 className="text-3xl font-black text-white italic tracking-tighter leading-none break-words">
+                        {faucetResult.message || "Subsidy Authorized"}
+                     </h3>
+                     <p className="text-xs font-bold text-slate-400 uppercase tracking-tight italic mt-2">"Your dedication to the district has attracted an on-chain faucet drop."</p>
                   </div>
 
                   {/* Actions */}
