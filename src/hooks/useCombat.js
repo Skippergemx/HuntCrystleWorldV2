@@ -535,6 +535,7 @@ export const useCombat = (
     let nextXp = (player?.xp || 0) + earnedXp, nextLvl = player?.level || 1, nextMaxHp = player?.maxHp || 1000;
     let apGained = 0;
     let didLevelUp = false;
+    let currentKillLoots = []; // Fix: Isolate current kill loots
     
     const MAX_LEVEL = 100;
     const GX_PER_XP = 0.5;
@@ -664,6 +665,7 @@ export const useCombat = (
               xp: prev.xp + earnedXp,
               loots: [...prev.loots, ...finalLootItems]
             }));
+            currentKillLoots = [...finalLootItems];
           } else {
             // Check for Aether Spark even if normal loot roll fails
             let extraLoot = [];
@@ -705,6 +707,7 @@ export const useCombat = (
               xp: prev.xp + earnedXp,
               loots: [...prev.loots, ...extraLoot]
             }));
+            currentKillLoots = [...extraLoot];
           }
         }
       }
@@ -723,8 +726,7 @@ export const useCombat = (
             nextLvl,
             nextMaxHp,
             apGained,
-            loots: sessionRewards.loots.filter(l => !updates[`inventory.${l.id}`]) // Only include new loots
-              .concat(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => v))
+            loots: currentKillLoots
           }
         });
       } catch (e) {

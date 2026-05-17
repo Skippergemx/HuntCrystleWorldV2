@@ -157,6 +157,60 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       return { success: true, message: `Sold ${removed} units.` };
     }
 
+    if (action === 'COMPLETE_TOWN_QUEST') {
+      const { quest, rewardFood } = payload;
+      const inventory = userData.inventory || {};
+      
+      // Verify and remove required items
+      quest.requires.forEach((req: any) => {
+        let removed = 0;
+        const entries = Object.entries(inventory);
+        for (const [key, val] of entries) {
+          if (removed >= req.qty) break;
+          if ((val as any)?.id?.startsWith(req.itemId)) {
+            delete inventory[key];
+            removed++;
+          }
+        }
+        if (removed < req.qty) {
+          throw new HttpsError('failed-precondition', `Missing required material: ${req.itemId}`);
+        }
+      });
+
+      // Add food reward
+      if (rewardFood) {
+        const rewardKey = `${rewardFood.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        inventory[rewardKey] = { ...rewardFood, id: rewardKey };
+      }
+
+      // Mark quest slot as completed and rotate
+      const currentSlots = [...(userData.townQuestSlots || [])].filter((id: string) => id !== quest.id);
+      const completedTownQuests = userData.completedTownQuests || {};
+      completedTownQuests[quest.id] = Date.now();
+
+      // Progression
+      let nextXp = (userData.crystleTownInfluenceXP || 0) + 5;
+      let nextLvl = userData.crystleTownLevel || 1;
+      let leveledUp = false;
+
+      while (nextXp >= 25) {
+         nextXp -= 25;
+         nextLvl++;
+         leveledUp = true;
+      }
+
+      transaction.update(userRef, {
+        inventory,
+        townQuestSlots: currentSlots,
+        completedTownQuests,
+        crystleTownInfluenceXP: nextXp,
+        crystleTownLevel: nextLvl,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return { success: true, leveledUp, nextLvl, item: rewardFood ? { ...rewardFood, qty: 1 } : null };
+    }
+
     if (action === 'EQUIP_ITEM') {
       const { itemId, slot } = payload;
       const inventory = userData.inventory || {};
@@ -245,6 +299,28 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       }
 
       transaction.update(userRef, updates);
+      return { success: true };
+    }
+
+    if (action === 'PROCESS_NAGA_HIT') {
+      const { warId, mySide, myUid, enemyUid, newMyHp, newEnemyHp, perfectTiming } = payload;
+      
+      // Basic integrity check to prevent insta-kill payloads (-99999 HP)
+      if (newMyHp < 0 || newEnemyHp < 0) {
+         throw new HttpsError('out-of-range', 'Negative HP values are unauthorized.');
+      }
+      
+      const oppSide = mySide === 'defendersA' ? 'defendersB' : 'defendersA';
+      const warRef = admin.firestore().collection('guild_wars').doc(warId);
+      
+      const momentumKey = mySide === 'defendersA' ? 'momentumA' : 'momentumB';
+
+      transaction.update(warRef, {
+        [`${mySide}.${myUid}.currentHp`]: newMyHp,
+        [`${oppSide}.${enemyUid}.currentHp`]: newEnemyHp,
+        [momentumKey]: admin.firestore.FieldValue.increment(perfectTiming ? 5 : 1)
+      });
+      
       return { success: true };
     }
 

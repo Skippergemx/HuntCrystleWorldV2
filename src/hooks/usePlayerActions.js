@@ -174,17 +174,7 @@ export const usePlayerActions = (
     const totalValue = value * qty;
     playSFX(SOUNDS.sellItem);
     
-    // --- OPTIMISTIC UI UPLINK ---
-    const nextInv = { ...(player.inventory || {}) };
-    let removed = 0;
-    const entries = Object.entries(nextInv);
-    for (const [key, invItem] of entries) {
-      if (invItem?.id?.replace(/_([a-z0-9]+)+$/, '') === itemBaseId && removed < qty) {
-        delete nextInv[key];
-        removed++;
-      }
-    }
-    syncPlayer({ tokens: (player.tokens || 0) + totalValue, inventory: nextInv });
+    // The backend Cloud Function will handle the transaction and emit an onSnapshot update.
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -211,16 +201,7 @@ export const usePlayerActions = (
 
     playSFX(SOUNDS.equipItem);
     
-    // Optimistic UI update
-    const nextInv = { ...(player.inventory || {}) };
-    const nextEquipped = { ...(player.equipped || {}) };
-    if (nextEquipped[slot]) {
-      const oldItem = nextEquipped[slot];
-      nextInv[oldItem.id || `OLD_${slot}`] = oldItem;
-    }
-    nextEquipped[slot] = item;
-    delete nextInv[itemId];
-    syncPlayer({ inventory: nextInv, equipped: nextEquipped });
+    // The backend Cloud Function will handle the transaction securely.
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -241,12 +222,7 @@ export const usePlayerActions = (
     
     playSFX(SOUNDS.unequipItem);
     
-    // Optimistic UI update
-    const nextInv = { ...(player.inventory || {}) };
-    const nextEquipped = { ...(player.equipped || {}) };
-    nextInv[item.id || `RET_${slot}`] = item;
-    delete nextEquipped[slot];
-    syncPlayer({ inventory: nextInv, equipped: nextEquipped });
+    // The backend Cloud Function will handle the transaction securely.
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -270,11 +246,12 @@ export const usePlayerActions = (
     const newStat = (player?.baseStats?.[statName] ?? 0) + 1;
     const newAP   = Math.max(0, (player?.abilityPoints ?? 0) - 1);
     
-    // We update local state, but Firestore update will now happen via Cloud Function
-    syncPlayer({
-      baseStats: { ...(player.baseStats || {}), [statName]: newStat },
+    // We update local state, but Firestore update will happen securely via Cloud Function
+    setPlayer(prev => ({
+      ...prev,
+      baseStats: { ...(prev.baseStats || {}), [statName]: newStat },
       abilityPoints: newAP
-    });
+    }));
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -328,9 +305,9 @@ export const usePlayerActions = (
       }
     }
 
-    // --- OPTIMISTIC UI UPLINK ---
-    // Synchronize local state immediately for zero-friction feedback.
-    syncPlayer(updates);
+    // --- SECURE UPLINK ---
+    // We defer the database write to the Cloud Function to prevent duplicate item UUIDs
+    // and let the backend securely process the transaction.
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -392,8 +369,7 @@ export const usePlayerActions = (
       updates.autoScrolls = (player.autoScrolls || 0) - spec.val;
     }
 
-    // --- OPTIMISTIC UI UPLINK ---
-    syncPlayer(updates);
+    // The backend Cloud Function will handle the transaction securely.
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -427,10 +403,11 @@ export const usePlayerActions = (
         let found = 0;
         inventory.forEach(([key, invItem]) => {
           if (!invItem) return;
-          const parts = (invItem.id || "").split('_');
-          const cleanId = parts.filter(p => !/^\d+$/.test(p) && !/^[a-z0-9]{4}$/.test(p)).join('_');
-          const itMaster = ITEMS.find(item => item.id === cleanId || item.id === invItem.id || item.name?.toLowerCase() === invItem.name?.toLowerCase());
-          const matchResult = (cleanId === mat.id) || (invItem.id === mat.id) || (itMaster?.id === mat.id);
+          const nameToIdMatch = ITEMS.find(item => item.name && invItem.name && item.name.toLowerCase() === invItem.name.toLowerCase())?.id;
+          const cleanId = nameToIdMatch || invItem.id?.replace(/_([a-z0-9]+)+$/, '') || invItem.name;
+          const itMaster = ITEMS.find(item => item.id === cleanId || item.id === invItem.id);
+          const targetId = itMaster?.id || cleanId;
+          const matchResult = (targetId === mat.id) || (invItem.id === mat.id);
           if (matchResult && found < mat.count) {
              if (!itemsToConsume.find(c => c.key === key)) {
                itemsToConsume.push({ key, ...invItem });
@@ -454,23 +431,15 @@ export const usePlayerActions = (
       const suffix = Math.random().toString(36).slice(2, 6);
       const mixedItem = { ...masterData, id: `${recipe.id}_${Date.now()}_${suffix}` };
       
-      // Standardize: Only base 1m essentials go to numeric counters.
-      // Advanced variants (3m scrolls, Mega potions) remain as unique inventory objects.
-      if (recipe.id === 'hp_potion') {
-        updates.potions = (player.potions || 0) + 1;
-      } else if (recipe.id === 'auto_scroll') {
-        updates.autoScrolls = (player.autoScrolls || 0) + 1;
-      } else {
-        updates[`inventory.${mixedItem.id}`] = mixedItem;
-      }
-
-      await syncPlayer(updates, true);
+      // We no longer push this to syncPlayer because it would delete the materials
+      // from Firestore *before* the Cloud Function can validate them, resulting in a 404!
+      // The secure Cloud Function will handle the atomic database transaction.
 
       try {
         const callAction = httpsCallable(functions, 'secureGameAction');
         const result = await callAction({ 
           action: 'MIX_ITEM', 
-          payload: { recipe, itemsToConsumeKeys: itemsToConsume.map(c => c.key) } 
+          payload: { recipe: { ...masterData, ...recipe }, itemsToConsumeKeys: itemsToConsume.map(c => c.key) } 
         });
 
         if (result.data?.success) {
@@ -1108,57 +1077,38 @@ export const usePlayerActions = (
       }
     }
 
-    const updates = {};
-
-    // Remove required items
-    for (const req of quest.requires) {
-      let removed = 0;
-      for (const [key, val] of Object.entries(inventory)) {
-        if (removed >= req.qty) break;
-        if (val?.id?.startsWith(req.itemId)) {
-          updates[`inventory.${key}`] = deleteField();
-          removed++;
-        }
-      }
-    }
-
-    // Add food reward to inventory
     const food = FOODS.find(f => f.id === quest.reward.foodId);
-    if (food) {
-      const rewardKey = `${food.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-      updates[`inventory.${rewardKey}`] = { ...food, id: rewardKey };
+
+    if (!functions) {
+      addLog("❌ QUEST ERROR: Backend connection unavailable.");
+      return;
     }
 
-    // Mark quest slot as completed and rotate
-    const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== quest.id);
-    updates.townQuestSlots = currentSlots;
-    updates[`completedTownQuests.${quest.id}`] = Date.now();
-
-    // --- Crystle Town Progression System ---
-    let nextXp = (player.crystleTownInfluenceXP || 0) + 5; // 5 XP per quest
-    let nextLvl = player.crystleTownLevel || 1;
-    let leveledUp = false;
-
-    // 25 XP required per Crystle Town Level
-    while (nextXp >= 25) {
-       nextXp -= 25;
-       nextLvl++;
-       leveledUp = true;
-       addLog(`🌟 TOWN RENOWN INCREASED! You are now Level ${nextLvl} in Crystle Town!`);
+    try {
+      const secureGameAction = httpsCallable(functions, 'secureGameAction');
+      const result = await secureGameAction({
+        action: 'COMPLETE_TOWN_QUEST',
+        payload: {
+          quest,
+          rewardFood: food
+        }
+      });
+      
+      const data = result.data;
+      if (data.success) {
+        if (data.leveledUp) {
+          playSFX(SOUNDS.lvlUp);
+          addLog(`🌟 TOWN RENOWN INCREASED! You are now Level ${data.nextLvl} in Crystle Town!`);
+        } else {
+          playSFX(SOUNDS.obtainLoot);
+        }
+        
+        addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
+      }
+    } catch (e) {
+      addLog("❌ QUEST FAILED: " + e.message);
+      return;
     }
-
-    updates.crystleTownInfluenceXP = nextXp;
-    updates.crystleTownLevel = nextLvl;
-
-    syncPlayer(updates);
-    
-    if (leveledUp) {
-       playSFX(SOUNDS.lvlUp);
-    } else {
-       playSFX(SOUNDS.obtainLoot);
-    }
-    
-    addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
 
     // --- Faucet Protocol: Automated Reward Trigger ---
     if (functions && player.walletAddress) {

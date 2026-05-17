@@ -272,6 +272,22 @@ export const GameProvider = ({ children, user }) => {
     };
   }, []); // Only mount once
 
+  const inventoryCounts = useMemo(() => {
+    const counts = {};
+    if (!player?.inventory) return counts;
+
+    const nameToId = {};
+    ITEMS.forEach(i => { if (i.name) nameToId[i.name.toLowerCase()] = i.id; });
+
+    Object.values(player.inventory).forEach(item => {
+      if (!item) return;
+      const baseId = (item.name && nameToId[item.name.toLowerCase()]) || item.id?.replace(/_([a-z0-9]+)+$/, '') || item.name;
+      counts[baseId] = (counts[baseId] || 0) + (item.count || 1);
+      if (item.id !== baseId) counts[item.id] = (counts[item.id] || 0) + (item.count || 1);
+    });
+    return counts;
+  }, [player?.inventory]);
+
   const engine = useMemo(() => ({
     user, player, syncPlayer, logs, addLog, currentTime,
     db, appId, functions,
@@ -296,7 +312,7 @@ export const GameProvider = ({ children, user }) => {
 
     totalStats: dynamicStats, handleLogout, openGuide,
     globalError, setGlobalError, submitErrorReport,
-    lowPerfMode, setLowPerfMode,
+    lowPerfMode, setLowPerfMode, inventoryCounts,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
     BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS
   }), [
@@ -311,7 +327,7 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport, lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES,
     SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS, BOSS, BOSS_MEDIA_FILES,
-    SOUNDS, ELEMENTAL_SKILLS
+    SOUNDS, ELEMENTAL_SKILLS, inventoryCounts
   ]);
 
   return (

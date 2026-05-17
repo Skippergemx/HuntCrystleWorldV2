@@ -9,7 +9,7 @@ import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const ShopView = React.memo(() => {
-  const { player, actions, adventure, openGuide, SHOP_ITEMS, ITEMS } = useGame();
+  const { player, actions, adventure, openGuide, SHOP_ITEMS, ITEMS, inventoryCounts } = useGame();
   const { setView } = adventure;
   const { buyItem } = actions;
 
@@ -30,6 +30,8 @@ export const ShopView = React.memo(() => {
       .sort((a,b) => (a.sellValue || 0) - (b.sellValue || 0));
   }, [ITEMS]);
 
+
+
   const getIndustrialData = (item) => {
     const rarity = item.rarity?.toLowerCase() || 'common';
     let mult = 10;
@@ -48,12 +50,7 @@ export const ShopView = React.memo(() => {
     if (item.id === 'hp_potion') pooled = player.potions || 0;
     if (item.id === 'auto_scroll') pooled = player.autoScrolls || 0;
 
-    const inventoryCount = Object.values(player.inventory || {}).filter(i => {
-       if (!i) return false;
-       // Alphanumeric suffix cleaning (matches _1234, _abcd, etc)
-       const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
-       return cleanId === item.id || i.id === item.id;
-    }).length;
+    const inventoryCount = inventoryCounts[item.id] || 0;
 
     return pooled + inventoryCount;
   };

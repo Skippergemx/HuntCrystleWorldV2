@@ -19,6 +19,24 @@ export const PetsView = () => {
     return counts;
   }, [player.unlockedPets, PETS_METADATA]);
 
+  const fruitInventory = useMemo(() => {
+    const fruits = {};
+    if (!player.inventory) return [];
+    
+    const nameToId = {};
+    ITEMS.forEach(i => { if (i.name) nameToId[i.name.toLowerCase()] = i.id; });
+
+    Object.entries(player.inventory).forEach(([key, item]) => {
+      if (item && item.type === 'Fruit') {
+        const baseId = (item.name && nameToId[item.name.toLowerCase()]) || item.id?.replace(/_([a-z0-9]+)+$/, '') || item.name;
+        if (!fruits[baseId]) fruits[baseId] = { ...item, count: 0, keys: [] };
+        fruits[baseId].count += (item.count || 1);
+        fruits[baseId].keys.push(key);
+      }
+    });
+    return Object.entries(fruits);
+  }, [player.inventory, ITEMS]);
+
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -169,16 +187,7 @@ export const PetsView = () => {
                           </div>
 
                           <div className="flex gap-2 overflow-x-auto custom-scrollbar pb-2">
-                            {Object.entries(
-                               Object.values(player.inventory || {})
-                                 .filter(i => i?.type === 'Fruit')
-                                 .reduce((acc, item) => {
-                                   acc[item.id] = acc[item.id] || { ...item, count: 0, keys: [] };
-                                   acc[item.id].count++;
-                                   acc[item.id].keys.push(Object.keys(player.inventory).find(k => player.inventory[k] === item));
-                                   return acc;
-                                 }, {})
-                            ).map(([fruitId, group]) => (
+                            {fruitInventory.map(([fruitId, group]) => (
                                <button 
                                  key={fruitId}
                                  disabled={loading}
@@ -222,7 +231,7 @@ export const PetsView = () => {
                                  <span className="absolute -top-1 -right-1 bg-black text-amber-400 border border-amber-400/30 text-[8px] font-bold px-1.5 py-0.5 rounded-md">{group.count}</span>
                                </button>
                             ))}
-                            {Object.values(player.inventory || {}).filter(i => i?.type === 'Fruit').length === 0 && (
+                            {fruitInventory.length === 0 && (
                                <div className="text-[10px] font-medium text-slate-500 w-full text-center py-2">No nutritional items found in inventory.</div>
                             )}
                           </div>

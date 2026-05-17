@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { getHitChance, getDamage } from '../utils/gameLogic';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../firebase';
 
 export const useNagaCombat = (
   db,
@@ -95,16 +97,24 @@ export const useNagaCombat = (
       }, 50);
    };
 
-   const updateWarDatabase = async (newMyHp, newEnemyHp) => {
+   const updateWarDatabase = async (newMyHp, newEnemyHp, isPerfectTiming = false) => {
       if (!gvgContext?.warId || !mySide || !myNaga || !enemyNaga) return;
-      const oppSide = mySide === 'defendersA' ? 'defendersB' : 'defendersA';
-      const warRef = doc(db, 'guild_wars', gvgContext.warId);
       
       try {
-         await updateDoc(warRef, {
-            [`${mySide}.${player.uid}.currentHp`]: newMyHp,
-            [`${oppSide}.${gvgContext.opponentId}.currentHp`]: newEnemyHp,
-            [`${mySide === 'defendersA' ? 'momentumA' : 'momentumB'}`]: increment(perfectTiming ? 5 : 1)
+         const callAction = httpsCallable(functions, 'secureGameAction');
+         await callAction({
+            action: 'PROCESS_NAGA_HIT',
+            payload: {
+               warId: gvgContext.warId,
+               mySide,
+               myUid: player.uid,
+               enemyUid: gvgContext.opponentId,
+               newMyHp,
+               newEnemyHp,
+               myMaxHp: myNaga.stats.totalMaxHp,
+               enemyMaxHp: enemyNaga.stats.totalMaxHp,
+               perfectTiming: isPerfectTiming
+            }
          });
       } catch (e) {
          console.error("Combat Sync Error:", e);
@@ -208,7 +218,7 @@ export const useNagaCombat = (
      const newEnemyHp = Math.max(0, enemyNaga.currentHp - dmg);
      setEnemyNaga(prev => ({ ...prev, currentHp: newEnemyHp }));
 
-     await updateWarDatabase(myNaga.currentHp, newEnemyHp);
+     await updateWarDatabase(myNaga.currentHp, newEnemyHp, isPerfect);
 
      if (newEnemyHp <= 0) {
         setShowVictoryWindow(true);
@@ -237,7 +247,7 @@ export const useNagaCombat = (
       
       const newEnemyHp = Math.max(0, enemyNaga.currentHp - ultimateDmg);
       setEnemyNaga(prev => ({ ...prev, currentHp: newEnemyHp }));
-      await updateWarDatabase(myNaga.currentHp, newEnemyHp);
+      await updateWarDatabase(myNaga.currentHp, newEnemyHp, true);
 
       setTimeout(() => {
          if (newEnemyHp <= 0) {

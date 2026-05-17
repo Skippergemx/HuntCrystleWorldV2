@@ -515,12 +515,20 @@ export const MenuView = React.memo(() => {
             </button>
          ))}
          {isAdmin && (
-           <button onClick={() => setView('admin')} className="group flex flex-col items-center gap-1.5 transition-all active:scale-95">
-              <div className="p-2 md:p-3 bg-black border-2 border-[var(--neon-pink)] rounded-xl group-hover:shadow-[0_0_15px_var(--neon-pink)] transition-all">
-                <ShieldAlert size={16} className="text-[var(--neon-pink)]" />
-              </div>
-              <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-[var(--neon-pink)] bungee">ADMIN</span>
-           </button>
+           <>
+             <button onClick={() => setView('admin')} className="group flex flex-col items-center gap-1.5 transition-all active:scale-95">
+                <div className="p-2 md:p-3 bg-black border-2 border-[var(--neon-pink)] rounded-xl group-hover:shadow-[0_0_15px_var(--neon-pink)] transition-all">
+                  <ShieldAlert size={16} className="text-[var(--neon-pink)]" />
+                </div>
+                <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-[var(--neon-pink)] bungee">ADMIN</span>
+             </button>
+             <button onClick={() => setView('vio8_audit')} className="group flex flex-col items-center gap-1.5 transition-all active:scale-95">
+                <div className="p-2 md:p-3 bg-black border-2 border-[var(--neon-cyan)] rounded-xl group-hover:shadow-[0_0_15px_var(--neon-cyan)] transition-all">
+                  <Brain size={16} className="text-[var(--neon-cyan)]" />
+                </div>
+                <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-[var(--neon-cyan)] bungee">VIO8 AUDIT</span>
+             </button>
+           </>
          )}
       </div>
 

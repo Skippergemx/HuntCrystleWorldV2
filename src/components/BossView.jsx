@@ -29,7 +29,7 @@ export const BossView = () => {
       player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState, 
       BOSS, BOSS_MEDIA_FILES, TAVERN_MATES, openGuide, syncPlayer, lowPerfMode, FOODS,
       bossAvatarIdx, setBossAvatarIdx, showBossVideo, setShowBossVideo,
-      LOOTS, ITEMS, PETS_METADATA, EQUIPMENT, ELEMENTAL_SKILLS
+      LOOTS, ITEMS, PETS_METADATA, EQUIPMENT, ELEMENTAL_SKILLS, inventoryCounts
   } = useGame();
 
   const { view, setView, enemyFlinch, isHurt } = adventure;
@@ -112,16 +112,18 @@ export const BossView = () => {
   const isMateBuffActive = (buffTimeLeft || 0) > 0;
   const activeMate = isMateBuffActive ? TAVERN_MATES.find(m => m.id === player.hiredMate) : null;
 
+
+
   const potionCountData = React.useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
-    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = inventoryCounts[sel] || 0;
     const baseCount = player.potions || 0;
     return {
       selected: sel,
       count: sel === 'hp_potion' ? (invCount + baseCount) : invCount,
       hasSelected: (sel === 'hp_potion' ? (invCount + baseCount) : invCount) > 0
     };
-  }, [player.selectedPotionId, player.inventory, player.potions]);
+  }, [player.selectedPotionId, player.potions, inventoryCounts]);
 
   const scrollCountData = React.useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
@@ -135,12 +137,8 @@ export const BossView = () => {
     const req = scrollSpecs[sel] || 1;
     const baseCount = player.autoScrolls || 0;
     
-    const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
-    const invCount = Object.values(player.inventory || {}).filter(i => {
-      if (!i || !i.id) return false;
-      const itemBaseId = possibleScrollIds.find(baseId => i.id.startsWith(baseId));
-      return itemBaseId === sel;
-    }).length;
+    // Calculate discrete items of this specific type
+    const invCount = inventoryCounts[sel] || 0;
 
     let totalPossible = 0;
     if (sel === 'auto_scroll') {
@@ -154,20 +152,20 @@ export const BossView = () => {
       count: totalPossible,
       hasSelected: totalPossible > 0
     };
-  }, [player.selectedScrollId, player.autoScrolls, player.inventory]);
+  }, [player.selectedScrollId, player.autoScrolls, inventoryCounts]);
 
-  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
+  const hasAnyPotions = React.useMemo(() => (player.potions > 0) || (inventoryCounts['hp_potion'] > 0 || inventoryCounts['mega_hp_potion'] > 0 || inventoryCounts['ultra_hp_potion'] > 0), [player.potions, inventoryCounts]);
+  const hasAnyScrolls = React.useMemo(() => (player.autoScrolls > 0) || (inventoryCounts['auto_scroll'] > 0 || inventoryCounts['auto_scroll_3m'] > 0 || inventoryCounts['auto_scroll_6m'] > 0 || inventoryCounts['auto_scroll_9m'] > 0 || inventoryCounts['auto_scroll_12m'] > 0), [player.autoScrolls, inventoryCounts]);
 
   const foodInventory = React.useMemo(() => {
     if (!FOODS) return [];
     const owned = [];
     FOODS.forEach(food => {
-      const instances = Object.values(player.inventory || {}).filter(i => i?.id?.startsWith(food.id));
-      if (instances.length > 0) owned.push({ ...food, count: instances.length, instanceId: instances[0].id });
+      const count = inventoryCounts[food.id] || 0;
+      if (count > 0) owned.push({ ...food, count });
     });
     return owned;
-  }, [player.inventory, FOODS]);
+  }, [inventoryCounts, FOODS]);
   
   const [selectedFoodIdx, setSelectedFoodIdx] = useState(0);
   const selectedFood = foodInventory[selectedFoodIdx] || null;

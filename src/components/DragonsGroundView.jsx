@@ -7,6 +7,146 @@ import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 import { calculateNagaStats } from '../utils/gameLogic';
 
+const MONSTER_POOL = [
+  { name: 'Venomhide Drake', folder: 'Neon Slums' },
+  { name: 'Bone Dragon', folder: 'Neon Slums' },
+  { name: 'Azure Glider', folder: 'Neon Slums' },
+  { name: 'Cinder Wyrm', folder: 'Inferno Crater' },
+  { name: 'Sky Razer', folder: 'Neon Slums' }
+];
+
+const GroundRenderArea = React.memo(({ gemxLevel, FRUITS, onCollectFruit }) => {
+  const [monsters, setMonsters] = useState([]);
+  const [fruits, setFruits] = useState([]);
+
+  // Spawn and Move logic (Dependency-free interval for smooth roaming)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      // 1. Spawn monsters (Scaling capacity per GEMX Level)
+      setMonsters(prev => {
+        if (prev.length < Math.min(50, gemxLevel * 3)) {
+          if (Math.random() < 0.4) {
+            const spawnSide = Math.floor(Math.random() * 4);
+            let x, y;
+            if (spawnSide === 0) { x = -10; y = Math.random() * 100; }
+            else if (spawnSide === 1) { x = 110; y = Math.random() * 100; }
+            else if (spawnSide === 2) { x = Math.random() * 100; y = -10; }
+            else { x = Math.random() * 100; y = 110; }
+
+            const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
+            return [...prev, {
+              id: 'monster_' + Date.now() + Math.random(),
+              icon: mProto.name,
+              name: mProto.name,
+              folder: mProto.folder,
+              x, y,
+              targetX: 10 + Math.random() * 80,
+              targetY: 10 + Math.random() * 80,
+              speed: 0.3 + Math.random() * 0.7
+            }];
+          }
+        }
+        return prev;
+      });
+
+      // 2. Move monsters and drop fruits
+      setMonsters(prev => {
+        return prev.map(m => {
+          const dx = m.targetX - m.x;
+          const dy = m.targetY - m.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 2) {
+            // Drop fruit! (Adjusted to 15% drop rate)
+            if (Math.random() < 0.15) {
+              const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
+              const pool = [];
+              FRUITS.forEach(f => {
+                const weight = rarityWeights[f.rarity] || 10;
+                for (let i = 0; i < weight; i++) pool.push(f);
+              });
+
+              const randomFruit = pool[Math.floor(Math.random() * pool.length)];
+              setFruits(f => {
+                if (f.length >= 30) return f; // Maximum cap of 30 uncollected fruits
+                return [...f, {
+                  id: 'fruit_' + Date.now() + Math.random(),
+                  data: randomFruit,
+                  x: m.x,
+                  y: m.y
+                }];
+              });
+            }
+            // New target (roaming)
+            return {
+              ...m,
+              targetX: 10 + Math.random() * 80,
+              targetY: 10 + Math.random() * 80
+            };
+          }
+
+          return {
+            ...m,
+            x: m.x + (dx / dist) * m.speed,
+            y: m.y + (dy / dist) * m.speed
+          };
+        });
+      });
+
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gemxLevel, FRUITS]);
+
+  const handleFruitClick = (fruit) => {
+    setFruits(prev => prev.filter(f => f.id !== fruit.id));
+    onCollectFruit(fruit);
+  };
+
+  return (
+    <div className="absolute inset-0 pointer-events-none">
+      {monsters.map(m => (
+        <div
+          key={m.id}
+          className="absolute transition-all duration-1000 z-10 w-8 h-8"
+          style={{ left: `${m.x}%`, top: `${m.y}%` }}
+        >
+          <div className="animate-pulse w-full h-full relative">
+            <div className="w-full h-full rounded-full border-[3px] border-black bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden transform rotate-2">
+              <img
+                src={`/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.jpg`}
+                alt={m.name}
+                className="w-full h-full object-cover rounded-full opacity-80"
+                onError={(e) => {
+                  if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.png`;
+                  else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {fruits.map(f => (
+        <button
+          key={f.id}
+          onClick={() => handleFruitClick(f)}
+          className="absolute z-20 text-4xl p-4 -m-4 hover:scale-125 transition-transform active:scale-95 animate-in fade-in zoom-in duration-300 pointer-events-auto"
+          style={{ left: `${f.x}%`, top: `${f.y}%` }}
+        >
+          <div className="relative group">
+            <div className="absolute inset-0 bg-white blur-md opacity-0 group-hover:opacity-40"></div>
+            {f.data.icon}
+            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 px-1 py-0.5 rounded border border-white/20 text-[6px] text-white opacity-0 group-hover:opacity-100 whitespace-nowrap">
+              {f.data.name}
+            </div>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+});
+
 export const DragonsGroundView = React.memo(() => {
   const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, actions, openGuide } = useGame();
   const { setView } = adventure;
@@ -17,8 +157,6 @@ export const DragonsGroundView = React.memo(() => {
   const gemx = player.gemx || { level: 1, crystalsFed: 0 };
   const dragonStats = player.dragon || { level: 1, fruitsFed: 0 };
 
-  const [fruits, setFruits] = useState([]);
-  const [monsters, setMonsters] = useState([]);
   const [message, setMessage] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -76,16 +214,18 @@ export const DragonsGroundView = React.memo(() => {
     }
   };
 
-  const MONSTER_POOL = [
-    { name: 'Venomhide Drake', folder: 'Neon Slums' },
-    { name: 'Bone Dragon', folder: 'Neon Slums' },
-    { name: 'Azure Glider', folder: 'Neon Slums' },
-    { name: 'Cinder Wyrm', folder: 'Inferno Crater' },
-    { name: 'Sky Razer', folder: 'Neon Slums' }
-  ];
 
-  const crystalsInInventory = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith('crystle_shard')).length || 0;
-  const fruitsInInventory = Object.values(player.inventory || {}).filter(i => i && i.type === 'Fruit').length || 0;
+
+  const { crystalsInInventory, fruitsInInventory } = useMemo(() => {
+    let crystals = 0;
+    let fruits = 0;
+    Object.values(player.inventory || {}).forEach(i => {
+      if (!i) return;
+      if (i.id?.startsWith('crystle_shard')) crystals++;
+      if (i.type === 'Fruit') fruits++;
+    });
+    return { crystalsInInventory: crystals, fruitsInInventory: fruits };
+  }, [player.inventory]);
 
   const gemxNextLevelRequirement = gemx.level * 10;
   const dragonNextLevelRequirement = dragonStats.level * 5;
@@ -179,87 +319,9 @@ export const DragonsGroundView = React.memo(() => {
     syncPlayer(updates, true);
   };
 
-  // Spawn and Move logic (Dependency-free interval for smooth roaming)
-  useEffect(() => {
-    const timer = setInterval(() => {
-      // 1. Spawn monsters (Scaling capacity per GEMX Level)
-      setMonsters(prev => {
-        if (prev.length < Math.min(50, gemx.level * 3)) {
-          if (Math.random() < 0.4) {
-            const spawnSide = Math.floor(Math.random() * 4);
-            let x, y;
-            if (spawnSide === 0) { x = -10; y = Math.random() * 100; }
-            else if (spawnSide === 1) { x = 110; y = Math.random() * 100; }
-            else if (spawnSide === 2) { x = Math.random() * 100; y = -10; }
-            else { x = Math.random() * 100; y = 110; }
 
-            const mProto = MONSTER_POOL[Math.floor(Math.random() * MONSTER_POOL.length)];
-            return [...prev, {
-              id: 'monster_' + Date.now() + Math.random(),
-              icon: mProto.name,
-              name: mProto.name,
-              folder: mProto.folder,
-              x, y,
-              targetX: 10 + Math.random() * 80,
-              targetY: 10 + Math.random() * 80,
-              speed: 0.3 + Math.random() * 0.7
-            }];
-          }
-        }
-        return prev;
-      });
 
-      // 2. Move monsters and drop fruits
-      setMonsters(prev => {
-        return prev.map(m => {
-          const dx = m.targetX - m.x;
-          const dy = m.targetY - m.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 2) {
-            // Drop fruit! (Adjusted to 15% drop rate)
-            if (Math.random() < 0.15) {
-              const rarityWeights = { 'Common': 100, 'Uncommon': 40, 'Rare': 15, 'Epic': 4, 'Legendary': 1 };
-              const pool = [];
-              FRUITS.forEach(f => {
-                const weight = rarityWeights[f.rarity] || 10;
-                for (let i = 0; i < weight; i++) pool.push(f);
-              });
-
-              const randomFruit = pool[Math.floor(Math.random() * pool.length)];
-              setFruits(f => {
-                if (f.length >= 30) return f; // Maximum cap of 30 uncollected fruits
-                return [...f, {
-                  id: 'fruit_' + Date.now() + Math.random(),
-                  data: randomFruit,
-                  x: m.x,
-                  y: m.y
-                }];
-              });
-            }
-            // New target (roaming)
-            return {
-              ...m,
-              targetX: 10 + Math.random() * 80,
-              targetY: 10 + Math.random() * 80
-            };
-          }
-
-          return {
-            ...m,
-            x: m.x + (dx / dist) * m.speed,
-            y: m.y + (dy / dist) * m.speed
-          };
-        });
-      });
-
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [gemx.level, FRUITS]);
-
-  const collectFruit = (fruit) => {
-    setFruits(prev => prev.filter(f => f.id !== fruit.id));
+  const handleCollectFruit = (fruit) => {
     const itemId = `${fruit.data.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
     syncPlayer({ [`inventory.${itemId}`]: fruit.data });
     setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
@@ -479,46 +541,11 @@ export const DragonsGroundView = React.memo(() => {
               </p>
             </div>
 
-            <div className="absolute inset-0 pointer-events-none">
-            {monsters.map(m => (
-              <div
-                key={m.id}
-                className="absolute transition-all duration-1000 z-10 w-8 h-8"
-                style={{ left: `${m.x}%`, top: `${m.y}%` }}
-              >
-                <div className="animate-pulse w-full h-full relative">
-                  <div className="w-full h-full rounded-full border-[3px] border-black bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden transform rotate-2">
-                    <img
-                      src={`/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.jpg`}
-                      alt={m.name}
-                      className="w-full h-full object-cover rounded-full opacity-80"
-                      onError={(e) => {
-                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${m.folder || 'Neon Slums'}/${m.name}.png`;
-                        else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + m.name; }
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            {fruits.map(f => (
-              <button
-                key={f.id}
-                onClick={() => collectFruit(f)}
-                className="absolute z-20 text-4xl p-4 -m-4 hover:scale-125 transition-transform active:scale-95 animate-in fade-in zoom-in duration-300 pointer-events-auto"
-                style={{ left: `${f.x}%`, top: `${f.y}%` }}
-              >
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-white blur-md opacity-0 group-hover:opacity-40"></div>
-                  {f.data.icon}
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-black/80 px-1 py-0.5 rounded border border-white/20 text-[6px] text-white opacity-0 group-hover:opacity-100 whitespace-nowrap">
-                    {f.data.name}
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+            <GroundRenderArea 
+              gemxLevel={gemx.level} 
+              FRUITS={FRUITS} 
+              onCollectFruit={handleCollectFruit} 
+            />
           </div>
         </div>
       </div>

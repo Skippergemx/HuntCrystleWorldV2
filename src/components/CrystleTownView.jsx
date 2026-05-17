@@ -18,12 +18,10 @@ const PERSONALITY_STYLES = {
 };
 
 // --- NPC Dialogue Modal ---
-const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfirmAbandon }) => {
+const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfirmAbandon, inventoryCounts }) => {
   const { player, ITEMS, FOODS, MAPS } = useGame();
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
   const [activeTooltip, setActiveTooltip] = useState(null);
-
-  const inventory = player?.inventory || {};
   const rewardFood = FOODS?.find(f => f.id === quest.reward.foodId);
 
   const getItemSource = (itId) => {
@@ -55,7 +53,7 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
   };
 
   const requirementStatus = quest.requires.map(req => {
-    const owned = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
+    const owned = inventoryCounts[req.itemId] || 0;
     const item = Object.values(ITEMS || []).find(i => i.id === req.itemId);
     return { 
         ...req, 
@@ -168,10 +166,9 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
 };
 
 // --- NPC Card ---
-const NPCCard = ({ quest, onOpen, idx }) => {
+const NPCCard = ({ quest, onOpen, idx, inventoryCounts }) => {
   const { player, ITEMS } = useGame();
   const style = PERSONALITY_STYLES[quest.personality] || PERSONALITY_STYLES.Wanderer;
-  const inventory = player?.inventory || {};
 
   const rewardFoodEmoji = quest.reward?.foodId?.includes('steak') ? '🥩'
     : quest.reward?.foodId?.includes('ramen') ? '🍜'
@@ -187,7 +184,7 @@ const NPCCard = ({ quest, onOpen, idx }) => {
     : '🍣';
 
   const allMet = quest.requires.every(req => {
-    const owned = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
+    const owned = inventoryCounts[req.itemId] || 0;
     return owned >= req.qty;
   });
 
@@ -211,7 +208,7 @@ const NPCCard = ({ quest, onOpen, idx }) => {
       <div className="flex flex-wrap gap-1 mt-1">
         {quest.requires.slice(0, 3).map((req, i) => {
           const item = Object.values(ITEMS || []).find(it => it.id === req.itemId);
-          const owned = Object.values(inventory).filter(iv => iv?.id?.startsWith(req.itemId)).length;
+          const owned = inventoryCounts[req.itemId] || 0;
           const met = owned >= req.qty;
           return (
             <div key={i} className={`flex items-center gap-1 px-1.5 py-0.5 border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)] text-[7px] font-black transition-colors ${met ? 'bg-green-400' : 'bg-white'}`}>
@@ -295,7 +292,7 @@ const CooldownCard = ({ expiration, id, onRush, idx }) => {
 
 // --- Main View ---
 export const CrystleTownView = () => {
-  const { player, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, adventure, openGuide, SOUNDS, faucetResult, setFaucetResult } = useGame();
+  const { player, actions, TOWN_QUESTS, FOODS, ITEMS, MAPS, syncPlayer, adventure, openGuide, SOUNDS, faucetResult, setFaucetResult, inventoryCounts } = useGame();
   const { setView } = adventure;
   const [activeQuest, setActiveQuest] = useState(null);
   const [completedFlash, setCompletedFlash] = useState(null);
@@ -304,15 +301,8 @@ export const CrystleTownView = () => {
   const [sessionReward, setSessionReward] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const sparkCount = useMemo(() => {
-    if (!player?.inventory) return 0;
-    return Object.values(player.inventory).filter(item => item && item.id && item.id.startsWith('aether_spark')).length;
-  }, [player?.inventory]);
-
-  const huntSparkCount = useMemo(() => {
-    if (!player?.inventory) return 0;
-    return Object.values(player.inventory).filter(item => item && item.id && item.id.startsWith('hunt_spark')).length;
-  }, [player?.inventory]);
+  const sparkCount = inventoryCounts['aether_spark'] || 0;
+  const huntSparkCount = inventoryCounts['hunt_spark'] || 0;
 
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 3000;
@@ -572,6 +562,7 @@ export const CrystleTownView = () => {
                   key={quest.id}
                   quest={quest}
                   idx={idx}
+                  inventoryCounts={inventoryCounts}
                   onOpen={(q) => { if (!isSyncing && !sessionReward) setActiveQuest(q); }}
                 />
               );
@@ -705,6 +696,7 @@ export const CrystleTownView = () => {
           onAbandon={actions.abandonTownQuest}
           canComplete={true}
           setConfirmAbandon={setConfirmAbandon}
+          inventoryCounts={inventoryCounts}
         />
       )}
 

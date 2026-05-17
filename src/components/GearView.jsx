@@ -78,7 +78,7 @@ export const GearView = React.memo(() => {
 
   const getBaseItemData = (item) => {
     if (!item) return null;
-    const baseId = item.id?.replace(/(_\d+)+$/, '');
+    const baseId = item.id?.replace(/_([a-z0-9]+)+$/, '');
     
     // Check Master Items DB
     const fromItems = ITEMS.find(i => i.id === baseId);
@@ -100,31 +100,32 @@ export const GearView = React.memo(() => {
   const currentMate = TAVERN_MATES.find(m => m.id === player.hiredMate);
 
   const equipment = useMemo(() => {
-    const raw = Object.values(player.inventory || {}).filter(i => {
-      if (!i) return false;
-      const master = getBaseItemData(i);
-      const type = i.type || master?.type;
-      return ['Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic'].includes(type);
-    }) || [];
+    const counts = {};
+    const firstInstances = {};
     
-    // Grouping by Base ID for stacking
-    return raw.reduce((acc, item) => {
-      const base = getBaseItemData(item);
-      const baseId = base?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
-      const existing = acc.find(i => {
-        const iBase = getBaseItemData(i);
-        const iBaseId = iBase?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
-        return iBaseId === baseId;
-      });
+    Object.values(player.inventory || {}).forEach(i => {
+      if (!i) return;
+      const baseId = i.id?.replace(/_([a-z0-9]+)+$/, '') || i.name;
       
-      if (existing) {
-        existing.count = (existing.count || 1) + 1;
-      } else {
-        acc.push({ ...item, count: 1 });
+      if (!firstInstances[baseId]) {
+         const master = ITEMS.find(item => item.id === baseId || item.name?.toLowerCase() === i.name?.toLowerCase());
+         const type = i.type || master?.type;
+         if (['Weapon', 'Armor', 'Headgear', 'Footwear', 'Relic'].includes(type)) {
+            firstInstances[baseId] = i;
+         } else {
+            firstInstances[baseId] = "NOT_GEAR";
+         }
       }
-      return acc;
-    }, []);
-  }, [player.inventory, EQUIPMENT, LOOTS]);
+      
+      if (firstInstances[baseId] !== "NOT_GEAR") {
+        counts[baseId] = (counts[baseId] || 0) + 1;
+      }
+    });
+    
+    return Object.keys(counts).map(baseId => {
+       return { ...firstInstances[baseId], count: counts[baseId] };
+    });
+  }, [player.inventory, ITEMS]);
 
   const slots = [
     { id: 'Headgear', label: 'Head', icon: <HardHat className="text-blue-400" /> },

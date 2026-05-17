@@ -56,20 +56,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       
-      // Optimistic UI
-      const nextInv = { ...(player.inventory || {}) };
-      const updates = { tokens: player.tokens - totalCost };
-      if (listing.item.id?.startsWith('hp_potion')) {
-         updates.potions = (player.potions || 0) + qty;
-      } else {
-         for (let i = 0; i < qty; i++) {
-           const suffix = Math.random().toString(36).slice(2, 6);
-           const uniqueId = `${listing.item.id?.replace(/_([a-z0-9]+)+$/, '')}_${Date.now()}_${suffix}_${i}`;
-           nextInv[uniqueId] = { ...listing.item, id: uniqueId };
-         }
-         updates.inventory = nextInv;
-      }
-      syncPlayer(updates);
+      // The backend Cloud Function will handle the transaction securely.
 
       const result = await callAction({ 
         action: 'MARKET_PURCHASE', 
@@ -96,22 +83,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       
-      // Optimistic UI
-      const nextInv = { ...(player.inventory || {}) };
-      const baseId = item.id?.replace(/_([a-z0-9]+)+$/, '');
-      const entries = Object.entries(nextInv);
-      let removed = 0;
-      for (const [key, invItem] of entries) {
-         if (invItem?.id?.replace(/_([a-z0-9]+)+$/, '') === baseId && removed < quantity) {
-            delete nextInv[key];
-            removed++;
-         }
-      }
-      const updates = { inventory: nextInv };
-      if (removed < quantity && baseId === 'hp_potion') {
-         updates.potions = (player.potions || 0) - (quantity - removed);
-      }
-      syncPlayer(updates);
+      // The backend Cloud Function will handle the transaction securely.
 
       await callAction({ 
         action: 'MARKET_LIST', 
@@ -132,23 +104,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       
-      // Optimistic UI (approximate return to inventory)
-      const listing = marketplace.find(l => l.id === listingId);
-      if (!listing) return;
-      
-      const qty = listing.quantity || 1;
-      const baseId = listing.item.id?.replace(/_([a-z0-9]+)+$/, '');
-      if (baseId === 'hp_potion') {
-         syncPlayer({ potions: (player.potions || 0) + qty });
-      } else {
-         const nextInv = { ...(player.inventory || {}) };
-         for (let i = 0; i < qty; i++) {
-           const suffix = Math.random().toString(36).slice(2, 6);
-           const newId = `${baseId}_${Date.now()}_${suffix}_${i}`;
-           nextInv[newId] = { ...listing.item, id: newId };
-         }
-         syncPlayer({ inventory: nextInv });
-      }
+      // The backend Cloud Function will handle the transaction securely.
 
       await callAction({ 
         action: 'MARKET_CANCEL', 

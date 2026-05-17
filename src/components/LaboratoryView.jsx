@@ -7,7 +7,7 @@ import { useGame } from '../contexts/GameContext';
 
 export const LaboratoryView = React.memo(() => {
   const { 
-    player, adventure, actions, LAB_RECIPES, ITEMS, MAPS, addLog, openGuide, forgeResult, setForgeResult, syncPlayer, FOODS, user
+    player, adventure, actions, LAB_RECIPES, ITEMS, MAPS, addLog, openGuide, forgeResult, setForgeResult, syncPlayer, FOODS, user, inventoryCounts
   } = useGame();
   
   const { setView } = adventure;
@@ -68,18 +68,7 @@ export const LaboratoryView = React.memo(() => {
     }
   };
 
-  const materials = useMemo(() => {
-    return Object.values(player.inventory || {});
-  }, [player.inventory]);
 
-  const getMaterialCount = (matId) => {
-    return materials.filter(i => {
-      if (!i) return false;
-      const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
-      const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-      return (cleanId === matId) || (master?.id === matId);
-    }).length;
-  };
 
   const currentMasterItem = useMemo(() => {
     return ITEMS.find(it => it.id === selectedRecipe.id);
@@ -237,12 +226,7 @@ export const LaboratoryView = React.memo(() => {
           const materials = recipe.materials || [];
           
           const hasMaterials = materials.every(mat => {
-            const countInInv = Object.values(player.inventory || {}).filter(i => {
-               if (!i) return false;
-               const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
-               const itemMaster = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-               return (cleanId === mat.id) || (itemMaster?.id === mat.id);
-            }).length || 0;
+            const countInInv = inventoryCounts[mat.id] || 0;
             return countInInv >= mat.count;
           });
 
@@ -281,12 +265,7 @@ export const LaboratoryView = React.memo(() => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2 border-2 border-black/5 rounded">
                 {materials.map((mat, mIdx) => {
                   const masterLoot = ITEMS.find(l => l.id === mat.id);
-                  const countInInv = Object.values(player.inventory || {}).filter(i => {
-                    if (!i) return false;
-                    const cleanId = i.id?.replace(/_([a-z0-9]+)+$/, '');
-                    const itemMaster = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-                    return (cleanId === mat.id) || (itemMaster?.id === mat.id);
-                  }).length || 0;
+                  const countInInv = inventoryCounts[mat.id] || 0;
                   const isMet = countInInv >= mat.count;
                   const tooltipKey = `${recipe.id}-${mat.id}-${mIdx}`;
                   return (

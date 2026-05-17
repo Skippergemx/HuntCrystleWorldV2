@@ -33,6 +33,7 @@ import { InventoryView } from './InventoryView';
 import { DatabaseView } from './DatabaseView';
 import { MapView } from './MapView';
 import { AdminPanelView } from './AdminPanelView';
+import { VioAuditView } from './VioAuditView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
@@ -756,6 +757,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'admin' && (
             <AdminPanelView />
+          )}
+
+          {view === 'vio8_audit' && (
+            <VioAuditView />
           )}
 
           {view === 'dragons_ground' && (

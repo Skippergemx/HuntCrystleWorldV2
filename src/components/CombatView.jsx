@@ -8,7 +8,7 @@ import { SOUNDS } from '../hooks/useAudioEngine';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
-    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS, ELEMENTAL_SKILLS
+    LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS, ELEMENTAL_SKILLS, inventoryCounts
   } = useGame();
 
   const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
@@ -70,16 +70,18 @@ export const CombatView = React.memo(() => {
     return selectedMap?.lootTable ? selectedMap.lootTable.map(id => LOOTS.find(l => l.id === id)).filter(Boolean) : [];
   }, [selectedMap, LOOTS]);
 
+
+
   const potionCountData = useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
-    const invCount = Object.values(player.inventory || {}).filter(i => i && i.id?.startsWith(sel)).length;
+    const invCount = inventoryCounts[sel] || 0;
     const baseCount = player.potions || 0;
     return {
       selected: sel,
       count: sel === 'hp_potion' ? (invCount + baseCount) : invCount,
       hasSelected: (sel === 'hp_potion' ? (invCount + baseCount) : invCount) > 0
     };
-  }, [player.selectedPotionId, player.inventory, player.potions]);
+  }, [player.selectedPotionId, player.potions, inventoryCounts]);
 
   const scrollCountData = useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
@@ -94,12 +96,7 @@ export const CombatView = React.memo(() => {
     const baseCount = player.autoScrolls || 0;
     
     // Calculate discrete items of this specific type
-    const possibleScrollIds = ['auto_scroll_12m', 'auto_scroll_9m', 'auto_scroll_6m', 'auto_scroll_3m', 'auto_scroll'];
-    const invCount = Object.values(player.inventory || {}).filter(i => {
-      if (!i || !i.id) return false;
-      const itemBaseId = possibleScrollIds.find(baseId => i.id.startsWith(baseId));
-      return itemBaseId === sel;
-    }).length;
+    const invCount = inventoryCounts[sel] || 0;
 
     // For 1m scrolls (auto_scroll), we can trigger them using the pool (divided by 1) PLUS discrete items
     let totalPossible = 0;
@@ -114,21 +111,20 @@ export const CombatView = React.memo(() => {
       count: totalPossible,
       hasSelected: totalPossible > 0
     };
-  }, [player.selectedScrollId, player.autoScrolls, player.inventory, ITEMS]);
+  }, [player.selectedScrollId, player.autoScrolls, inventoryCounts]);
 
-  const hasAnyPotions = useMemo(() => (player.potions > 0) || Object.values(player.inventory || {}).some(i => i?.id?.includes('hp_potion')), [player.potions, player.inventory]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0 || Object.values(player.inventory || {}).some(i => i?.id?.includes('auto_scroll')), [player.autoScrolls, player.inventory]);
-
+  const hasAnyPotions = useMemo(() => (player.potions > 0) || (inventoryCounts['hp_potion'] > 0 || inventoryCounts['mega_hp_potion'] > 0 || inventoryCounts['ultra_hp_potion'] > 0), [player.potions, inventoryCounts]);
+  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0 || (inventoryCounts['auto_scroll'] > 0 || inventoryCounts['auto_scroll_3m'] > 0 || inventoryCounts['auto_scroll_6m'] > 0 || inventoryCounts['auto_scroll_9m'] > 0 || inventoryCounts['auto_scroll_12m'] > 0), [player.autoScrolls, inventoryCounts]);
 
   const foodInventory = useMemo(() => {
     if (!FOODS) return [];
     const owned = [];
     FOODS.forEach(food => {
-      const instances = Object.values(player.inventory || {}).filter(i => i?.id?.startsWith(food.id));
-      if (instances.length > 0) owned.push({ ...food, count: instances.length, instanceId: instances[0].id });
+      const count = inventoryCounts[food.id] || 0;
+      if (count > 0) owned.push({ ...food, count });
     });
     return owned;
-  }, [player.inventory, FOODS]);
+  }, [inventoryCounts, FOODS]);
   const [selectedFoodIdx, setSelectedFoodIdx] = useState(0);
   const selectedFood = foodInventory[selectedFoodIdx] || null;
   const isFoodActive = (foodTimeLeft || 0) > 0;
@@ -190,7 +186,7 @@ export const CombatView = React.memo(() => {
   }, [enemy, cosmicMonsters]);
 
   const requiredTool = useMemo(() => tamingTools[currentEnemyElement], [tamingTools, currentEnemyElement]);
-  const hasRequiredTool = useMemo(() => requiredTool && Object.values(player.inventory || {}).some(i => i?.id?.startsWith(requiredTool)), [player.inventory, requiredTool]);
+  const hasRequiredTool = useMemo(() => requiredTool && (inventoryCounts[requiredTool] > 0), [inventoryCounts, requiredTool]);
   const toolDetails = useMemo(() => requiredTool ? LOOTS.find(l => l.id === requiredTool) : null, [requiredTool, LOOTS]);
 
   useEffect(() => {
@@ -606,12 +602,11 @@ export const CombatView = React.memo(() => {
                         <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-blue-600 uppercase italic tracking-tighter leading-none mt-0.5">SKIP</span>
                       </button>
 
-                      {Object.values(player.inventory || {}).some(i => i?.id?.startsWith('taming_')) && (
+                      {['taming_pyro', 'taming_hydro', 'taming_gale', 'taming_earthen', 'taming_cosmic'].some(id => inventoryCounts[id] > 0) && (
                         (() => {
                           const targetElement = getMonsterElement(enemy);
-                          const matchingPrism = Object.values(player.inventory || {}).find(i => 
-                            i?.id?.startsWith(`taming_${targetElement.toLowerCase()}`)
-                          );
+                          const matchingPrismBaseId = `taming_${targetElement.toLowerCase()}`;
+                          const hasMatchingPrism = inventoryCounts[matchingPrismBaseId] > 0;
                           const elementIcons = { 'Pyro': '🔥', 'Hydro': '💧', 'Gale': '🌪️', 'Earthen': '⛰️', 'Cosmic': '⚛️' };
                           const chance = Math.floor((0.9 - ((enemy.hp / enemy.maxHp) * 0.6)) * 100);
 
@@ -619,13 +614,11 @@ export const CombatView = React.memo(() => {
                             <button 
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (tameAnimation || !matchingPrism) return;
-                                
-                                const cleanPrismId = matchingPrism.id.replace(/(_\d+)+$/, '').split('_').slice(0, 2).join('_');
+                                if (tameAnimation || !hasMatchingPrism) return;
                                 
                                 setTameAnimation('ATTEMPTING');
                                 const initialPetCount = (player.unlockedPets || []).length;
-                                await actions.handlePurify(enemy, cleanPrismId);
+                                await actions.handlePurify(enemy, matchingPrismBaseId);
                                 
                                 setTimeout(() => {
                                   const currentPetCount = (player.unlockedPets || []).length;
@@ -638,13 +631,13 @@ export const CombatView = React.memo(() => {
                                   }, 2500);
                                 }, 1500);
                               }}
-                              className={`bg-emerald-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${!matchingPrism ? 'opacity-30 grayscale cursor-not-allowed' : 'animate-pulse'}`}
+                              className={`bg-emerald-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${!hasMatchingPrism ? 'opacity-30 grayscale cursor-not-allowed' : 'animate-pulse'}`}
                             >
                               <span className="text-xs md:text-xl group-hover:rotate-12 transition-transform">
                                 {elementIcons[targetElement] || '💠'}
                               </span>
                               <span className="text-[5px] md:text-[8px] font-black text-white group-hover:text-emerald-600 uppercase italic tracking-tighter leading-none mt-0.5 whitespace-nowrap">
-                                {!matchingPrism ? `NEED ${targetElement}` : `${chance}% TAME`}
+                                {!hasMatchingPrism ? `NEED ${targetElement}` : `${chance}% TAME`}
                               </span>
                             </button>
                           );

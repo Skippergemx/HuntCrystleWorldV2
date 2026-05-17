@@ -6,7 +6,7 @@ import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const ForgeView = React.memo(() => {
-  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide, ITEMS, totalStats, forgeResult, setForgeResult } = useGame();
+  const { player, CRYSTLE_RECIPES, actions, adventure, LOOTS, openGuide, ITEMS, totalStats, forgeResult, setForgeResult, MAPS, inventoryCounts } = useGame();
   const { setView } = adventure;
   const { forgeCrystle } = actions;
 
@@ -15,7 +15,7 @@ export const ForgeView = React.memo(() => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState(null);
 
-  const { MAPS } = useGame();
+
 
   const getItemSource = (itId) => {
     if (itId?.includes('apple') || itId?.includes('grapes') || itId?.includes('berry') || itId?.includes('cherry') || itId?.includes('peach') || itId?.includes('lemon') || itId?.includes('orange') || itId?.includes('pear')) {
@@ -70,6 +70,8 @@ export const ForgeView = React.memo(() => {
   };
 
   const getMasterData = (id) => ITEMS.find(i => i.id === id);
+
+
 
   const [activeTab, setActiveTab] = useState('Standard');
   const standardRecs = CRYSTLE_RECIPES.filter(r => r.isDefault);
@@ -162,18 +164,13 @@ export const ForgeView = React.memo(() => {
           const materials = recipe.materials || [];
           const master = getMasterData(recipe.id);
           const type = master?.type || 'Weapon';
-          const equippedBaseId = player.equipped?.[type]?.id?.replace(/(_\d+)+$/, '');
+          const equippedBaseId = ITEMS.find(item => item.name && player.equipped?.[type]?.name && item.name.toLowerCase() === player.equipped[type].name.toLowerCase())?.id || player.equipped?.[type]?.id?.replace(/_([a-z0-9]+)+$/, '');
           const isOwned = equippedBaseId === recipe.id;
           const currentDex = totalStats?.dex || 10;
           const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
           
           const hasMaterials = materials.every(mat => {
-            const countInInv = Object.values(player.inventory || {}).filter(i => {
-               if (!i) return false;
-               const cleanId = i.id?.replace(/(_\d+)+$/, '');
-               const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-               return (cleanId === mat.id) || (master?.id === mat.id);
-            }).length || 0;
+            const countInInv = inventoryCounts[mat.id] || 0;
             return countInInv >= mat.count;
           });
 
@@ -220,12 +217,7 @@ export const ForgeView = React.memo(() => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 p-2 border-2 border-black/5 rounded">
                 {materials.map((mat, mIdx) => {
                   const masterLoot = LOOTS.find(l => l.id === mat.id);
-                  const countInInv = Object.values(player.inventory || {}).filter(i => {
-                    if (!i) return false;
-                    const cleanId = i.id?.replace(/(_\d+)+$/, '');
-                    const master = ITEMS.find(item => item.id === cleanId || item.name?.toLowerCase() === i.name?.toLowerCase());
-                    return (cleanId === mat.id) || (master?.id === mat.id);
-                  }).length || 0;
+                  const countInInv = inventoryCounts[mat.id] || 0;
                   const isMet = countInInv >= mat.count;
                   const tooltipKey = `${recipe.id}-${mat.id}-${mIdx}`;
                   return (

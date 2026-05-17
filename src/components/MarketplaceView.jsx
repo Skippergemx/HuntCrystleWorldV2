@@ -20,7 +20,7 @@ import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
 export const MarketplaceView = React.memo(() => {
-  const { player, market, adventure, actions, openGuide, ITEMS } = useGame();
+  const { player, market, adventure, actions, openGuide, ITEMS, inventoryCounts } = useGame();
   const { setView } = adventure;
   const { marketplace: listings, purchaseMarketItem: purchaseItem, listMarketItem: listItem, cancelMarketListing: cancelListing } = market;
   
@@ -52,13 +52,8 @@ export const MarketplaceView = React.memo(() => {
 
     // SCRAMBLE FIX: Scan inventory for any stray units that arrived as objects
     const master = getMasterData(item);
-    const id = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
-    const invCount = Object.values(player.inventory || {}).filter(i => {
-       if (!i) return false;
-       const iMaster = getMasterData(i);
-       const cleanId = iMaster?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
-       return cleanId === id;
-    }).length;
+    const id = master?.id || item.id?.replace(/_([a-z0-9]+)+$/, '') || item.name;
+    const invCount = inventoryCounts[id] || 0;
 
     return count + invCount;
   };
@@ -111,7 +106,7 @@ export const MarketplaceView = React.memo(() => {
     if (!itemOrId) return null;
     const item = typeof itemOrId === 'object' ? itemOrId : null;
     const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
-    const cleanId = id?.replace(/(_\d+)+$/, '');
+    const cleanId = id?.replace(/_([a-z0-9]+)+$/, '');
     
     const byId = ITEMS.find(i => i.id === cleanId);
     if (byId) return byId;
@@ -123,6 +118,8 @@ export const MarketplaceView = React.memo(() => {
 
     return item;
   };
+
+
 
   const filteredListings = useMemo(() => {
     return (listings || []).filter(l => {
@@ -155,10 +152,10 @@ export const MarketplaceView = React.memo(() => {
     // 3. Stack items by Master ID or Name fallback
     return raw.reduce((acc, item) => {
       const master = getMasterData(item);
-      const baseId = master?.id || item.id?.replace(/(_\d+)+$/, '') || item.name;
+      const baseId = master?.id || item.id?.replace(/_([a-z0-9]+)+$/, '') || item.name;
       const existing = acc.find(i => {
          const iMaster = getMasterData(i);
-         const iBaseId = iMaster?.id || i.id?.replace(/(_\d+)+$/, '') || i.name;
+         const iBaseId = iMaster?.id || i.id?.replace(/_([a-z0-9]+)+$/, '') || i.name;
          return iBaseId === baseId;
       });
       if (existing) {

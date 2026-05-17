@@ -97,23 +97,43 @@ export const InventoryView = React.memo(() => {
   };
 
   const processedInventory = useMemo(() => {
-     const inv = Object.values(player.inventory || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: false }));
-     const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => ({ ...i, isEquipped: true }));
+     const unequippedCounts = {};
+     const unequippedFirsts = {};
+     const nameToId = {};
+     ITEMS.forEach(i => { if (i.name) nameToId[i.name.toLowerCase()] = i.id; });
+
+     Object.values(player.inventory || {}).forEach(i => {
+       if (!i || typeof i !== 'object') return;
+       const baseId = (i.name && nameToId[i.name.toLowerCase()]) || i.id?.replace(/_([a-z0-9]+)+$/, '') || i.name;
+       const master = getMasterData(i);
+       
+       if (!unequippedFirsts[baseId]) {
+         unequippedFirsts[baseId] = { ...i, isEquipped: false, master };
+       }
+       unequippedCounts[baseId] = (unequippedCounts[baseId] || 0) + 1;
+     });
      
-     // Synthesize base root items into physical objects for the main grid
-     // Synthesize base root items into physical objects for the main grid (Representative only)
+     const unequipped = Object.keys(unequippedCounts).map(baseId => {
+       return { ...unequippedFirsts[baseId], count: unequippedCounts[baseId] };
+     });
+     
+     const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => {
+       return { ...i, isEquipped: true, count: 1, master: getMasterData(i) };
+     });
+     
+     const pools = [];
      if (player.autoScrolls > 0) {
-        inv.push({ id: `auto_scroll_pool`, name: 'Auto-Hunt Energy', type: 'Consumable', category: 'Consumable', count: player.autoScrolls, isEquipped: false, icon: '🪄', desc: 'Unified reservoir of auto-hunt minutes.' });
+        pools.push({ id: `auto_scroll_pool`, name: 'Auto-Hunt Energy', type: 'Consumable', category: 'Consumable', count: player.autoScrolls, isEquipped: false, icon: '🪄', desc: 'Unified reservoir of auto-hunt minutes.', master: { type: 'Consumable' } });
      }
      if (player.potions > 0) {
-        inv.push({ id: `hp_potion_pool`, name: 'Standard HP Potion', type: 'Consumable', category: 'Consumable', count: player.potions, isEquipped: false, icon: '🧪', desc: 'Standard biological recovery unit.' });
+        pools.push({ id: `hp_potion_pool`, name: 'Standard HP Potion', type: 'Consumable', category: 'Consumable', count: player.potions, isEquipped: false, icon: '🧪', desc: 'Standard biological recovery unit.', master: { type: 'Consumable' } });
      }
 
-     let fullList = [...inv, ...equipped];
+     let fullList = [...pools, ...equipped, ...unequipped];
 
      if (filter !== 'All') {
         fullList = fullList.filter(i => {
-          const master = getMasterData(i);
+          const master = i.master || getMasterData(i);
           const iType = i.type || master?.type;
           const iCat = i.category || master?.category;
           if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact'].includes(iType);
@@ -133,14 +153,19 @@ export const InventoryView = React.memo(() => {
 
   const counts = useMemo(() => {
     const c = {};
-    Object.values(player.inventory || {}).forEach(i => {
-      if (!i) return;
-      const master = getMasterData(i);
-      const cleanId = master?.id || i.id?.replace(/_([a-z0-9]+)+$/, '');
-      c[cleanId] = (c[cleanId] || 0) + 1;
+    if (!player.inventory) return c;
+
+    const nameToId = {};
+    ITEMS.forEach(i => { if (i.name) nameToId[i.name.toLowerCase()] = i.id; });
+
+    Object.values(player.inventory).forEach(item => {
+      if (!item) return;
+      const baseId = (item.name && nameToId[item.name.toLowerCase()]) || item.id?.replace(/_([a-z0-9]+)+$/, '') || item.name;
+      c[baseId] = (c[baseId] || 0) + 1;
+      if (item.id !== baseId) c[item.id] = (c[item.id] || 0) + 1;
     });
     return c;
-  }, [player.inventory, ITEMS, CRYSTLE_RECIPES, FOODS]);
+  }, [player.inventory, ITEMS]);
 
   const renderResource = (icon, label, count) => (
     <div className={`flex flex-col items-center justify-center p-1 border-[3px] border-black transition-all ${count === 0 ? 'grayscale opacity-40 bg-white/5' : 'bg-white shadow-[3px_3px_0px_0px_black]'}`}>
@@ -251,30 +276,11 @@ export const InventoryView = React.memo(() => {
 
           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
              {(() => {
-                 const stacked = processedInventory.reduce((acc, item) => {
-                   const cleanId = item.id?.replace(/_([a-z0-9]+)+$/, '');
-                   const master = ITEMS.find(it => it.id === cleanId || it.name?.toLowerCase() === item.name?.toLowerCase());
-                   const baseId = master?.id || cleanId || item.name;
-                   
-                   const key = `${baseId}-${!!item.isEquipped}`;
-                   const existing = acc.find(i => {
-                      const iCleanId = i.id?.replace(/(_\d+)+$/, '');
-                      const iMaster = ITEMS.find(it => it.id === iCleanId || it.name?.toLowerCase() === i.name?.toLowerCase());
-                      const iBaseId = iMaster?.id || iCleanId || i.name;
-                      return `${iBaseId}-${!!i.isEquipped}` === key;
-                   });
-                   
-                   if (existing && !item.isEquipped) {
-                      existing.count += 1;
-                   } else {
-                      acc.push({ ...item, count: 1 });
-                   }
-                   return acc;
-                 }, []);
+                const stacked = processedInventory;
 
                 return stacked.length > 0 ? (
                   stacked.map((item, idx) => {
-                    const master = getMasterData(item);
+                    const master = item.master || getMasterData(item);
                     const icon = getItemIcon(item, master);
                     const rarity = master.rarity || item.rarity || 'Common';
                     
