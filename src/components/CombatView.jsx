@@ -11,12 +11,13 @@ export const CombatView = React.memo(() => {
     LOOTS, ITEMS, TAVERN_MATES, PETS_METADATA, openGuide, syncPlayer, lowPerfMode, FOODS, ELEMENTAL_SKILLS, inventoryCounts
   } = useGame();
 
-  const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip } = adventure;
+  const { enemy, depth, setDepth, view, setView, selectedMap, killsInFloor, isHurt, handleSkip, clearEnemy } = adventure;
   const { 
     stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
     strikingSide, currentTaunt, playerTaunt, lastLoot, isTreasury,
     skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
-    monsterSkillActive, squadStrikeActive, defeatData, handleDismissDefeat
+    monsterSkillActive, squadStrikeActive, defeatData, handleDismissDefeat,
+    showOverburdenedWarning, setShowOverburdenedWarning, resetCombatEngine
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, penaltyRemaining, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -137,7 +138,10 @@ export const CombatView = React.memo(() => {
     combat.sessionRewards.loots.forEach(item => {
       const rarity = item.rarity || 'Common';
       if (!categories[rarity]) categories[rarity] = [];
-      const existing = categories[rarity].find(i => (i.id.replace(/(_\d+)+$/, '') === item.id.replace(/(_\d+)+$/, '')) || i.name === item.name);
+      const existing = categories[rarity].find(i => 
+        (((i.id || '').replace(/(_\d+)+$/, '') === (item.id || '').replace(/(_\d+)+$/, '')) || i.name === item.name)
+        && !!i.isAbandoned === !!item.isAbandoned
+      );
       if (existing) {
         existing.count = (existing.count || 1) + 1;
       } else {
@@ -194,6 +198,15 @@ export const CombatView = React.memo(() => {
     // Ensures if the player re-enters rapidly, the mutex is clean
     if (combat.combatBusRef) {
       combat.combatBusRef.current = false;
+    }
+
+    const currentSlots = Object.keys(player?.inventory || {}).length;
+    const maxSlots = player?.maxInventorySlots || 50;
+    if (currentSlots >= maxSlots) {
+      setShowOverburdenedWarning(true);
+      if (audio?.playSFX) {
+        audio.playSFX(SOUNDS.skillTrigger);
+      }
     }
   }, []);
 
@@ -863,9 +876,19 @@ export const CombatView = React.memo(() => {
                       <span className="text-white font-black text-sm italic">+{enemy?.xp || 0} EXP</span>
                     </div>
                     {combat.lastLoot && (
-                       <div className="mt-2 bg-white/10 px-2 py-1 rounded flex items-center gap-2 border border-white/20">
-                         <span>{combat.lastLoot.icon}</span>
-                         <span className="text-[10px] text-white font-black uppercase">{combat.lastLoot.name}</span>
+                       <div className={`mt-2 px-2 py-1 rounded flex items-center gap-2 border ${
+                         combat.lastLoot.isAbandoned 
+                           ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.6)] text-red-400 animate-pulse' 
+                           : 'bg-white/10 border-white/20 text-white'
+                       }`}>
+                         <span className={combat.lastLoot.isAbandoned ? 'filter grayscale opacity-50 scale-90' : ''}>
+                           {combat.lastLoot.icon}
+                         </span>
+                         <span className="text-[10px] font-black uppercase tracking-tighter">
+                           {combat.lastLoot.isAbandoned 
+                             ? `🎒 ABANDONED (BAG FULL): ${combat.lastLoot.name}` 
+                             : combat.lastLoot.name}
+                         </span>
                        </div>
                     )}
                   </div>
@@ -1088,14 +1111,24 @@ export const CombatView = React.memo(() => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                       {items.map((item, idx) => (
-                        <div key={idx} className="bg-black/40 border-2 border-white/5 p-3 md:p-4 rounded-xl flex items-center gap-4 group hover:bg-white/5 hover:border-cyan-500/50 transition-all">
-                          <div className={`w-12 h-12 md:w-16 md:h-16 flex-shrink-0 flex items-center justify-center text-3xl md:text-4xl bg-slate-900 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] rounded-xl transform transition-transform group-hover:scale-110 group-hover:rotate-3 ${item.rarity === 'Legendary' ? 'border-amber-500/50' : ''
-                            }`}>
+                        <div key={idx} className={`border-2 p-3 md:p-4 rounded-xl flex items-center gap-4 group transition-all relative overflow-hidden ${
+                          item.isAbandoned 
+                            ? 'bg-red-950/20 border-red-500/30 opacity-60 hover:bg-red-950/30 shadow-[inset_0_0_12px_rgba(239,68,68,0.15)]' 
+                            : 'bg-black/40 border-white/5 hover:bg-white/5 hover:border-cyan-500/50'
+                        }`}>
+                          {item.isAbandoned && (
+                            <div className="absolute top-1 right-1 bg-red-600 text-black px-1.5 py-0.5 text-[6px] md:text-[8px] font-black uppercase italic rounded transform rotate-3 z-10 shadow-md">
+                              🎒 ABANDONED
+                            </div>
+                          )}
+                          <div className={`w-12 h-12 md:w-16 md:h-16 flex-shrink-0 flex items-center justify-center text-3xl md:text-4xl bg-slate-900 border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,1)] rounded-xl transform transition-transform group-hover:scale-110 group-hover:rotate-3 ${
+                            item.isAbandoned ? 'border-red-900 grayscale opacity-45' : (item.rarity === 'Legendary' ? 'border-amber-500/50' : '')
+                          }`}>
                             {item.icon}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <h4 className="text-xs md:text-base font-black text-white uppercase italic truncate">
+                              <h4 className={`text-xs md:text-base font-black uppercase italic truncate ${item.isAbandoned ? 'text-red-400 line-through' : 'text-white'}`}>
                                 {item.count && item.count > 1 ? `${item.count}x ` : ''}{item.name}
                               </h4>
                               <div className="flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
@@ -1107,7 +1140,9 @@ export const CombatView = React.memo(() => {
                               <span className="text-[7px] md:text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.type}</span>
                               <div className="flex gap-1">
                                 {Object.entries(item.stats || {}).map(([s, v]) => v !== 0 && (
-                                  <span key={s} className="text-[7px] md:text-[8px] font-black text-cyan-400/70 border border-cyan-400/20 px-1 rounded uppercase">+{v} {s}</span>
+                                  <span key={s} className={`text-[7px] md:text-[8px] font-black border px-1 rounded uppercase ${
+                                    item.isAbandoned ? 'text-red-400/50 border-red-500/20' : 'text-cyan-400/70 border-cyan-400/20'
+                                  }`}>+{v} {s}</span>
                                 ))}
                               </div>
                             </div>
@@ -1417,6 +1452,67 @@ export const CombatView = React.memo(() => {
                 className="flex-1 bg-slate-800 border-[3px] border-black py-3 md:py-4 font-black text-white text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
               >
                 <span className="text-lg">🏠</span> Return to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HIGH-IMPACT OVERBURDENED WARNING PORTAL MODAL */}
+      {showOverburdenedWarning && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-cyber-grid opacity-10 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-scanline opacity-25 pointer-events-none"></div>
+          
+          <div className="relative bg-slate-950 border-[6px] border-red-600 max-w-lg w-full p-6 md:p-8 text-center shadow-[0_0_80px_rgba(220,38,38,0.5),10px_10px_0_rgba(0,0,0,1)] transform -rotate-1 animate-in zoom-in-95 duration-300">
+            {/* Halftone & Grid Details */}
+            <div className="absolute inset-0 bg-comic-dots opacity-20 pointer-events-none text-red-500"></div>
+            
+            {/* Warning Klaxon Triangle Header */}
+            <div className="mx-auto w-20 h-20 bg-red-600 border-[4px] border-black rounded-full flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] animate-bounce-short mb-4 transform rotate-6">
+              <span className="text-white text-4xl">🎒</span>
+            </div>
+
+            <h2 className="text-3xl md:text-5xl font-[1000] text-red-500 italic uppercase tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-none bungee">
+              SATCHEL FULL!
+            </h2>
+            <p className="text-[10px] md:text-xs font-black text-white/50 uppercase tracking-[0.25em] font-mono mt-2 italic">
+              CRITICAL INVENTORY ENVELOPE BREACHED
+            </p>
+
+            <div className="my-6 border-2 border-red-500/20 bg-red-950/20 p-4 rounded-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 h-full bg-red-600 opacity-5 w-[150%] animate-skill-sweep"></div>
+              
+              <div className="flex items-center justify-between text-[10px] md:text-xs font-black text-red-400 mb-2 uppercase italic tracking-wider bungee">
+                <span>Occupancy Load</span>
+                <span>{Object.keys(player?.inventory || {}).length} / {player?.maxInventorySlots || 50} Slots</span>
+              </div>
+              <div className="w-full h-4 bg-black border-2 border-red-500/50 p-0.5 rounded overflow-hidden">
+                <div className="h-full bg-red-600 rounded animate-pulse" style={{ width: '100%' }}></div>
+              </div>
+
+              <p className="text-[9px] md:text-[11px] font-bold text-white uppercase mt-4 tracking-tighter leading-snug bungee text-left">
+                ⚠️ WARNING: All pending dungeon drops (including rare <span className="text-cyan-400">Hunt Sparks</span>, legendary <span className="text-purple-400">Aether Sparks</span>, and elite equipment frequencies) WILL be immediately abandoned and left behind in the sector!
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
+              <button
+                onClick={() => {
+                  resetCombatEngine();
+                  if (clearEnemy) clearEnemy();
+                  setView('bag_upgrade');
+                }}
+                className="w-full sm:w-auto px-6 py-3 bg-[var(--neon-lime)] hover:bg-lime-400 border-3 border-black text-black font-black text-xs md:text-sm uppercase italic tracking-wider shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all bungee"
+              >
+                ⚙️ UPGRADE CAPACITY NOW
+              </button>
+              
+              <button
+                onClick={() => setShowOverburdenedWarning(false)}
+                className="w-full sm:w-auto px-6 py-3 bg-red-600 hover:bg-red-500 border-3 border-black text-white font-black text-xs md:text-sm uppercase italic tracking-wider shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all bungee"
+              >
+                ⚔️ RISK IT & ENTER SECTOR
               </button>
             </div>
           </div>

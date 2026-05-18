@@ -98,6 +98,9 @@ export const useGameLoop = ({
       const p = playerRef.current;
       if (!p || !c) return;
 
+      // Pause attacks completely if the overburdened warning dialog is visible
+      if (c.showOverburdenedWarning) return;
+
       // All three gates must be open
       const busOpen   = c.combatBusRef?.current === false;
       const notStunned = (c.stunRef?.current || 0) <= 0;

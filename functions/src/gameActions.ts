@@ -1,82 +1,219 @@
 import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
-// ============================================================
-// SERVER-SIDE CATALOG — The ONLY source of truth for pricing.
-// Client-supplied 'cost' and 'value' fields are NEVER trusted.
-// ============================================================
-const ITEM_CATALOG: Record<string, { cost?: number; sellValue?: number; reqLvl?: number; name?: string }> = {
-  'hp_potion':         { cost: 50,    sellValue: 20,    reqLvl: 1  },
-  'auto_scroll':       { cost: 300,   sellValue: 120,   reqLvl: 1  },
-  'mega_hp_potion':    {              sellValue: 100              },
-  'ultra_hp_potion':   {              sellValue: 500              },
-  'auto_scroll_3m':    {              sellValue: 350              },
-  'auto_scroll_6m':    {              sellValue: 700              },
-  'auto_scroll_9m':    {              sellValue: 1000             },
-  'auto_scroll_12m':   {              sellValue: 1400             },
-  'steel_edge':        { cost: 100,   sellValue: 40,    reqLvl: 2  },
-  'breaker_hammer':    { cost: 400,   sellValue: 160,   reqLvl: 8  },
-  'scout_vest':        { cost: 150,   sellValue: 60,    reqLvl: 3  },
-  'heavy_plate':       { cost: 600,   sellValue: 240,   reqLvl: 10 },
-  'leather_cap':       { cost: 80,    sellValue: 32,    reqLvl: 1  },
-  'iron_helm':         { cost: 250,   sellValue: 100,   reqLvl: 5  },
-  'leather_boots':     { cost: 80,    sellValue: 32,    reqLvl: 1  },
-  'swift_sandals':     { cost: 300,   sellValue: 120,   reqLvl: 6  },
-  'war_boots':         { cost: 500,   sellValue: 200,   reqLvl: 12 },
-  'dragon_apple':      { cost: 200,   sellValue: 50,    reqLvl: 1  },
-  'ember_grapes':      { cost: 200,   sellValue: 50,    reqLvl: 1  },
-  'sky_berry':         { cost: 500,   sellValue: 100,   reqLvl: 10 },
-  'void_cherry':       { cost: 500,   sellValue: 100,   reqLvl: 10 },
-  'golden_peach':      { cost: 2000,  sellValue: 500,   reqLvl: 20 },
-  'plasma_lemon':      { cost: 2000,  sellValue: 500,   reqLvl: 20 },
-  'neon_orange':       { cost: 5000,  sellValue: 1200,  reqLvl: 30 },
-  'crystle_pear':      { cost: 25000, sellValue: 5000,  reqLvl: 40 },
-  'taming_hydro':      { cost: 2500,  sellValue: 500,   reqLvl: 25 },
-  'taming_pyro':       { cost: 2500,  sellValue: 500,   reqLvl: 25 },
-  'taming_gale':       { cost: 2500,  sellValue: 500,   reqLvl: 25 },
-  'taming_earthen':    { cost: 2500,  sellValue: 500,   reqLvl: 25 },
-  'taming_cosmic':     { cost: 2500,  sellValue: 500,   reqLvl: 25 },
-  'enforcer_blade':    { cost: 3000,  sellValue: 1200,  reqLvl: 35 },
-  'enforcer_plate':    { cost: 3200,  sellValue: 1280,  reqLvl: 35 },
-  'enforcer_helm':     { cost: 2800,  sellValue: 1120,  reqLvl: 35 },
-  'enforcer_boots':    { cost: 2800,  sellValue: 1120,  reqLvl: 35 },
-  'vanguard_halberd':  { cost: 8000,  sellValue: 3200,  reqLvl: 50 },
-  'vanguard_suit':     { cost: 8500,  sellValue: 3400,  reqLvl: 50 },
-  'vanguard_visor':    { cost: 7500,  sellValue: 3000,  reqLvl: 50 },
-  'vanguard_treads':   { cost: 7500,  sellValue: 3000,  reqLvl: 50 },
-  'apex_striker':      { cost: 20000, sellValue: 8000,  reqLvl: 75 },
-  'apex_carapace':     { cost: 22000, sellValue: 8800,  reqLvl: 75 },
-  'apex_crown':        { cost: 18000, sellValue: 7200,  reqLvl: 75 },
-  'apex_striders':     { cost: 18000, sellValue: 7200,  reqLvl: 75 },
-  'genesis_edge':      { cost: 50000, sellValue: 20000, reqLvl: 100 },
-  'genesis_core_armor':{ cost: 55000, sellValue: 22000, reqLvl: 100 },
-  'genesis_halo':      { cost: 45000, sellValue: 18000, reqLvl: 100 },
-  'genesis_gravity_boots':{ cost: 45000, sellValue: 18000, reqLvl: 100 },
-  // Loot sell values (client can never inflate these)
-  'crystle_shard':     { sellValue: 10   }, 'beast_hide':    { sellValue: 15   },
-  'void_essence':      { sellValue: 50   }, 'ancient_gear':  { sellValue: 200  },
-  'core_pulse':        { sellValue: 1000 }, 'omega_crystle': { sellValue: 5000 },
-  'singularity':       { sellValue: 10000}, 'black_hole_shard':{ sellValue: 15000 },
-  'aether_spark':      { sellValue: 1000 }, 'hunt_spark':    { sellValue: 250  },
-  'void_edge':         { sellValue: 2000 }, 'guardian_core': { sellValue: 2000 },
-  'void_capacitor':    { sellValue: 1800 }, 'omega_sigil':   { sellValue: 3200 },
-  'magma_blade':       { sellValue: 5000 }, 'tidal_plate':   { sellValue: 5000 },
-  'storm_boots':       { sellValue: 5000 }, 'quake_helm':    { sellValue: 5000 },
-  'void_relic':        { sellValue: 8000 }, 'event_horizon': { sellValue: 4000 },
-  'time_drift':        { sellValue: 3500 }, 'glowing_eye':   { sellValue: 1200 },
-  'void_crystal':      { sellValue: 800  }, 'crystle_blade': { sellValue: 400  },
-  'neon_plate':        { sellValue: 600  }, 'tech_visor':    { sellValue: 320  },
-  'kinetic_boots':     { sellValue: 480  },
+const ITEM_CATALOG: Record<string, any> = {
+  'hp_potion': { sellValue: 20 },
+  'auto_scroll': { sellValue: 120 },
+  'mega_hp_potion': { sellValue: 100 },
+  'ultra_hp_potion': { sellValue: 500 },
+  'auto_scroll_3m': { sellValue: 350 },
+  'auto_scroll_6m': { sellValue: 700 },
+  'auto_scroll_9m': { sellValue: 1000 },
+  'auto_scroll_12m': { sellValue: 1400 },
+  'steel_edge': { sellValue: 40 },
+  'breaker_hammer': { sellValue: 160 },
+  'scout_vest': { sellValue: 60 },
+  'heavy_plate': { sellValue: 240 },
+  'leather_cap': { sellValue: 32 },
+  'iron_helm': { sellValue: 100 },
+  'leather_boots': { sellValue: 32 },
+  'swift_sandals': { sellValue: 120 },
+  'war_boots': { sellValue: 200 },
+  'crystle_blade': { sellValue: 400 },
+  'neon_plate': { sellValue: 600 },
+  'tech_visor': { sellValue: 320 },
+  'kinetic_boots': { sellValue: 480 },
+  'void_edge': { sellValue: 2000 },
+  'guardian_core': { sellValue: 2000 },
+  'void_capacitor': { sellValue: 1800 },
+  'omega_sigil': { sellValue: 3200 },
+  'crystle_shard': { sellValue: 10 },
+  'beast_hide': { sellValue: 15 },
+  'void_essence': { sellValue: 50 },
+  'ancient_gear': { sellValue: 200 },
+  'core_pulse': { sellValue: 1000 },
+  'omega_crystle': { sellValue: 5000 },
+  'slum_scrap': { sellValue: 5 },
+  'toxic_sludge': { sellValue: 8 },
+  'rusty_wire': { sellValue: 6 },
+  'mutant_tooth': { sellValue: 12 },
+  'neon_dust': { sellValue: 15 },
+  'broken_sensor': { sellValue: 45 },
+  'slum_medals': { sellValue: 60 },
+  'cypher_chip': { sellValue: 250 },
+  'glowing_eye': { sellValue: 1200 },
+  'slum_rat_tail': { sellValue: 4 },
+  'copper_piping': { sellValue: 14 },
+  'broken_glasses': { sellValue: 2 },
+  'dirty_rag': { sellValue: 1 },
+  'moldy_bread': { sellValue: 1 },
+  'faded_poster': { sellValue: 5 },
+  'cracked_tile': { sellValue: 3 },
+  'plastic_bottle': { sellValue: 2 },
+  'old_coin': { sellValue: 35 },
+  'bio_vial': { sellValue: 75 },
+  'hazard_tape': { sellValue: 10 },
+  'rusted_key': { sellValue: 40 },
+  'empty_can': { sellValue: 3 },
+  'cracked_screen': { sellValue: 55 },
+  'neon_filament': { sellValue: 180 },
+  'canyon_iron': { sellValue: 25 },
+  'oil_drum': { sellValue: 30 },
+  'cracked_piston': { sellValue: 20 },
+  'sand_glass': { sellValue: 18 },
+  'engine_bolt': { sellValue: 15 },
+  'power_cell': { sellValue: 80 },
+  'vintage_armor': { sellValue: 95 },
+  'titanium_link': { sellValue: 350 },
+  'turbo_charger': { sellValue: 1500 },
+  'exhaust_pipe': { sellValue: 40 },
+  'steel_spring': { sellValue: 35 },
+  'rubber_hose': { sellValue: 25 },
+  'spark_plug': { sellValue: 65 },
+  'fan_blade': { sellValue: 75 },
+  'rusty_cog': { sellValue: 45 },
+  'metal_shard': { sellValue: 20 },
+  'fuel_filter': { sellValue: 85 },
+  'brake_pad': { sellValue: 90 },
+  'clutch_plate': { sellValue: 250 },
+  'valve_stem': { sellValue: 70 },
+  'radiator_fin': { sellValue: 55 },
+  'chrome_trim': { sellValue: 200 },
+  'carbon_filter': { sellValue: 320 },
+  'hydraulics': { sellValue: 1200 },
+  'ignition_coil': { sellValue: 400 },
+  'void_shard': { sellValue: 100 },
+  'dark_matter': { sellValue: 120 },
+  'gravity_well': { sellValue: 150 },
+  'neural_net': { sellValue: 110 },
+  'plasma_core': { sellValue: 450 },
+  'void_crystal': { sellValue: 800 },
+  'singularity': { sellValue: 10000 },
+  'event_horizon': { sellValue: 4000 },
+  'quantum_bit': { sellValue: 900 },
+  'nanite_cloud': { sellValue: 600 },
+  'warp_drive_part': { sellValue: 2500 },
+  'cyber_heart': { sellValue: 2000 },
+  'stardust': { sellValue: 400 },
+  'obsidian_glass': { sellValue: 200 },
+  'void_tear': { sellValue: 350 },
+  'shadow_pulse': { sellValue: 280 },
+  'entropy_coil': { sellValue: 750 },
+  'null_point': { sellValue: 950 },
+  'void_membrane': { sellValue: 180 },
+  'black_hole_shard': { sellValue: 15000 },
+  'time_drift': { sellValue: 3500 },
+  'phase_module': { sellValue: 820 },
+  'void_beacon': { sellValue: 680 },
+  'dark_energy_cell': { sellValue: 520 },
+  'void_fang': { sellValue: 220 },
+  'magma_core': { sellValue: 1500 },
+  'fire_essence': { sellValue: 500 },
+  'scorched_bone': { sellValue: 150 },
+  'ember_shard': { sellValue: 50 },
+  'quake_stone': { sellValue: 1500 },
+  'earth_essence': { sellValue: 500 },
+  'petrified_wood': { sellValue: 150 },
+  'granite_fragment': { sellValue: 50 },
+  'ocean_pearl': { sellValue: 1500 },
+  'water_essence': { sellValue: 500 },
+  'coral_spine': { sellValue: 150 },
+  'sea_salt': { sellValue: 50 },
+  'gale_feather': { sellValue: 1500 },
+  'storm_essence': { sellValue: 500 },
+  'cloud_silk': { sellValue: 150 },
+  'mist_vial': { sellValue: 50 },
+  'dragon_apple': { sellValue: 50 },
+  'ember_grapes': { sellValue: 50 },
+  'sky_berry': { sellValue: 100 },
+  'void_cherry': { sellValue: 100 },
+  'golden_peach': { sellValue: 500 },
+  'plasma_lemon': { sellValue: 500 },
+  'neon_orange': { sellValue: 1200 },
+  'crystle_pear': { sellValue: 5000 },
+  'taming_hydro': { sellValue: 500 },
+  'taming_pyro': { sellValue: 500 },
+  'taming_gale': { sellValue: 500 },
+  'taming_earthen': { sellValue: 500 },
+  'taming_cosmic': { sellValue: 500 },
+  'magma_blade': { sellValue: 5000 },
+  'tidal_plate': { sellValue: 5000 },
+  'storm_boots': { sellValue: 5000 },
+  'quake_helm': { sellValue: 5000 },
+  'void_relic': { sellValue: 8000 },
+  'schema_neon_plate': { sellValue: 500 },
+  'schema_tech_visor': { sellValue: 300 },
+  'schema_kinetic_boots': { sellValue: 450 },
+  'schema_void_edge': { sellValue: 2500 },
+  'scrap_saber': { sellValue: 150 },
+  'riveted_plate': { sellValue: 200 },
+  'welder_mask': { sellValue: 120 },
+  'heavy_clogs': { sellValue: 120 },
+  'sludge_slicer': { sellValue: 350 },
+  'hazmat_vest': { sellValue: 400 },
+  'filter_helm': { sellValue: 280 },
+  'rubber_treaders': { sellValue: 280 },
+  'pulse_blade': { sellValue: 800 },
+  'data_mesh': { sellValue: 900 },
+  'hud_goggles': { sellValue: 650 },
+  'static_runners': { sellValue: 650 },
+  'scrap_spear': { sellValue: 180 },
+  'sand_cloak': { sellValue: 220 },
+  'dust_hood': { sellValue: 150 },
+  'dune_wraps': { sellValue: 150 },
+  'flux_core_r': { sellValue: 1200 },
+  'signal_jammer': { sellValue: 1250 },
+  'capacitor_cuff': { sellValue: 1100 },
+  'neural_link': { sellValue: 1500 },
+  'titan_impact': { sellValue: 1800 },
+  'void_plating': { sellValue: 2000 },
+  'chrono_helm': { sellValue: 1600 },
+  'warp_boots': { sellValue: 1600 },
+  'bio_saber': { sellValue: 900 },
+  'recycled_core': { sellValue: 2500 },
+  'scrap_cannon': { sellValue: 1400 },
+  'neon_shield': { sellValue: 1200 },
+  'hazmat_claws': { sellValue: 1300 },
+  'void_wraps': { sellValue: 1350 },
+  'enforcer_blade': { sellValue: 1200 },
+  'enforcer_plate': { sellValue: 1280 },
+  'enforcer_helm': { sellValue: 1120 },
+  'enforcer_boots': { sellValue: 1120 },
+  'vanguard_halberd': { sellValue: 3200 },
+  'vanguard_suit': { sellValue: 3400 },
+  'vanguard_visor': { sellValue: 3000 },
+  'vanguard_treads': { sellValue: 3000 },
+  'apex_striker': { sellValue: 8000 },
+  'apex_carapace': { sellValue: 8800 },
+  'apex_crown': { sellValue: 7200 },
+  'apex_striders': { sellValue: 7200 },
+  'genesis_edge': { sellValue: 20000 },
+  'genesis_core_armor': { sellValue: 22000 },
+  'genesis_halo': { sellValue: 18000 },
+  'genesis_gravity_boots': { sellValue: 18000 },
+  'magnetic_coil': { sellValue: 85 },
+  'aether_spark': { sellValue: 1000 },
+  'hunt_spark': { sellValue: 250 },
 };
 
-// Helper: look up sell value by stripping unique suffixes (e.g., 'crystle_shard_1234_abc' -> 'crystle_shard')
+// Robust base ID extractor: strips `_<timestamp>_<any_suffix>` or `_<timestamp>` patterns.
+// Handles short suffixes (1–3 chars) that the old {4,} regex missed.
+const extractBaseId = (itemId: string): string => {
+  // Strip everything from the first underscore followed by 10+ digits (a 13-digit ms timestamp)
+  const tsStripped = itemId.replace(/_\d{10,}.*$/, '');
+  if (tsStripped !== itemId) return tsStripped; // found a timestamp, return cleaned base
+  // Fallback: strip trailing short alphanumeric suffix (for IDs without timestamps)
+  return itemId.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+};
+
+// Helper: look up sell value by extracting the canonical base ID
 const getSellValue = (itemId: string): number => {
-  const baseId = itemId.replace(/_[a-z0-9]{4,}(_TOWN_\d+_[a-z0-9]+)?$/i, '').replace(/_\d+$/, '');
+  const baseId = extractBaseId(itemId);
   return ITEM_CATALOG[baseId]?.sellValue ?? ITEM_CATALOG[itemId]?.sellValue ?? 0;
 };
 
 const getCatalogEntry = (itemId: string) => {
-  const baseId = itemId.replace(/_\d+(_[a-z0-9]+)*$/, '');
+  const baseId = extractBaseId(itemId);
   return ITEM_CATALOG[baseId] ?? ITEM_CATALOG[itemId] ?? null;
 };
 
@@ -121,6 +258,14 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       const currentTokens = userData.tokens || 0;
       if (currentTokens < totalCost) throw new HttpsError('failed-precondition', 'Insufficient GX.');
       if (userData.level < (catalogEntry.reqLvl || 1)) throw new HttpsError('failed-precondition', 'Level too low.');
+
+      // SECURITY: Enforce inventory slot capacity before allowing purchase
+      const maxSlots = userData.maxInventorySlots || 50;
+      const currentSlots = Object.keys(userData.inventory || {}).length;
+      const isCounterItem = (item.id === 'hp_potion' || item.id === 'auto_scroll');
+      if (!isCounterItem && (currentSlots + qty) > maxSlots) {
+        throw new HttpsError('failed-precondition', `Bag full! You have ${currentSlots}/${maxSlots} slots used. Sell items or upgrade your storage.`);
+      }
 
       const updates: any = {
         tokens: currentTokens - totalCost,
@@ -216,8 +361,11 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
 
       if (loots && loots.length > 0) {
         const inventory = userData.inventory || {};
+        const maxSlots = userData.maxInventorySlots || 50;
         loots.forEach((loot: any) => {
           if (loot.id?.includes('_pool_')) return;
+          // SERVER CAPACITY LOCK: Skip adding items if capacity is exceeded
+          if (Object.keys(inventory).length >= maxSlots) return;
           inventory[loot.id] = loot;
         });
         updates.inventory = inventory;
@@ -245,14 +393,15 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       const trueSellValue = getSellValue((targetItem as any).id || itemId);
       if (trueSellValue <= 0) throw new HttpsError('failed-precondition', 'This item cannot be sold.');
 
-      const baseId = (targetItem as any).id?.replace(/_[a-z0-9]{4,}$/i, '').replace(/_\d+$/, '') || itemId;
+      const baseId = extractBaseId((targetItem as any).id || itemId);
       const sellQty = qty;
 
       const entries = Object.entries(inventory);
       let removed = 0;
       for (const [key, invItem] of entries) {
         if (removed >= sellQty) break;
-        const invBaseId = (invItem as any).id?.replace(/_[a-z0-9]{4,}$/i, '').replace(/_\d+$/, '');
+        if (!invItem) continue;
+        const invBaseId = extractBaseId((invItem as any).id || key);
         if (invBaseId === baseId) {
           delete inventory[key];
           removed++;
@@ -612,6 +761,130 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
       return { success: true, total };
+    }
+
+    if (action === 'UPGRADE_INVENTORY_SLOTS') {
+      const { method, txHash } = payload;
+      const currentMax = userData.maxInventorySlots || 50;
+
+      if (currentMax >= 120) {
+        throw new HttpsError('failed-precondition', 'Maximum storage capacity of 120 slots has already been reached.');
+      }
+
+      const updates: any = {};
+      const inventory = userData.inventory || {};
+
+      // --- 1. THE F2P GRIND PATH (GX Gold) ---
+      if (method === 'GX') {
+        let cost = 5000;
+        if (currentMax >= 100) cost = 30000;
+        else if (currentMax >= 70) cost = 15000;
+
+        if ((userData.tokens || 0) < cost) {
+          throw new HttpsError('failed-precondition', 'Insufficient GX Gold. Keep grinding!');
+        }
+        updates.tokens = userData.tokens - cost;
+      }
+
+      // --- 2. THE WEB3 FAST-TRACK (On-Chain Tokens) ---
+      else if (method === 'DWGX' || method === 'HUNT') {
+        if (!txHash) {
+          throw new HttpsError('invalid-argument', 'Missing blockchain transaction hash.');
+        }
+
+        const txRef = db.collection('usedTransactions').doc(txHash);
+        const txSnap = await transaction.get(txRef);
+        if (txSnap.exists) {
+          throw new HttpsError('already-exists', 'This transaction has already been claimed.');
+        }
+
+        const isDevEnv = process.env.FUNCTIONS_EMULATOR === 'true';
+
+        if (!isDevEnv) {
+          const { ethers } = require("ethers");
+          const provider = new ethers.JsonRpcProvider("https://mainnet.base.org");
+          const txReceipt = await provider.getTransactionReceipt(txHash);
+
+          if (!txReceipt || txReceipt.status !== 1) {
+            throw new HttpsError('failed-precondition', 'Transaction failed or is not yet mined on Base.');
+          }
+
+          const txData = await provider.getTransaction(txHash);
+          const playerAddress = userData.walletAddress?.toLowerCase();
+
+          if (txData.from.toLowerCase() !== playerAddress) {
+            throw new HttpsError('permission-denied', 'Transaction was not initiated by your connected wallet.');
+          }
+
+          const faucetAddress = "0x8dca8d7B35004630F460B85F70d1189795CDe6Fc".toLowerCase();
+          
+          // Verify contract matches the method token
+          const expectedContract = method === 'DWGX' 
+            ? "0x3038aFBd4Bde3898C3972A8E0F45de7CB7300A3A".toLowerCase() 
+            : "0x37f0c2915CeCC7e977183B8543Fc0864d03E064C".toLowerCase();
+          
+          if (txData.to?.toLowerCase() !== expectedContract) {
+            throw new HttpsError('failed-precondition', `Invalid target contract address. Expected token contract: ${expectedContract}`);
+          }
+
+          // Parse ERC20 Transfer Input Data
+          try {
+            const erc20Interface = new ethers.Interface([
+              "function transfer(address to, uint256 amount) public returns (bool)"
+            ]);
+            const parsedTx = erc20Interface.parseTransaction({ data: txData.data });
+            if (!parsedTx) throw new Error("Invalid transaction input data.");
+            
+            const toAddress = parsedTx.args[0].toLowerCase();
+            const rawAmount = parsedTx.args[1];
+
+            // Verify receiver is the Faucet
+            if (toAddress !== faucetAddress) {
+              throw new HttpsError('failed-precondition', `Incorrect payment recipient. Expected faucet address: ${faucetAddress}`);
+            }
+
+            // Verify minimum required amount is transferred
+            // DWGX required = 25.0, HUNT required = 10.0
+            const requiredDecimals = 18; // Both use 18 decimals
+            const requiredAmount = method === 'DWGX' 
+              ? ethers.parseUnits("25.0", requiredDecimals) 
+              : ethers.parseUnits("10.0", requiredDecimals);
+
+            if (rawAmount < requiredAmount) {
+              const formattedSent = ethers.formatUnits(rawAmount, requiredDecimals);
+              const formattedReq = ethers.formatUnits(requiredAmount, requiredDecimals);
+              throw new HttpsError('failed-precondition', `Insufficient payment. Sent ${formattedSent} ${method}, but requires at least ${formattedReq} ${method}.`);
+            }
+          } catch (err: any) {
+            throw new HttpsError('failed-precondition', err.message || 'Failed to decode ERC20 transfer payload.');
+          }
+        }
+
+        // T3 check (requires burning 2 Hunt Sparks if paying with HUNT)
+        if (method === 'HUNT' && currentMax >= 100) {
+          const sparkKeys = Object.keys(inventory).filter(k => {
+            const item = inventory[k];
+            return item && typeof item.id === 'string' && item.id.startsWith('hunt_spark');
+          });
+          if (sparkKeys.length < 2) {
+            throw new HttpsError('failed-precondition', 'Requires at least 2 Hunt Sparks in your bag.');
+          }
+          delete inventory[sparkKeys[0]];
+          delete inventory[sparkKeys[1]];
+          updates.inventory = inventory;
+        }
+
+        // Mark the transaction hash as claimed
+        transaction.set(txRef, { claimedBy: uid, timestamp: admin.firestore.FieldValue.serverTimestamp() });
+      } else {
+        throw new HttpsError('invalid-argument', 'Invalid upgrade currency method.');
+      }
+
+      updates.maxInventorySlots = currentMax + 10;
+      updates.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+      transaction.update(userRef, updates);
+      return { success: true, newMax: currentMax + 10 };
     }
 
     if (action === 'ACTIVATE_SCROLL') {

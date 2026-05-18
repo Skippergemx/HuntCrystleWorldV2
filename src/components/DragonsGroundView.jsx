@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { deleteField } from 'firebase/firestore';
 import { createPortal } from 'react-dom';
-import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair, Check } from 'lucide-react';
+import { Trees, Gem, ShoppingBag, ArrowLeft, TrendingUp, Sparkles, Ghost, Hexagon, Play, Pause, Image as ImageIcon, Video, Info, X, Zap, Clock, HelpCircle, Shield, Swords, Crosshair, Check, AlertTriangle } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
@@ -158,6 +158,7 @@ export const DragonsGroundView = React.memo(() => {
   const dragonStats = player.dragon || { level: 1, fruitsFed: 0 };
 
   const [message, setMessage] = useState(null);
+  const [showOverburdenModal, setShowOverburdenModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -322,6 +323,15 @@ export const DragonsGroundView = React.memo(() => {
 
 
   const handleCollectFruit = (fruit) => {
+    const currentSlots = Object.keys(player?.inventory || {}).length;
+    const maxSlots = player?.maxInventorySlots || 50;
+
+    if (currentSlots >= maxSlots) {
+      setShowOverburdenModal(true);
+      if (playSFX) playSFX(SOUNDS.skillTrigger);
+      return;
+    }
+
     const itemId = `${fruit.data.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
     syncPlayer({ [`inventory.${itemId}`]: fruit.data });
     setMessage({ type: 'success', text: `Collected ${fruit.data.icon} ${fruit.data.name}!` });
@@ -704,6 +714,71 @@ export const DragonsGroundView = React.memo(() => {
                     <Sparkles size={12} />
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showOverburdenModal && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative w-full max-w-sm flex flex-col justify-center">
+            {/* Holographic Red shadow backing */}
+            <div className="absolute inset-0 bg-red-600 rounded-3xl transform translate-x-2 translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+            
+            <div className="relative bg-[#0d0208] border-[4px] border-black rounded-3xl z-10 p-6 flex flex-col items-center overflow-hidden text-center shadow-2xl">
+              {/* Halftone Retro Grid Overlay */}
+              <div className="absolute inset-0 opacity-5 pointer-events-none bg-cyber-grid"></div>
+              <div className="absolute inset-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #ef4444 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+              <div className="absolute inset-0 opacity-5 pointer-events-none bg-scanline"></div>
+
+              {/* Pulsing Alarm Indicator */}
+              <div className="w-16 h-16 rounded-full border-4 border-dashed border-red-500/50 flex items-center justify-center animate-spin-slow mb-4 relative">
+                <div className="absolute inset-0 bg-red-500/10 rounded-full animate-ping"></div>
+                <AlertTriangle className="text-red-500 z-10 drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]" size={30} />
+              </div>
+
+              {/* Warning Title Block */}
+              <h2 className="text-xl md:text-2xl font-[1000] text-red-500 uppercase italic tracking-tighter bungee drop-shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                SATCHEL OVERBURDENED
+              </h2>
+              <span className="text-[7px] font-black text-slate-500 bg-red-950/40 border border-red-500/30 px-3 py-1 rounded uppercase tracking-[0.2em] mb-4 block bungee">
+                ⚠️ STORAGE EXCEEDED ⚠️
+              </span>
+
+              {/* Capacity Status Grid */}
+              <div className="w-full bg-black/60 border border-white/5 p-4 rounded-2xl mb-4 text-left">
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest bungee">Satchel Status</span>
+                  <span className="text-xs font-black text-red-400 italic bungee">{Object.keys(player?.inventory || {}).length} / {player?.maxInventorySlots || 50} SLOTS</span>
+                </div>
+                <div className="h-3 bg-slate-900 rounded-full border-2 border-black overflow-hidden relative shadow-inner">
+                  <div className="h-full bg-red-600 shadow-[0_0_10px_rgba(239,68,68,1)] animate-pulse animate-duration-1000" style={{ width: '100%' }}></div>
+                </div>
+                <p className="text-[9px] text-slate-400 uppercase leading-normal tracking-tight mt-3 text-center bungee italic">
+                  Any further fruit harvesting is locked. Dump cargo or trigger a payload capacity upgrade to resume collecting.
+                </p>
+              </div>
+
+              {/* CTAs */}
+              <div className="flex flex-col gap-2.5 w-full">
+                <button
+                  onClick={() => {
+                    setShowOverburdenModal(false);
+                    setView('bag_upgrade');
+                  }}
+                  className="w-full bg-[var(--neon-lime)] text-black py-3 rounded-xl font-[1000] uppercase tracking-tighter border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-white active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all italic text-[10px] flex items-center justify-center gap-2 bungee animate-pulse"
+                >
+                  <Sparkles size={12} />
+                  UPGRADE CAPACITY NOW
+                </button>
+                <button
+                  onClick={() => setShowOverburdenModal(false)}
+                  className="w-full bg-slate-900 text-white/70 py-2.5 rounded-xl font-black uppercase tracking-widest hover:bg-slate-800 transition-all border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none italic text-[9px] bungee"
+                >
+                  DISMISS BRIEFING
+                </button>
               </div>
             </div>
           </div>

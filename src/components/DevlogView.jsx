@@ -23,6 +23,28 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.21.0',
+    date: '2026-05-18',
+    title: 'INVENTORY HARDENING & SELL SYSTEM OVERHAUL',
+    category: 'ECONOMY & SECURITY',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'cyan',
+    description: 'A comprehensive hardening of the inventory economy. This update fixes the sell validation pipeline, adds floating GX feedback on successful sells, enforces bag capacity limits at both the frontend and backend layers, and deploys a full server-side item catalog sync to prevent "Cannot be sold" false rejections.',
+    changes: [
+      'Backend: Replaced fragile suffix regex with extractBaseId() anchored on 13-digit timestamps',
+      'Backend: Synced all 180+ items from items.json into the server-side ITEM_CATALOG',
+      'Backend: Added null-guard for empty inventory slots in SELL_ITEM loop',
+      'Backend: Enforced inventory slot capacity check in BUY_ITEM Cloud Function',
+      'Frontend: Added floating "+X GX" tooltip animation on confirmed sells via createPortal',
+      'Frontend: sellItem() now returns earned value for UI feedback integration',
+      'Frontend: buyItem() now checks bag capacity client-side before calling backend',
+      'UX: Overburdened players see an immediate descriptive error instead of a 500 crash',
+      'Security: Counter items (hp_potion, auto_scroll) correctly exempt from slot checks'
+    ],
+    media: '/assets/monsters/Void Sector 7/Null Stalker.jpg'
+  },
+  {
     id: '1.20.0',
     date: '2026-05-16',
     title: 'HUNT SPARK ECONOMY & MULTI-TOKEN EXCHANGE',

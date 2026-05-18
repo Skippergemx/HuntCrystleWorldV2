@@ -21,8 +21,22 @@ export const InventoryView = React.memo(() => {
   const { setView } = adventure;
   const { sellItem, unequipItem, learnRecipe } = actions;
   
+  const currentSlots = Object.keys(player?.inventory || {}).length;
+  const maxSlots = player?.maxInventorySlots || 50;
+
   const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
+
+  const [floaters, setFloaters] = useState([]);
+  const showFloater = (e, text) => {
+    const id = Date.now() + Math.random();
+    const x = e.clientX;
+    const y = e.clientY;
+    setFloaters(prev => [...prev, { id, text, x, y }]);
+    setTimeout(() => {
+      setFloaters(prev => prev.filter(f => f.id !== id));
+    }, 1500);
+  };
 
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
@@ -209,16 +223,43 @@ export const InventoryView = React.memo(() => {
         ]}
       />
 
-       <div className="flex flex-col gap-3 mb-6 relative z-10 w-full">
-          <div className="bg-[var(--neon-lime)] border-[3px] border-black p-3 flex justify-between items-center shadow-[6px_6px_0px_0px_black]">
-             <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_black] flex items-center justify-center text-xl">🪙</div>
-                 <div className="flex flex-col">
-                    <span className="text-[8px] font-black text-black/70 uppercase leading-none bungee">GX TOKENS (LIQUID ASSETS)</span>
-                    <span className="text-xl font-black italic text-black leading-none drop-shadow-sm bungee">{player.tokens?.toLocaleString() || 0}</span>
-                 </div>
-             </div>
+      {currentSlots >= maxSlots && (
+        <div className="mb-4 bg-red-950/70 border-[3px] border-black p-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[6px_6px_0px_0px_rgba(239,68,68,1)] animate-pulse relative z-10 select-none">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-red-500 border-2 border-black flex items-center justify-center text-black font-black text-lg shadow-[2px_2px_0px_black] shrink-0">⚠️</div>
+            <div className="flex flex-col text-left">
+              <span className="text-[10px] font-black text-red-400 uppercase tracking-widest leading-none bungee">SATCHEL OVERBURDENED (WEIGHT LOCK ACTIVE)</span>
+              <p className="text-[8.5px] font-bold text-white uppercase tracking-tight mt-1 leading-snug bungee">
+                Your storage core is full! You can equip or sell items, but new monster drops and fruits are blocked.
+              </p>
+            </div>
           </div>
+          <button 
+            onClick={() => setView('bag_upgrade')} 
+            className="px-3.5 py-2 bg-white text-black hover:bg-red-500 hover:text-white text-[9px] font-[1000] uppercase italic border-2 border-black shadow-[3px_3px_0px_0px_black] active:shadow-none active:translate-y-0.5 transition-all bungee shrink-0"
+          >
+            EXPAND CAPACITY
+          </button>
+        </div>
+      )}
+
+       <div className="flex flex-col gap-3 mb-6 relative z-10 w-full">
+          <div className="bg-[var(--neon-lime)] border-[3px] border-black p-3 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-center shadow-[6px_6px_0px_0px_black]">
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white border-[3px] border-black shadow-[3px_3px_0px_0px_black] flex items-center justify-center text-xl">🪙</div>
+                  <div className="flex flex-col text-left">
+                     <span className="text-[8px] font-black text-black/70 uppercase leading-none bungee">GX TOKENS (LIQUID ASSETS)</span>
+                     <span className="text-xl font-black italic text-black leading-none drop-shadow-sm bungee">{player.tokens?.toLocaleString() || 0}</span>
+                  </div>
+              </div>
+              
+              <button 
+                onClick={() => setView('bag_upgrade')}
+                className="px-4 py-2 bg-black hover:bg-white text-white hover:text-black border-[2px] border-black font-black uppercase text-[10px] italic shadow-[3px_3px_0px_0px_rgba(0,0,0,0.8)] active:translate-y-0.5 active:shadow-none transition-all flex items-center gap-1.5 bungee shrink-0"
+              >
+                <span>🔋 EXPAND BAG CAPACITY</span>
+              </button>
+           </div>
          
          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
            <div className="bg-black border-[3px] border-white p-2.5 shadow-[6px_6px_0px_0px_black]">
@@ -359,17 +400,23 @@ export const InventoryView = React.memo(() => {
                                )}
                                {!item.id?.includes('_99999') && (
                                  <>
-                                    <button onClick={() => {
+                                    <button onClick={async (e) => {
+                                         e.persist();
                                          if (item.isEquipped) {
                                             const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
                                             if (slot) unequipItem(slot);
                                          }
-                                         sellItem(item.id, 1);
+                                         const val = await sellItem(item.id, 1);
+                                         if (val) showFloater(e, `+${val} GX`);
                                       }}
                                       className="px-3 py-1.5 bg-black text-white hover:bg-white hover:text-black text-[9px] font-black uppercase italic border-[3px] border-white hover:border-black transition-all shadow-[4px_4px_0px_0px_black] hover:shadow-[4px_4px_0px_0px_var(--neon-lime)] active:shadow-none active:translate-y-1 bungee"
                                     >Sell 1</button>
                                     {!item.isEquipped && item.count > 1 && (
-                                      <button onClick={() => sellItem(item.id, item.count)}
+                                      <button onClick={async (e) => {
+                                          e.persist();
+                                          const val = await sellItem(item.id, item.count);
+                                          if (val) showFloater(e, `+${val} GX`);
+                                        }}
                                         className="px-3 py-1.5 bg-[var(--neon-lime)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
                                       >Sell All</button>
                                     )}
@@ -389,11 +436,32 @@ export const InventoryView = React.memo(() => {
                 );
              })()}
           </div>
-          <div className="bg-black text-white/40 p-2 text-[8px] font-black flex justify-between items-center bungee">
-             <div className="flex gap-4">
-                <span>RECORDS: {processedInventory.length}</span>
-                <span>SIGNALS: ACTIVE</span>
+          <div className="bg-black border-t border-white/10 text-white/40 p-2.5 text-[8px] font-black flex flex-col md:flex-row gap-3 justify-between items-center bungee">
+             <div className="flex items-center gap-4">
+                <span>RECORDS: {processedInventory.length} ASSETS</span>
+                <span className="text-[var(--neon-lime)]">SIGNALS: ACTIVE</span>
              </div>
+             
+             {/* THE DYNAMIC CYBER CAPACITY BAR */}
+             <div className="flex items-center gap-2.5 w-full md:w-auto">
+                <span className="uppercase text-[8px] tracking-widest text-slate-400">Bag:</span>
+                <div className="w-24 md:w-32 h-2.5 bg-slate-900 border border-slate-700 p-0.5 rounded-sm overflow-hidden relative">
+                   <div 
+                     className={`h-full rounded-sm transition-all duration-500 ${
+                       currentSlots >= maxSlots ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse' : 
+                       currentSlots >= maxSlots * 0.8 ? 'bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.6)]' : 'bg-[var(--neon-cyan)] shadow-[0_0_10px_var(--neon-cyan)]'
+                     }`} 
+                     style={{ width: `${Math.min(100, (currentSlots / maxSlots) * 100)}%` }} 
+                   />
+                </div>
+                <span className={`text-[9px] font-black italic uppercase ${
+                  currentSlots >= maxSlots ? 'text-red-500 animate-pulse' : 
+                  currentSlots >= maxSlots * 0.8 ? 'text-amber-400' : 'text-white'
+                }`}>
+                   {currentSlots} / {maxSlots} SLOTS
+                </span>
+             </div>
+
              <div className="flex items-center gap-1 text-[var(--neon-cyan)]">
                 <span className="animate-pulse">●</span>
                 <span>REAL-TIME PERSISTENCE ENABLED</span>
@@ -507,11 +575,29 @@ export const InventoryView = React.memo(() => {
         document.body
       )}
 
+      {createPortal(
+        floaters.map(f => (
+          <div key={f.id} className="pointer-events-none fixed z-[9999] text-[var(--neon-lime)] font-black italic text-lg drop-shadow-[0_0_8px_rgba(0,0,0,1)] bungee animate-float-up"
+               style={{ left: f.x, top: f.y, transform: 'translate(-50%, -100%)' }}>
+            {f.text}
+          </div>
+        )),
+        document.body
+      )}
+
        <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 5px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        @keyframes float-up {
+          0% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
+          100% { transform: translate(-50%, calc(-100% - 40px)) scale(1.2); opacity: 0; }
+        }
+        .animate-float-up {
+          animation: float-up 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
        `}</style>
     </div>
   );

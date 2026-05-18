@@ -178,14 +178,19 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'SELL_ITEM', 
         payload: { itemId, value: totalValue, qty } 
       });
-      addLog(`💰 Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
+      if (result.data?.success) {
+         addLog(`💰 Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
+         return totalValue;
+      }
+      return false;
     } catch (e) {
       console.error(e);
       addLog("🚨 UPLINK ERROR: Sale failed.");
+      return false;
     }
   }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions]);
 
@@ -280,6 +285,17 @@ export const usePlayerActions = (
     if ((player.tokens || 0) < totalCost) {
       addLog("🚨 ERROR: Insufficient GX for this transaction.");
       return false;
+    }
+
+    // FRONTEND GUARD: Check inventory capacity before even calling the backend
+    const isCounterItem = (item.id === 'hp_potion' || item.id === 'auto_scroll');
+    if (!isCounterItem) {
+      const currentSlots = Object.keys(player.inventory || {}).length;
+      const maxSlots = player.maxInventorySlots || 50;
+      if (currentSlots + qty > maxSlots) {
+        addLog(`🎒 BAG FULL! ${currentSlots}/${maxSlots} slots used. Sell items or upgrade your storage first.`);
+        return false;
+      }
     }
 
     const updates = { tokens: (player.tokens || 0) - totalCost };

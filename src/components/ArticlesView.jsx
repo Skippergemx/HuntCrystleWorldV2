@@ -31,6 +31,59 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-sell-system-hardening',
+    date: '2026-05-18',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Vault Mechanics: Selling, Storage & Secure Commerce',
+    subtitle: 'Full-stack hardening of the inventory economy — from sell-side validation to bag-capacity enforcement and floating reward feedback.',
+    category: 'ECONOMY & SECURITY',
+    type: 'article',
+    tag: 'NEW',
+    color: 'cyan',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'Today\'s deployment targets one of the most foundational layers of the Hunt Crystle economy: the inventory. From the moment a hunter picks up loot to the moment they convert it back into GX, every step in that loop has been hardened, validated, and polished.'
+      },
+      {
+        type: 'heading',
+        text: 'The Sell Validation Fix'
+      },
+      {
+        type: 'paragraph',
+        text: 'A subtle but critical bug was discovered in the backend SELL_ITEM handler. Items generated with short random suffixes (such as a single character like "i" or "9") were failing the server-side catalog lookup entirely, triggering a silent "This item cannot be sold" error. We have replaced the fragile regex with a robust extractBaseId() function that anchors on the 13-digit millisecond timestamp instead of suffix length — making every item in every inventory universally sellable.'
+      },
+      {
+        type: 'heading',
+        text: 'Floating GX Rewards'
+      },
+      {
+        type: 'paragraph',
+        text: 'Selling items now gives you instant visual confirmation. A glowing "+X GX" tooltip spawns directly at your cursor the moment the Cloud Function confirms the transaction. The floater rises, scales, and fades — delivering a satisfying economic loop that feels as rewarding as the combat drops that earned the loot in the first place.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The floating GX tooltip appears at cursor position on every confirmed sell.'
+      },
+      {
+        type: 'heading',
+        text: 'Bag Capacity Enforcement'
+      },
+      {
+        type: 'paragraph',
+        text: 'The inventory capacity system now has teeth. Before this update, a player could bypass the slot cap entirely by purchasing from the Shop or Marketplace while overburdened. This has been sealed at both layers: the frontend now immediately blocks the call and displays a descriptive error message, while the backend Cloud Function applies a server-side slot count check as a secondary defense. Counter items like HP Potions and Auto Scrolls — stored as numeric counters, not slots — remain unaffected.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The grid economy is only as strong as its enforcement. Every fix today brings us one step closer to an airtight, tamper-resistant ecosystem built for hunters, not exploits.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-hunt-spark-economy',
     date: '2026-05-16',
     author: 'Commander Gemx',

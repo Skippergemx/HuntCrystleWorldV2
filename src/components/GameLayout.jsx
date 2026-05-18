@@ -34,6 +34,7 @@ import { DatabaseView } from './DatabaseView';
 import { MapView } from './MapView';
 import { AdminPanelView } from './AdminPanelView';
 import { VioAuditView } from './VioAuditView';
+import { StorageUpgradeView } from './StorageUpgradeView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
@@ -204,6 +205,10 @@ export const GameLayout = ({ onLogout }) => {
       alert(`Migration Failed: ${result.error}`);
     }
   };
+
+  const currentSlots = player?.inventory ? Object.keys(player.inventory).length : 0;
+  const maxSlots = player?.maxInventorySlots || 50;
+  const isOverburdened = currentSlots >= maxSlots;
 
   if (!player) return <LoadingScreen />;
 
@@ -565,6 +570,35 @@ export const GameLayout = ({ onLogout }) => {
                 </div>
               </div>
 
+              {/* THE SATCHEL CAPACITY HUD WIDGET */}
+              <button 
+                onClick={() => setView('bag_upgrade')}
+                className={`flex items-center gap-2 shrink-0 bg-black/40 px-2.5 md:px-4 py-1.5 rounded-lg border transition-all group/satchel ${
+                  isOverburdened 
+                    ? 'border-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.4)] hover:bg-red-950/20' 
+                    : 'border-white/5 hover:border-[var(--neon-lime)] hover:bg-emerald-950/10'
+                }`}
+                title={isOverburdened ? "SATCHEL LOCK: Satchel is full! Click to upgrade." : "View Asset Storage Core"}
+              >
+                <div className={`w-5 h-5 md:w-7 md:h-7 flex items-center justify-center rounded-md border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transition-transform group-hover/satchel:scale-110 ${
+                  isOverburdened ? 'bg-red-500 text-black' : 'bg-[var(--neon-cyan)] text-black'
+                }`}>
+                  <span className="text-[10px] md:text-sm">🎒</span>
+                </div>
+                <div className="flex flex-col items-start -gap-1">
+                  <span className={`text-[10px] md:text-sm font-black italic tracking-tighter tabular-nums ${
+                    isOverburdened ? 'text-red-500' : 'text-white'
+                  }`}>
+                    {currentSlots} / {maxSlots}
+                  </span>
+                  <span className={`text-[6px] md:text-[8px] font-black uppercase tracking-[0.2em] leading-none ${
+                    isOverburdened ? 'text-red-400 animate-pulse' : 'text-[var(--neon-lime)]'
+                  }`}>
+                    {isOverburdened ? 'FULL!' : 'Satchel'}
+                  </span>
+                </div>
+              </button>
+
               <div className="ml-auto flex items-center gap-1.5 shrink-0">
                 {/* IN-LINE NPC GUIDE (NOW MOBILE-READY) */}
                 <div className="flex items-center gap-1.5 md:gap-2 bg-black/20 px-1.5 md:px-2 py-1 rounded-lg border border-white/5 max-w-[120px] md:max-w-[180px] animate-in fade-in duration-1000">
@@ -761,6 +795,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'vio8_audit' && (
             <VioAuditView />
+          )}
+
+          {view === 'bag_upgrade' && (
+            <StorageUpgradeView />
           )}
 
           {view === 'dragons_ground' && (

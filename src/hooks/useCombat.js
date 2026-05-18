@@ -50,6 +50,7 @@ export const useCombat = (
   const [playerTaunt, setPlayerTaunt] = useState("");
   const [showDefeatedWindow, setShowDefeatedWindow] = useState(false);
   const [showVictoryWindow, setShowVictoryWindow] = useState(false);
+  const [showOverburdenedWarning, setShowOverburdenedWarning] = useState(false);
   const [sessionRewards, setSessionRewards] = useState({ tokens: 0, xp: 0, loots: [] });
   const [killsInFloor, setKillsInFloor] = useState(0);
   const [lastLoot, setLastLoot] = useState(null);
@@ -242,6 +243,7 @@ export const useCombat = (
     setCritAlert(false);
     setShowVictoryWindow(false);
     setShowDefeatedWindow(false);
+    setShowOverburdenedWarning(false);
     combatBusRef.current = false; 
   }, []);
 
@@ -607,6 +609,9 @@ export const useCombat = (
             const isPotion = lootItem.id === 'hp_potion';
             const isScroll = lootItem.id === 'auto_scroll';
             let dropToTrack = lootItem;
+            
+            let slotsCount = Object.keys(player?.inventory || {}).length;
+            const maxSlotsCount = player?.maxInventorySlots || 50;
 
             if (isPotion) {
                updates.potions = (player?.potions || 0) + 1;
@@ -615,30 +620,59 @@ export const useCombat = (
                 updates.autoScrolls = (player?.autoScrolls || 0) + 1;
                 dropToTrack = { ...lootItem, id: `auto_scroll_pool_${Date.now()}` };
             } else if (lootItem.id?.startsWith('auto_scroll')) {
-                const uniqueId = `${lootItem.id}_LOOT_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-                updates[`inventory.${uniqueId}`] = { ...lootItem, id: uniqueId };
-                dropToTrack = { ...lootItem, id: uniqueId };
+                if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Auto Scroll ${lootItem.name} left behind!`);
+                  const uniqueId = `ABANDONED_${lootItem.id}_${Date.now()}`;
+                  dropToTrack = { ...lootItem, id: uniqueId, isAbandoned: true };
+                } else {
+                  const uniqueId = `${lootItem.id}_LOOT_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                  updates[`inventory.${uniqueId}`] = { ...lootItem, id: uniqueId };
+                  dropToTrack = { ...lootItem, id: uniqueId };
+                  slotsCount++;
+                }
             } else {
                // Unique Inventory Item
-               const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
-               updates[`inventory.${itemWithId.id}`] = itemWithId;
-               setLastLoot(itemWithId);
-               dropToTrack = itemWithId;
+               if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Dropped ${lootItem.name} left behind!`);
+                  const uniqueId = `ABANDONED_${lootItem.id}_${Date.now()}`;
+                  dropToTrack = { ...lootItem, id: uniqueId, isAbandoned: true };
+               } else {
+                  const itemWithId = { ...lootItem, id: `${lootItem.id}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
+                  updates[`inventory.${itemWithId.id}`] = itemWithId;
+                  setLastLoot(itemWithId);
+                  dropToTrack = itemWithId;
+                  slotsCount++;
+               }
             }
 
-            addLog(`🎁 LOOT: Found ${lootItem.name}!`);
-            playSFX(SOUNDS.obtainLoot);
-            setTimeout(() => setLastLoot(null), 3000);
+            if (dropToTrack) {
+              if (dropToTrack.isAbandoned) {
+                setLastLoot(dropToTrack);
+                setTimeout(() => setLastLoot(null), 3000);
+              } else {
+                addLog(`🎁 LOOT: Found ${lootItem.name}!`);
+                if (playSFX) playSFX(SOUNDS.obtainLoot);
+                setLastLoot(dropToTrack);
+                setTimeout(() => setLastLoot(null), 3000);
+              }
+            }
 
             // --- AETHER SPARK PROTOCOL (Lv100 Elite Drops) ---
-            let finalLootItems = [dropToTrack];
+            let finalLootItems = dropToTrack ? [dropToTrack] : [];
             if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
               const spark = LOOTS.find(l => l.id === 'aether_spark');
               if (spark) {
-                const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-                updates[`inventory.${sId}`] = { ...spark, id: sId };
-                addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
-                finalLootItems.push({ ...spark, id: sId });
+                if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Aether Spark drop left behind!`);
+                  const sId = `ABANDONED_aether_spark_${Date.now()}`;
+                  finalLootItems.push({ ...spark, id: sId, isAbandoned: true });
+                } else {
+                  const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                  updates[`inventory.${sId}`] = { ...spark, id: sId };
+                  addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
+                  finalLootItems.push({ ...spark, id: sId });
+                  slotsCount++;
+                }
               }
             }
 
@@ -658,10 +692,17 @@ export const useCombat = (
             if (huntSparkDrop) {
               const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
               if (hSpark) {
-                const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-                updates[`inventory.${hId}`] = { ...hSpark, id: hId };
-                addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
-                finalLootItems.push({ ...hSpark, id: hId });
+                if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Hunt Spark drop left behind!`);
+                  const hId = `ABANDONED_hunt_spark_${Date.now()}`;
+                  finalLootItems.push({ ...hSpark, id: hId, isAbandoned: true });
+                } else {
+                  const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                  updates[`inventory.${hId}`] = { ...hSpark, id: hId };
+                  addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
+                  finalLootItems.push({ ...hSpark, id: hId });
+                  slotsCount++;
+                }
               }
             }
 
@@ -674,13 +715,23 @@ export const useCombat = (
           } else {
             // Check for Aether Spark even if normal loot roll fails
             let extraLoot = [];
+            let slotsCount = Object.keys(player?.inventory || {}).length;
+            const maxSlotsCount = player?.maxInventorySlots || 50;
+
             if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
               const spark = LOOTS.find(l => l.id === 'aether_spark');
               if (spark) {
-                const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-                updates[`inventory.${sId}`] = { ...spark, id: sId };
-                addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
-                extraLoot.push({ ...spark, id: sId });
+                if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Aether Spark drop left behind!`);
+                  const sId = `ABANDONED_aether_spark_${Date.now()}`;
+                  extraLoot.push({ ...spark, id: sId, isAbandoned: true });
+                } else {
+                  const sId = `aether_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                  updates[`inventory.${sId}`] = { ...spark, id: sId };
+                  addLog(`✨ AETHER DISCOVERY: Found an Aether Spark!`);
+                  extraLoot.push({ ...spark, id: sId });
+                  slotsCount++;
+                }
               }
             }
 
@@ -700,10 +751,17 @@ export const useCombat = (
             if (huntSparkDrop) {
               const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
               if (hSpark) {
-                const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
-                updates[`inventory.${hId}`] = { ...hSpark, id: hId };
-                addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
-                extraLoot.push({ ...hSpark, id: hId });
+                if (slotsCount >= maxSlotsCount) {
+                  addLog(`🎒 SATCHEL FULL: Hunt Spark drop left behind!`);
+                  const hId = `ABANDONED_hunt_spark_${Date.now()}`;
+                  extraLoot.push({ ...hSpark, id: hId, isAbandoned: true });
+                } else {
+                  const hId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+                  updates[`inventory.${hId}`] = { ...hSpark, id: hId };
+                  addLog(`⚡ HUNT DISCOVERY: Found a Hunt Spark!`);
+                  extraLoot.push({ ...hSpark, id: hId });
+                  slotsCount++;
+                }
               }
             }
 
@@ -1189,6 +1247,9 @@ export const useCombat = (
     squadStrikeActive,
     defeatData,
     setDefeatData,
-    handleDismissDefeat
+    handleDismissDefeat,
+    showOverburdenedWarning,
+    setShowOverburdenedWarning,
+    resetCombatEngine
   };
 };
