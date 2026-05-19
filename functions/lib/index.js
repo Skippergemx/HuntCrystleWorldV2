@@ -4,7 +4,6 @@ exports.secureGameAction = exports.claimFaucetReward = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const params_1 = require("firebase-functions/params");
-const gameActions_1 = require("./gameActions");
 // Initialize admin SDK at top level (standard practice)
 if (admin.apps.length === 0) {
     admin.initializeApp();
@@ -221,6 +220,7 @@ exports.claimFaucetReward = (0, https_1.onCall)({ secrets: [faucetPrivateKeySecr
     }
 });
 exports.secureGameAction = (0, https_1.onCall)({ enforceAppCheck: true }, async (request) => {
-    return (0, gameActions_1.handleSecureGameAction)(request, getDb());
+    const { handleSecureGameAction } = require("./gameActions");
+    return handleSecureGameAction(request, getDb());
 });
 //# sourceMappingURL=index.js.map

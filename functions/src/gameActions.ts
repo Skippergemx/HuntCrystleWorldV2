@@ -2,198 +2,1240 @@ import { HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 
 const ITEM_CATALOG: Record<string, any> = {
-  'hp_potion': { sellValue: 20 },
-  'auto_scroll': { sellValue: 120 },
-  'mega_hp_potion': { sellValue: 100 },
-  'ultra_hp_potion': { sellValue: 500 },
-  'auto_scroll_3m': { sellValue: 350 },
-  'auto_scroll_6m': { sellValue: 700 },
-  'auto_scroll_9m': { sellValue: 1000 },
-  'auto_scroll_12m': { sellValue: 1400 },
-  'steel_edge': { sellValue: 40 },
-  'breaker_hammer': { sellValue: 160 },
-  'scout_vest': { sellValue: 60 },
-  'heavy_plate': { sellValue: 240 },
-  'leather_cap': { sellValue: 32 },
-  'iron_helm': { sellValue: 100 },
-  'leather_boots': { sellValue: 32 },
-  'swift_sandals': { sellValue: 120 },
-  'war_boots': { sellValue: 200 },
-  'crystle_blade': { sellValue: 400 },
-  'neon_plate': { sellValue: 600 },
-  'tech_visor': { sellValue: 320 },
-  'kinetic_boots': { sellValue: 480 },
-  'void_edge': { sellValue: 2000 },
-  'guardian_core': { sellValue: 2000 },
-  'void_capacitor': { sellValue: 1800 },
-  'omega_sigil': { sellValue: 3200 },
-  'crystle_shard': { sellValue: 10 },
-  'beast_hide': { sellValue: 15 },
-  'void_essence': { sellValue: 50 },
-  'ancient_gear': { sellValue: 200 },
-  'core_pulse': { sellValue: 1000 },
-  'omega_crystle': { sellValue: 5000 },
-  'slum_scrap': { sellValue: 5 },
-  'toxic_sludge': { sellValue: 8 },
-  'rusty_wire': { sellValue: 6 },
-  'mutant_tooth': { sellValue: 12 },
-  'neon_dust': { sellValue: 15 },
-  'broken_sensor': { sellValue: 45 },
-  'slum_medals': { sellValue: 60 },
-  'cypher_chip': { sellValue: 250 },
-  'glowing_eye': { sellValue: 1200 },
-  'slum_rat_tail': { sellValue: 4 },
-  'copper_piping': { sellValue: 14 },
-  'broken_glasses': { sellValue: 2 },
-  'dirty_rag': { sellValue: 1 },
-  'moldy_bread': { sellValue: 1 },
-  'faded_poster': { sellValue: 5 },
-  'cracked_tile': { sellValue: 3 },
-  'plastic_bottle': { sellValue: 2 },
-  'old_coin': { sellValue: 35 },
-  'bio_vial': { sellValue: 75 },
-  'hazard_tape': { sellValue: 10 },
-  'rusted_key': { sellValue: 40 },
-  'empty_can': { sellValue: 3 },
-  'cracked_screen': { sellValue: 55 },
-  'neon_filament': { sellValue: 180 },
-  'canyon_iron': { sellValue: 25 },
-  'oil_drum': { sellValue: 30 },
-  'cracked_piston': { sellValue: 20 },
-  'sand_glass': { sellValue: 18 },
-  'engine_bolt': { sellValue: 15 },
-  'power_cell': { sellValue: 80 },
-  'vintage_armor': { sellValue: 95 },
-  'titanium_link': { sellValue: 350 },
-  'turbo_charger': { sellValue: 1500 },
-  'exhaust_pipe': { sellValue: 40 },
-  'steel_spring': { sellValue: 35 },
-  'rubber_hose': { sellValue: 25 },
-  'spark_plug': { sellValue: 65 },
-  'fan_blade': { sellValue: 75 },
-  'rusty_cog': { sellValue: 45 },
-  'metal_shard': { sellValue: 20 },
-  'fuel_filter': { sellValue: 85 },
-  'brake_pad': { sellValue: 90 },
-  'clutch_plate': { sellValue: 250 },
-  'valve_stem': { sellValue: 70 },
-  'radiator_fin': { sellValue: 55 },
-  'chrome_trim': { sellValue: 200 },
-  'carbon_filter': { sellValue: 320 },
-  'hydraulics': { sellValue: 1200 },
-  'ignition_coil': { sellValue: 400 },
-  'void_shard': { sellValue: 100 },
-  'dark_matter': { sellValue: 120 },
-  'gravity_well': { sellValue: 150 },
-  'neural_net': { sellValue: 110 },
-  'plasma_core': { sellValue: 450 },
-  'void_crystal': { sellValue: 800 },
-  'singularity': { sellValue: 10000 },
-  'event_horizon': { sellValue: 4000 },
-  'quantum_bit': { sellValue: 900 },
-  'nanite_cloud': { sellValue: 600 },
-  'warp_drive_part': { sellValue: 2500 },
-  'cyber_heart': { sellValue: 2000 },
-  'stardust': { sellValue: 400 },
-  'obsidian_glass': { sellValue: 200 },
-  'void_tear': { sellValue: 350 },
-  'shadow_pulse': { sellValue: 280 },
-  'entropy_coil': { sellValue: 750 },
-  'null_point': { sellValue: 950 },
-  'void_membrane': { sellValue: 180 },
-  'black_hole_shard': { sellValue: 15000 },
-  'time_drift': { sellValue: 3500 },
-  'phase_module': { sellValue: 820 },
-  'void_beacon': { sellValue: 680 },
-  'dark_energy_cell': { sellValue: 520 },
-  'void_fang': { sellValue: 220 },
-  'magma_core': { sellValue: 1500 },
-  'fire_essence': { sellValue: 500 },
-  'scorched_bone': { sellValue: 150 },
-  'ember_shard': { sellValue: 50 },
-  'quake_stone': { sellValue: 1500 },
-  'earth_essence': { sellValue: 500 },
-  'petrified_wood': { sellValue: 150 },
-  'granite_fragment': { sellValue: 50 },
-  'ocean_pearl': { sellValue: 1500 },
-  'water_essence': { sellValue: 500 },
-  'coral_spine': { sellValue: 150 },
-  'sea_salt': { sellValue: 50 },
-  'gale_feather': { sellValue: 1500 },
-  'storm_essence': { sellValue: 500 },
-  'cloud_silk': { sellValue: 150 },
-  'mist_vial': { sellValue: 50 },
-  'dragon_apple': { sellValue: 50 },
-  'ember_grapes': { sellValue: 50 },
-  'sky_berry': { sellValue: 100 },
-  'void_cherry': { sellValue: 100 },
-  'golden_peach': { sellValue: 500 },
-  'plasma_lemon': { sellValue: 500 },
-  'neon_orange': { sellValue: 1200 },
-  'crystle_pear': { sellValue: 5000 },
-  'taming_hydro': { sellValue: 500 },
-  'taming_pyro': { sellValue: 500 },
-  'taming_gale': { sellValue: 500 },
-  'taming_earthen': { sellValue: 500 },
-  'taming_cosmic': { sellValue: 500 },
-  'magma_blade': { sellValue: 5000 },
-  'tidal_plate': { sellValue: 5000 },
-  'storm_boots': { sellValue: 5000 },
-  'quake_helm': { sellValue: 5000 },
-  'void_relic': { sellValue: 8000 },
-  'schema_neon_plate': { sellValue: 500 },
-  'schema_tech_visor': { sellValue: 300 },
-  'schema_kinetic_boots': { sellValue: 450 },
-  'schema_void_edge': { sellValue: 2500 },
-  'scrap_saber': { sellValue: 150 },
-  'riveted_plate': { sellValue: 200 },
-  'welder_mask': { sellValue: 120 },
-  'heavy_clogs': { sellValue: 120 },
-  'sludge_slicer': { sellValue: 350 },
-  'hazmat_vest': { sellValue: 400 },
-  'filter_helm': { sellValue: 280 },
-  'rubber_treaders': { sellValue: 280 },
-  'pulse_blade': { sellValue: 800 },
-  'data_mesh': { sellValue: 900 },
-  'hud_goggles': { sellValue: 650 },
-  'static_runners': { sellValue: 650 },
-  'scrap_spear': { sellValue: 180 },
-  'sand_cloak': { sellValue: 220 },
-  'dust_hood': { sellValue: 150 },
-  'dune_wraps': { sellValue: 150 },
-  'flux_core_r': { sellValue: 1200 },
-  'signal_jammer': { sellValue: 1250 },
-  'capacitor_cuff': { sellValue: 1100 },
-  'neural_link': { sellValue: 1500 },
-  'titan_impact': { sellValue: 1800 },
-  'void_plating': { sellValue: 2000 },
-  'chrono_helm': { sellValue: 1600 },
-  'warp_boots': { sellValue: 1600 },
-  'bio_saber': { sellValue: 900 },
-  'recycled_core': { sellValue: 2500 },
-  'scrap_cannon': { sellValue: 1400 },
-  'neon_shield': { sellValue: 1200 },
-  'hazmat_claws': { sellValue: 1300 },
-  'void_wraps': { sellValue: 1350 },
-  'enforcer_blade': { sellValue: 1200 },
-  'enforcer_plate': { sellValue: 1280 },
-  'enforcer_helm': { sellValue: 1120 },
-  'enforcer_boots': { sellValue: 1120 },
-  'vanguard_halberd': { sellValue: 3200 },
-  'vanguard_suit': { sellValue: 3400 },
-  'vanguard_visor': { sellValue: 3000 },
-  'vanguard_treads': { sellValue: 3000 },
-  'apex_striker': { sellValue: 8000 },
-  'apex_carapace': { sellValue: 8800 },
-  'apex_crown': { sellValue: 7200 },
-  'apex_striders': { sellValue: 7200 },
-  'genesis_edge': { sellValue: 20000 },
-  'genesis_core_armor': { sellValue: 22000 },
-  'genesis_halo': { sellValue: 18000 },
-  'genesis_gravity_boots': { sellValue: 18000 },
-  'magnetic_coil': { sellValue: 85 },
-  'aether_spark': { sellValue: 1000 },
-  'hunt_spark': { sellValue: 250 },
+  "hp_potion": {
+    "cost": 50,
+    "sellValue": 20,
+    "type": "Consumable",
+    "category": "Consumable",
+    "reqLvl": 1
+  },
+  "auto_scroll": {
+    "cost": 300,
+    "sellValue": 120,
+    "type": "Consumable",
+    "category": "Consumable",
+    "reqLvl": 1
+  },
+  "mega_hp_potion": {
+    "sellValue": 100,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "ultra_hp_potion": {
+    "sellValue": 500,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "auto_scroll_3m": {
+    "sellValue": 350,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "auto_scroll_6m": {
+    "sellValue": 700,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "auto_scroll_9m": {
+    "sellValue": 1000,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "auto_scroll_12m": {
+    "sellValue": 1400,
+    "type": "Consumable",
+    "category": "Consumable"
+  },
+  "steel_edge": {
+    "cost": 100,
+    "sellValue": 40,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 2
+  },
+  "breaker_hammer": {
+    "cost": 400,
+    "sellValue": 160,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 8
+  },
+  "scout_vest": {
+    "cost": 150,
+    "sellValue": 60,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 3
+  },
+  "heavy_plate": {
+    "cost": 600,
+    "sellValue": 240,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 10
+  },
+  "leather_cap": {
+    "cost": 80,
+    "sellValue": 32,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 1
+  },
+  "iron_helm": {
+    "cost": 250,
+    "sellValue": 100,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 5
+  },
+  "leather_boots": {
+    "cost": 80,
+    "sellValue": 32,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 1
+  },
+  "swift_sandals": {
+    "cost": 300,
+    "sellValue": 120,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 6
+  },
+  "war_boots": {
+    "cost": 500,
+    "sellValue": 200,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 12
+  },
+  "crystle_blade": {
+    "sellValue": 400,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 5
+  },
+  "neon_plate": {
+    "sellValue": 600,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 8
+  },
+  "tech_visor": {
+    "sellValue": 320,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 4
+  },
+  "kinetic_boots": {
+    "sellValue": 480,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 6
+  },
+  "void_edge": {
+    "sellValue": 2000,
+    "rarity": "Epic",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "guardian_core": {
+    "sellValue": 2000,
+    "rarity": "Legendary",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "void_capacitor": {
+    "sellValue": 1800,
+    "rarity": "Epic",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 15
+  },
+  "omega_sigil": {
+    "sellValue": 3200,
+    "rarity": "Legendary",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 25
+  },
+  "crystle_shard": {
+    "sellValue": 10,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "beast_hide": {
+    "sellValue": 15,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "void_essence": {
+    "sellValue": 50,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "ancient_gear": {
+    "sellValue": 200,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "core_pulse": {
+    "sellValue": 1000,
+    "rarity": "Epic",
+    "type": "Heart",
+    "category": "Loot"
+  },
+  "omega_crystle": {
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Artifact",
+    "category": "Loot"
+  },
+  "slum_scrap": {
+    "sellValue": 5,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "toxic_sludge": {
+    "sellValue": 8,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "rusty_wire": {
+    "sellValue": 6,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "mutant_tooth": {
+    "sellValue": 12,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "neon_dust": {
+    "sellValue": 15,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "broken_sensor": {
+    "sellValue": 45,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "slum_medals": {
+    "sellValue": 60,
+    "rarity": "Uncommon",
+    "type": "Token",
+    "category": "Loot"
+  },
+  "cypher_chip": {
+    "sellValue": 250,
+    "rarity": "Rare",
+    "type": "Data",
+    "category": "Loot"
+  },
+  "glowing_eye": {
+    "sellValue": 1200,
+    "rarity": "Epic",
+    "type": "Relic",
+    "category": "Loot"
+  },
+  "slum_rat_tail": {
+    "sellValue": 4,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "copper_piping": {
+    "sellValue": 14,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "broken_glasses": {
+    "sellValue": 2,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "dirty_rag": {
+    "sellValue": 1,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "moldy_bread": {
+    "sellValue": 1,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "faded_poster": {
+    "sellValue": 5,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "cracked_tile": {
+    "sellValue": 3,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "plastic_bottle": {
+    "sellValue": 2,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "old_coin": {
+    "sellValue": 35,
+    "rarity": "Uncommon",
+    "type": "Currency",
+    "category": "Loot"
+  },
+  "bio_vial": {
+    "sellValue": 75,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "hazard_tape": {
+    "sellValue": 10,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "rusted_key": {
+    "sellValue": 40,
+    "rarity": "Uncommon",
+    "type": "Key",
+    "category": "Loot"
+  },
+  "empty_can": {
+    "sellValue": 3,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "cracked_screen": {
+    "sellValue": 55,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "neon_filament": {
+    "sellValue": 180,
+    "rarity": "Rare",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "canyon_iron": {
+    "sellValue": 25,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "oil_drum": {
+    "sellValue": 30,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "cracked_piston": {
+    "sellValue": 20,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "sand_glass": {
+    "sellValue": 18,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "engine_bolt": {
+    "sellValue": 15,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "power_cell": {
+    "sellValue": 80,
+    "rarity": "Uncommon",
+    "type": "Energy",
+    "category": "Loot"
+  },
+  "vintage_armor": {
+    "sellValue": 95,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "titanium_link": {
+    "sellValue": 350,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "turbo_charger": {
+    "sellValue": 1500,
+    "rarity": "Epic",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "exhaust_pipe": {
+    "sellValue": 40,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "steel_spring": {
+    "sellValue": 35,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "rubber_hose": {
+    "sellValue": 25,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "spark_plug": {
+    "sellValue": 65,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "fan_blade": {
+    "sellValue": 75,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "rusty_cog": {
+    "sellValue": 45,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "metal_shard": {
+    "sellValue": 20,
+    "rarity": "Common",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "fuel_filter": {
+    "sellValue": 85,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "brake_pad": {
+    "sellValue": 90,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "clutch_plate": {
+    "sellValue": 250,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "valve_stem": {
+    "sellValue": 70,
+    "rarity": "Uncommon",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "radiator_fin": {
+    "sellValue": 55,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "chrome_trim": {
+    "sellValue": 200,
+    "rarity": "Rare",
+    "type": "Loot",
+    "category": "Loot"
+  },
+  "carbon_filter": {
+    "sellValue": 320,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "hydraulics": {
+    "sellValue": 1200,
+    "rarity": "Epic",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "ignition_coil": {
+    "sellValue": 400,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "void_shard": {
+    "sellValue": 100,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "dark_matter": {
+    "sellValue": 120,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "gravity_well": {
+    "sellValue": 150,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "neural_net": {
+    "sellValue": 110,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "plasma_core": {
+    "sellValue": 450,
+    "rarity": "Uncommon",
+    "type": "Energy",
+    "category": "Loot"
+  },
+  "void_crystal": {
+    "sellValue": 800,
+    "rarity": "Rare",
+    "type": "Relic",
+    "category": "Loot"
+  },
+  "singularity": {
+    "sellValue": 10000,
+    "rarity": "Legendary",
+    "type": "Artifact",
+    "category": "Loot"
+  },
+  "event_horizon": {
+    "sellValue": 4000,
+    "rarity": "Epic",
+    "type": "Relic",
+    "category": "Loot"
+  },
+  "quantum_bit": {
+    "sellValue": 900,
+    "rarity": "Rare",
+    "type": "Data",
+    "category": "Loot"
+  },
+  "nanite_cloud": {
+    "sellValue": 600,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "warp_drive_part": {
+    "sellValue": 2500,
+    "rarity": "Epic",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "cyber_heart": {
+    "sellValue": 2000,
+    "rarity": "Epic",
+    "type": "Heart",
+    "category": "Loot"
+  },
+  "stardust": {
+    "sellValue": 400,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "obsidian_glass": {
+    "sellValue": 200,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "void_tear": {
+    "sellValue": 350,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "shadow_pulse": {
+    "sellValue": 280,
+    "rarity": "Uncommon",
+    "type": "Data",
+    "category": "Loot"
+  },
+  "entropy_coil": {
+    "sellValue": 750,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "null_point": {
+    "sellValue": 950,
+    "rarity": "Rare",
+    "type": "Energy",
+    "category": "Loot"
+  },
+  "void_membrane": {
+    "sellValue": 180,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "black_hole_shard": {
+    "sellValue": 15000,
+    "rarity": "Legendary",
+    "type": "Artifact",
+    "category": "Loot"
+  },
+  "time_drift": {
+    "sellValue": 3500,
+    "rarity": "Epic",
+    "type": "Relic",
+    "category": "Loot"
+  },
+  "phase_module": {
+    "sellValue": 820,
+    "rarity": "Rare",
+    "type": "Component",
+    "category": "Loot"
+  },
+  "void_beacon": {
+    "sellValue": 680,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Loot"
+  },
+  "dark_energy_cell": {
+    "sellValue": 520,
+    "rarity": "Uncommon",
+    "type": "Energy",
+    "category": "Loot"
+  },
+  "void_fang": {
+    "sellValue": 220,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "magma_core": {
+    "sellValue": 1500,
+    "rarity": "Epic",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "fire_essence": {
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "scorched_bone": {
+    "sellValue": 150,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "ember_shard": {
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "quake_stone": {
+    "sellValue": 1500,
+    "rarity": "Epic",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "earth_essence": {
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "petrified_wood": {
+    "sellValue": 150,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "granite_fragment": {
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "ocean_pearl": {
+    "sellValue": 1500,
+    "rarity": "Epic",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "water_essence": {
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "coral_spine": {
+    "sellValue": 150,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "sea_salt": {
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "gale_feather": {
+    "sellValue": 1500,
+    "rarity": "Epic",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "storm_essence": {
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "cloud_silk": {
+    "sellValue": 150,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "mist_vial": {
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "dragon_apple": {
+    "cost": 200,
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 1
+  },
+  "ember_grapes": {
+    "cost": 200,
+    "sellValue": 50,
+    "rarity": "Common",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 1
+  },
+  "sky_berry": {
+    "cost": 500,
+    "sellValue": 100,
+    "rarity": "Uncommon",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 10
+  },
+  "void_cherry": {
+    "cost": 500,
+    "sellValue": 100,
+    "rarity": "Uncommon",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 10
+  },
+  "golden_peach": {
+    "cost": 2000,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 20
+  },
+  "plasma_lemon": {
+    "cost": 2000,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 20
+  },
+  "neon_orange": {
+    "cost": 5000,
+    "sellValue": 1200,
+    "rarity": "Epic",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 30
+  },
+  "crystle_pear": {
+    "cost": 25000,
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Fruit",
+    "category": "Fruit",
+    "reqLvl": 40
+  },
+  "taming_hydro": {
+    "cost": 2500,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Consumable",
+    "reqLvl": 25
+  },
+  "taming_pyro": {
+    "cost": 2500,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Consumable",
+    "reqLvl": 25
+  },
+  "taming_gale": {
+    "cost": 2500,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Consumable",
+    "reqLvl": 25
+  },
+  "taming_earthen": {
+    "cost": 2500,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Consumable",
+    "reqLvl": 25
+  },
+  "taming_cosmic": {
+    "cost": 2500,
+    "sellValue": 500,
+    "rarity": "Rare",
+    "type": "Tool",
+    "category": "Consumable",
+    "reqLvl": 25
+  },
+  "magma_blade": {
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "tidal_plate": {
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "storm_boots": {
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "quake_helm": {
+    "sellValue": 5000,
+    "rarity": "Legendary",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "void_relic": {
+    "sellValue": 8000,
+    "rarity": "Legendary",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 45
+  },
+  "schema_neon_plate": {
+    "sellValue": 500,
+    "rarity": "Uncommon",
+    "type": "Schematic",
+    "category": "Loot"
+  },
+  "schema_tech_visor": {
+    "sellValue": 300,
+    "rarity": "Common",
+    "type": "Schematic",
+    "category": "Loot"
+  },
+  "schema_kinetic_boots": {
+    "sellValue": 450,
+    "rarity": "Uncommon",
+    "type": "Schematic",
+    "category": "Loot"
+  },
+  "schema_void_edge": {
+    "sellValue": 2500,
+    "rarity": "Epic",
+    "type": "Schematic",
+    "category": "Loot"
+  },
+  "scrap_saber": {
+    "sellValue": 150,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 10
+  },
+  "riveted_plate": {
+    "sellValue": 200,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 10
+  },
+  "welder_mask": {
+    "sellValue": 120,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 10
+  },
+  "heavy_clogs": {
+    "sellValue": 120,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 10
+  },
+  "sludge_slicer": {
+    "sellValue": 350,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 15
+  },
+  "hazmat_vest": {
+    "sellValue": 400,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 15
+  },
+  "filter_helm": {
+    "sellValue": 280,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 15
+  },
+  "rubber_treaders": {
+    "sellValue": 280,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 15
+  },
+  "pulse_blade": {
+    "sellValue": 800,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "data_mesh": {
+    "sellValue": 900,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "hud_goggles": {
+    "sellValue": 650,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "static_runners": {
+    "sellValue": 650,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 20
+  },
+  "scrap_spear": {
+    "sellValue": 180,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 12
+  },
+  "sand_cloak": {
+    "sellValue": 220,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 12
+  },
+  "dust_hood": {
+    "sellValue": 150,
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 12
+  },
+  "dune_wraps": {
+    "sellValue": 150,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 12
+  },
+  "flux_core_r": {
+    "sellValue": 1200,
+    "rarity": "Uncommon",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 22
+  },
+  "signal_jammer": {
+    "sellValue": 1250,
+    "rarity": "Uncommon",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 22
+  },
+  "capacitor_cuff": {
+    "sellValue": 1100,
+    "rarity": "Uncommon",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 22
+  },
+  "neural_link": {
+    "sellValue": 1500,
+    "rarity": "Rare",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 22
+  },
+  "titan_impact": {
+    "sellValue": 1800,
+    "rarity": "Rare",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 28
+  },
+  "void_plating": {
+    "sellValue": 2000,
+    "rarity": "Rare",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 28
+  },
+  "chrono_helm": {
+    "sellValue": 1600,
+    "rarity": "Rare",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 28
+  },
+  "warp_boots": {
+    "sellValue": 1600,
+    "rarity": "Rare",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 28
+  },
+  "bio_saber": {
+    "sellValue": 900,
+    "rarity": "Rare",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 24
+  },
+  "recycled_core": {
+    "sellValue": 2500,
+    "rarity": "Epic",
+    "type": "Relic",
+    "category": "Equipment",
+    "reqLvl": 30
+  },
+  "scrap_cannon": {
+    "sellValue": 1400,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 26
+  },
+  "neon_shield": {
+    "sellValue": 1200,
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 22
+  },
+  "hazmat_claws": {
+    "sellValue": 1300,
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 24
+  },
+  "void_wraps": {
+    "sellValue": 1350,
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 25
+  },
+  "enforcer_blade": {
+    "cost": 3000,
+    "sellValue": 1200,
+    "rarity": "Uncommon",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "enforcer_plate": {
+    "cost": 3200,
+    "sellValue": 1280,
+    "rarity": "Uncommon",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "enforcer_helm": {
+    "cost": 2800,
+    "sellValue": 1120,
+    "rarity": "Uncommon",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "enforcer_boots": {
+    "cost": 2800,
+    "sellValue": 1120,
+    "rarity": "Uncommon",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 35
+  },
+  "vanguard_halberd": {
+    "cost": 8000,
+    "sellValue": 3200,
+    "rarity": "Rare",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 50
+  },
+  "vanguard_suit": {
+    "cost": 8500,
+    "sellValue": 3400,
+    "rarity": "Rare",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 50
+  },
+  "vanguard_visor": {
+    "cost": 7500,
+    "sellValue": 3000,
+    "rarity": "Rare",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 50
+  },
+  "vanguard_treads": {
+    "cost": 7500,
+    "sellValue": 3000,
+    "rarity": "Rare",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 50
+  },
+  "apex_striker": {
+    "cost": 20000,
+    "sellValue": 8000,
+    "rarity": "Epic",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 75
+  },
+  "apex_carapace": {
+    "cost": 22000,
+    "sellValue": 8800,
+    "rarity": "Epic",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 75
+  },
+  "apex_crown": {
+    "cost": 18000,
+    "sellValue": 7200,
+    "rarity": "Epic",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 75
+  },
+  "apex_striders": {
+    "cost": 18000,
+    "sellValue": 7200,
+    "rarity": "Epic",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 75
+  },
+  "genesis_edge": {
+    "cost": 50000,
+    "sellValue": 20000,
+    "rarity": "Legendary",
+    "type": "Weapon",
+    "category": "Equipment",
+    "reqLvl": 100
+  },
+  "genesis_core_armor": {
+    "cost": 55000,
+    "sellValue": 22000,
+    "rarity": "Legendary",
+    "type": "Armor",
+    "category": "Equipment",
+    "reqLvl": 100
+  },
+  "genesis_halo": {
+    "cost": 45000,
+    "sellValue": 18000,
+    "rarity": "Legendary",
+    "type": "Headgear",
+    "category": "Equipment",
+    "reqLvl": 100
+  },
+  "genesis_gravity_boots": {
+    "cost": 45000,
+    "sellValue": 18000,
+    "rarity": "Legendary",
+    "type": "Footwear",
+    "category": "Equipment",
+    "reqLvl": 100
+  },
+  "magnetic_coil": {
+    "sellValue": 85,
+    "rarity": "Uncommon",
+    "type": "Material",
+    "category": "Loot"
+  },
+  "aether_spark": {
+    "sellValue": 1000,
+    "rarity": "Legendary",
+    "type": "Artifact",
+    "category": "Loot"
+  },
+  "hunt_spark": {
+    "sellValue": 250,
+    "rarity": "Rare",
+    "type": "Artifact",
+    "category": "Loot"
+  }
 };
 
 // Robust base ID extractor: strips `_<timestamp>_<any_suffix>` or `_<timestamp>` patterns.
@@ -209,7 +1251,20 @@ const extractBaseId = (itemId: string): string => {
 // Helper: look up sell value by extracting the canonical base ID
 const getSellValue = (itemId: string): number => {
   const baseId = extractBaseId(itemId);
-  return ITEM_CATALOG[baseId]?.sellValue ?? ITEM_CATALOG[itemId]?.sellValue ?? 0;
+  console.log(`[getSellValue] itemId: "${itemId}", baseId: "${baseId}"`);
+  const entry = ITEM_CATALOG[baseId] ?? ITEM_CATALOG[itemId];
+  console.log(`[getSellValue] entry found:`, !!entry, entry ? JSON.stringify(entry) : 'null');
+  if (!entry) return 0;
+  if (entry.sellValue !== undefined) {
+    console.log(`[getSellValue] returning sellValue: ${entry.sellValue}`);
+    return entry.sellValue;
+  }
+  if (entry.cost !== undefined) {
+    console.log(`[getSellValue] returning cost fallback: ${Math.floor(entry.cost * 0.4)}`);
+    return Math.floor(entry.cost * 0.4);
+  }
+  console.log(`[getSellValue] no value/cost found, returning 0`);
+  return 0;
 };
 
 const getCatalogEntry = (itemId: string) => {
@@ -252,9 +1307,25 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       const { item, qty } = payload;
       // SECURITY PATCH: Never trust client-supplied 'cost'. Look up from server catalog.
       const catalogEntry = getCatalogEntry(item.id);
-      if (!catalogEntry || catalogEntry.cost === undefined) throw new HttpsError('not-found', 'Item not available for purchase.');
+      if (!catalogEntry) throw new HttpsError('not-found', 'Item not available for purchase.');
+
+      let cost = catalogEntry.cost;
+      if (cost === undefined) {
+        // Calculate dynamic cost if it's an Industrial Scrap item (Loot/Material/Component with sellValue > 0)
+        if ((catalogEntry.category === 'Loot' || catalogEntry.type === 'Material' || catalogEntry.type === 'Component') && catalogEntry.sellValue > 0) {
+          const rarity = catalogEntry.rarity?.toLowerCase() || 'common';
+          let mult = 10;
+          if (rarity === 'uncommon') mult = 20;
+          if (rarity === 'rare') mult = 40;
+          if (rarity === 'epic') mult = 80;
+          if (rarity === 'legendary') mult = 150;
+          cost = catalogEntry.sellValue * mult;
+        }
+      }
+
+      if (cost === undefined) throw new HttpsError('not-found', 'Item not available for purchase.');
       if (!Number.isInteger(qty) || qty <= 0 || qty > 99) throw new HttpsError('invalid-argument', 'Invalid quantity.');
-      const totalCost = catalogEntry.cost * qty;
+      const totalCost = cost * qty;
       const currentTokens = userData.tokens || 0;
       if (currentTokens < totalCost) throw new HttpsError('failed-precondition', 'Insufficient GX.');
       if (userData.level < (catalogEntry.reqLvl || 1)) throw new HttpsError('failed-precondition', 'Level too low.');
@@ -383,30 +1454,46 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
 
     if (action === 'SELL_ITEM') {
       const { itemId, qty } = payload;
+      console.log(`[SELL_ITEM] Payload itemId: "${itemId}", qty: ${qty}`);
       // SECURITY PATCH: 'value' is NEVER accepted from client — looked up server-side.
       if (!Number.isInteger(qty) || qty <= 0 || qty > 99) throw new HttpsError('invalid-argument', 'Invalid quantity.');
       const inventory = userData.inventory || {};
       const targetItem = inventory[itemId];
+      console.log(`[SELL_ITEM] targetItem found:`, !!targetItem, targetItem ? JSON.stringify(targetItem) : 'null');
       if (!targetItem) throw new HttpsError('not-found', 'Item not in inventory.');
 
       // Look up canonical sell value from server catalog
       const trueSellValue = getSellValue((targetItem as any).id || itemId);
+      console.log(`[SELL_ITEM] trueSellValue resolved: ${trueSellValue}`);
       if (trueSellValue <= 0) throw new HttpsError('failed-precondition', 'This item cannot be sold.');
 
       const baseId = extractBaseId((targetItem as any).id || itemId);
       const sellQty = qty;
-
-      const entries = Object.entries(inventory);
       let removed = 0;
-      for (const [key, invItem] of entries) {
-        if (removed >= sellQty) break;
-        if (!invItem) continue;
-        const invBaseId = extractBaseId((invItem as any).id || key);
-        if (invBaseId === baseId) {
-          delete inventory[key];
+
+      // 1. Delete targetItem first to prevent other same-baseId items from being sold instead
+      if (inventory[itemId]) {
+        const targetBaseId = extractBaseId((inventory[itemId] as any).id || itemId);
+        if (targetBaseId === baseId) {
+          delete inventory[itemId];
           removed++;
         }
       }
+
+      // 2. Fallback to delete other items with the same baseId if qty > 1 (e.g. stackable loots)
+      if (removed < sellQty) {
+        const entries = Object.entries(inventory);
+        for (const [key, invItem] of entries) {
+          if (removed >= sellQty) break;
+          if (!invItem) continue;
+          const invBaseId = extractBaseId((invItem as any).id || key);
+          if (invBaseId === baseId) {
+            delete inventory[key];
+            removed++;
+          }
+        }
+      }
+
       if (removed === 0) throw new HttpsError('not-found', 'No matching items found.');
 
       transaction.update(userRef, {
@@ -915,6 +2002,76 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
 
       transaction.update(userRef, updates);
       return { success: true };
+    }
+
+    if (action === 'USE_POTION') {
+      const { selection, maxHp } = payload;
+      const currentHp = userData.hp || 0;
+      const resolvedMaxHp = Number(maxHp) || userData.maxHp || 150;
+
+      if (currentHp >= resolvedMaxHp) {
+        throw new HttpsError('failed-precondition', 'Already at full HP!');
+      }
+
+      const potionSpecs: Record<string, { mult: number }> = {
+        'hp_potion': { mult: 0.1 },
+        'mega_hp_potion': { mult: 0.5 },
+        'ultra_hp_potion': { mult: 1.0 }
+      };
+
+      const spec = potionSpecs[selection];
+      if (!spec) {
+        throw new HttpsError('invalid-argument', 'Invalid potion selection.');
+      }
+
+      const inventory = userData.inventory || {};
+      const updates: any = {
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      let hasPotion = false;
+      let usedItemId: string | null = null;
+
+      if (selection === 'hp_potion') {
+        const count = userData.potions || 0;
+        if (count > 0) {
+          hasPotion = true;
+          updates.potions = count - 1;
+        } else {
+          const targetKey = Object.keys(inventory).find(key => {
+            const item = inventory[key];
+            return item && typeof item.id === 'string' && item.id.startsWith('hp_potion');
+          });
+          if (targetKey) {
+            hasPotion = true;
+            usedItemId = targetKey;
+          }
+        }
+      } else {
+        const targetKey = Object.keys(inventory).find(key => {
+          const item = inventory[key];
+          return item && typeof item.id === 'string' && item.id.startsWith(selection);
+        });
+        if (targetKey) {
+          hasPotion = true;
+          usedItemId = targetKey;
+        }
+      }
+
+      if (!hasPotion) {
+        throw new HttpsError('failed-precondition', `No ${selection.replace(/_/g, ' ')}'s found in bag.`);
+      }
+
+      if (usedItemId) {
+        delete inventory[usedItemId];
+        updates.inventory = inventory;
+      }
+
+      const healAmt = Math.floor(resolvedMaxHp * spec.mult);
+      updates.hp = Math.min(resolvedMaxHp, currentHp + healAmt);
+
+      transaction.update(userRef, updates);
+      return { success: true, hp: updates.hp };
     }
 
     throw new HttpsError('unimplemented', 'Action Not Recognized.');

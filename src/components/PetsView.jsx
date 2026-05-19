@@ -6,7 +6,7 @@ import { Header } from './GameUI';
 import { NPCCard } from './NPCCard';
 
 export const PetsView = () => {
-  const { player, syncPlayer, adventure, addLog, PETS_METADATA } = useGame();
+  const { player, syncPlayer, adventure, addLog, PETS_METADATA, ITEMS } = useGame();
   const [loading, setLoading] = useState(false);
   const [selectedPet, setSelectedPet] = useState(null);
 

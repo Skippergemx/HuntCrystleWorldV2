@@ -73,18 +73,46 @@ export const usePlayerActions = (
 
     const healAmt = Math.floor(totalStats.maxHp * spec.mult);
     playSFX(SOUNDS.useHeal);
-    
-    const updates = { hp: Math.min(player.maxHp, player.hp + healAmt) };
-    if (useCounter) {
-      updates.potions = (player.potions || 0) - 1;
-    } else {
-      // Correct Dot-Notation Deletion for Keyed Maps
-      updates[`inventory.${usedItemId}`] = deleteField();
-    }
 
-    syncPlayer(updates);
+    // 1. Optimistic Local State Update (keeps UI responsive during intense combat)
+    setPlayer(prev => {
+      if (!prev) return prev;
+      const nextHp = Math.min(totalStats.maxHp, prev.hp + healAmt);
+      const nextInv = { ...prev.inventory };
+      let nextPotions = prev.potions || 0;
+
+      if (useCounter) {
+        nextPotions = Math.max(0, nextPotions - 1);
+      } else if (usedItemId && nextInv[usedItemId]) {
+        delete nextInv[usedItemId];
+      }
+
+      return {
+        ...prev,
+        hp: nextHp,
+        potions: nextPotions,
+        inventory: nextInv
+      };
+    });
+
     addLog(`Healed for ${spec.label} Max HP (+${healAmt} HP).`);
-  }, [player, addLog, syncPlayer, playSFX, SOUNDS]);
+
+    // 2. Secure Backend Commitment
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      const result = await callAction({
+        action: 'USE_POTION',
+        payload: { selection, maxHp: totalStats.maxHp }
+      });
+      const data = result.data || {};
+      if (!data.success) {
+        console.warn("Backend failed to confirm potion usage:", data.message);
+      }
+    } catch (e) {
+      console.error("Failed to commit potion usage securely:", e);
+      addLog("🚨 UPLINK ERROR: Potion consumption could not be verified.");
+    }
+  }, [player, totalStats.maxHp, setPlayer, addLog, playSFX, SOUNDS, functions]);
 
   const cyclePotion = () => {
     const potions = ['hp_potion', 'mega_hp_potion', 'ultra_hp_potion'];
@@ -161,7 +189,16 @@ export const usePlayerActions = (
   const sellItem = useCallback(async (itemId, qty = 1) => {
     if (!player.inventory || !player.inventory[itemId]) return;
     const item = player.inventory[itemId];
-    const itemBaseId = item.id?.replace(/_([a-z0-9]+)+$/, '');
+    
+    // Robust base ID extractor matching the backend's implementation
+    const extractBaseId = (id) => {
+      if (!id) return '';
+      const tsStripped = id.replace(/_\d{10,}.*$/, '');
+      if (tsStripped !== id) return tsStripped;
+      return id.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+    };
+
+    const itemBaseId = extractBaseId(item.id || itemId);
     const master = ITEMS.find(i => i.id === itemBaseId) || item;
     
     let value = 0;

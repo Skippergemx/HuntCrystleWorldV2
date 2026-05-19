@@ -1,7 +1,6 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import { defineSecret } from "firebase-functions/params";
-import { handleSecureGameAction } from "./gameActions";
 
 // Initialize admin SDK at top level (standard practice)
 if (admin.apps.length === 0) {
@@ -247,6 +246,7 @@ export const claimFaucetReward = onCall(
 export const secureGameAction = onCall(
   { enforceAppCheck: true }, 
   async (request) => {
+    const { handleSecureGameAction } = require("./gameActions");
     return handleSecureGameAction(request, getDb());
   }
 );
