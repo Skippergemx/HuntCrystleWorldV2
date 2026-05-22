@@ -64,6 +64,48 @@ export const usePlayerSync = (user, db, appId) => {
   const syncTimeoutRef = useRef(null);
   const pendingUpdatesRef = useRef({});
   const syncFailureCount = useRef(0);
+  const optimisticUpdatesRef = useRef({});
+
+  const addOptimisticUpdate = useCallback((updates) => {
+    const timestamp = Date.now();
+    Object.entries(updates).forEach(([key, value]) => {
+      optimisticUpdatesRef.current[key] = { value, timestamp };
+    });
+    setPlayer(prev => {
+      if (!prev) return prev;
+      const next = { ...prev };
+      Object.entries(updates).forEach(([key, value]) => {
+        if (key.includes('.')) {
+          const parts = key.split('.');
+          let cursor = next;
+          for (let i = 0; i < parts.length - 1; i++) {
+            cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+            cursor = cursor[parts[i]];
+          }
+          if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+            delete cursor[parts[parts.length - 1]];
+          } else {
+            cursor[parts[parts.length - 1]] = value;
+          }
+        } else {
+          next[key] = value;
+        }
+      });
+
+      // Algorithmic AP Auto-Heal
+      const level = next.level || 1;
+      const baseStats = next.baseStats || { str: 10, agi: 10, dex: 10 };
+      const safeStr = Number(baseStats.str) || 10;
+      const safeAgi = Number(baseStats.agi) || 10;
+      const safeDex = Number(baseStats.dex) || 10;
+      const spentAP = (Math.max(10, safeStr) - 10) + (Math.max(10, safeAgi) - 10) + (Math.max(10, safeDex) - 10);
+      const earnedAP = (Number(level) || 1) * 5;
+      const trueAP = isNaN(earnedAP - spentAP) ? 0 : (earnedAP - spentAP);
+      next.abilityPoints = Math.max(0, trueAP);
+
+      return next;
+    });
+  }, []);
 
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
@@ -142,7 +184,7 @@ export const usePlayerSync = (user, db, appId) => {
             tokens: data.tokens || 100,
             hp: Number(data.hp ?? 150),
             maxHp: Number(data.maxHp ?? 150),
-            abilityPoints: (data.abilityPoints !== undefined && data.abilityPoints !== null && !isNaN(data.abilityPoints) && data.abilityPoints >= 0) ? data.abilityPoints : Math.max(0, trueAP),
+            abilityPoints: Math.max(0, trueAP), // Enforce strict AP calculation
             baseStats: baseStats,
             gemx: data.gemx || { level: 1, crystalsFed: 0 },
             dragon: data.dragon || { level: 1, fruitsFed: 0 },
@@ -185,6 +227,37 @@ export const usePlayerSync = (user, db, appId) => {
               fullySanitized[key] = value;
             }
           });
+
+          // Apply active optimistic updates (less than 10s old)
+          const now = Date.now();
+          Object.entries(optimisticUpdatesRef.current).forEach(([key, item]) => {
+            if (now - item.timestamp > 10000) {
+              delete optimisticUpdatesRef.current[key];
+              return;
+            }
+            const value = item.value;
+            if (key.includes('.')) {
+              const parts = key.split('.');
+              let cursor = fullySanitized;
+              for (let i = 0; i < parts.length - 1; i++) {
+                cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+                cursor = cursor[parts[i]];
+              }
+              cursor[parts[parts.length - 1]] = value;
+            } else {
+              fullySanitized[key] = value;
+            }
+          });
+
+          // Enforce auto-heal on the final merged state
+          const finalLevel = fullySanitized.level || 1;
+          const finalStats = fullySanitized.baseStats || { str: 10, agi: 10, dex: 10 };
+          const finalStr = Number(finalStats.str) || 10;
+          const finalAgi = Number(finalStats.agi) || 10;
+          const finalDex = Number(finalStats.dex) || 10;
+          const finalSpent = (Math.max(10, finalStr) - 10) + (Math.max(10, finalAgi) - 10) + (Math.max(10, finalDex) - 10);
+          const finalEarned = (Number(finalLevel) || 1) * 5;
+          fullySanitized.abilityPoints = Math.max(0, isNaN(finalEarned - finalSpent) ? 0 : (finalEarned - finalSpent));
 
           setPlayer(fullySanitized);
 
@@ -289,8 +362,18 @@ export const usePlayerSync = (user, db, appId) => {
         // --- STATE SYNCHRONIZATION ---
         // We only update if we have a valid session and the data exists
         if (hasHydratedSession) {
+          const level = data.level || 1;
+          const baseStats = data.baseStats || { str: 10, agi: 10, dex: 10 };
+          const safeStr = Number(baseStats.str) || 10;
+          const safeAgi = Number(baseStats.agi) || 10;
+          const safeDex = Number(baseStats.dex) || 10;
+          const spentAP = (Math.max(10, safeStr) - 10) + (Math.max(10, safeAgi) - 10) + (Math.max(10, safeDex) - 10);
+          const earnedAP = (Number(level) || 1) * 5;
+          const trueAP = isNaN(earnedAP - spentAP) ? 0 : (earnedAP - spentAP);
+
           const sanitized = {
             ...data,
+            abilityPoints: Math.max(0, trueAP), // Enforce strict AP calculation
             inventory: Array.isArray(data.inventory) 
               ? Object.fromEntries(data.inventory.filter(i => i).map(i => [i.id || `ITEM_${Date.now()}`, i])) 
               : (data.inventory || {}),
@@ -314,6 +397,37 @@ export const usePlayerSync = (user, db, appId) => {
               fullySanitized[key] = value;
             }
           });
+
+          // Apply active optimistic updates
+          const now = Date.now();
+          Object.entries(optimisticUpdatesRef.current).forEach(([key, item]) => {
+            if (now - item.timestamp > 10000) {
+              delete optimisticUpdatesRef.current[key];
+              return;
+            }
+            const value = item.value;
+            if (key.includes('.')) {
+              const parts = key.split('.');
+              let cursor = fullySanitized;
+              for (let i = 0; i < parts.length - 1; i++) {
+                cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
+                cursor = cursor[parts[i]];
+              }
+              cursor[parts[parts.length - 1]] = value;
+            } else {
+              fullySanitized[key] = value;
+            }
+          });
+
+          // Enforce auto-heal on final state
+          const finalLevel = fullySanitized.level || 1;
+          const finalStats = fullySanitized.baseStats || { str: 10, agi: 10, dex: 10 };
+          const finalStr = Number(finalStats.str) || 10;
+          const finalAgi = Number(finalStats.agi) || 10;
+          const finalDex = Number(finalStats.dex) || 10;
+          const finalSpent = (Math.max(10, finalStr) - 10) + (Math.max(10, finalAgi) - 10) + (Math.max(10, finalDex) - 10);
+          const finalEarned = (Number(finalLevel) || 1) * 5;
+          fullySanitized.abilityPoints = Math.max(0, isNaN(finalEarned - finalSpent) ? 0 : (finalEarned - finalSpent));
 
           setPlayer(fullySanitized);
         }
@@ -550,5 +664,5 @@ export const usePlayerSync = (user, db, appId) => {
     }
   }, [activeDocId, db]);
 
-  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict, isSyncing, lastSyncFailed };
+  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict, isSyncing, lastSyncFailed, addOptimisticUpdate };
 };

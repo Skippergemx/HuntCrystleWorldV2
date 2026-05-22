@@ -24,7 +24,8 @@ export const usePlayerActions = (
   PETS_METADATA,
   gvgActions = {},
   functions = null,
-  setFaucetResult = null
+  setFaucetResult = null,
+  addOptimisticUpdate = null
 ) => {
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
 
@@ -211,7 +212,12 @@ export const usePlayerActions = (
     const totalValue = value * qty;
     playSFX(SOUNDS.sellItem);
     
-    // The backend Cloud Function will handle the transaction and emit an onSnapshot update.
+    if (addOptimisticUpdate) {
+      addOptimisticUpdate({
+        tokens: (player.tokens || 0) + totalValue,
+        [`inventory.${itemId}`]: { _methodName: 'deleteField' }
+      });
+    }
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -229,7 +235,7 @@ export const usePlayerActions = (
       addLog("🚨 UPLINK ERROR: Sale failed.");
       return false;
     }
-  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions]);
+  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
 
   const equipItem = useCallback(async (itemOrId) => {
     const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
@@ -243,7 +249,17 @@ export const usePlayerActions = (
 
     playSFX(SOUNDS.equipItem);
     
-    // The backend Cloud Function will handle the transaction securely.
+    if (addOptimisticUpdate) {
+      const equipUpdates = {
+        [`inventory.${itemId}`]: { _methodName: 'deleteField' },
+        [`equipped.${slot}`]: item
+      };
+      if (player.equipped?.[slot]) {
+        const oldEquipped = player.equipped[slot];
+        equipUpdates[`inventory.${oldEquipped.id}`] = oldEquipped;
+      }
+      addOptimisticUpdate(equipUpdates);
+    }
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -256,7 +272,7 @@ export const usePlayerActions = (
       console.error(e);
       addLog("🚨 UPLINK ERROR: Install failed.");
     }
-  }, [player, syncPlayer, playSFX, SOUNDS, functions]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
 
   const unequipItem = useCallback(async (slot) => {
     if (!player.equipped?.[slot]) return;
@@ -264,7 +280,12 @@ export const usePlayerActions = (
     
     playSFX(SOUNDS.unequipItem);
     
-    // The backend Cloud Function will handle the transaction securely.
+    if (addOptimisticUpdate) {
+      addOptimisticUpdate({
+        [`equipped.${slot}`]: { _methodName: 'deleteField' },
+        [`inventory.${item.id}`]: item
+      });
+    }
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -277,7 +298,7 @@ export const usePlayerActions = (
       console.error(e);
       addLog("🚨 UPLINK ERROR: Uninstall failed.");
     }
-  }, [player, syncPlayer, playSFX, SOUNDS, functions]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
 
   const allocateStat = async (statName) => {
     // Guard: synchronous ref prevents rapid-click over-spending before React re-renders
@@ -1303,6 +1324,7 @@ export const usePlayerActions = (
     }
 
     let dropData = null;
+    const loots = [];
     if (rId) {
       const masterDrop = ITEMS?.find(i => i.id === rId) || 
                          FOODS?.find(i => i.id === rId) ||
@@ -1314,25 +1336,55 @@ export const usePlayerActions = (
         // Standardize: Route to numeric counters for stackable essentials
         if (masterDrop.id === 'hp_potion') {
            updates.potions = (player.potions || 0) + rQty;
+           for (let i = 0; i < rQty; i++) {
+             loots.push({ ...masterDrop, id: `hp_potion_pool_${Date.now()}_${i}` });
+           }
         } else {
            for (let i = 0; i < rQty; i++) {
-              const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-              updates[`inventory.${dropKey}`] = { ...masterDrop, id: dropKey };
+              const dropKey = `${masterDrop.id}_ILEARN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}_${i}`;
+              const newLootItem = { ...masterDrop, id: dropKey };
+              updates[`inventory.${dropKey}`] = newLootItem;
+              loots.push(newLootItem);
            }
         }
         addLog(`🎁 KNOWLEDGE REWARD: Acquired ${rQty}x ${masterDrop.name}!`);
       }
     }
 
-    if (apGained > 0) updates.abilityPoints = (player.abilityPoints || 0) + apGained;
-
     // Filter out the completed quiz from active slots
     if (player.quizSlots) {
        updates.quizSlots = player.quizSlots.filter(id => id !== quiz.id);
     }
     
-    console.log("🎒 iLEARN: Initiating immediate blocking sync...");
-    await syncPlayer(updates, true);
+    // Apply optimistic updates locally first
+    if (addOptimisticUpdate) {
+      addOptimisticUpdate(updates);
+    }
+    
+    console.log("🎒 iLEARN: Initiating secure completeQuiz action...");
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      const result = await callAction({
+        action: 'COMPLETE_QUIZ',
+        payload: {
+          quizId: quiz.id,
+          earnedLoot: Math.floor(overflowGx),
+          earnedXp: quiz.xpReward,
+          nextXp,
+          nextLvl,
+          nextMaxHp,
+          apGained,
+          loots
+        }
+      });
+      const data = result.data || {};
+      if (!data.success) {
+        console.warn("Backend failed to confirm quiz completion:", data.message);
+      }
+    } catch (e) {
+      console.error("Failed to commit quiz completion securely:", e);
+      addLog("🚨 UPLINK ERROR: Quiz completion could not be verified securely.");
+    }
     
     addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
     playSFX(SOUNDS.lvlUp);
@@ -1369,7 +1421,7 @@ export const usePlayerActions = (
     }
 
     return { xp: quiz.xpReward, item: dropData };
-  }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions, setFaucetResult]);
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS, functions, setFaucetResult, addOptimisticUpdate]);
 
   const exchangeAetherSparks = useCallback(async () => {
     if (!player || !functions) return;

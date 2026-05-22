@@ -31,6 +31,63 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-secure-progression-uplink',
+    date: '2026-05-22',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Secure Progression: The Server-Side Level Up Sync',
+    subtitle: 'Securing the iLearn quiz completion engine, stat level-ups, and ability point calculations with server-side transactions and local optimistic updates.',
+    category: 'SECURITY & SYNC SYSTEM',
+    type: 'article',
+    tag: 'NEW',
+    color: 'emerald',
+    readingTime: '5 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'Today\'s deployment addresses a core architectural boundary of the Hunt Crystle economy: player progression. Client-side state mutations are inherently vulnerable, prompting us to transition crucial progression updates directly to secure Cloud Functions.'
+      },
+      {
+        type: 'heading',
+        text: 'Securing iLearn Quiz completions'
+      },
+      {
+        type: 'paragraph',
+        text: 'Completing quizzes in the iLearn terminal previously attempted to directly write XP, Level, HP, and Ability Point gains to Firestore. Under our strict security rules, these direct client-side updates are blocked. We have migrated the entire completion logic into a secure, server-side Cloud Function transaction (the COMPLETE_QUIZ action). The server now handles calculations for stat boosts, inventory rewards, and level-ups internally.'
+      },
+      {
+        type: 'heading',
+        text: 'The AP Auto-Heal & Exploit Blockade'
+      },
+      {
+        type: 'paragraph',
+        text: 'To protect the grid from arbitrary Ability Point (AP) injection, the server now calculates available AP mathematically. The formula, Ability Points = Level * 5 - (spent stats), runs within the secure transaction and is enforced on player document load. If any discrepancy in AP is detected, the database automatically heals the player profile to its correct mathematical state.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The iLearn terminal now safely processes progression and level-ups via secure server transactions.'
+      },
+      {
+        type: 'heading',
+        text: 'Flicker-Free Optimistic Syncing'
+      },
+      {
+        type: 'paragraph',
+        text: 'Relying purely on server-side updates can introduce network lag, causing screen flickering. To combat this, we engineered an optimistic updates tracker (addOptimisticUpdate) that predicts the state transition locally. Local changes are temporarily preserved and merged with incoming database snapshots, preventing outdated Firestore reads from overriding immediate player actions during transaction transit.'
+      },
+      {
+        type: 'heading',
+        text: 'Separated Inventory Disposals'
+      },
+      {
+        type: 'paragraph',
+        text: 'Additionally, we separated the Sell and Unequip flows on equipped inventory assets. Equipped items now show a dedicated "Unequip" button; users must explicitly unequip items before they can be sold. This prevents concurrent Cloud Function calls (unequip + sell) from triggering database document conflicts, securing real-time persistence.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-sell-system-hardening',
     date: '2026-05-18',
     author: 'Commander Gemx',

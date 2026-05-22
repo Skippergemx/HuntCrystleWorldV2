@@ -23,6 +23,27 @@ import { useGame } from '../contexts/GameContext';
 
 const DEVLOG_ENTRIES = [
   {
+    id: '1.22.0',
+    date: '2026-05-22',
+    title: 'SECURE CHARACTER PROGRESSION & OPTIMISTIC SYNC',
+    category: 'SECURITY & SYNC SYSTEM',
+    type: 'feature',
+    tag: 'NEW',
+    color: 'emerald',
+    description: 'We have fully secured the iLearn quiz completion pipeline and character progression fields by migrating XP, Level, Stats, and AP calculations to the server. To maintain zero-latency gameplay, we engineered a client-side optimistic updates engine with Wipe Guard protection.',
+    changes: [
+      'Backend: Added COMPLETE_QUIZ secure action in Cloud Functions with strict data validation',
+      'Backend: Migrated XP, Level, Stats, and inventory reward additions to Firestore transaction',
+      'Backend: Enforced mathematical AP calculations based on Level and spent attributes to block exploits',
+      'Backend: Corrected base ID extraction to support recycled items (_RET suffix catalog match)',
+      'Frontend: Added addOptimisticUpdate tracker to usePlayerSync to block database overwrite lag',
+      'Frontend: Implemented local React state prediction during secure function transit',
+      'Frontend: Injected client-side AP auto-heal algorithms on hydration to prevent status mismatch',
+      'Frontend: Separated Sell and Unequip flows on equipped assets to resolve concurrent write conflicts'
+    ],
+    media: '/assets/monsters/Void Sector 7/Void Wraith.jpg'
+  },
+  {
     id: '1.21.0',
     date: '2026-05-18',
     title: 'INVENTORY HARDENING & SELL SYSTEM OVERHAUL',

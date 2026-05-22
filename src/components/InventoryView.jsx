@@ -392,37 +392,46 @@ export const InventoryView = React.memo(() => {
                               <span className="text-[12px] font-black italic text-[var(--neon-lime)] leading-none bungee">{basePrice} GX</span>
                               <span className={`text-[6px] font-bold uppercase tracking-widest mt-0.5 bungee ${item.isEquipped ? 'text-black/60' : 'text-white/40'}`}>Yield Per Unit</span>
                            </div>
-                            <div className="flex gap-1">
-                               {item.type === 'Schematic' && (
-                                 <button onClick={() => learnRecipe(item)}
-                                   className="px-3 py-1.5 bg-[var(--neon-cyan)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
-                                 >Learn</button>
-                               )}
-                               {!item.id?.includes('_99999') && (
-                                 <>
-                                    <button onClick={async (e) => {
-                                         e.persist();
-                                         if (item.isEquipped) {
-                                            const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
-                                            if (slot) unequipItem(slot);
-                                         }
-                                         const val = await sellItem(item.id, 1);
-                                         if (val) showFloater(e, `+${val} GX`);
-                                      }}
-                                      className="px-3 py-1.5 bg-black text-white hover:bg-white hover:text-black text-[9px] font-black uppercase italic border-[3px] border-white hover:border-black transition-all shadow-[4px_4px_0px_0px_black] hover:shadow-[4px_4px_0px_0px_var(--neon-lime)] active:shadow-none active:translate-y-1 bungee"
-                                    >Sell 1</button>
-                                    {!item.isEquipped && item.count > 1 && (
-                                      <button onClick={async (e) => {
-                                          e.persist();
-                                          const val = await sellItem(item.id, item.count);
-                                          if (val) showFloater(e, `+${val} GX`);
-                                        }}
-                                        className="px-3 py-1.5 bg-[var(--neon-lime)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
-                                      >Sell All</button>
-                                    )}
-                                  </>
-                               )}
-                            </div>
+                           <div className="flex gap-1">
+                                {item.type === 'Schematic' && (
+                                  <button onClick={() => learnRecipe(item)}
+                                    className="px-3 py-1.5 bg-[var(--neon-cyan)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
+                                  >Learn</button>
+                                )}
+                                {item.isEquipped ? (
+                                  <button onClick={async (e) => {
+                                       e.persist();
+                                       const slot = Object.keys(player.equipped || {}).find(k => player.equipped[k]?.id === item.id);
+                                       if (slot) {
+                                          await unequipItem(slot);
+                                          showFloater(e, "Unequipped");
+                                       }
+                                    }}
+                                    className="px-3 py-1.5 bg-black text-white hover:bg-white hover:text-black text-[9px] font-black uppercase italic border-[3px] border-white hover:border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
+                                  >Unequip</button>
+                                ) : (
+                                  !item.id?.includes('_99999') && (
+                                    <>
+                                       <button onClick={async (e) => {
+                                            e.persist();
+                                            const val = await sellItem(item.id, 1);
+                                            if (val) showFloater(e, `+${val} GX`);
+                                         }}
+                                         className="px-3 py-1.5 bg-black text-white hover:bg-white hover:text-black text-[9px] font-black uppercase italic border-[3px] border-white hover:border-black transition-all shadow-[4px_4px_0px_0px_black] hover:shadow-[4px_4px_0px_0px_var(--neon-lime)] active:shadow-none active:translate-y-1 bungee"
+                                       >Sell 1</button>
+                                       {item.count > 1 && (
+                                         <button onClick={async (e) => {
+                                             e.persist();
+                                             const val = await sellItem(item.id, item.count);
+                                             if (val) showFloater(e, `+${val} GX`);
+                                           }}
+                                           className="px-3 py-1.5 bg-[var(--neon-lime)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
+                                         >Sell All</button>
+                                       )}
+                                    </>
+                                  )
+                                )}
+                             </div>
                         </div>
                       </div>
 

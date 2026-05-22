@@ -82,7 +82,7 @@ export const GameProvider = ({ children, user }) => {
   const sentryStateRef = useRef({ view: 'menu', depth: 1 });
 
   // --- CORE SYSTEM INITIALIZATION ---
-  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict } = usePlayerSync(user, db, appId);
+  const { player, setPlayer, syncPlayer, loadingPlayer, linkWallet, migrateProfile, sessionConflict, addOptimisticUpdate } = usePlayerSync(user, db, appId);
   
   // GvG Battle Context
   const [battleMode, setBattleMode] = useState('DUNGEON'); // 'DUNGEON', 'BOSS', 'GVG'
@@ -106,7 +106,7 @@ export const GameProvider = ({ children, user }) => {
     TAVERN_MATES, ITEMS, setForgeResult, totalStats, db, appId,
     PETS_METADATA,
     { setBattleMode, setGvgContext, setEnemy: adventure.setEnemy, setView: adventure.setView },
-    functions, setFaucetResult
+    functions, setFaucetResult, addOptimisticUpdate
   );
 
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, functions, setPlayer);
@@ -301,7 +301,7 @@ export const GameProvider = ({ children, user }) => {
     forgeResult, setForgeResult,
     faucetResult, setFaucetResult,
     adventure, combat, actions, gameLoop, market, audio, wallet, 
-    linkWallet, migrateProfile,
+    linkWallet, migrateProfile, addOptimisticUpdate,
     network,
     gvgContext, setGvgContext,
     battleMode, setBattleMode,
@@ -322,7 +322,7 @@ export const GameProvider = ({ children, user }) => {
     showBlockadeModal, setShowBlockadeModal, blockadeError, setBlockadeError,
     collisionProfile, setCollisionProfile, sessionConflict, forgeResult, setForgeResult,
     faucetResult, setFaucetResult, adventure, combat, actions, gameLoop, market, audio,
-    wallet, linkWallet, migrateProfile, network, gvgContext, setGvgContext,
+    wallet, linkWallet, migrateProfile, addOptimisticUpdate, network, gvgContext, setGvgContext,
     battleMode, setBattleMode, leaderboardObj, dynamicStats, handleLogout, openGuide,
     globalError, setGlobalError, submitErrorReport, lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES,

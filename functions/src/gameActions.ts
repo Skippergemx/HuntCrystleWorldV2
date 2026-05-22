@@ -1243,9 +1243,8 @@ const ITEM_CATALOG: Record<string, any> = {
 const extractBaseId = (itemId: string): string => {
   // Strip everything from the first underscore followed by 10+ digits (a 13-digit ms timestamp)
   const tsStripped = itemId.replace(/_\d{10,}.*$/, '');
-  if (tsStripped !== itemId) return tsStripped; // found a timestamp, return cleaned base
-  // Fallback: strip trailing short alphanumeric suffix (for IDs without timestamps)
-  return itemId.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+  const baseId = tsStripped !== itemId ? tsStripped : itemId.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+  return baseId.replace(/_RET$/, '');
 };
 
 // Helper: look up sell value by extracting the canonical base ID
@@ -1403,7 +1402,7 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
     }
 
     if (action === 'PROCESS_KILL_REWARDS') {
-      const { earnedLoot, earnedXp, nextXp, nextLvl, nextMaxHp, apGained, loots } = payload;
+      const { earnedLoot, earnedXp, nextXp, nextLvl, nextMaxHp, loots } = payload;
       
       // SECURITY PATCH: Validate all numeric inputs are positive integers within bounds.
       if (!Number.isInteger(earnedLoot) || earnedLoot < 0 || earnedLoot > 49999)
@@ -1426,9 +1425,14 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       };
 
-      if (apGained > 0) {
-        updates.abilityPoints = (userData.abilityPoints || 0) + apGained;
-      }
+      // Algorithmic AP Auto-Heal: Enforce strict AP calculation
+      const safeStr = Number(userData.baseStats?.str ?? 10);
+      const safeAgi = Number(userData.baseStats?.agi ?? 10);
+      const safeDex = Number(userData.baseStats?.dex ?? 10);
+      const spentAP = (Math.max(10, safeStr) - 10) + (Math.max(10, safeAgi) - 10) + (Math.max(10, safeDex) - 10);
+      const earnedAP = (Number(nextLvl) || 1) * 5;
+      const trueAP = isNaN(earnedAP - spentAP) ? 0 : Math.max(0, earnedAP - spentAP);
+      updates.abilityPoints = trueAP;
 
       if (loots && loots.length > 0) {
         const inventory = userData.inventory || {};
@@ -1436,6 +1440,66 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
         loots.forEach((loot: any) => {
           if (loot.id?.includes('_pool_')) return;
           // SERVER CAPACITY LOCK: Skip adding items if capacity is exceeded
+          if (Object.keys(inventory).length >= maxSlots) return;
+          inventory[loot.id] = loot;
+        });
+        updates.inventory = inventory;
+        
+        const potCount = loots.filter((l: any) => l.id?.startsWith('hp_potion')).length;
+        if (potCount > 0) updates.potions = (userData.potions || 0) + potCount;
+        
+        const scrollCount = loots.filter((l: any) => l.id?.startsWith('auto_scroll_pool')).length;
+        if (scrollCount > 0) updates.autoScrolls = (userData.autoScrolls || 0) + scrollCount;
+      }
+
+      transaction.update(userRef, updates);
+      return { success: true };
+    }
+
+    if (action === 'COMPLETE_QUIZ') {
+      const { quizId, earnedLoot, earnedXp, nextXp, nextLvl, nextMaxHp, apGained, loots } = payload;
+
+      // Validate inputs
+      if (!quizId) throw new HttpsError('invalid-argument', 'Missing quizId.');
+      if (!Number.isInteger(earnedLoot) || earnedLoot < 0 || earnedLoot > 49999)
+        throw new HttpsError('out-of-range', 'Invalid loot payload.');
+      if (!Number.isInteger(earnedXp) || earnedXp < 0 || earnedXp > 99999)
+        throw new HttpsError('out-of-range', 'Invalid XP payload.');
+
+      // Prevent completing the same quiz multiple times
+      const completedQuizzes = userData.completedQuizzes || {};
+      if (completedQuizzes[quizId]) {
+        throw new HttpsError('already-exists', 'Quiz already completed.');
+      }
+
+      const updates: any = {
+        tokens: (userData.tokens || 0) + earnedLoot,
+        xp: nextXp,
+        level: nextLvl,
+        maxHp: nextMaxHp,
+        hp: Math.min(nextMaxHp, (userData.hp || 0) + (apGained > 0 ? 50 : 0)),
+        [`completedQuizzes.${quizId}`]: Date.now(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+
+      if (userData.quizSlots) {
+        updates.quizSlots = userData.quizSlots.filter((id: string) => id !== quizId);
+      }
+
+      // Algorithmic AP Auto-Heal: Enforce strict AP calculation
+      const safeStr = Number(userData.baseStats?.str ?? 10);
+      const safeAgi = Number(userData.baseStats?.agi ?? 10);
+      const safeDex = Number(userData.baseStats?.dex ?? 10);
+      const spentAP = (Math.max(10, safeStr) - 10) + (Math.max(10, safeAgi) - 10) + (Math.max(10, safeDex) - 10);
+      const earnedAP = (Number(nextLvl) || 1) * 5;
+      const trueAP = isNaN(earnedAP - spentAP) ? 0 : Math.max(0, earnedAP - spentAP);
+      updates.abilityPoints = trueAP;
+
+      if (loots && loots.length > 0) {
+        const inventory = userData.inventory || {};
+        const maxSlots = userData.maxInventorySlots || 50;
+        loots.forEach((loot: any) => {
+          if (loot.id?.includes('_pool_')) return;
           if (Object.keys(inventory).length >= maxSlots) return;
           inventory[loot.id] = loot;
         });
