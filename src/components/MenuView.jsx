@@ -475,13 +475,13 @@ export const MenuView = React.memo(() => {
             <div className="flex items-center justify-center gap-4 md:gap-8">
                {[
                  { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS & GEAR', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
-                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
+                 { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90', disabled: true },
                  { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
                ].map((token, i) => (
                   <button
                     key={token.id}
-                    onClick={() => setView(token.id)}
-                    className={`group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] rounded-xl ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative overflow-hidden`}
+                    onClick={() => !token.disabled && setView(token.id)}
+                    className={`group flex flex-col items-center transition-all w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] rounded-xl ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'} relative overflow-hidden ${token.disabled ? 'opacity-40 cursor-not-allowed grayscale pointer-events-none' : 'hover:-translate-y-2 active:scale-95'}`}
                   >
                      {/* FULL ART PREVIEW */}
                      <div className="absolute inset-0 z-0">

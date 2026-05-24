@@ -55,14 +55,15 @@ export const CrystleBazaarView = () => {
       npc: 22,
       stat: activePet ? activePet.name.toUpperCase() : 'NO LINK'
     },
-    { 
-      id: 'market', 
-      name: 'P2P MARKET', 
-      sub: 'P2P TRADING HUB', 
-      icon: <ShoppingCart size={24} />, 
-      color: 'bg-white', 
+    {
+      id: 'market',
+      name: 'P2P MARKET',
+      sub: 'P2P TRADING HUB',
+      icon: <ShoppingCart size={24} />,
+      color: 'bg-white',
       npc: 16,
-      stat: 'LIVE'
+      stat: 'OFFLINE',
+      disabled: true
     }
   ];
 
@@ -93,8 +94,8 @@ export const CrystleBazaarView = () => {
           {districts.map((d, idx) => (
             <button
               key={d.id}
-              onClick={() => setView(d.id)}
-              className={`group relative aspect-[9/16] flex flex-col items-center rounded-2xl border-[4px] border-white bg-black transition-all duration-300 hover:-translate-y-2 hover:border-[var(--neon-lime)] hover:shadow-[12px_12px_0px_0px_black] shadow-[6px_6px_0px_0px_black] overflow-hidden ${idx % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}
+              onClick={() => !d.disabled && setView(d.id)}
+              className={`group relative aspect-[9/16] flex flex-col items-center rounded-2xl border-[4px] border-white bg-black transition-all duration-300 shadow-[6px_6px_0px_0px_black] overflow-hidden ${idx % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${d.disabled ? 'opacity-40 cursor-not-allowed grayscale pointer-events-none' : 'hover:-translate-y-2 hover:border-[var(--neon-lime)] hover:shadow-[12px_12px_0px_0px_black]'}`}
             >
                <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none"></div>
                {/* CITIZEN BACKGROUND */}
