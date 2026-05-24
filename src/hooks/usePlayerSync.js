@@ -120,6 +120,61 @@ export const usePlayerSync = (user, db, appId) => {
       try {
         setLoadingPlayer(true);
 
+        // DEV MODE CHECK: Skip Firestore entirely, create local genesis profile
+        // __DEV_MODE__ is a compile-time constant — tree-shaken in production builds.
+        if (__DEV_MODE__) {
+          const devEnv = typeof import.meta !== 'undefined' ? import.meta.env.VITE_DEV_MODE : undefined;
+          const isDev = import.meta.env.DEV === true ||
+                        devEnv === 'true' ||
+                        (typeof window !== 'undefined' && window.location.hostname === 'localhost') ||
+                        (typeof window !== 'undefined' && window.__PLAYWRIGHT_DEV_MODE__ === true);
+
+          if (isDev) {
+            console.log("System V4: Dev Mode — Creating local genesis profile (no Firestore)");
+            const genesisProfile = {
+              uid: user?.uid || null,
+              email: user?.email || null,
+              name: (user?.username || "").trim() || `Hunter_${(user?.uid || '0000').toString().slice(0, 4)}`,
+              pfp: user?.pfp || null,
+              platform: 'dev',
+              farcasterData: null,
+              level: 50, xp: 0, tokens: 999999,
+              hp: 9999, maxHp: 9999,
+              dailyFaucetClaims: 0,
+              lastFaucetClaimDate: "",
+              baseStats: { str: 50, agi: 50, dex: 50 },
+              abilityPoints: 999, potions: 99,
+              autoScrolls: 99, autoUntil: 0,
+              hiredMate: null, buffUntil: 0,
+              equipped: { Headgear: null, Weapon: null, Armor: null, Footwear: null, Relic: null },
+              recipes: ['crystle_blade'],
+              inventory: {},
+              totalBossDamage: 0,
+              maxDepth: 1,
+              maxDepthScore: 100001,
+              maxDepthFloor: 1,
+              maxDepthMapName: 'Neon Slums',
+              maxDepthMapMinLevel: 1,
+              penaltyUntil: 0, autoMode: null,
+              gemx: { level: 1, crystalsFed: 0 },
+              dragon: { level: 1, fruitsFed: 0 },
+              gemxAvatar: 'Cosmic gemx (1).gif',
+              selectedPotionId: 'hp_potion',
+              selectedScrollId: 'auto_scroll',
+              avatar: 1,
+              unlockedPets: [1, 11, 21, 31, 41],
+              sessionId: `DEV_SESS_${Date.now()}`,
+              walletAddress: null,
+              walletConflict: null
+            };
+            setActiveDocId(user?.uid || 'dev_local');
+            setPlayer(genesisProfile);
+            setHasHydratedSession(true);
+            setLoadingPlayer(false);
+            return;
+          }
+        }
+
         // IDENTITY RESOLVER: Google UID is the canonical player document key.
         const primaryAuthId = user.uid;
 
@@ -347,6 +402,15 @@ export const usePlayerSync = (user, db, appId) => {
   useEffect(() => {
     if (!activeDocId || sessionConflict) return;
 
+    // DEV MODE: Skip Firestore live monitoring
+    const devEnv = typeof import.meta !== 'undefined' ? import.meta.env.VITE_DEV_MODE : undefined;
+    const forceProd = typeof import.meta !== 'undefined' ? import.meta.env.VITE_FORCE_PROD === 'true' : false;
+    const isDev = (import.meta.env.DEV === true && !forceProd) ||
+                  devEnv === 'true' ||
+                  (typeof window !== 'undefined' && window.location.hostname === 'localhost') ||
+                  (typeof window !== 'undefined' && window.__PLAYWRIGHT_DEV_MODE__ === true);
+    if (isDev) return;
+
     const docRef = doc(db, 'players', activeDocId);
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
@@ -494,10 +558,17 @@ export const usePlayerSync = (user, db, appId) => {
         return next;
       });
 
-      // Update the remote queue
-      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
+      // Update the remote queue (skipped in dev mode — no Firestore auth available)
+      if (!__DEV_MODE__) {
+        pendingUpdatesRef.current = { ...pendingUpdatesRef.current, ...sterilized, updatedAt: serverTimestamp() };
+      }
 
       const performSync = async () => {
+        // Dev mode guard: skip Firestore writes entirely to avoid infinite permission error loops
+        if (__DEV_MODE__) {
+          pendingUpdatesRef.current = {};
+          return;
+        }
         if (sessionConflict) return;
         if (isSyncing) return;
 

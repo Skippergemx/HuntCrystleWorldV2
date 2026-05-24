@@ -87,13 +87,9 @@ export const DungeonMenuView = React.memo(() => {
       icon: <AlertCircle size={24} />,
       color: 'bg-red-600',
       npc: 15,
-      status: isPenalized ? 'LOCKED' : 'EPIC',
-      action: () => {
-        if (!isPenalized) {
-          setView('boss');
-          if (autoTimeLeft > 0) syncPlayer({ autoUntil: 0 });
-        }
-      }
+      status: 'MAINTENANCE',
+      disabled: true,
+      action: () => {}
     },
     {
       id: 'pvp',
@@ -102,8 +98,9 @@ export const DungeonMenuView = React.memo(() => {
       icon: <Swords size={24} />,
       color: 'bg-purple-600',
       npc: 16,
-      status: isPenalized ? 'LOCKED' : 'LIVE',
-      action: () => !isPenalized && setView('pvp')
+      status: 'MAINTENANCE',
+      disabled: true,
+      action: () => {}
     },
     {
       id: 'gvg',

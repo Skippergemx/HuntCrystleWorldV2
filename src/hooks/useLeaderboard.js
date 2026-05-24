@@ -11,6 +11,8 @@ export const useLeaderboard = (user, player, db) => {
   const [activeBoard, setActiveBoard] = useState('level'); // Default sort
 
   const fetchLeaderboard = useCallback(async (sortField) => {
+    // Dev mode: skip Firestore queries (no auth session available)
+    if (__DEV_MODE__) return;
     if (!db) return;
     try {
       console.log(`System V2: Static Fetch Hall of Fame [Sort: ${sortField}]`);

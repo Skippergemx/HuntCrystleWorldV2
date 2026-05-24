@@ -13,6 +13,8 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
 
   // 1. Marketplace Listener (V2: Root Path)
   useEffect(() => {
+    // Dev mode: skip Firestore listener (no auth session available)
+    if (__DEV_MODE__) return;
     if (!db) return;
     try {
       const q = query(collection(db, 'marketplace'), limit(50));

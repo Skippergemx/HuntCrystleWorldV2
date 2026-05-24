@@ -6,7 +6,7 @@ import {
   Github, Twitter, MessageCircle
 } from 'lucide-react';
 
-export const LoginView = ({ handleGoogleLogin }) => {
+export const LoginView = ({ handleGoogleLogin, handleDevLogin }) => {
   const [activeTab, setActiveTab] = useState('mission');
   const [activeMobileShot, setActiveMobileShot] = useState(0);
   const [activeDesktopShot, setActiveDesktopShot] = useState(0);
@@ -122,6 +122,21 @@ export const LoginView = ({ handleGoogleLogin }) => {
                   </div>
                   <ChevronRight size={18} />
                 </button>
+
+                {__DEV_MODE__ && import.meta.env.VITE_DEV_MODE === 'true' && (
+                  <button
+                    onClick={handleDevLogin}
+                    className="w-full h-14 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl flex items-center justify-between px-5 transition-all transform active:scale-[0.98] border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,0.1)] group overflow-hidden relative z-10 mt-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-black p-1.5 rounded-lg border-2 border-white">
+                        <span className="text-lg">⚡</span>
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-tighter italic">Dev Login (Skip Auth)</span>
+                    </div>
+                    <ChevronRight size={18} />
+                  </button>
+                )}
               </div>
 
 
@@ -226,7 +241,7 @@ export const LoginView = ({ handleGoogleLogin }) => {
                     
                     <div className="flex items-center gap-2 mb-2">
                        <div className="w-2 h-2 bg-cyan-500 rounded-full animate-ping"></div>
-                       <span className="text-[10px] font-black text-white uppercase tracking-widest italic tracking-[0.3em]">System Terminal Overview</span>
+                       <span className="text-[10px] font-black text-white uppercase italic tracking-[0.3em]">System Terminal Overview</span>
                     </div>
 
                     {/* HORIZONTAL DESKTOP TERMINAL (Full Width) */}
@@ -340,7 +355,7 @@ export const LoginView = ({ handleGoogleLogin }) => {
 
               {/* SOCIAL LINKS */}
               <div className="flex flex-wrap justify-center gap-3 md:gap-6 bg-black/40 px-6 py-3 rounded-2xl border border-white/5 backdrop-blur-sm">
-                 <div className="flex items-center gap-2 border-r border-white/10 pr-6 mr-2 hidden md:flex">
+                 <div className="hidden md:flex items-center gap-2 border-r border-white/10 pr-6 mr-2">
                     <span className="text-[10px] font-black text-slate-400 uppercase italic">Architect:</span>
                     <span className="text-[10px] font-black text-cyan-500 uppercase italic tracking-wider">Skipper Gemx</span>
                  </div>

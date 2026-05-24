@@ -365,7 +365,7 @@ export const MenuView = React.memo(() => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         </div>
       </div>
-      
+
       {/* TOP HUD ROW (Tier 3) */}
       <div className="relative z-50 pt-2 px-2">
         <CharacterBadge 

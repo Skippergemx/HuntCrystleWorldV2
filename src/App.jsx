@@ -58,7 +58,7 @@ const AdContainer = React.memo(({ loading }) => {
 });
 
 export const App = () => {
-  const { user, loading, loginWithGoogle, logout } = useUnifiedAuth();
+  const { user, loading, loginWithGoogle, loginDev, logout } = useUnifiedAuth();
 
   // Google Auth is the single auth gate for the web version.
   const isAuthenticated = !!user;
@@ -70,7 +70,7 @@ export const App = () => {
           <LoadingScreen />
         </div>
       ) : !isAuthenticated ? (
-        <LoginView handleGoogleLogin={loginWithGoogle} />
+        <LoginView handleGoogleLogin={loginWithGoogle} handleDevLogin={loginDev} />
       ) : (
         <GameProvider user={user}>
           <NetworkAlert />

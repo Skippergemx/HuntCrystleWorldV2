@@ -25,12 +25,34 @@ dist-ssr
 *.sln
 *.sw?
 
-# Markdown Documentation
+# Markdown Documentation (except README.md)
 *.md
 *.MD
+!README.md
 
 # Firebase
 firestore.rules
 
 # Research & Playground (Ignore from Git)
 src/components/EffectsPlayground.jsx
+
+# E2E Test Suite
+e2e/
+
+# Test Results (Playwright)
+test-results/
+
+# Planning Documents
+plans/
+
+# Firebase Cloud Functions (backend)
+functions/
+
+# Scratch / Playground
+scratch/
+
+# Tool artifacts
+.qoder/
+
+# Vite temp build artifacts
+vite.config.js.timestamp-*.mjs

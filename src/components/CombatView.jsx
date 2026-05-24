@@ -40,6 +40,7 @@ export const CombatView = React.memo(() => {
 
   const [isLootModalOpen, setIsLootModalOpen] = useState(false);
   const [isPossibleDropsModalOpen, setIsPossibleDropsModalOpen] = useState(false);
+  const [isMonsterInfoModalOpen, setIsMonsterInfoModalOpen] = useState(false);
   const [showRetreatConfirm, setShowRetreatConfirm] = useState(false);
   const [showPurifyConfirm, setShowPurifyConfirm] = useState(false);
   const [tameAnimation, setTameAnimation] = useState(null); // 'ATTEMPTING', 'SUCCESS', 'FAIL'
@@ -189,9 +190,27 @@ export const CombatView = React.memo(() => {
     return el?.charAt(0).toUpperCase() + el?.slice(1);
   }, [enemy, cosmicMonsters]);
 
+  const monsterElementTheme = useMemo(() => {
+    const el = currentEnemyElement;
+    if (el === 'Pyro') return { bg: 'bg-red-600', text: 'text-red-400', icon: '🔥', border: 'border-red-500' };
+    if (el === 'Earthen') return { bg: 'bg-emerald-600', text: 'text-emerald-400', icon: '⛰️', border: 'border-emerald-500' };
+    if (el === 'Hydro') return { bg: 'bg-blue-600', text: 'text-blue-400', icon: '💧', border: 'border-blue-500' };
+    if (el === 'Gale') return { bg: 'bg-purple-600', text: 'text-purple-400', icon: '🌪️', border: 'border-purple-500' };
+    if (el === 'Cosmic') return { bg: 'bg-pink-600', text: 'text-pink-400', icon: '⚛️', border: 'border-pink-500' };
+    return { bg: 'bg-cyan-600', text: 'text-cyan-400', icon: '💠', border: 'border-cyan-500' };
+  }, [currentEnemyElement]);
+
   const requiredTool = useMemo(() => tamingTools[currentEnemyElement], [tamingTools, currentEnemyElement]);
   const hasRequiredTool = useMemo(() => requiredTool && (inventoryCounts[requiredTool] > 0), [inventoryCounts, requiredTool]);
   const toolDetails = useMemo(() => requiredTool ? LOOTS.find(l => l.id === requiredTool) : null, [requiredTool, LOOTS]);
+
+  // Pick a random taunt when the monster info modal opens
+  const randomTaunt = useMemo(() => {
+    if (!enemy?.taunts?.length) return null;
+    const seed = isMonsterInfoModalOpen ? Math.floor(Math.random() * enemy.taunts.length) : 0;
+    return enemy.taunts[seed];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMonsterInfoModalOpen, enemy?.id]);
 
   useEffect(() => {
     // Phase 4: Emergency Gate Reset on Mount
@@ -551,9 +570,10 @@ export const CombatView = React.memo(() => {
                 {enemy?.isElite && (
                   <div className="absolute inset-0 -m-8 bg-purple-600/30 blur-3xl rounded-full animate-pulse scale-125 z-0"></div>
                 )}
-                <div 
+                <div
                   ref={enemyContainerRef}
-                  className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-black border-[5px] md:border-[8px] border-white shadow-[6px_6px_0px_0px_var(--neon-pink)] md:shadow-[12px_12px_0px_0px_var(--neon-pink)] overflow-hidden relative transform -rotate-2 ${enemy?.isElite ? 'scale-125 neon-glow-pink' : ''} ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}
+                  onClick={() => setIsMonsterInfoModalOpen(true)}
+                  className={`group w-32 h-32 sm:w-44 sm:h-44 lg:w-64 lg:h-64 bg-black border-[5px] md:border-[8px] border-white shadow-[6px_6px_0px_0px_var(--neon-pink)] md:shadow-[12px_12px_0px_0px_var(--neon-pink)] overflow-hidden relative transform -rotate-2 cursor-pointer ${enemy?.isElite ? 'scale-125 neon-glow-pink' : ''} ${isHurt || impactSplash ? 'animate-flinch' : (requiredTool ? 'animate-tame-shine' : 'animate-float')}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-transparent z-10"></div>
                   <div className="halftone-overlay absolute inset-0 opacity-20 text-red-500 z-0"></div>
@@ -1246,8 +1266,156 @@ export const CombatView = React.memo(() => {
             </div>
           </div>
         )}
+
+        {/* Monster Info Modal */}
+        {isMonsterInfoModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in duration-300">
+            <div className="absolute inset-0 comic-halftone opacity-20 text-cyan-500 pointer-events-none"></div>
+
+            <div className="bg-slate-950 border-[5px] border-black w-full max-w-lg max-h-[85vh] flex flex-col relative shadow-[10px_10px_0_rgba(0,0,0,1)] animate-in zoom-in slide-in-from-bottom-8 duration-500 overflow-hidden">
+              
+              {/* Header — element-themed */}
+              <div className={`${monsterElementTheme.bg} border-b-[5px] border-black p-4 flex justify-between items-center transform -skew-x-2 w-full mt-[-2px] ml-[-2px] relative z-10`}>
+                <div className="flex items-center gap-3">
+                  <div className="bg-black p-2 rounded transform rotate-12 text-2xl">
+                    {monsterElementTheme.icon}
+                  </div>
+                  <div className="flex flex-col">
+                    <h2 className="text-xl md:text-3xl font-black text-black uppercase italic tracking-tighter leading-none">THREAT PROFILE</h2>
+                    <span className="text-[10px] font-black text-black/60 uppercase tracking-widest leading-none mt-1">{enemy.name}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsMonsterInfoModalOpen(false)}
+                  className="bg-black text-white p-2 md:p-3 border-2 border-black hover:bg-red-600 transition-colors shadow-[4px_4px_0_rgba(255,255,255,0.1)] active:translate-x-1 active:translate-y-1 active:shadow-none"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar space-y-6">
+                
+                {/* Monster Avatar + Element Badge */}
+                <div className="flex items-center gap-6">
+                  <div className="w-28 h-28 md:w-36 md:h-36 bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] overflow-hidden relative flex-shrink-0">
+                    <img
+                      src={`/assets/monsters/${enemy.folder || 'Neon Slums'}/${enemy.baseName || (enemy.name?.startsWith('CHAMPION ') ? enemy.name.replace('CHAMPION ', '') : enemy.name)}.jpg`}
+                      alt={enemy.name}
+                      className="w-full h-full object-cover filter brightness-110 contrast-125"
+                      onError={(e) => {
+                        const folder = enemy.folder || 'Neon Slums';
+                        const baseN = enemy.baseName || (enemy.name?.startsWith('CHAMPION ') ? enemy.name.replace('CHAMPION ', '') : enemy.name);
+                        if (e.target.src.endsWith('.jpg')) e.target.src = `/assets/monsters/${folder}/${baseN}.png`;
+                        else { e.target.onerror = null; e.target.src = 'https://api.dicebear.com/7.x/identicon/svg?seed=' + enemy.name; }
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <h3 className="text-lg md:text-2xl font-black text-white uppercase italic tracking-tighter bungee">{enemy.name}</h3>
+                    {enemy?.isElite && (
+                      <span className="bg-white text-black text-xs px-2 py-0.5 rounded font-black border-2 border-black animate-pulse w-fit bungee">
+                        CHAMPION
+                      </span>
+                    )}
+                    <div className={`${monsterElementTheme.bg} px-3 py-1 rounded border-2 border-black shadow-[3px_3px_0_rgba(0,0,0,1)] flex items-center gap-2 w-fit`}>
+                      <span className="text-lg">{monsterElementTheme.icon}</span>
+                      <span className="text-xs md:text-sm font-black text-black uppercase italic bungee">{currentEnemyElement}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-2 bg-black/60 border-[3px] border-black p-3 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+                  <div className="flex flex-col items-center p-2 border-r border-white/10 text-red-500">
+                    <span className="text-[7px] font-black uppercase tracking-widest">STR</span>
+                    <span className="text-sm md:text-base font-black italic">{enemy.str}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-2 border-r border-white/10 text-emerald-500">
+                    <span className="text-[7px] font-black uppercase tracking-widest">AGI</span>
+                    <span className="text-sm md:text-base font-black italic">{enemy.agi}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-2 text-cyan-500">
+                    <span className="text-[7px] font-black uppercase tracking-widest">DEX</span>
+                    <span className="text-sm md:text-base font-black italic">{enemy.dex}</span>
+                  </div>
+                </div>
+
+                {/* HP Bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[9px] font-black text-[var(--neon-pink)] uppercase italic bungee">Power Core</span>
+                    <span className="text-[9px] font-black text-white italic bungee">{Math.floor(enemy.hp)}/{Math.floor(enemy.maxHp)}</span>
+                  </div>
+                  <div className="w-full h-6 bg-black border-[3px] border-white p-0.5 relative shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center overflow-hidden">
+                    <div className="absolute h-full bg-[var(--neon-pink)] opacity-30 transition-all duration-700 ease-out" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}></div>
+                    <div className="h-full bg-[var(--neon-pink)] transition-all duration-300 relative shadow-[0_0_15px_var(--neon-pink)]" style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}>
+                      <div className="absolute inset-0 halftone-overlay opacity-30 pointer-events-none text-black"></div>
+                      <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* XP Reward */}
+                <div className="bg-black/40 border-2 border-white/10 p-3 rounded-lg flex items-center justify-between">
+                  <span className="text-[10px] font-black text-cyan-400 uppercase italic flex items-center gap-2 bungee">
+                    <Star size={14} className="text-amber-400" /> XP REWARD
+                  </span>
+                  <span className="text-sm md:text-lg font-black text-white italic">{enemy.xp} XP</span>
+                </div>
+
+                {/* Tame Section — only if player has matching tool */}
+                {requiredTool && (
+                  <div className={`bg-black/40 border-2 ${hasRequiredTool ? 'border-emerald-500/30' : 'border-red-500/20'} p-4 rounded-lg space-y-3`}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-emerald-400 uppercase italic flex items-center gap-2 bungee">
+                        <WandSparkles size={14} /> TAME PROTOCOL
+                      </span>
+                      {hasRequiredTool && (
+                        <span className="text-[9px] font-black text-white bg-emerald-600 px-2 py-0.5 rounded border border-black bungee">
+                          TOOL READY
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-white/70 font-bold uppercase">Required Prism</span>
+                      <span className={`text-xs font-black uppercase italic ${hasRequiredTool ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {toolDetails?.name || requiredTool}
+                      </span>
+                    </div>
+                    
+                    {!hasRequiredTool && (
+                      <div className="bg-red-950/30 border border-red-500/30 p-2 rounded text-[9px] font-black text-red-400 uppercase italic text-center">
+                        ⚠️ Missing {currentEnemyElement}-affinity taming prism
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Random Taunt Display */}
+                {enemy.taunts && enemy.taunts.length > 0 && (
+                  <div className="bg-red-600/10 border-2 border-red-500/30 p-3 rounded-lg">
+                    <span className="text-[8px] font-black text-red-400 uppercase italic tracking-widest bungee">HOSTILE TRANSMISSION</span>
+                    <p className="text-sm md:text-base font-black text-white italic mt-1">
+                      &ldquo;{randomTaunt}&rdquo;
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-black/80 border-t-[5px] border-black flex justify-center">
+                <div className="text-[8px] md:text-[10px] font-black text-white/40 uppercase italic tracking-[0.3em]">
+                  Threat analysis synchronized // LVL {enemy.level} {enemy.archetype}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       {/* Confirmation Modal */}
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={showRetreatConfirm}
         onClose={() => setShowRetreatConfirm(false)}
         onConfirm={combat.handleRetreat}

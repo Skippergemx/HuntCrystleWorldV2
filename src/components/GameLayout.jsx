@@ -396,7 +396,7 @@ export const GameLayout = ({ onLogout }) => {
         </div>
       )}
 
-      <nav className="bg-slate-950 border-b-[4px] border-black sticky top-0 z-50 p-2 md:p-3 shadow-2xl relative overflow-hidden">
+      <nav className="bg-slate-950 border-b-[4px] border-black sticky top-0 z-50 p-2 md:p-3 shadow-2xl overflow-hidden">
         {/* Halftone Overlay HUD */}
 
         {player.avatar && (
@@ -741,9 +741,8 @@ export const GameLayout = ({ onLogout }) => {
             <TavernView />
           )}
 
-          {view === 'boss' && (
-            <BossView />
-          )}
+          {/* 🔒 DISABLED — Boss Room under maintenance */}
+          {view === 'boss' && null}
 
           {view === 'attributes' && (
             <AttributesView />
@@ -785,9 +784,8 @@ export const GameLayout = ({ onLogout }) => {
             <MapView />
           )}
 
-          {view === 'pvp' && (
-            <PvpRoomView />
-          )}
+          {/* 🔒 DISABLED — PvP Arena under maintenance */}
+          {view === 'pvp' && null}
 
           {view === 'admin' && (
             <AdminPanelView />
@@ -958,7 +956,7 @@ export const GameLayout = ({ onLogout }) => {
                       <div className="w-10 h-10 bg-black border-2 border-red-600 flex items-center justify-center font-black italic text-red-500 shadow-lg">#{collisionProfile.level}</div>
                       <div>
                         <p className="text-sm font-black text-white uppercase italic">{collisionProfile.name}</p>
-                        <p className="text-[8px] text-slate-500 uppercase tracking-tighter tracking-widest">OWNED VIA {collisionProfile.platform}</p>
+                        <p className="text-[8px] text-slate-500 uppercase tracking-widest">OWNED VIA {collisionProfile.platform}</p>
                       </div>
                    </div>
                 </div>

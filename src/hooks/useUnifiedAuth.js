@@ -20,6 +20,41 @@ export const useUnifiedAuth = () => {
     let isMounted = true;
 
     const init = async () => {
+      // DEV MODE CHECK: Skip Firebase entirely and create mock user
+      // __DEV_MODE__ is a compile-time constant replaced by Vite's define:
+      //   - `true` during dev (vite / npm run dev)
+      //   - `false` in production builds (vite build)
+      // The bundler tree-shakes the entire block below out of production bundles.
+      if (__DEV_MODE__) {
+        const envDevMode = import.meta.env.VITE_DEV_MODE;
+        const envDEV = import.meta.env.DEV;
+        const hostname = typeof window !== 'undefined' ? window.location.hostname : 'NO_WINDOW';
+        const pwFlag = typeof window !== 'undefined' ? window.__PLAYWRIGHT_DEV_MODE__ : undefined;
+        console.log("[DGBUG] VITE_DEV_MODE env:", JSON.stringify(envDevMode), "| DEV flag:", envDEV, "| hostname:", hostname, "| __PLAYWRIGHT_DEV_MODE__:", pwFlag);
+
+        const isDevMode = envDevMode === 'true' ||
+                          envDEV === true ||
+                          hostname === 'localhost' ||
+                          hostname === '127.0.0.1' ||
+                          pwFlag === true;
+        
+        console.log("[DGBUG] isDevMode:", isDevMode);
+        if (isDevMode) {
+          console.log("System V4: Dev Mode Detected — Bypassing Firebase Auth");
+          const devUser = {
+            uid: 'DEV_LOCAL_' + Date.now(),
+            email: 'dev@test.local',
+            username: 'Dev Hunter',
+            pfp: 'https://api.dicebear.com/7.x/identicon/svg?seed=DEV',
+            platform: 'dev',
+            walletAddress: null
+          };
+          setUser(devUser);
+          setLoading(false);
+          return;
+        }
+      }
+
       let isFarcaster = false;
       let fcUser = null;
 
@@ -136,6 +171,21 @@ export const useUnifiedAuth = () => {
     }
   };
 
+  const loginDev = () => {
+    if (!__DEV_MODE__) return; // safety net — tree-shaken in production
+    const devUser = {
+      uid: 'DEV_LOCAL_' + Date.now(),
+      email: 'dev@test.local',
+      username: 'Dev Hunter',
+      pfp: 'https://api.dicebear.com/7.x/identicon/svg?seed=DEV',
+      platform: 'dev',
+      walletAddress: null
+    };
+    setUser(devUser);
+    setLoading(false);
+    console.log("System V4: Dev Mode Activated — Mock Identity:", devUser.uid);
+  };
+
   const logout = async () => {
     try {
       if (disconnect) disconnect();
@@ -147,6 +197,7 @@ export const useUnifiedAuth = () => {
     user,
     loading,
     loginWithGoogle,
+    loginDev,
     logout
   };
 };
