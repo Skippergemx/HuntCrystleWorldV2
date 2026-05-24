@@ -772,8 +772,9 @@ export const GameLayout = ({ onLogout }) => {
             <GearView />
           )}
 
-          {/* 🔒 DISABLED — P2P Market under maintenance */}
-          {view === 'market' && null}
+          {view === 'market' && (
+            <MarketplaceView />
+          )}
 
           {view === 'database' && (
             <DatabaseView />
