@@ -198,3 +198,51 @@ body[data-perf-mode="low"] .comic-halftone,
 body[data-perf-mode="low"] .halftone-overlay {
     background-image: none !important;
 }
+
+/* --- COMBAT EXCITEMENT ANIMATIONS --- */
+
+@keyframes crit-flash {
+    0% { box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.8); }
+    50% { box-shadow: inset 0 0 200px rgba(255, 255, 255, 0.4); }
+    100% { box-shadow: inset 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+.animate-crit-flash {
+    animation: crit-flash 0.8s ease-out forwards;
+}
+
+@keyframes float-up {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-100px) scale(1.8); opacity: 0; }
+}
+
+.animate-float-up {
+    animation: float-up 1s ease-out forwards;
+}
+
+@keyframes spark-pulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.15); filter: brightness(1.5); }
+}
+
+.animate-spark-pulse {
+    animation: spark-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skill-sweep {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.animate-skill-sweep {
+    animation: skill-sweep 1.5s ease-in-out infinite;
+}
+
+@keyframes slide-down {
+    0% { transform: translateY(-100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
+}

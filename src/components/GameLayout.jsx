@@ -49,6 +49,8 @@ import { CrystleTownView } from './CrystleTownView';
 import { CrystleBazaarView } from './CrystleBazaarView';
 import { BiometricCoreView } from './BiometricCoreView';
 import { HunterRegistryView } from './HunterRegistryView';
+import { PartyCompanionDock } from './PartyCompanionDock';
+import { CompanionChatModal } from './CompanionChatModal';
 // import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
@@ -156,6 +158,7 @@ export const GameLayout = ({ onLogout }) => {
   } = engine;
 
   const [isMigrating, setIsMigrating] = useState(false);
+  const [chatCompanion, setChatCompanion] = useState(null);
   const [displayedTip, setDisplayedTip] = useState("");
   const fullTipText = "STUTTERING? TOGGLE LOW-FX MODE TO STABILIZE UPLINK.";
 
@@ -871,6 +874,8 @@ export const GameLayout = ({ onLogout }) => {
 
       </main>
 
+      <PartyCompanionDock onOpenChat={setChatCompanion} />
+
       <footer className="w-full py-8 flex flex-col items-center gap-4 relative z-20">
         <a href="https://metaverse.dungeonswithgems.quest" className="text-[9px] text-slate-700 font-black uppercase tracking-[0.5em] mb-1 opacity-40 hover:opacity-100 transition-opacity">METAVERSE.DUNGEONSWITHGEMS.QUEST // SYNCED_TO_GRID</a>
 
@@ -893,6 +898,16 @@ export const GameLayout = ({ onLogout }) => {
           </button> */}
         </div>
       </footer>
+
+      {/* ─── Companion Chat Modal (Phase 3) ─── */}
+      {chatCompanion && (
+        <CompanionChatModal
+          companion={chatCompanion}
+          player={player}
+          context={penaltyRemaining > 0 ? 'penalized' : (player?.hp < (player?.maxHp * 0.4) ? 'lowHp' : 'idle')}
+          onClose={() => setChatCompanion(null)}
+        />
+      )}
 
       <style>{`
         @keyframes defeat-progress { from { width: 0%; } to { width: 100%; } }

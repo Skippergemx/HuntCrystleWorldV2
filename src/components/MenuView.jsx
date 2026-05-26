@@ -38,108 +38,43 @@ import {
   CitizenMedia 
 } from './GameUI';
 import { useGame } from '../contexts/GameContext';
+import { useCompanionBanter } from '../hooks/useCompanionBanter';
 
-const DIALOGUE_POOL = {
-  idle: [
-    "Ready for another run?",
-    "These sector slums... they never change.",
-    "Data streams are looking stable today.",
-    "Found anything good in the wreckage?",
-    "Where to next, Hunter?"
-  ],
-  tips: [
-    "TIP: Dexterity increases your Forge success rate significantly!",
-    "TIP: Legendary loot only drops in floors 20 and above.",
-    "TIP: Watch the map colors. Elemental affinities are real.",
-    "TIP: Hiring a Tavern Mate is the best insurance for Boss battles.",
-    "TIP: Salvage common gear to get materials for Crystle crafting.",
-    "TIP: Strength increases flat physical damage. Simple but effective.",
-    "TIP: Agility determines your Crit rate. Hunt for those red numbers!",
-    "TIP: Always check your Dragon Buffs before entering deep floors."
-  ],
-  lowHp: [
-    "I'm leaking coolant here... we need a fix.",
-    "System integrity at critical levels. Let's rest.",
-    "One more hit and we're neural-dumped. Heal up!"
-  ],
-  hasAp: [
-    "I feel untapped potential... check the Stats.",
-    "Ready for a neural upgrade?",
-    "These Ability Points won't spend themselves!"
-  ],
-  penalized: [
-    "Just catching my breath. Stand by.",
-    "System reboot in progress... give me a sec.",
-    "That last one stung. Recalibrating."
-  ],
-  rich: [
-    "We're stacked! Let's hit the Market.",
-    "GX tokens burning a hole in my pocket...",
-    "Shop day? I'm feeling some new gear."
-  ]
-};
-
-const DUO_DIALOGUE = [
-  ["H: How are the levels looking, buddy?", "P: Energy cores at 100%. We're combat-ready!"],
-  ["P: *Scans surrounding floor*", "H: Spotting anything good in the loot-streams?"],
-  ["H: Ready for the next run?", "P: Always. The Meta-verse won't conquer itself."],
-  ["P: I sense untapped stats in your neural core.", "H: You're right. I should check the Attributes."],
-  ["H: Think we can take the Boss in Sector 7?", "P: With your skill and my logic? Not even a contest."],
-  ["P: Watch your HP, Hunter. It's getting low.", "H: Don't worry, I've got a potion ready."],
-  ["H: These crystal pets are smarter than they look.", "P: We're literally built from ancient logic-gems, boss."]
-];
-
-const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => {
-  const [fullMsg, setFullMsg] = React.useState("");
+const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode, tavernMates }) => {
   const [displayedMsg, setDisplayedMsg] = React.useState("");
-  const [lineIdx, setLineIdx] = React.useState(0);
-  const [activeDuo, setActiveDuo] = React.useState(null);
-  const currentPet = player.petId ? petsMeta.find(p => p.id === player.petId) : null;
-  
+  const [banterData, setBanterData] = React.useState(null);
+  const { activeCompanions, pickBanter } = useCompanionBanter(player, penaltyRemaining, petsMeta, tavernMates);
+
   const pickMessage = React.useCallback(() => {
-    setActiveDuo(null);
-    setLineIdx(0);
-    let pool = DIALOGUE_POOL.idle;
-    const isLowHp = player.hp < (player.maxHp * 0.4);
-    if (currentPet && Math.random() < 0.3) {
-      const duo = DUO_DIALOGUE[Math.floor(Math.random() * DUO_DIALOGUE.length)];
-      setActiveDuo(duo);
-      setFullMsg(duo[0]);
-    } else {
-      if (penaltyRemaining > 0) pool = DIALOGUE_POOL.penalized;
-      else if (isLowHp) pool = DIALOGUE_POOL.lowHp;
-      else if (player.abilityPoints > 0) pool = DIALOGUE_POOL.hasAp;
-      else pool = Math.random() > 0.5 ? DIALOGUE_POOL.tips : DIALOGUE_POOL.idle;
-      setFullMsg(pool[Math.floor(Math.random() * pool.length)]);
-    }
-    setDisplayedMsg(""); 
-  }, [player.hp, player.abilityPoints, penaltyRemaining, currentPet]);
+    const data = pickBanter();
+    setBanterData(data);
+    setDisplayedMsg("");
+  }, [pickBanter]);
 
+  // Typewriter effect — animate message character by character
   React.useEffect(() => {
-    if (displayedMsg.length < fullMsg.length) {
-      const timeout = setTimeout(() => setDisplayedMsg(fullMsg.slice(0, displayedMsg.length + 1)), 30);
-      return () => clearTimeout(timeout);
-    } else if (activeDuo && lineIdx < activeDuo.length - 1) {
-      const timeout = setTimeout(() => {
-        setLineIdx(lineIdx + 1);
-        setFullMsg(activeDuo[lineIdx + 1]);
-        setDisplayedMsg("");
-      }, 2500);
+    if (!banterData) return;
+    if (displayedMsg.length < banterData.message.length) {
+      const timeout = setTimeout(
+        () => setDisplayedMsg(banterData.message.slice(0, displayedMsg.length + 1)),
+        30
+      );
       return () => clearTimeout(timeout);
     }
-  }, [displayedMsg, fullMsg, activeDuo, lineIdx]);
+  }, [displayedMsg, banterData]);
 
+  // 15-second banter cycle
   React.useEffect(() => {
     pickMessage();
     const interval = setInterval(pickMessage, 15000);
     return () => clearInterval(interval);
   }, [pickMessage]);
 
-  const isPetTalking = displayedMsg.startsWith("P:");
-  const cleanDisplayMsg = displayedMsg.replace(/^(H:|P:)\s*/, "");
+  const prefixColor = banterData?.color || 'var(--neon-cyan)';
+  const prefixLabel = banterData?.prefix || '[COMM_LINK]';
 
   return (
-    <div className="w-full flex items-center justify-center p-2 relative z-50">
+    <div className="w-full flex flex-col items-center justify-center p-2 relative z-50">
       {/* TACTICAL COMMAND BANNER - SLIM & WIDE */}
       <div className="w-full max-w-4xl bg-white border-[4px] border-black rounded-2xl p-2 px-4 flex items-center gap-4 md:gap-6 shadow-[10px_10px_0px_0px_var(--neon-pink)] relative overflow-hidden transform rotate-0.5 transition-all hover:rotate-0 hover:-translate-y-1 hover:shadow-[14px_14px_0px_0px_var(--neon-cyan)] group cursor-pointer" onClick={pickMessage}>
          <div className="halftone-overlay absolute inset-0 opacity-5 pointer-events-none"></div>
@@ -151,11 +86,15 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
             <div className="w-16 h-16 md:w-20 md:h-20 bg-black border-[3px] border-black rounded-xl overflow-hidden shadow-[4px_4px_0px_0px_black] transform -rotate-2 group-hover:rotate-0 transition-transform">
                <AvatarMedia num={player.avatar} animated={!lowPerfMode} className="w-full h-full object-cover object-top scale-110" />
             </div>
-            {currentPet && (
-              <div className="absolute -bottom-1 -right-2 w-8 h-8 rounded-lg border-2 border-black overflow-hidden bg-slate-950 shadow-[2px_2px_0_rgba(0,0,0,1)] z-10 transform rotate-12 group-hover:rotate-0 transition-transform">
-                <img src={`/assets/pets/genesis-pets/Genesis Pets (${currentPet.id}).jpg`} className="w-full h-full object-cover contrast-125" />
-              </div>
-            )}
+            {/* Pet thumbnail overlay — always show if pet is adopted */}
+            {activeCompanions.some(c => c.type === 'pet') && (() => {
+              const petComp = activeCompanions.find(c => c.type === 'pet');
+              return (
+                <div className="absolute -bottom-1 -right-2 w-8 h-8 rounded-lg border-2 border-black overflow-hidden bg-slate-950 shadow-[2px_2px_0_rgba(0,0,0,1)] z-10 transform rotate-12 group-hover:rotate-0 transition-transform">
+                  <img src={`/assets/pets/genesis-pets/Genesis Pets (${petComp.petId}).jpg`} className="w-full h-full object-cover contrast-125" />
+                </div>
+              );
+            })()}
          </div>
 
          <div className="flex-1 flex flex-col md:flex-row items-center gap-4 md:gap-8 min-w-0">
@@ -172,10 +111,10 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
              <div className="flex-1 h-12 overflow-hidden relative bg-black rounded-lg border-2 border-black p-2 flex items-center shadow-inner">
                <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
                <p className="text-[10px] md:text-xs font-black text-white uppercase leading-snug italic line-clamp-2 relative z-10">
-                 <span className={`${isPetTalking ? 'text-[var(--neon-lime)]' : 'text-[var(--neon-cyan)]'} drop-shadow-sm bungee`}>{isPetTalking ? '[PET_LINK]:' : '[COMM_LINK]:'}</span> {cleanDisplayMsg}
+                 <span className="drop-shadow-sm bungee" style={{ color: prefixColor }}>{prefixLabel}:</span> {displayedMsg}
                </p>
                {/* Pulse Cursor */}
-               <div className="w-1.5 h-3 bg-[var(--neon-cyan)] animate-pulse ml-1 shrink-0" />
+               <div className="w-1.5 h-3 animate-pulse ml-1 shrink-0" style={{ backgroundColor: prefixColor }} />
             </div>
          </div>
 
@@ -183,14 +122,51 @@ const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode }) => 
          <div className="hidden md:flex flex-col items-end gap-1 shrink-0 pl-2">
             <div className="flex items-center gap-1">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[6px] font-black text-slate-400 italic">LIVE_UPLLINK</span>
+               <span className="text-[6px] font-black text-slate-400 italic">LIVE_UPLINK</span>
             </div>
             <div className="text-[8px] font-black text-black/20">#{player.id?.slice(-4)}</div>
          </div>
       </div>
 
+      {/* ─── COMPANION INDICATOR BAR ─── */}
+      {/* Mobile: horizontal scrollable row. Desktop: visible badges. */}
+      {activeCompanions.length > 1 && (
+        <div className="w-full max-w-4xl mt-1.5 flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 px-1">
+          {activeCompanions.filter(c => c.type !== 'hunter').map((comp, i) => {
+            const isActiveSpeaker = banterData?.speaker?.type === comp.type;
+            return (
+              <div
+                key={`${comp.type}-${i}`}
+                className={`flex items-center gap-1 px-2 py-0.5 rounded-full border-2 transition-all duration-200 shrink-0 cursor-pointer select-none
+                  ${isActiveSpeaker
+                    ? 'bg-black border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] scale-105'
+                    : 'bg-white/80 border-black/20 hover:border-black/40 opacity-70 hover:opacity-100'
+                  }`}
+                onClick={pickMessage}
+                title={comp.displayName}
+              >
+                {/* Mini icon */}
+                <span className="text-[10px] leading-none">
+                  {comp.avatarType === 'pet' && '🐾'}
+                  {comp.avatarType === 'mate' && (comp.icon || '👤')}
+                  {comp.avatarType === 'gemx' && '💎'}
+                  {comp.avatarType === 'dragon' && '🐉'}
+                </span>
+                <span className={`text-[7px] font-black uppercase tracking-wider leading-none ${isActiveSpeaker ? 'text-white' : 'text-black/60'}`}>
+                  {comp.displayName.length > 12 ? comp.displayName.slice(0, 10) + '..' : comp.displayName}
+                </span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isActiveSpeaker ? 'animate-pulse' : ''}`}
+                  style={{ backgroundColor: comp.color }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 10px; }
         .clip-hex { clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
@@ -278,7 +254,7 @@ const MissionBriefing = ({ player, setView }) => {
 };
 
 export const MenuView = React.memo(() => {
-  const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA, lowPerfMode, setLowPerfMode } = useGame();
+  const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA, TAVERN_MATES, lowPerfMode, setLowPerfMode } = useGame();
   const { setView } = adventure;
   const { penaltyRemaining, autoTimeLeft } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
@@ -368,11 +344,12 @@ export const MenuView = React.memo(() => {
 
       {/* TOP HUD ROW (Tier 3) */}
       <div className="relative z-50 pt-2 px-2">
-        <CharacterBadge 
-          player={player} 
-          penaltyRemaining={penaltyRemaining} 
-          petsMeta={PETS_METADATA} 
+        <CharacterBadge
+          player={player}
+          penaltyRemaining={penaltyRemaining}
+          petsMeta={PETS_METADATA}
           lowPerfMode={lowPerfMode}
+          tavernMates={TAVERN_MATES}
         />
       </div>
 

@@ -6,6 +6,8 @@ import { AvatarMedia, SquadHUD, ConfirmationModal, Header } from './GameUI';
 import { X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { SOUNDS } from '../hooks/useAudioEngine';
+import { CombatBanterOverlay } from './CombatBanterOverlay';
+import { SparkCelebration } from './SparkCelebration';
 
 const BossAvatarMedia = ({ bossIdx, animated, className, BOSS_MEDIA_FILES }) => {
   const media = BOSS_MEDIA_FILES[bossIdx] || BOSS_MEDIA_FILES[0];
@@ -33,12 +35,13 @@ export const BossView = () => {
   } = useGame();
 
   const { view, setView, enemyFlinch, isHurt } = adventure;
-  const { 
-    stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash, 
+  const {
+    stunTimeLeft, missTimeLeft, combatState, impactSplash, playerImpactSplash,
     strikingSide, currentTaunt, playerTaunt,
     skillEnergy, activeSkill, skillDuration, triggerSkill, skillCooldown,
     monsterSkillActive, squadStrikeActive,
-    defeatData, handleDismissDefeat
+    defeatData, handleDismissDefeat,
+    floatingNumbers, critAlert, lastLoot
   } = combat;
   const { handleHeal, activateAutoScroll, cyclePotion, cycleScroll, eatFood } = actions;
   const { autoTimeLeft, dragonTimeLeft, buffTimeLeft, foodTimeLeft } = gameLoop;
@@ -47,6 +50,7 @@ export const BossView = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [sparkCelebration, setSparkCelebration] = useState(null);
 
   const battleParticlesRef = React.useRef(null);
   const bossContainerRef = React.useRef(null);
@@ -216,6 +220,34 @@ export const BossView = () => {
     }
   }, [squadStrikeActive]);
 
+  // --- SPARK CELEBRATION DETECTION ---
+  useEffect(() => {
+    if (lastLoot) {
+      const itemId = lastLoot.id || lastLoot.itemId || '';
+      if (itemId.startsWith('aether_spark')) {
+        setSparkCelebration({ type: 'aether', item: lastLoot });
+        if (audio?.playSFX) audio.playSFX(SOUNDS.skillTrigger);
+      } else if (itemId.startsWith('hunt_spark')) {
+        setSparkCelebration({ type: 'hunt', item: lastLoot });
+        if (audio?.playSFX) audio.playSFX(SOUNDS.obtainLoot);
+      }
+    }
+  }, [lastLoot, audio]);
+
+  // SKILL TRIGGER PARTICLES
+  useEffect(() => {
+    if (activeSkill && battleParticlesRef.current && bossContainerRef.current && arenaRef.current) {
+      const rect = bossContainerRef.current.getBoundingClientRect();
+      const arenaRect = arenaRef.current.getBoundingClientRect();
+      battleParticlesRef.current.emit(
+        (rect.left - arenaRect.left) + rect.width / 2,
+        (rect.top - arenaRect.top) + rect.height / 2,
+        activeSkill.element || 'impact',
+        { speed: 30, size: 25, gravity: -0.3, count: 100 }
+      );
+    }
+  }, [activeSkill]);
+
   return (
     <div 
       ref={arenaRef}
@@ -235,6 +267,11 @@ export const BossView = () => {
           activeSkill.name === 'PHANTOM VELOCITY' ? 'from-purple-600/50 to-transparent' :
           activeSkill.name === 'TECTONIC FORTRESS' ? 'from-emerald-600/50 to-transparent' : 'from-indigo-600/50 to-transparent'
         }`}></div>
+      )}
+
+      {/* CRITICAL HIT FLASH OVERLAY */}
+      {critAlert && (
+        <div className="absolute inset-0 z-[50] pointer-events-none animate-crit-flash"></div>
       )}
 
       {/* SKILL CUT-IN BANNER */}
@@ -444,7 +481,27 @@ export const BossView = () => {
              </div>
           </div>
 
-          {/* PLAYER AVATAR */}
+         {/* FLOATING DAMAGE NUMBERS */}
+         {floatingNumbers && floatingNumbers.length > 0 && (
+           <div className="absolute inset-0 z-[55] pointer-events-none">
+             {floatingNumbers.map((fn, i) => (
+               <div
+                 key={fn.id || i}
+                 className="absolute animate-float-up font-black italic drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+                 style={{
+                   left: fn.side === 'player' ? '25%' : '75%',
+                   top: '30%',
+                   color: fn.isCrit ? '#ff4444' : '#ffdd44',
+                   fontSize: fn.isCrit ? 'clamp(1.5rem,5vw,4rem)' : 'clamp(1rem,3vw,2.5rem)',
+                 }}
+               >
+                 {fn.isCrit ? '⚡CRIT!⚡' : `-${Math.floor(fn.val || 0)}`}
+               </div>
+             ))}
+           </div>
+         )}
+
+         {/* PLAYER AVATAR */}
           <div className={`flex flex-col items-center lg:items-start transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
              <div className="relative group">
                 <div className="flex items-center gap-3 md:gap-8">
@@ -615,6 +672,14 @@ export const BossView = () => {
           </div>
         </div>
       </div>
+
+      {/* --- COMBAT BANTER OVERLAY --- */}
+      <CombatBanterOverlay
+        combat={combat}
+        player={player}
+        petsMeta={PETS_METADATA}
+        tavernMates={TAVERN_MATES}
+      />
 
       {/* --- TACTICAL UTILITY BELT: ELEVATED Z-INDEX TO ENSURE CLICKABILITY --- */}
       <div className="w-full flex justify-center z-[60] mt-auto pointer-events-none relative pb-4">
@@ -906,6 +971,12 @@ export const BossView = () => {
           </div>
         </div>
       )}
+
+      {/* SPARK CELEBRATION OVERLAY */}
+      <SparkCelebration
+        spark={sparkCelebration}
+        onComplete={() => setSparkCelebration(null)}
+      />
     </div>
   );
 };

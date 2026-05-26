@@ -193,15 +193,24 @@ export const BattleParticles = forwardRef(({ lowPerfMode }, ref) => {
 
 export const ImpactSplash = React.memo(({ splash }) => {
   if (!splash) return null;
+  const isCrit = splash.isCrit;
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-      <div className="animate-impact relative will-change-transform flex flex-col items-center">
-        <div className="absolute inset-0 bg-amber-400 blur-2xl opacity-60 scale-150 rounded-full animate-pulse"></div>
-        <div className="bg-amber-500 text-black font-black text-2xl md:text-3xl px-6 py-1.5 rounded-sm border-[4px] border-black transform -rotate-12 shadow-[6px_6px_0_rgba(0,0,0,1)] z-20 mb-[-10px] relative">
-          {splash.text}
+      <div className={`animate-impact relative will-change-transform flex flex-col items-center ${isCrit ? 'scale-125' : ''}`}>
+        <div className={`absolute inset-0 blur-2xl opacity-60 scale-150 rounded-full animate-pulse ${isCrit ? 'bg-red-500' : 'bg-amber-400'}`}></div>
+        <div className={`font-black text-2xl md:text-3xl px-6 py-1.5 rounded-sm border-[4px] border-black transform -rotate-12 shadow-[6px_6px_0_rgba(0,0,0,1)] z-20 mb-[-10px] relative ${isCrit ? 'bg-red-600 text-white border-red-400' : 'bg-amber-500 text-black'}`}>
+          {isCrit ? '☠️ CRITICAL!' : splash.text}
         </div>
-        <div className="bg-white text-black font-[1000] text-3xl md:text-5xl px-4 py-2 rounded-lg border-[4px] border-black shadow-[8px_8px_0_rgba(239,68,68,1)] z-30 transform rotate-3 animate-bounce-short">
-          <span className="text-red-600 mr-1">-</span>{Math.floor(splash.dmg)}
+        <div className={`font-[1000] text-3xl md:text-5xl px-4 py-2 rounded-lg border-[4px] z-30 transform rotate-3 animate-bounce-short ${isCrit ? 'bg-red-900 text-red-300 border-red-500 shadow-[8px_8px_0_rgba(255,0,0,0.8)]' : 'bg-white text-black border-black shadow-[8px_8px_0_rgba(239,68,68,1)]'}`}>
+          {isCrit ? (
+            <span className="flex items-center gap-1">
+              <span className="text-yellow-400">⚡</span>
+              <span>CRIT</span>
+              <span className="text-yellow-400">⚡</span>
+            </span>
+          ) : (
+            <><span className="text-red-600 mr-1">-</span>{Math.floor(splash.dmg)}</>
+          )}
         </div>
       </div>
     </div>
