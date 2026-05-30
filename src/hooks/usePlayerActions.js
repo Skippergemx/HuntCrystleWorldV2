@@ -394,8 +394,6 @@ export const usePlayerActions = (
       
       const data = result.data || {};
       if (data.success) {
-        // Apply updates to local state so the purchase is visible immediately
-        if (syncPlayer) syncPlayer(updates);
         addLog(`Acquired ${qty > 1 ? qty + 'x ' : ''}${item.name}! Check your Storage Bag.`);
         playSFX(SOUNDS.obtainLoot);
         return true;
@@ -460,7 +458,6 @@ export const usePlayerActions = (
         action: 'ACTIVATE_SCROLL',
         payload: { selection, ms: spec.ms, val: spec.val, view }
       });
-      if (syncPlayer) syncPlayer(updates);
       addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
     } catch (e) {
       console.error(e);
