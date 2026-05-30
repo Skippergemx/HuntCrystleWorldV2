@@ -24,6 +24,13 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
   const [activeTooltip, setActiveTooltip] = useState(null);
   const rewardFood = FOODS?.find(f => f.id === quest.reward.foodId);
 
+  // Bonus reward: scroll or potion
+  const rewardScroll = quest.reward?.scrollId ? ITEMS?.find(i => i.id === quest.reward.scrollId) : null;
+  const rewardPotion = quest.reward?.potionId ? ITEMS?.find(i => i.id === quest.reward.potionId) : null;
+  const bonusReward = rewardScroll || rewardPotion;
+  const bonusLabel = rewardScroll ? 'AUTO_SCROLL' : rewardPotion ? 'POTION_REWARD' : null;
+  const bonusQty = rewardScroll ? quest.reward.scrollQty : rewardPotion ? quest.reward.potionQty : null;
+
   const getItemSource = (itId) => {
     if (itId?.includes('apple') || itId?.includes('grapes') || itId?.includes('berry') || itId?.includes('cherry') || itId?.includes('peach') || itId?.includes('lemon') || itId?.includes('orange') || itId?.includes('pear')) {
         return "Dragons Ground / Orchard";
@@ -118,6 +125,20 @@ const NPCModal = ({ quest, onClose, onComplete, onAbandon, canComplete, setConfi
           </div>
         )}
 
+        {/* Bonus reward: Auto Scroll or Potion */}
+        {bonusReward && (
+          <div className="bg-slate-900 p-2.5 rounded-2xl border-[3px] border-black flex items-center gap-3 shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center border-2 border-white/5 shrink-0">
+               <span className="text-3xl leading-none">{bonusReward.icon || '📦'}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-black uppercase text-amber-400 tracking-[0.2em] mb-0.5">{bonusLabel}</p>
+              <p className="text-[11px] font-black text-white uppercase italic truncate">{bonusQty || 1}&times; {bonusReward.name}</p>
+              <p className="text-[9px] text-white/50 font-bold italic truncate">{bonusReward.description}</p>
+            </div>
+          </div>
+        )}
+
         {!player.walletAddress && (
           <div className="bg-amber-100 border-[3px] border-amber-500 p-3 rounded-2xl flex items-center gap-3 shadow-[4px_4px_0_rgba(245,158,11,0.2)] animate-pulse">
             <div className="bg-amber-500 p-1.5 rounded-lg border-2 border-black text-white shrink-0">
@@ -188,6 +209,11 @@ const NPCCard = ({ quest, onOpen, idx, inventoryCounts }) => {
     return owned >= req.qty;
   });
 
+  // Bonus reward icon for footer
+  const bonusScroll = quest.reward?.scrollId ? ITEMS?.find(i => i.id === quest.reward.scrollId) : null;
+  const bonusPotion = quest.reward?.potionId ? ITEMS?.find(i => i.id === quest.reward.potionId) : null;
+  const bonusIcon = bonusScroll ? bonusScroll.icon : bonusPotion ? bonusPotion.icon : null;
+
   return (
     <ComicQuestCard
       npcIndex={quest.npcIndex}
@@ -202,6 +228,7 @@ const NPCCard = ({ quest, onOpen, idx, inventoryCounts }) => {
         <div className="flex items-center gap-1">
           <span className="text-sm">{rewardFoodEmoji}</span>
           <span className="text-[7px] font-black text-black/40 uppercase">REWARD: {quest.reward.foodId.replace(/_/g, ' ')}</span>
+          {bonusIcon && <span className="text-xs ml-0.5">{bonusIcon}</span>}
         </div>
       }
     >
@@ -228,18 +255,18 @@ const ConfirmModal = ({ isOpen, onConfirm, onCancel, title, message }) => {
   if (!isOpen) return null;
   return createPortal(
     <div className="fixed inset-0 z-[10001] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-[#faf6f0] border-[4px] border-black p-6 rounded-3xl shadow-[10px_10px_0_rgba(0,0,0,1)] max-w-sm w-full transform -rotate-1">
+      <div className="bg-slate-900 border-[4px] border-black p-6 rounded-3xl shadow-[10px_10px_0_rgba(0,0,0,1)] max-w-sm w-full transform -rotate-1">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-red-500 rounded-xl border-[3px] border-black flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)]">
             <AlertCircle size={24} className="text-white" />
           </div>
-          <h3 className="text-lg font-black text-black uppercase italic tracking-tighter">{title}</h3>
+          <h3 className="text-lg font-black text-white uppercase italic tracking-tighter">{title}</h3>
         </div>
-        <p className="text-xs font-bold text-slate-700 uppercase leading-tight mb-6">{message}</p>
+        <p className="text-xs font-bold text-slate-400 uppercase leading-tight mb-6">{message}</p>
         <div className="flex gap-3">
           <button 
             onClick={onCancel}
-            className="flex-1 bg-white border-[3px] border-black text-black py-3 font-black uppercase text-[10px] shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
+            className="flex-1 bg-slate-800 border-[3px] border-black text-white py-3 font-black uppercase text-[10px] shadow-[4px_4px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none italic"
           >
             Go Back
           </button>
@@ -274,15 +301,15 @@ const CooldownCard = ({ expiration, id, onRush, idx }) => {
 
   return (
     <div className={`relative ${rotate} transform transition-all h-44`}>
-       <div className={`absolute inset-0 bg-red-500 rounded-2xl translate-x-1.5 translate-y-1.5 opacity-20`} />
-       <div className="relative bg-[#fdfaf5] border-[3px] border-dashed border-red-500 rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col h-full items-center justify-center p-4">
+       <div className={`absolute inset-0 bg-red-500/30 rounded-2xl translate-x-1.5 translate-y-1.5 blur-sm`} />
+       <div className="relative bg-slate-900 border-[3px] border-dashed border-red-500/50 rounded-2xl overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)] flex flex-col h-full items-center justify-center p-4">
           <AlertCircle size={32} className="text-red-500 mb-2 opacity-50" />
-          <p className="text-[10px] font-black uppercase text-red-500 tracking-widest">Cooling Down...</p>
-          <div className="text-3xl font-black text-black italic my-1 font-mono tracking-tighter">
+          <p className="text-[10px] font-black uppercase text-red-400 tracking-widest">Cooling Down...</p>
+          <div className="text-3xl font-black text-white italic my-1 font-mono tracking-tighter">
              {mins}:{secs.toString().padStart(2, '0')}
           </div>
           
-          <button onClick={() => onRush(id)} className="mt-2 bg-yellow-400 hover:bg-yellow-300 border-[2px] border-black text-black text-[9px] font-black uppercase px-4 py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1.5">
+          <button onClick={() => onRush(id)} className="mt-2 bg-yellow-500 hover:bg-yellow-400 border-[2px] border-black text-black text-[9px] font-black uppercase px-4 py-2 shadow-[2px_2px_0_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1.5">
              ⚡ Skip (2,000 GX)
           </button>
        </div>
@@ -463,9 +490,9 @@ export const CrystleTownView = () => {
   }, [player?.inventory, FOODS]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[#e8e0d5] relative">
-      {/* Pin-board texture overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '14px 14px' }} />
+    <div className="flex-1 flex flex-col bg-slate-950 relative overflow-hidden">
+      {/* Tech Grid Overlay */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
 
       <div className="sticky top-0 z-10">
         <Header 
@@ -518,20 +545,27 @@ export const CrystleTownView = () => {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-        {/* Intro Banner */}
-        <div className="bg-[#faf6f0] border-[3px] border-black p-3 mb-4 shadow-[3px_3px_0_rgba(0,0,0,1)] -rotate-1 transform relative">
-          <div className="absolute -top-2 left-4 bg-yellow-400 text-black text-[8px] font-black px-2 py-0.5 border border-black uppercase italic">Town Notice Board</div>
-          <p className="text-[10px] font-bold text-black/70 italic leading-relaxed">
-            The citizens of Crystle Town need supplies. Complete their requests and they'll reward you with food buffs that boost your combat stats. New citizens appear as requests are fulfilled.
-          </p>
+        {/* Intro Section */}
+        <div className="bg-emerald-900/20 border-2 border-emerald-500/30 p-4 rounded-2xl relative">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.4)] animate-pulse">
+              <CheckCircle className="text-black" size={28} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-black text-emerald-400 uppercase italic tracking-tighter">Town Notice Board</h2>
+              <p className="text-[10px] text-white/60 font-medium uppercase leading-tight tracking-tight mt-0.5">
+                The citizens of Crystle Town need supplies. Complete their requests and they'll reward you with food buffs that boost your combat stats. New citizens appear as requests are fulfilled.
+              </p>
+            </div>
+          </div>
           {foodsOwned.length > 0 && (
-            <div className="mt-2 pt-2 border-t-2 border-dashed border-black/20 flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase text-black/50">Food Stash:</span>
+            <div className="mt-3 pt-3 border-t border-emerald-500/20 flex items-center gap-2">
+              <span className="text-[8px] font-black uppercase text-emerald-400/60">Food Stash:</span>
               {foodsOwned.slice(0, 6).map((f, i) => {
                 const meta = FOODS?.find(fd => f.id?.startsWith(fd.id));
                 return <span key={i} className="text-xl leading-none" title={meta?.name}>{meta?.icon || '🍽️'}</span>;
               })}
-              {foodsOwned.length > 6 && <span className="text-[8px] font-black text-black/50">+{foodsOwned.length - 6} more</span>}
+              {foodsOwned.length > 6 && <span className="text-[8px] font-black text-emerald-400/60">+{foodsOwned.length - 6} more</span>}
             </div>
           )}
         </div>
@@ -539,9 +573,9 @@ export const CrystleTownView = () => {
         {/* NPC card grid */}
         {activeQuests.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-4xl mb-3">🏙️</p>
-            <p className="text-black/50 font-black uppercase text-sm italic">Town is quiet today...</p>
-            <p className="text-black/30 text-[10px] font-bold uppercase mt-1">All requests fulfilled. New citizens arriving soon.</p>
+            <p className="text-4xl mb-4">🌀</p>
+            <h3 className="text-white font-black uppercase italic">Town is quiet today...</h3>
+            <p className="text-emerald-400 text-[10px] font-bold uppercase mt-2 italic tracking-widest">All requests fulfilled. New citizens arriving soon.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-6">
@@ -805,18 +839,18 @@ export const CrystleTownView = () => {
       {/* Knowledge Acquisition Modal (Celebratory Burst) */}
       {(isSyncing || sessionReward) && createPortal(
         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm pointer-events-auto animate-in fade-in duration-300">
-          <div className="max-w-sm w-full bg-[#e8e0d5] border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden pointer-events-auto">
-            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
+          <div className="max-w-sm w-full bg-slate-900 border-[6px] border-black p-8 relative shadow-[16px_16px_0_rgba(0,0,0,1)] overflow-hidden pointer-events-auto">
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
 
             {isSyncing ? (
               <div className="relative z-10 space-y-6 text-center py-8">
                 <div className="flex items-center justify-center mb-6">
-                  <Zap className="animate-spin text-emerald-600" size={64} />
+                  <Zap className="animate-spin text-emerald-400" size={64} />
                 </div>
-                <h2 className="text-2xl font-[1000] text-emerald-600 uppercase italic tracking-tighter leading-none animate-pulse">
+                <h2 className="text-2xl font-[1000] text-emerald-400 uppercase italic tracking-tighter leading-none animate-pulse">
                   COMMITTING TO ARCHIVE...
                 </h2>
-                <p className="text-xs font-black text-black/60 uppercase tracking-[0.2em]">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">
                   Securing town registry
                 </p>
               </div>
@@ -827,43 +861,43 @@ export const CrystleTownView = () => {
                   {sessionReward.item ? (
                     <span className="text-6xl relative z-10 drop-shadow-[0_0_15px_rgba(16,185,129,0.6)] animate-bounce font-serif">{sessionReward.item.icon || '📦'}</span>
                   ) : (
-                    <Trophy className="text-amber-500 w-16 h-16 animate-bounce relative z-10" />
+                    <Trophy className="text-amber-400 w-16 h-16 animate-bounce relative z-10" />
                   )}
-                  <div className="absolute inset-0 border-4 border-dashed border-emerald-500/50 rounded-full animate-spin-slow"></div>
+                  <div className="absolute inset-0 border-4 border-dashed border-emerald-400/50 rounded-full animate-spin-slow"></div>
                 </div>
 
                 <div className="space-y-2">
-                  <h2 className="text-2xl font-[1000] text-black uppercase italic tracking-tighter leading-none">
+                  <h2 className="text-2xl font-[1000] text-white uppercase italic tracking-tighter leading-none">
                     QUEST COMPLETE
                   </h2>
-                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] animate-pulse">
+                  <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] animate-pulse">
                     District Support Acknowledged
                   </p>
                 </div>
 
-                <div className="bg-white/60 border-[3px] border-black/10 p-4 rounded-xl space-y-3">
+                <div className="bg-black/60 border-[3px] border-white/10 p-4 rounded-xl space-y-3">
                   <div className="flex items-center justify-center gap-4">
                     <div className="flex flex-col items-center">
-                      <span className="text-2xl font-black text-black italic">+{sessionReward.xp}</span>
-                      <span className="text-[8px] font-black text-black/60 uppercase tracking-widest leading-none">INFLUENCE XP</span>
+                      <span className="text-2xl font-black text-white italic">+{sessionReward.xp}</span>
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">INFLUENCE XP</span>
                     </div>
                     {sessionReward.item && (
                       <>
-                        <div className="w-[2px] h-8 bg-black/10"></div>
+                        <div className="w-[2px] h-8 bg-white/10"></div>
                         <div className="flex flex-col items-center">
-                          <span className="text-2xl font-black text-black italic">x{sessionReward.item.qty}</span>
-                          <span className="text-[8px] font-black text-black/60 uppercase tracking-widest leading-none">Quantity</span>
+                          <span className="text-2xl font-black text-white italic">x{sessionReward.item.qty}</span>
+                          <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">Quantity</span>
                         </div>
                       </>
                     )}
                   </div>
 
                   {sessionReward.item && (
-                    <div className="pt-2 border-t border-black/5">
-                      <p className="text-[11px] font-black text-black uppercase tracking-tight italic">
+                    <div className="pt-2 border-t border-white/5">
+                      <p className="text-[11px] font-black text-white uppercase tracking-tight italic">
                         "{sessionReward.item.name}"
                       </p>
-                      <p className="text-[8px] font-bold text-black/60 uppercase opacity-60">
+                      <p className="text-[8px] font-bold text-slate-400 uppercase opacity-60">
                         Added to Inventory
                       </p>
                     </div>

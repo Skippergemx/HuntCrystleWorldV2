@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameProvider } from './contexts/GameContext';
-import { GameLayout } from './components/GameLayout';
+import { GameEntry } from './components/GameEntry';
 import { LoadingScreen } from './components/LoadingScreen';
 import { LoginView } from './components/LoginView';
 import { NetworkAlert } from './components/NetworkAlert';
@@ -74,7 +74,7 @@ export const App = () => {
       ) : (
         <GameProvider user={user}>
           <NetworkAlert />
-          <GameLayout onLogout={logout} />
+          <GameEntry onLogout={logout} />
         </GameProvider>
       )}
 

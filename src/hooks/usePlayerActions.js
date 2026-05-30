@@ -196,7 +196,7 @@ export const usePlayerActions = (
       if (!id) return '';
       const tsStripped = id.replace(/_\d{10,}.*$/, '');
       if (tsStripped !== id) return tsStripped;
-      return id.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+      return id.replace(/_[a-z0-9]{4}$/i, '').replace(/_\d+$/, '');
     };
 
     const itemBaseId = extractBaseId(item.id || itemId);
@@ -356,33 +356,35 @@ export const usePlayerActions = (
       }
     }
 
-    const updates = { tokens: (player.tokens || 0) - totalCost };
-    
-    if (item.id === 'hp_potion') {
-      updates.potions = (player.potions || 0) + qty;
-    } else if (item.id === 'auto_scroll') {
-      // Standardize: Pool base 1m scrolls into numeric counter for "Energy (Mins)" UI.
-      updates.autoScrolls = (player.autoScrolls || 0) + qty;
-    } else if (item.id?.includes('auto_scroll')) {
-      // V2: Advanced variants (3m+) remain discrete items.
-      for (let i = 0; i < qty; i++) {
-        const suffix = Math.random().toString(36).slice(2, 6);
-        const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
-        updates[`inventory.${purchaseItem.id}`] = purchaseItem;
+    // --- OPTIMISTIC LOCAL STATE UPDATE ---
+    // Apply instantly so UI reflects purchase without waiting for Firestore sync.
+    // Cloud function validates & commits the canonical transaction.
+    setPlayer(prev => {
+      const next = { ...prev, tokens: (prev.tokens || 0) - totalCost };
+      if (item.id === 'hp_potion') {
+        next.potions = (prev.potions || 0) + qty;
+      } else if (item.id === 'auto_scroll') {
+        next.autoScrolls = (prev.autoScrolls || 0) + qty;
+      } else if (item.id?.includes('auto_scroll')) {
+        const newInv = { ...prev.inventory };
+        for (let i = 0; i < qty; i++) {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          newInv[`${item.id}_${Date.now()}_${suffix}`] = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
+        }
+        next.inventory = newInv;
+      } else {
+        const newInv = { ...prev.inventory };
+        for (let i = 0; i < qty; i++) {
+          const suffix = Math.random().toString(36).slice(2, 6);
+          newInv[`${item.id}_${Date.now()}_${suffix}`] = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
+        }
+        next.inventory = newInv;
       }
-    } else {
-      // For equipment, generate multiple unique IDs if buying bulk
-      for (let i = 0; i < qty; i++) {
-        const suffix = Math.random().toString(36).slice(2, 6);
-        const purchaseItem = { ...item, id: `${item.id}_${Date.now()}_${suffix}` };
-        updates[`inventory.${purchaseItem.id}`] = purchaseItem;
-      }
-    }
+      return next;
+    });
 
     // --- SECURE UPLINK ---
-    // We defer the database write to the Cloud Function to prevent duplicate item UUIDs
-    // and let the backend securely process the transaction.
-
+    // Cloud function validates cost from server catalog and commits the canonical transaction.
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       const result = await callAction({ 
@@ -435,15 +437,20 @@ export const usePlayerActions = (
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
 
-    const updates = { 
-      autoUntil: Date.now() + spec.ms,
-      autoTimeLeftSaved: 0
-    };
-    if (targetItemEntry) {
-      updates[`inventory.${targetItemEntry[0]}`] = deleteField();
-    } else {
-      updates.autoScrolls = (player.autoScrolls || 0) - spec.val;
-    }
+    // --- OPTIMISTIC LOCAL STATE UPDATE ---
+    // Apply instantly so UI reflects activation without waiting for Firestore sync.
+    // Cloud function validates & commits the canonical transaction.
+    setPlayer(prev => {
+      const next = { ...prev, autoUntil: Date.now() + spec.ms, autoTimeLeftSaved: 0 };
+      if (targetItemEntry) {
+        const newInv = { ...prev.inventory };
+        delete newInv[targetItemEntry[0]];
+        next.inventory = newInv;
+      } else {
+        next.autoScrolls = (prev.autoScrolls || 0) - spec.val;
+      }
+      return next;
+    });
 
     // The backend Cloud Function will handle the transaction securely.
 
@@ -1156,6 +1163,10 @@ export const usePlayerActions = (
 
     const food = FOODS.find(f => f.id === quest.reward.foodId);
 
+    // Resolve bonus reward item data for cloud function
+    const rewardScroll = quest.reward?.scrollId ? ITEMS?.find(i => i.id === quest.reward.scrollId) : null;
+    const rewardPotion = quest.reward?.potionId ? ITEMS?.find(i => i.id === quest.reward.potionId) : null;
+
     if (!functions) {
       addLog("❌ QUEST ERROR: Backend connection unavailable.");
       return;
@@ -1167,7 +1178,9 @@ export const usePlayerActions = (
         action: 'COMPLETE_TOWN_QUEST',
         payload: {
           quest,
-          rewardFood: food
+          rewardFood: food,
+          rewardScroll: rewardScroll ? { ...rewardScroll, qty: quest.reward.scrollQty || 1 } : null,
+          rewardPotion: rewardPotion ? { ...rewardPotion, qty: quest.reward.potionQty || 1 } : null
         }
       });
       

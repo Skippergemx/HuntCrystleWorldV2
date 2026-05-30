@@ -1243,7 +1243,7 @@ const ITEM_CATALOG: Record<string, any> = {
 const extractBaseId = (itemId: string): string => {
   // Strip everything from the first underscore followed by 10+ digits (a 13-digit ms timestamp)
   const tsStripped = itemId.replace(/_\d{10,}.*$/, '');
-  const baseId = tsStripped !== itemId ? tsStripped : itemId.replace(/_[a-z0-9]{1,8}$/i, '').replace(/_\d+$/, '');
+  const baseId = tsStripped !== itemId ? tsStripped : itemId.replace(/_[a-z0-9]{4}$/i, '').replace(/_\d+$/, '');
   return baseId.replace(/_RET$/, '');
 };
 
@@ -1592,6 +1592,26 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       if (rewardFood) {
         const rewardKey = `${rewardFood.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
         inventory[rewardKey] = { ...rewardFood, id: rewardKey };
+      }
+
+      // Add scroll reward (auto-hunt)
+      const rewardScroll = payload.rewardScroll;
+      if (rewardScroll) {
+        const qty = rewardScroll.qty || 1;
+        for (let i = 0; i < qty; i++) {
+          const key = `${rewardScroll.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          inventory[key] = { ...rewardScroll, id: key };
+        }
+      }
+
+      // Add potion reward
+      const rewardPotion = payload.rewardPotion;
+      if (rewardPotion) {
+        const qty = rewardPotion.qty || 1;
+        for (let i = 0; i < qty; i++) {
+          const key = `${rewardPotion.id}_TOWN_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+          inventory[key] = { ...rewardPotion, id: key };
+        }
       }
 
       // Mark quest slot as completed and rotate

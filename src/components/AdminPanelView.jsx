@@ -1,10 +1,89 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink, DollarSign, BarChart3, ShoppingBag, Hammer, Microscope } from 'lucide-react';
-import { createPublicClient, http, formatEther } from 'viem';
+import { createPublicClient, http, formatEther, formatUnits } from 'viem';
 import { base } from 'viem/chains';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
+
+// === Treasury Token Configuration ===
+const TREASURY_TOKENS = [
+  {
+    symbol: 'ETH',
+    label: 'Base ETH',
+    type: 'native',
+    icon: '⬡',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-950/30',
+    borderColor: 'border-blue-500/30',
+    decimals: 18
+  },
+  {
+    symbol: 'DWGX',
+    label: 'DWGX Token',
+    type: 'erc20',
+    address: '0x3038aFBd4Bde3898C3972A8E0F45de7CB7300A3A',
+    icon: '💎',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-950/30',
+    borderColor: 'border-purple-500/30',
+    decimals: 18
+  },
+  {
+    symbol: 'HUNT',
+    label: 'HUNT Token',
+    type: 'erc20',
+    address: '0x37f0c2915CeCC7e977183B8543Fc0864d03E064C',
+    icon: '⚡',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-950/30',
+    borderColor: 'border-amber-500/30',
+    decimals: 18
+  },
+  {
+    symbol: 'TRISAPG',
+    label: 'Trilith Sapphire Gemx',
+    type: 'erc1155',
+    address: '0x182D92921c49ca5cf9bc53c013dE735446507dE1',
+    tokenId: 0n,
+    icon: '🔷',
+    color: 'text-cyan-400',
+    bgColor: 'bg-cyan-950/30',
+    borderColor: 'border-cyan-500/30',
+    decimals: 0 // ERC-1155 balanceOf returns raw count, not wei-scaled
+  },
+  {
+    symbol: 'TRIEM',
+    label: 'Trilith Emerald Gemx',
+    type: 'erc1155',
+    address: '0xE6961d4b515D018d5b1C4c91790ef8B5573a0615',
+    tokenId: 0n,
+    icon: '🟢',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-950/30',
+    borderColor: 'border-emerald-500/30',
+    decimals: 0 // ERC-1155 balanceOf returns raw count
+  }
+];
+
+const ERC20_BALANCE_ABI = [{
+  inputs: [{ name: 'account', type: 'address' }],
+  name: 'balanceOf',
+  outputs: [{ type: 'uint256' }],
+  stateMutability: 'view',
+  type: 'function'
+}];
+
+const ERC1155_BALANCE_ABI = [{
+  inputs: [
+    { name: 'account', type: 'address' },
+    { name: 'id', type: 'uint256' }
+  ],
+  name: 'balanceOf',
+  outputs: [{ type: 'uint256' }],
+  stateMutability: 'view',
+  type: 'function'
+}];
 
 export const AdminPanelView = React.memo(() => {
   const { db, appId, user, adventure } = useGame();
@@ -21,6 +100,7 @@ export const AdminPanelView = React.memo(() => {
   const [errorReports, setErrorReports] = useState([]);
   const [faucetBalance, setFaucetBalance] = useState(null);
   const faucetAddress = "0x8dca8d7B35004630F460B85F70d1189795CDe6Fc";
+  const [treasuryBalances, setTreasuryBalances] = useState(null); // { ETH: '0.1234', DWGX: '500.00', ... }
   const [viewAllWallets, setViewAllWallets] = useState(false);
   const itemsPerPage = 10;
 
@@ -94,11 +174,62 @@ export const AdminPanelView = React.memo(() => {
     }
   }, [faucetAddress]);
 
+  const fetchTreasuryBalances = useCallback(async () => {
+    try {
+      const publicClient = createPublicClient({
+        chain: base,
+        transport: http()
+      });
+
+      const results = {};
+      for (const token of TREASURY_TOKENS) {
+        try {
+          if (token.type === 'native') {
+            const balance = await publicClient.getBalance({ address: faucetAddress });
+            results[token.symbol] = formatEther(balance);
+          } else if (token.type === 'erc20') {
+            const balance = await publicClient.readContract({
+              address: token.address,
+              abi: ERC20_BALANCE_ABI,
+              functionName: 'balanceOf',
+              args: [faucetAddress]
+            });
+            results[token.symbol] = formatUnits(balance, token.decimals);
+          } else if (token.type === 'erc1155') {
+            const tokenIds = Array.isArray(token.tokenId) ? token.tokenId : [token.tokenId];
+            let bestBalance = 0n;
+            for (const tid of tokenIds) {
+              try {
+                const balance = await publicClient.readContract({
+                  address: token.address,
+                  abi: ERC1155_BALANCE_ABI,
+                  functionName: 'balanceOf',
+                  args: [faucetAddress, tid]
+                });
+                if (balance > bestBalance) bestBalance = balance;
+              } catch (e) {
+                // try next token ID
+              }
+            }
+            results[token.symbol] = formatUnits(bestBalance, token.decimals);
+          }
+        } catch (tokenErr) {
+          console.error(`Failed to fetch ${token.symbol} balance:`, tokenErr);
+          results[token.symbol] = 'ERROR';
+        }
+      }
+      setTreasuryBalances(results);
+    } catch (e) {
+      console.error("Treasury Scan Error:", e);
+    }
+  }, [faucetAddress]);
+
   useEffect(() => {
     if (isAdmin && activeTab === 'system') {
       fetchFaucetBalance();
+      fetchTreasuryBalances();
     }
-  }, [isAdmin, activeTab, fetchFaucetBalance]);
+  }, [isAdmin, activeTab, fetchFaucetBalance, fetchTreasuryBalances]);
 
   const resetLeaderboard = async () => {
     if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL V2 players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
@@ -1295,6 +1426,66 @@ export const AdminPanelView = React.memo(() => {
                    REFILL RESERVES <Droplets size={14} />
                  </a>
                </div>
+            </div>
+
+            {/* TREASURE CHEST — Token Balances */}
+            <div className="bg-slate-950/80 border-2 border-amber-500/30 p-6 rounded-2xl space-y-6 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-all duration-1000"></div>
+               
+               <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                     <div className="bg-amber-500 p-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-2">
+                        <DollarSign size={24} className="text-black" />
+                     </div>
+                     <div>
+                        <h3 className="font-black uppercase italic text-xl leading-none text-amber-400">TREASURE CHEST</h3>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">
+                          Wallet: <span className="text-slate-400">{faucetAddress.slice(0, 6)}...{faucetAddress.slice(-4)}</span>
+                        </p>
+                     </div>
+                  </div>
+                  <button 
+                    onClick={fetchTreasuryBalances}
+                    className="p-3 bg-black border-2 border-slate-800 text-slate-400 hover:text-white hover:border-amber-500 transition-all rounded-xl"
+                  >
+                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                  </button>
+               </div>
+
+               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {TREASURY_TOKENS.map(token => {
+                    const balance = treasuryBalances?.[token.symbol];
+                    const isError = balance === 'ERROR';
+                    const isScanning = balance === undefined;
+                    const displayBalance = isError ? 'ERR' : isScanning ? 'SCAN...' : Number(balance).toLocaleString(undefined, { maximumFractionDigits: 4 });
+                    
+                    return (
+                      <div key={token.symbol} className={`${token.bgColor} border-2 ${token.borderColor} p-4 rounded-xl flex flex-col justify-center`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">{token.icon}</span>
+                          <p className={`text-[8px] font-black uppercase tracking-widest ${token.color}`}>{token.label}</p>
+                        </div>
+                        <p className={`text-lg font-black italic ${isError ? 'text-red-400' : isScanning ? 'text-slate-500 animate-pulse' : token.color}`}>
+                          {displayBalance}
+                        </p>
+                        {!isError && !isScanning && (
+                          <p className={`text-[9px] font-black uppercase tracking-wider mt-0.5 ${token.color}/70`}>
+                            {token.symbol}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+               </div>
+
+               <a 
+                 href={`https://basescan.org/address/${faucetAddress}`} 
+                 target="_blank" 
+                 rel="noreferrer"
+                 className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-amber-400 transition-colors"
+               >
+                 VIEW ON BASESCAN <ExternalLink size={10} />
+               </a>
             </div>
          </div>
       ) : activeTab === 'migration' ? (

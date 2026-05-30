@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles, LogOut } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles, LogOut, Gem } from 'lucide-react';
 import { deleteField } from 'firebase/firestore';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
+import { usePlayerNftBalance } from '../hooks/usePlayerNftBalance';
 
 export const IdentityView = React.memo(({ onLogout }) => {
   const { player, syncPlayer, adventure, addLog, openGuide, wallet, linkWallet } = useGame();
@@ -15,6 +16,12 @@ export const IdentityView = React.memo(({ onLogout }) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const nftBalance = usePlayerNftBalance(player?.walletAddress);
+  const emeraldBalance = usePlayerNftBalance(player?.walletAddress, {
+    address: '0xE6961d4b515D018d5b1C4c91790ef8B5573a0615',
+    tokenId: 0n
+  });
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_identity_tutorial') === 'true';
@@ -240,6 +247,129 @@ export const IdentityView = React.memo(({ onLogout }) => {
             </div>
           )}
         </div>
+
+        {/* --- NFT COLLECTION --- */}
+        {player.walletAddress && (
+          <div className="w-full mb-5">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-px flex-1 bg-slate-800"></div>
+              <span className="text-[7px] font-black text-slate-600 uppercase tracking-[0.3em]">NFT Collection</span>
+              <div className="h-px flex-1 bg-slate-800"></div>
+            </div>
+
+            {nftBalance === null ? (
+              /* Loading skeleton */
+              <div className="bg-slate-900 border-2 border-slate-800 rounded-2xl p-4 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-slate-800"></div>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-slate-800 rounded w-3/4"></div>
+                    <div className="h-2 bg-slate-800 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ) : nftBalance > 0 ? (
+              /* Has the NFT */
+              <div className="relative overflow-hidden bg-gradient-to-br from-cyan-950/40 to-slate-900 border-2 border-cyan-500/30 rounded-2xl p-4 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '6px 6px' }}></div>
+                <div className="relative z-10 flex items-center gap-3">
+                  {/* Gem icon */}
+                  <div className="relative flex-shrink-0">
+                    <div className="absolute inset-0 rounded-xl bg-cyan-400/20 animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <div className="relative w-12 h-12 rounded-xl bg-cyan-500/20 border-2 border-cyan-500 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                      <Gem size={22} className="text-cyan-300" />
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[9px] font-black text-cyan-400 uppercase italic tracking-tighter leading-tight">Trilith Sapphire Gemx</h4>
+                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Quartermaster's Welcome Gift</p>
+                    {player.welcomeNftTxHash && (
+                      <a
+                        href={`https://basescan.org/tx/${player.welcomeNftTxHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[7px] font-black text-cyan-600 uppercase tracking-wider hover:text-cyan-400 transition-colors mt-1"
+                      >
+                        View TX <ExternalLink size={9} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Quantity badge */}
+                  <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/30">
+                    <span className="text-[10px] font-black text-cyan-400">{nftBalance}</span>
+                  </div>
+                </div>
+              </div>
+            ) : player.welcomeNftClaimed ? (
+              /* Marked as claimed but balance is 0 — pending or discrepancy */
+              <div className="bg-amber-950/20 border-2 border-amber-500/20 rounded-2xl p-3 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0"></div>
+                <p className="text-[7px] font-bold text-amber-400 uppercase italic">Sapphire — awaiting on-chain confirmation</p>
+              </div>
+            ) : (
+              /* No wallet linked or no NFT — subtle empty state */
+              <div className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-2xl p-3 flex items-center gap-2">
+                <Gem size={12} className="text-slate-700 flex-shrink-0" />
+                <p className="text-[7px] font-bold text-slate-600 uppercase italic">No Sapphire found. The Quartermaster may have a gift for new Hunters.</p>
+              </div>
+            )}
+
+            {/* === Emerald Gemx (Level 10) === */}
+            {emeraldBalance === null ? (
+              /* Loading skeleton */
+              <div className="bg-slate-900 border-2 border-slate-800 rounded-2xl p-4 mt-2 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-slate-800"></div>
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 bg-slate-800 rounded w-3/4"></div>
+                    <div className="h-2 bg-slate-800 rounded w-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            ) : emeraldBalance > 0 ? (
+              /* Has the NFT */
+              <div className="relative overflow-hidden bg-gradient-to-br from-emerald-950/40 to-slate-900 border-2 border-emerald-500/30 rounded-2xl p-4 mt-2 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '6px 6px' }}></div>
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="relative flex-shrink-0">
+                    <div className="absolute inset-0 rounded-xl bg-emerald-400/20 animate-ping" style={{ animationDuration: '3s' }}></div>
+                    <div className="relative w-12 h-12 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                      <Gem size={22} className="text-emerald-300" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[9px] font-black text-emerald-400 uppercase italic tracking-tighter leading-tight">Trilith Emerald Gemx</h4>
+                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Level 10 Milestone</p>
+                    {player.level10NftTxHash && (
+                      <a
+                        href={`https://basescan.org/tx/${player.level10NftTxHash}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[7px] font-black text-emerald-600 uppercase tracking-wider hover:text-emerald-400 transition-colors mt-1"
+                      >
+                        View TX <ExternalLink size={9} />
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30">
+                    <span className="text-[10px] font-black text-emerald-400">{emeraldBalance}</span>
+                  </div>
+                </div>
+              </div>
+            ) : player.level10NftReserved || player.level10NftClaimed ? (
+              /* Reserved or claimed but balance is 0 */
+              <div className="bg-amber-950/20 border-2 border-amber-500/20 rounded-2xl p-3 mt-2 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0"></div>
+                <p className="text-[7px] font-bold text-amber-400 uppercase italic">
+                  {player.level10NftClaimed ? 'Emerald claimed — awaiting on-chain confirmation' : 'Emerald reserved — link wallet to claim'}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        )}
 
         <p className="text-[10px] text-slate-500 font-black uppercase text-center mb-4 tracking-widest border-b border-slate-800/50 pb-2 w-full">Select your combat avatar</p>
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sparkles, Terminal } from 'lucide-react';
 
-export const LoadingScreen = () => {
+export const LoadingScreen = ({ message }) => {
   // We'll use a selection of avatar indices to display
   const displayAvatars = [1, 12, 25];
 
@@ -49,8 +49,10 @@ export const LoadingScreen = () => {
         </div>
 
         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-          Retrieving Hunter Signatures...<br/>
-          <span className="text-cyan-400/50">Crystle Network Protocol v2.0.4</span>
+          {message || <>
+            Retrieving Hunter Signatures...<br/>
+            <span className="text-cyan-400/50">Crystle Network Protocol v2.0.4</span>
+          </>}
         </p>
 
         <div className="relative pt-4">

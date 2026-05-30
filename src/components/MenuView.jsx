@@ -317,7 +317,6 @@ export const MenuView = React.memo(() => {
     { id: 'tokenomics', icon: <PieChart size={16} />, label: 'TOKENOMICS' },
     { id: 'articles', icon: <Newspaper size={16} />, label: 'ARTICLES' },
     { id: 'devlog', icon: <Radio size={16} />, label: 'DEVLOG' },
-    { id: 'bag_upgrade', icon: <Sparkles size={16} />, label: 'UPGRADE' },
   ];
 
   return (

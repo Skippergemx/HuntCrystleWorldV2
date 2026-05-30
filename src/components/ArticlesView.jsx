@@ -31,6 +31,165 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-nft-gift-guide',
+    date: '2026-05-29',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Quartermaster\u2019s Gift: Claiming Your Trilith Gemx NFTs',
+    subtitle: 'A complete guide to the Welcome NFT and Level 10 Milestone rewards — how to claim, where to view, and the technology powering your on-chain treasures.',
+    category: 'NFT REWARDS & ONBOARDING',
+    type: 'article',
+    tag: 'NEW',
+    color: 'cyan',
+    readingTime: '6 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The grid has a new tradition. Every Hunter who completes their Neural Link onboarding is now greeted by the Quartermaster with a rare, on-chain gift. Additionally, reaching the Level 10 milestone unlocks a second treasure from the vault. This guide covers everything you need to know about the Trilith Gemx NFT collection — what they are, how to claim them, and where to track them.'
+      },
+      {
+        type: 'heading',
+        text: 'The Trilith Gemx Collection'
+      },
+      {
+        type: 'paragraph',
+        text: 'The Gemx Collection consists of two limited-edition ERC-1155 tokens deployed on the Base blockchain. Each token is a soulbound-style marker of your journey through the Dungeons With Gems ecosystem — proof that you were here from the beginning.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The Trilith Sapphire Gemx is the first prize: a welcome gift distributed by the Quartermaster to the first 20 Hunters who complete the onboarding sequence. The Trilith Emerald Gemx is unlocked at Level 10, marking your graduation from the beginner sectors into full-fledged Hunter status. Both tokens are visible in your Identity Core and verifiable on-chain via Basescan.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'Your Gemx NFTs are tracked in the Identity Core under the NFT Collection panel.'
+      },
+      {
+        type: 'heading',
+        text: 'How to Claim Your Welcome Gift (Trilith Sapphire Gemx)'
+      },
+      {
+        type: 'paragraph',
+        text: 'The Sapphire Gemx is presented automatically to every first-time Hunter who completes the onboarding sequence. Here is exactly what happens, step by step:'
+      },
+      {
+        type: 'heading',
+        text: 'Step 1: Complete the Welcome Screen'
+      },
+      {
+        type: 'paragraph',
+        text: 'When you first log in to Dungeons With Gems, you are greeted by the Welcome Screen — a brief narrative introduction to the grid. Read through the transmissions and select \"I Understand. Proceed\" at the bottom. This completes your neural link initialization and triggers the Quartermaster\u2019s gift protocol.'
+      },
+      {
+        type: 'heading',
+        text: 'Step 2: The Gift Reveal'
+      },
+      {
+        type: 'paragraph',
+        text: 'After completing the welcome screen, the Quartermaster (NPC 3) appears in a dramatic transmission overlay. You will see a pulsing cyan Sapphire icon with the message: \"The Quartermaster is sending a Trilith Sapphire Gemx to your wallet.\" A live counter below shows how many gifts remain in the treasury. This reveal lasts approximately 3 seconds before the claiming process begins automatically.'
+      },
+      {
+        type: 'heading',
+        text: 'Step 3: Connect Your Wallet (If Needed)'
+      },
+      {
+        type: 'paragraph',
+        text: 'If you have not yet linked a Base-compatible wallet, you will be shown the Wallet Prompt Overlay. This full-screen interface lets you connect via RainbowKit (MetaMask, WalletConnect, Coinbase Wallet, or any injected provider). A live on-chain counter displays how many NFTs remain. Two-step skip confirmation ensures you understand the scarcity — only 20 Sapphires exist, and skipping means you risk losing your claim permanently.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Wallet Prompt Overlay guides you through connecting your Base wallet with live remaining-supply tracking.'
+      },
+      {
+        type: 'heading',
+        text: 'Step 4: Automatic Claim & Confirmation'
+      },
+      {
+        type: 'paragraph',
+        text: 'Once your wallet is connected and synced to your player profile, the claim executes automatically. Behind the scenes, a secure Cloud Function performs an atomic two-phase operation: first, it reserves your slot in Firestore via a transaction (incrementing the nftCount to prevent oversubscription), then it calls the ERC-1155 safeTransferFrom on the NFT contract to send exactly 1 Sapphire Gemx from the Quartermaster\u2019s treasury wallet to your address. If the on-chain transfer fails for any reason, the reservation is rolled back and the slot is returned to the pool — ensuring no slot is ever wasted.'
+      },
+      {
+        type: 'heading',
+        text: 'Step 5: Success & Entry'
+      },
+      {
+        type: 'paragraph',
+        text: 'On success, you will see a green confirmation screen with a Basescan link to your transaction hash. Click \"ENTER THE GRID\" to begin your adventure. Your Sapphire Gemx is now permanently visible in the Identity Core under the NFT Collection section.'
+      },
+      {
+        type: 'heading',
+        text: 'Error Recovery'
+      },
+      {
+        type: 'paragraph',
+        text: 'If the transfer fails due to network congestion or gas issues, you will see an amber error screen with the specific failure reason. You can retry the claim or skip and continue into the game. Your wallet remains linked, and you can always retry later from the Identity Core. The Sapphire slot is preserved during the retry window.'
+      },
+      {
+        type: 'heading',
+        text: 'The Level 10 Milestone: Trilith Emerald Gemx'
+      },
+      {
+        type: 'paragraph',
+        text: 'The second Gemx in the collection is earned through gameplay, not onboarding. When your Hunter reaches Level 10, the system automatically detects the milestone and triggers the Emerald Gemx reward flow.'
+      },
+      {
+        type: 'heading',
+        text: 'Auto-Detection & Reservation'
+      },
+      {
+        type: 'paragraph',
+        text: 'The useLevel10Reward hook monitors your player level continuously. The moment you hit Level 10, it calls the claimLevel10Nft Cloud Function. If you already have a wallet linked, the Emerald is transferred on-chain immediately. If not, the system reserves your Emerald in Firestore and displays a notification: \"A Trilith Emerald Gemx has been reserved for you. Link your wallet to claim.\"'
+      },
+      {
+        type: 'heading',
+        text: 'The Celebration Modal'
+      },
+      {
+        type: 'paragraph',
+        text: 'When the Emerald claim triggers, a full-screen celebration modal appears. It cycles through states: a pulsing emerald with bouncing dots during the transaction, a success card with a Basescan link and \"Continue\" button on completion, or a warning with retry/skip options if something goes wrong. You can dismiss the modal with the Escape key once the claim is resolved.'
+      },
+      {
+        type: 'heading',
+        text: 'Supply Scarcity'
+      },
+      {
+        type: 'paragraph',
+        text: 'Both Gemx tokens are strictly limited. The Welcome Sapphire is capped at 20 NFTs. The Level 10 Emerald is also limited. If the treasury is exhausted when you reach the milestone, you will see a gentle notification in the game log rather than a blocking modal — because your achievement still matters, even if the physical token supply has run dry.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Level 10 Celebration modal marks your ascension with a cinematic Gemx transmission.'
+      },
+      {
+        type: 'heading',
+        text: 'Where to View Your NFTs'
+      },
+      {
+        type: 'paragraph',
+        text: 'Navigate to the Identity Core from the main Menu. If you have a wallet linked, scroll down to the \"NFT Collection\" divider. Here you will see both Gemx tokens displayed as individual cards with glowing gem icons, quantity badges, and direct Basescan transaction links. The Sapphire card uses a cyan gradient and the Emerald card uses an emerald gradient — each with its own pulsing glow animation. If a token is claimed but still awaiting on-chain confirmation, a subtle amber status banner appears instead.'
+      },
+      {
+        type: 'heading',
+        text: 'The Technology Powering Your Gifts'
+      },
+      {
+        type: 'paragraph',
+        text: 'The NFT distribution system is built on three layers. The frontend uses React hooks (useWelcomeNft, useRemainingNfts, useLevel10Reward) that manage claim state, auto-detect triggers, and poll the Base blockchain every 15 seconds for live supply counts via Viem public client. The backend uses Firebase Cloud Functions with atomic Firestore transactions for reservation, ethers.js v6 for on-chain ERC-1155 transfers, and automatic rollback logic that returns slots to the pool if transfers fail. The NFT contract is a standard ERC-1155 deployed on Base (0x182D92921c49ca5cf9bc53c013dE735446507dE1) with the Quartermaster\u2019s treasury wallet (0x8dca8d7B35004630F460B85F70d1189795CDe6Fc) as the distributor.'
+      },
+      {
+        type: 'paragraph',
+        text: 'This architecture ensures that every claim is atomic, verifiable, and fair. No slot can be double-claimed. No transfer can silently fail. And every Gemx is traceable from the moment it leaves the treasury to the moment it lands in your wallet.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The Quartermaster\u2019s vault is open. Claim your Gemx, Hunter, and wear it as proof that you were here when the grid was young.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-secure-progression-uplink',
     date: '2026-05-22',
     author: 'Commander Gemx',

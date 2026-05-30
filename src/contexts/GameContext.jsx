@@ -28,7 +28,9 @@ import { useGameLoop } from '../hooks/useGameLoop';
 import { useWallet } from '../hooks/useWallet';
 
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
+import { useLevel10Reward } from '../hooks/useLevel10Reward';
 import { LoadingScreen } from '../components/LoadingScreen';
+import Level10Celebration from '../components/Level10Celebration';
 
 export const GameContext = createContext(null);
 
@@ -112,6 +114,9 @@ export const GameProvider = ({ children, user }) => {
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, functions, setPlayer);
   const wallet = useWallet(addLog);
 
+  // Level 10 Emerald Gemx reward detection
+  const { level10Reward, dismissLevel10, retryClaim } = useLevel10Reward(player, functions, addLog, syncPlayer);
+
   const combat = useCombat(
     user, player, syncPlayer, 
     adventure.enemy, adventure.setEnemy, adventure.enemyRef, adventure.spawnNewEnemy, adventure.clearEnemy,
@@ -145,15 +150,41 @@ export const GameProvider = ({ children, user }) => {
     combat.setPenaltyRemaining(gameLoop.penaltyRemaining);
   }, [gameLoop.penaltyRemaining]);
 
-  // Initialize town quest slots on first load (7 random quests, no repeats)
+  // Initialize town quest slots on first load (filtered by player's accessible dungeon items)
   useEffect(() => {
     if (!player) return;
     const slots = player.townQuestSlots;
+    const playerLevel = player.level || 1;
+
+    // Build set of item IDs the player can actually obtain from unlocked dungeons
+    const accessibleItems = new Set();
+    MAPS.filter(m => m.minLevel <= playerLevel).forEach(m => {
+      m.lootTable.forEach(id => accessibleItems.add(id));
+    });
+
+    const isQuestValid = (questId) => {
+      if (questId.startsWith('COOLDOWN_')) return true;
+      const quest = TOWN_QUESTS.find(q => q.id === questId);
+      if (!quest) return false;
+      return quest.requires.every(r => accessibleItems.has(r.itemId));
+    };
+
     if (!slots || slots.length === 0) {
+      // First time: generate level-appropriate quests
       const completed = player.completedTownQuests || {};
-      const available = TOWN_QUESTS.filter(q => !completed[q.id]);
+      const available = TOWN_QUESTS.filter(q => {
+        if (completed[q.id]) return false;
+        return q.requires.every(r => accessibleItems.has(r.itemId));
+      });
       const shuffled = [...available].sort(() => Math.random() - 0.5);
       syncPlayer({ townQuestSlots: shuffled.slice(0, 10).map(q => q.id) });
+    } else {
+      // Prune invalid quests (e.g. from before this level-gate fix was deployed)
+      const validSlots = slots.filter(isQuestValid);
+      if (validSlots.length !== slots.length) {
+        syncPlayer({ townQuestSlots: validSlots });
+        // CrystleTownView refill will top up to 10 with valid quests
+      }
     }
   }, [player?.uid]);
 
@@ -314,7 +345,7 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode, inventoryCounts,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
-    BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS
+    BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS, level10Reward
   }), [
     user, player, syncPlayer, logs, addLog, currentTime, db, appId, functions,
     showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx,
@@ -327,12 +358,13 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport, lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES,
     SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS, BOSS, BOSS_MEDIA_FILES,
-    SOUNDS, ELEMENTAL_SKILLS, inventoryCounts
+    SOUNDS, ELEMENTAL_SKILLS, inventoryCounts, level10Reward
   ]);
 
   return (
     <GameContext.Provider value={engine}>
       {(loadingPlayer || !player) ? <LoadingScreen /> : children}
+      <Level10Celebration reward={level10Reward} onDismiss={dismissLevel10} onRetry={retryClaim} />
     </GameContext.Provider>
   );
 };

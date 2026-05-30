@@ -165,7 +165,11 @@ export const usePlayerSync = (user, db, appId) => {
               unlockedPets: [1, 11, 21, 31, 41],
               sessionId: `DEV_SESS_${Date.now()}`,
               walletAddress: null,
-              walletConflict: null
+              walletConflict: null,
+              welcomeCompleted: false,
+              welcomeNftClaimed: false,
+              level10NftReserved: false,
+              level10NftClaimed: false
             };
             setActiveDocId(user?.uid || 'dev_local');
             setPlayer(genesisProfile);
@@ -375,6 +379,10 @@ export const usePlayerSync = (user, db, appId) => {
             selectedScrollId: 'auto_scroll',
             avatar: 1,
             unlockedPets: [1, 11, 21, 31, 41],
+            welcomeCompleted: false,
+            welcomeNftClaimed: false,
+            level10NftReserved: false,
+            level10NftClaimed: false,
             sessionId: localSessionId,
             createdAt: serverTimestamp()
           };
