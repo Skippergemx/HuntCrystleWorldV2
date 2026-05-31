@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { Wallet, AlertTriangle, ArrowLeft, Sparkles, Gem } from 'lucide-react';
 import { useRemainingNfts } from '../hooks/useRemainingNfts';
 import { AvatarMedia } from './GameUI';
+import sdk from '@farcaster/frame-sdk';
 
 /**
  * WalletPromptOverlay — full-screen overlay shown after welcome screen
@@ -17,11 +18,30 @@ import { AvatarMedia } from './GameUI';
  */
 export const WalletPromptOverlay = ({ onWalletReady, onSkip }) => {
   const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const { openConnectModal } = useConnectModal();
   const [isConnecting, setIsConnecting] = useState(false);
   const [hasClickedConnect, setHasClickedConnect] = useState(false);
   const [showSkipWarning, setShowSkipWarning] = useState(false);
+  const [isFarcaster, setIsFarcaster] = useState(false);
   const { remaining, total: TOTAL_SUPPLY } = useRemainingNfts();
+
+  // Detect Farcaster Frame environment
+  useEffect(() => {
+    const detectFrame = async () => {
+      try {
+        const contextPromise = sdk.context;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Frame SDK Timeout')), 2000)
+        );
+        const context = await Promise.race([contextPromise, timeoutPromise]);
+        if (context) setIsFarcaster(true);
+      } catch (e) {
+        // Not in a Farcaster Frame — that's fine
+      }
+    };
+    detectFrame();
+  }, []);
 
   // Auto-dismiss only after user explicitly clicked connect and wallet becomes available
   useEffect(() => {
@@ -33,10 +53,17 @@ export const WalletPromptOverlay = ({ onWalletReady, onSkip }) => {
   const handleConnect = useCallback(() => {
     setHasClickedConnect(true);
     setIsConnecting(true);
+    if (isFarcaster) {
+      const farcasterConnector = connectors.find(c => c.id === 'farcaster');
+      if (farcasterConnector) {
+        connect({ connector: farcasterConnector });
+        return;
+      }
+    }
     if (openConnectModal) {
       openConnectModal();
     }
-  }, [openConnectModal]);
+  }, [isFarcaster, connectors, connect, openConnectModal]);
 
   const handleSkipClick = useCallback(() => {
     setShowSkipWarning(true);
