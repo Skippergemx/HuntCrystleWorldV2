@@ -35,6 +35,65 @@ export const usePlayerActions = (
     remainingApRef.current = player?.abilityPoints || 0;
   }, [player?.abilityPoints]);
 
+  // ── DUNGEON LOADOUT SYSTEM ──
+  // Session-only caps: 20 potion uses & 20 scroll uses per dungeon run.
+  // Stored in a ref so reads are always current without re-render chains.
+  const EMPTY_LOADOUT = {
+    potions: { hp_potion: 0, mega_hp_potion: 0, ultra_hp_potion: 0 },
+    scrolls: { auto_scroll: 0, auto_scroll_3m: 0, auto_scroll_6m: 0, auto_scroll_9m: 0, auto_scroll_12m: 0 }
+  };
+  const freshLoadout = () => ({
+    potions: { ...EMPTY_LOADOUT.potions },
+    scrolls: { ...EMPTY_LOADOUT.scrolls }
+  });
+  const loadoutRef = useRef(freshLoadout());
+  const isLoadoutReadyRef = useRef(false);
+
+  const setLoadout = useCallback((newLoadout) => {
+    loadoutRef.current = {
+      potions: { ...EMPTY_LOADOUT.potions, ...(newLoadout?.potions || {}) },
+      scrolls: { ...EMPTY_LOADOUT.scrolls, ...(newLoadout?.scrolls || {}) },
+    };
+    isLoadoutReadyRef.current = true;
+  }, []);
+
+  const clearLoadout = useCallback(() => {
+    loadoutRef.current = freshLoadout();
+    isLoadoutReadyRef.current = false;
+  }, []);
+
+  const getLoadout = useCallback(() => loadoutRef.current, []);
+
+  const getTotalPotionLoadout = useCallback(() => {
+    const p = loadoutRef.current.potions;
+    return (p.hp_potion || 0) + (p.mega_hp_potion || 0) + (p.ultra_hp_potion || 0);
+  }, []);
+
+  const getTotalScrollLoadout = useCallback(() => {
+    const s = loadoutRef.current.scrolls;
+    return (s.auto_scroll || 0) + (s.auto_scroll_3m || 0) + (s.auto_scroll_6m || 0) + (s.auto_scroll_9m || 0) + (s.auto_scroll_12m || 0);
+  }, []);
+
+  const getPlayerPotionOwned = useCallback(() => {
+    const inventory = Object.values(player?.inventory || {});
+    return {
+      hp_potion: player?.potions || 0,
+      mega_hp_potion: inventory.filter(i => i?.id?.startsWith('mega_hp_potion')).length,
+      ultra_hp_potion: inventory.filter(i => i?.id?.startsWith('ultra_hp_potion')).length,
+    };
+  }, [player]);
+
+  const getPlayerScrollOwned = useCallback(() => {
+    const inventory = Object.values(player?.inventory || {});
+    return {
+      auto_scroll: player?.autoScrolls || 0,
+      auto_scroll_3m: inventory.filter(i => i?.id?.startsWith('auto_scroll_3m')).length,
+      auto_scroll_6m: inventory.filter(i => i?.id?.startsWith('auto_scroll_6m')).length,
+      auto_scroll_9m: inventory.filter(i => i?.id?.startsWith('auto_scroll_9m')).length,
+      auto_scroll_12m: inventory.filter(i => i?.id?.startsWith('auto_scroll_12m')).length,
+    };
+  }, [player]);
+
   const startGvGRaid = useCallback((warId, opponentId, defenderData, syndicateName = "Unknown", syndicateTag = "???") => {
     if (!setGvgContext || !setView) {
         console.error("System V4: Battle Bridge Offline. Context missing.");
@@ -61,6 +120,12 @@ export const usePlayerActions = (
     const targetItem = inventory.find(i => i && i.id?.startsWith(selection));
     const hasCounter = (player.potions || 0) > 0;
 
+    // ── LOADOUT GUARD ──
+    const loadoutPotionCount = loadoutRef.current.potions[selection] || 0;
+    if (loadoutPotionCount <= 0) {
+      return addLog(`No ${selection.replace(/_/g, ' ')} packed for this run!`);
+    }
+
     let useCounter = false;
     let usedItemId = null;
 
@@ -71,6 +136,9 @@ export const usePlayerActions = (
     } else {
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag.`);
     }
+
+    // Decrement loadout before optimistic update
+    loadoutRef.current.potions[selection] = loadoutPotionCount - 1;
 
     const healAmt = Math.floor(totalStats.maxHp * spec.mult);
     playSFX(SOUNDS.useHeal);
@@ -116,19 +184,25 @@ export const usePlayerActions = (
   }, [player, totalStats.maxHp, setPlayer, addLog, playSFX, SOUNDS, functions]);
 
   const cyclePotion = () => {
-    const potions = ['hp_potion', 'mega_hp_potion', 'ultra_hp_potion'];
-    const currentIdx = potions.indexOf(player.selectedPotionId || 'hp_potion');
-    const nextIdx = (currentIdx + 1) % potions.length;
-    syncPlayer({ selectedPotionId: potions[nextIdx] });
-    addLog(`Tactical Swap: Selected ${potions[nextIdx].replace(/_/g, ' ')}.`);
+    const allPotions = ['hp_potion', 'mega_hp_potion', 'ultra_hp_potion'];
+    const loadout = loadoutRef.current.potions;
+    const available = allPotions.filter(p => (loadout[p] || 0) > 0);
+    if (available.length === 0) return;
+    const currentIdx = available.indexOf(player.selectedPotionId || 'hp_potion');
+    const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % available.length;
+    syncPlayer({ selectedPotionId: available[nextIdx] });
+    addLog(`Tactical Swap: Selected ${available[nextIdx].replace(/_/g, ' ')}.`);
   };
 
   const cycleScroll = () => {
-    const scrolls = ['auto_scroll', 'auto_scroll_3m', 'auto_scroll_6m', 'auto_scroll_9m', 'auto_scroll_12m'];
-    const currentIdx = scrolls.indexOf(player.selectedScrollId || 'auto_scroll');
-    const nextIdx = (currentIdx + 1) % scrolls.length;
-    syncPlayer({ selectedScrollId: scrolls[nextIdx] });
-    addLog(`Tactical Swap: Selected ${scrolls[nextIdx].replace(/_/g, ' ')}.`);
+    const allScrolls = ['auto_scroll', 'auto_scroll_3m', 'auto_scroll_6m', 'auto_scroll_9m', 'auto_scroll_12m'];
+    const loadout = loadoutRef.current.scrolls;
+    const available = allScrolls.filter(s => (loadout[s] || 0) > 0);
+    if (available.length === 0) return;
+    const currentIdx = available.indexOf(player.selectedScrollId || 'auto_scroll');
+    const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % available.length;
+    syncPlayer({ selectedScrollId: available[nextIdx] });
+    addLog(`Tactical Swap: Selected ${available[nextIdx].replace(/_/g, ' ')}.`);
   };
 
   const hireMate = async (mate) => {
@@ -434,6 +508,14 @@ export const usePlayerActions = (
     if (!targetItemEntry && !hasPoolValue) {
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
+
+    // ── LOADOUT GUARD ──
+    const loadoutScrollCount = loadoutRef.current.scrolls[selection] || 0;
+    if (loadoutScrollCount <= 0) {
+      return addLog(`No ${selection.replace(/_/g, ' ')} packed for this run!`);
+    }
+    // Decrement loadout before optimistic update
+    loadoutRef.current.scrolls[selection] = loadoutScrollCount - 1;
 
     // --- OPTIMISTIC LOCAL STATE UPDATE ---
     // Apply instantly so UI reflects activation without waiting for Firestore sync.
@@ -1535,6 +1617,7 @@ export const usePlayerActions = (
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
-    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks
+    eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks,
+    setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned
   };
 };

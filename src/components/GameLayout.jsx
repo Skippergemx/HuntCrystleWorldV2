@@ -51,6 +51,7 @@ import { BiometricCoreView } from './BiometricCoreView';
 import { HunterRegistryView } from './HunterRegistryView';
 import { PartyCompanionDock } from './PartyCompanionDock';
 import { CompanionChatModal } from './CompanionChatModal';
+import { DungeonPrepModal } from './DungeonPrepModal';
 // import { EffectsPlayground } from './EffectsPlayground';
 import { AnimatedBackground } from './AnimatedBackground';
 import { GUIDE_CONTENT } from '../data/guideContent';
@@ -160,6 +161,7 @@ export const GameLayout = ({ onLogout }) => {
   const [isMigrating, setIsMigrating] = useState(false);
   const [chatCompanion, setChatCompanion] = useState(null);
   const [displayedTip, setDisplayedTip] = useState("");
+  const [showRepackModal, setShowRepackModal] = useState(false);
   const fullTipText = "STUTTERING? TOGGLE LOW-FX MODE TO STABILIZE UPLINK.";
 
   useEffect(() => {
@@ -179,7 +181,7 @@ export const GameLayout = ({ onLogout }) => {
 
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
-  const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, showVictoryWindow, setShowVictoryWindow, handleAttack } = combat;
+  const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, showVictoryWindow, setShowVictoryWindow, handleAttack, handleDismissDefeat } = combat;
   const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem } = actions;
   const { autoTimeLeft, buffTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
   const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX, skipTrack } = audio;
@@ -265,7 +267,7 @@ export const GameLayout = ({ onLogout }) => {
               </div>
 
               {/* Message Box */}
-              <div className="px-8 pb-8 w-full">
+              <div className="px-8 pb-6 w-full">
                 <div className="bg-white text-black p-4 rounded-2xl border-[3px] border-black relative transform rotate-1 shadow-[6px_6px_0_rgba(0,0,0,0.3)]">
                   <div className="absolute -top-3 -left-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 border-2 border-black uppercase italic">
                     Log: Protocol Zero
@@ -276,19 +278,40 @@ export const GameLayout = ({ onLogout }) => {
                   <div className="absolute -bottom-2 -left-1 w-4 h-4 bg-white border-b-3 border-l-3 border-black transform rotate-[30deg]"></div>
                 </div>
 
-                <div className="mt-8 space-y-2">
-                  <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black text-red-500 uppercase italic">Recovery Progress</span>
-                    <span className="text-[10px] font-black text-white opacity-50 uppercase tracking-tighter italic">Returning To Tavern</span>
-                  </div>
-                  <div className="w-full h-4 bg-black rounded-lg border-2 border-red-900/50 p-0.5 relative overflow-hidden">
-                    <div className="h-full bg-red-600 rounded-sm animate-defeat-progress shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
-                  </div>
+                <div className="mt-6 grid grid-cols-3 gap-2">
+                  <button
+                    onClick={() => { actions.clearLoadout?.(); handleDismissDefeat(false); }}
+                    className="py-3 bg-slate-800 text-white font-black uppercase italic text-[10px] rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-y-1 active:shadow-none transition-all"
+                  >🏠 Menu</button>
+                  <button
+                    onClick={() => setShowRepackModal(true)}
+                    className="py-3 bg-amber-500 text-black font-black uppercase italic text-[10px] rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-amber-400 active:translate-y-1 active:shadow-none transition-all"
+                  >🎒 Repack</button>
+                  <button
+                    onClick={() => handleDismissDefeat(true)}
+                    className="py-3 bg-cyan-600 text-white font-black uppercase italic text-[10px] rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-500 active:translate-y-1 active:shadow-none transition-all"
+                  >🔁 Re-Enter</button>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Repack Loadout Modal (post-defeat) */}
+      {showRepackModal && (
+        <DungeonPrepModal
+          player={player}
+          playerPotions={actions.getPlayerPotionOwned ? actions.getPlayerPotionOwned() : { hp_potion: 0, mega_hp_potion: 0, ultra_hp_potion: 0 }}
+          playerScrolls={actions.getPlayerScrollOwned ? actions.getPlayerScrollOwned() : { auto_scroll: 0, auto_scroll_3m: 0, auto_scroll_6m: 0, auto_scroll_9m: 0, auto_scroll_12m: 0 }}
+          initialLoadout={actions.getLoadout ? actions.getLoadout() : undefined}
+          onConfirm={(loadout) => {
+            if (actions.setLoadout) actions.setLoadout(loadout);
+            setShowRepackModal(false);
+            handleDismissDefeat(true);
+          }}
+          onCancel={() => setShowRepackModal(false)}
+        />
       )}
 
       {showSuccessWindow && (

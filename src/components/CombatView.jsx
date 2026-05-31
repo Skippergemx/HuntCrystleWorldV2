@@ -7,6 +7,7 @@ import { useGame } from '../contexts/GameContext';
 import { getMonsterElement } from '../utils/gameLogic';
 import { SOUNDS } from '../hooks/useAudioEngine';
 import { CombatBanterOverlay } from './CombatBanterOverlay';
+import { DungeonPrepModal } from './DungeonPrepModal';
 export const CombatView = React.memo(() => {
   const {
     player, adventure, combat, actions, gameLoop, audio, totalStats, autoScrollState,
@@ -49,6 +50,7 @@ export const CombatView = React.memo(() => {
   const [tameAnimation, setTameAnimation] = useState(null); // 'ATTEMPTING', 'SUCCESS', 'FAIL'
   const [levelUpCinematic, setLevelUpCinematic] = useState(false);
   const [sparkCelebration, setSparkCelebration] = useState(null);
+  const [showRepackModal, setShowRepackModal] = useState(false);
   
   const battleParticlesRef = useRef(null);
   const prevLevelUpRef = useRef(0);
@@ -92,49 +94,38 @@ export const CombatView = React.memo(() => {
 
 
 
+  // Loadout-aware potion count — reads from session loadout (up to 20 per run)
+  const loadout = actions.getLoadout ? actions.getLoadout() : { potions: { hp_potion: 0 }, scrolls: { auto_scroll: 0 } };
+  const potionSel = player.selectedPotionId || 'hp_potion';
+  const potionLoadoutCount = (loadout.potions?.[potionSel] || 0);
+
   const potionCountData = useMemo(() => {
     const sel = player.selectedPotionId || 'hp_potion';
     const invCount = inventoryCounts[sel] || 0;
     const baseCount = player.potions || 0;
     return {
       selected: sel,
-      count: sel === 'hp_potion' ? (invCount + baseCount) : invCount,
-      hasSelected: (sel === 'hp_potion' ? (invCount + baseCount) : invCount) > 0
+      count: potionLoadoutCount,
+      hasSelected: potionLoadoutCount > 0
     };
-  }, [player.selectedPotionId, player.potions, inventoryCounts]);
+  }, [player.selectedPotionId, player.potions, inventoryCounts, potionLoadoutCount]);
+
+  const scrollSel = player.selectedScrollId || 'auto_scroll';
+  const scrollLoadoutCount = (loadout.scrolls?.[scrollSel] || 0);
 
   const scrollCountData = useMemo(() => {
     const sel = player.selectedScrollId || 'auto_scroll';
-    const scrollSpecs = {
-      'auto_scroll': 1,
-      'auto_scroll_3m': 3,
-      'auto_scroll_6m': 6,
-      'auto_scroll_9m': 9,
-      'auto_scroll_12m': 12
-    };
-    const req = scrollSpecs[sel] || 1;
-    const baseCount = player.autoScrolls || 0;
-    
-    // Calculate discrete items of this specific type
-    const invCount = inventoryCounts[sel] || 0;
-
-    // For 1m scrolls (auto_scroll), we can trigger them using the pool (divided by 1) PLUS discrete items
-    let totalPossible = 0;
-    if (sel === 'auto_scroll') {
-      totalPossible = Math.floor(baseCount / req) + invCount;
-    } else {
-      totalPossible = invCount;
-    }
-
     return {
       selected: sel,
-      count: totalPossible,
-      hasSelected: totalPossible > 0
+      count: scrollLoadoutCount,
+      hasSelected: scrollLoadoutCount > 0
     };
-  }, [player.selectedScrollId, player.autoScrolls, inventoryCounts]);
+  }, [player.selectedScrollId, player.autoScrolls, inventoryCounts, scrollLoadoutCount]);
 
-  const hasAnyPotions = useMemo(() => (player.potions > 0) || (inventoryCounts['hp_potion'] > 0 || inventoryCounts['mega_hp_potion'] > 0 || inventoryCounts['ultra_hp_potion'] > 0), [player.potions, inventoryCounts]);
-  const hasAnyScrolls = useMemo(() => (player.autoScrolls || 0) > 0 || (inventoryCounts['auto_scroll'] > 0 || inventoryCounts['auto_scroll_3m'] > 0 || inventoryCounts['auto_scroll_6m'] > 0 || inventoryCounts['auto_scroll_9m'] > 0 || inventoryCounts['auto_scroll_12m'] > 0), [player.autoScrolls, inventoryCounts]);
+  const totalPotionLoadout = (loadout.potions?.hp_potion || 0) + (loadout.potions?.mega_hp_potion || 0) + (loadout.potions?.ultra_hp_potion || 0);
+  const totalScrollLoadout = (loadout.scrolls?.auto_scroll || 0) + (loadout.scrolls?.auto_scroll_3m || 0) + (loadout.scrolls?.auto_scroll_6m || 0) + (loadout.scrolls?.auto_scroll_9m || 0) + (loadout.scrolls?.auto_scroll_12m || 0);
+  const hasAnyPotions = totalPotionLoadout > 0;
+  const hasAnyScrolls = totalScrollLoadout > 0;
 
   const foodInventory = useMemo(() => {
     if (!FOODS) return [];
@@ -721,25 +712,7 @@ export const CombatView = React.memo(() => {
              </div>
           </div>
 
-         {/* FLOATING DAMAGE NUMBERS */}
-         {floatingNumbers && floatingNumbers.length > 0 && (
-           <div className="absolute inset-0 z-[55] pointer-events-none">
-             {floatingNumbers.map((fn, i) => (
-               <div
-                 key={fn.id || i}
-                 className="absolute animate-float-up font-black italic drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                 style={{
-                   left: fn.side === 'player' ? '25%' : '75%',
-                   top: '30%',
-                   color: fn.isCrit ? '#ff4444' : '#ffdd44',
-                   fontSize: fn.isCrit ? 'clamp(1.5rem,5vw,4rem)' : 'clamp(1rem,3vw,2.5rem)',
-                 }}
-               >
-                 {fn.isCrit ? '⚡CRIT!⚡' : `-${Math.floor(fn.val || 0)}`}
-               </div>
-             ))}
-           </div>
-         )}
+
 
          {/* PLAYER AVATAR */}
           <div className={`flex flex-col items-center lg:items-start transition-all duration-300 ${strikingSide === 'player' ? 'animate-strike-left' : ''}`}>
@@ -1678,18 +1651,41 @@ export const CombatView = React.memo(() => {
                 onClick={() => handleDismissDefeat(true)}
                 className="flex-1 bg-cyan-500 border-[3px] border-black py-3 md:py-4 font-black text-black text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
               >
-                <span className="text-lg">🔁</span> Re-Enter Dungeon
+                <span className="text-lg">🔁</span> Re-Enter
+              </button>
+              <button
+                id="raid-summary-repack-btn"
+                onClick={() => setShowRepackModal(true)}
+                className="flex-1 bg-amber-500 border-[3px] border-black py-3 md:py-4 font-black text-black text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-amber-400 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
+              >
+                <span className="text-lg">🎒</span> Repack
               </button>
               <button
                 id="raid-summary-menu-btn"
-                onClick={() => handleDismissDefeat(false)}
+                onClick={() => { actions.clearLoadout?.(); handleDismissDefeat(false); }}
                 className="flex-1 bg-slate-800 border-[3px] border-black py-3 md:py-4 font-black text-white text-sm md:text-base uppercase italic tracking-tight shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-slate-700 active:translate-x-1 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-2"
               >
-                <span className="text-lg">🏠</span> Return to Menu
+                <span className="text-lg">🏠</span> Menu
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Repack Loadout Modal (post-defeat) */}
+      {showRepackModal && (
+        <DungeonPrepModal
+          player={player}
+          playerPotions={actions.getPlayerPotionOwned ? actions.getPlayerPotionOwned() : { hp_potion: 0, mega_hp_potion: 0, ultra_hp_potion: 0 }}
+          playerScrolls={actions.getPlayerScrollOwned ? actions.getPlayerScrollOwned() : { auto_scroll: 0, auto_scroll_3m: 0, auto_scroll_6m: 0, auto_scroll_9m: 0, auto_scroll_12m: 0 }}
+          initialLoadout={actions.getLoadout ? actions.getLoadout() : undefined}
+          onConfirm={(loadout) => {
+            if (actions.setLoadout) actions.setLoadout(loadout);
+            setShowRepackModal(false);
+            handleDismissDefeat(true);
+          }}
+          onCancel={() => setShowRepackModal(false)}
+        />
       )}
 
       {/* HIGH-IMPACT OVERBURDENED WARNING PORTAL MODAL */}

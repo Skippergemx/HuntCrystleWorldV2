@@ -106,11 +106,12 @@ export const useUnifiedAuth = () => {
           }
 
           const unifiedUser = {
-            uid: `FC_${fcUser.fid}`,
+            uid: u.uid,
             email: null,
             username: fcUser.username || `FC_Hunter_${fcUser.fid}`,
             pfp: fcUser.pfpUrl || `https://api.dicebear.com/7.x/identicon/svg?seed=FC_${fcUser.fid}`,
             platform: 'farcaster',
+            farcasterData: { fid: fcUser.fid, username: fcUser.username, pfpUrl: fcUser.pfpUrl },
             walletAddress: address ? address.toLowerCase() : null
           };
           setUser(unifiedUser);

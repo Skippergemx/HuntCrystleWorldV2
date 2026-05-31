@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink, DollarSign, BarChart3, ShoppingBag, Hammer, Microscope } from 'lucide-react';
+import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink, DollarSign, BarChart3, ShoppingBag, Hammer, Microscope, Gem } from 'lucide-react';
 import { createPublicClient, http, formatEther, formatUnits } from 'viem';
 import { base } from 'viem/chains';
 import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField } from 'firebase/firestore';
@@ -94,7 +94,7 @@ export const AdminPanelView = React.memo(() => {
   const [stats, setStats] = useState({ totalUsers: 0, leaderboardSize: 0 });
   const [players, setPlayers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls', 'rewards', 'economy'
+  const [activeTab, setActiveTab] = useState('maintenance'); // 'maintenance', 'players', 'wallets', 'system', 'errors', 'migration', 'scrolls', 'rewards', 'nftClaims', 'economy'
   const [message, setMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [errorReports, setErrorReports] = useState([]);
@@ -118,6 +118,29 @@ export const AdminPanelView = React.memo(() => {
   }, [players, searchQuery]);
 
   const totalPages = Math.ceil(filteredPlayers.length / itemsPerPage);
+
+  // Derive NFT-related players and summary stats from existing players data
+  const nftPlayers = useMemo(() => {
+    const search = searchQuery.toLowerCase();
+    return players.filter(p => {
+      const hasNftData = p.welcomeNftClaimed || p.level10NftClaimed || p.level10NftReserved || p.walletAddress;
+      if (!hasNftData) return false;
+      if (!search) return true;
+      return (p.name?.toLowerCase().includes(search)) ||
+             (p.id?.toLowerCase().includes(search)) ||
+             (p.email?.toLowerCase().includes(search)) ||
+             (p.walletAddress?.toLowerCase().includes(search));
+    });
+  }, [players, searchQuery]);
+
+  const nftStats = useMemo(() => ({
+    sapphireClaimed: players.filter(p => p.welcomeNftClaimed === true).length,
+    emeraldClaimed: players.filter(p => p.level10NftClaimed === true).length,
+    emeraldReserved: players.filter(p => p.level10NftReserved === true && !p.level10NftClaimed).length,
+    pendingConfirm: players.filter(p => (p.welcomeNftClaimed && !p.welcomeNftTxHash) || (p.level10NftClaimed && !p.level10NftTxHash)).length,
+    totalSapphire: 20,
+    totalEmerald: 20,
+  }), [players]);
   const paginatedPlayers = filteredPlayers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   useEffect(() => {
@@ -820,6 +843,12 @@ export const AdminPanelView = React.memo(() => {
           🎁 Reward Audit
         </button>
         <button 
+          onClick={() => setActiveTab('nftClaims')}
+          className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'nftClaims' ? 'bg-cyan-600 text-white border-cyan-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
+        >
+          💎 NFT Claims
+        </button>
+        <button 
           onClick={() => setActiveTab(activeTab === 'economy' ? 'maintenance' : 'economy')}
           className={`px-6 py-3 font-black uppercase italic text-xs border-b-4 transition-all ${activeTab === 'economy' ? 'bg-blue-600 text-white border-blue-900 shadow-[4px_4px_0_rgba(0,0,0,1)]' : 'bg-slate-900 text-slate-500 border-transparent hover:bg-slate-800'}`}
         >
@@ -962,7 +991,7 @@ export const AdminPanelView = React.memo(() => {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <p className="text-sm font-black text-white italic leading-none truncate max-w-[150px]">{player.name || 'Anonymous Hunter'}</p>
                                   {player.platform === 'farcaster' && (
-                                    <span className="text-[8px] font-black text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/30">FID: {player.id.replace('FC_', '')}</span>
+                                    <span className="text-[8px] font-black text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/30">FID: {player.farcasterData?.fid || '?'}</span>
                                   )}
                                 </div>
 
@@ -2113,6 +2142,276 @@ export const AdminPanelView = React.memo(() => {
               </p>
             </div>
           </div>
+        </div>
+      ) : activeTab === 'nftClaims' ? (
+        <div className="bg-black border-4 border-black p-4 md:p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4 space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-cyan-500 pl-4">
+            <h2 className="text-xl font-black text-white uppercase italic">💎 NFT Claims Monitor</h2>
+            <button onClick={fetchStats} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black uppercase italic text-[10px] border border-slate-700 rounded-lg flex items-center gap-2 transition-colors">
+              <RefreshCw size={12} /> Refresh
+            </button>
+          </div>
+
+          {/* ── Summary Stats Bar ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Sapphire */}
+            <div className="bg-cyan-950/30 border-2 border-cyan-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(6,182,212,0.1)]">
+              <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center border border-cyan-500/40 shrink-0">
+                <Gem size={18} className="text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sapphire Claimed</p>
+                <p className="text-xl font-black text-cyan-400 italic">{nftStats.sapphireClaimed}<span className="text-xs text-cyan-400/40">/{nftStats.totalSapphire}</span></p>
+              </div>
+            </div>
+            {/* Emerald */}
+            <div className="bg-emerald-950/30 border-2 border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(16,185,129,0.1)]">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/40 shrink-0">
+                <Gem size={18} className="text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Emerald Claimed</p>
+                <p className="text-xl font-black text-emerald-400 italic">{nftStats.emeraldClaimed}<span className="text-xs text-emerald-400/40">/{nftStats.totalEmerald}</span></p>
+              </div>
+            </div>
+            {/* Reserved */}
+            <div className="bg-amber-950/30 border-2 border-amber-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(251,191,36,0.1)]">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center border border-amber-500/40 shrink-0">
+                <AlertCircle size={18} className="text-amber-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Emerald Reserved</p>
+                <p className="text-xl font-black text-amber-400 italic">{nftStats.emeraldReserved}</p>
+              </div>
+            </div>
+            {/* Pending */}
+            <div className="bg-purple-950/30 border-2 border-purple-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(168,85,247,0.1)]">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center border border-purple-500/40 shrink-0">
+                <Activity size={18} className="text-purple-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Awaiting TX</p>
+                <p className="text-xl font-black text-purple-400 italic">{nftStats.pendingConfirm}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Search ── */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search Name, ID, or Wallet..." 
+              className="w-full bg-slate-900 border-2 border-slate-800 rounded px-10 py-2 text-xs text-white focus:border-cyan-500 outline-none font-black italic"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            />
+            {nftPlayers.length > 0 && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-600 uppercase">{nftPlayers.length} players</span>
+            )}
+          </div>
+
+          {/* ── Players Table (Desktop md+) ── */}
+          {nftPlayers.length > 0 ? (
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-slate-800">
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Hunter</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Wallet</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🔷 Sapphire</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🟢 Emerald</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {nftPlayers.map((player) => {
+                      const sapphireClaimed = player.welcomeNftClaimed === true;
+                      const sapphireTx = player.welcomeNftTxHash;
+                      const emeraldClaimed = player.level10NftClaimed === true;
+                      const emeraldReserved = player.level10NftReserved === true;
+                      const emeraldTx = player.level10NftTxHash;
+                      const hasWallet = !!player.walletAddress;
+
+                      return (
+                        <tr key={player.id} className="hover:bg-slate-900/30 transition-colors group">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-slate-800 border-2 border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
+                                <img 
+                                  src={player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                                  className="w-full h-full object-cover" 
+                                  alt="" 
+                                />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-black text-white italic leading-none truncate max-w-[140px]">{player.name || 'Anonymous'}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[7px] text-slate-500 font-bold uppercase">LVL {player.level || 1}</span>
+                                  {player.platform === 'farcaster' ? (
+                                    <span className="px-1 py-0 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded text-[6px] font-black italic">FC</span>
+                                  ) : (
+                                    <span className="px-1 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded text-[6px] font-black italic">GOOGLE</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {hasWallet ? (
+                              <div className="flex items-center gap-1.5 cursor-pointer group/wallet" onClick={() => { navigator.clipboard.writeText(player.walletAddress); setMessage({type:'success', text:`Wallet copied: ${player.walletAddress.slice(0,6)}...`}); }}>
+                                <Wallet size={10} className="text-amber-500/60" />
+                                <span className="text-[9px] text-amber-500/80 font-mono tracking-tighter">{player.walletAddress.slice(0,6)}...{player.walletAddress.slice(-4)}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">Not linked</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {sapphireClaimed ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-950/40 border border-cyan-500/30 rounded text-[9px] font-black text-cyan-400 uppercase">
+                                  <CheckCircle size={10} /> Claimed
+                                </span>
+                                {sapphireTx && (
+                                  <a href={`https://basescan.org/tx/${sapphireTx}`} target="_blank" rel="noreferrer" className="text-[7px] font-black text-cyan-600 hover:text-cyan-400 uppercase flex items-center gap-0.5">
+                                    TX <ExternalLink size={8} />
+                                  </a>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {emeraldClaimed ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/40 border border-emerald-500/30 rounded text-[9px] font-black text-emerald-400 uppercase">
+                                  <CheckCircle size={10} /> Claimed
+                                </span>
+                                {emeraldTx && (
+                                  <a href={`https://basescan.org/tx/${emeraldTx}`} target="_blank" rel="noreferrer" className="text-[7px] font-black text-emerald-600 hover:text-emerald-400 uppercase flex items-center gap-0.5">
+                                    TX <ExternalLink size={8} />
+                                  </a>
+                                )}
+                              </div>
+                            ) : emeraldReserved ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 rounded text-[9px] font-black text-amber-400 uppercase">
+                                🔒 Reserved
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── Mobile Card Layout (below md) ── */}
+              <div className="md:hidden space-y-3">
+                {nftPlayers.map((player) => {
+                  const sapphireClaimed = player.welcomeNftClaimed === true;
+                  const sapphireTx = player.welcomeNftTxHash;
+                  const emeraldClaimed = player.level10NftClaimed === true;
+                  const emeraldReserved = player.level10NftReserved === true;
+                  const emeraldTx = player.level10NftTxHash;
+                  const hasWallet = !!player.walletAddress;
+
+                  return (
+                    <div key={player.id} className="bg-slate-900/40 border-2 border-slate-800 rounded-xl p-3 space-y-3">
+                      {/* Header Row */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-800 border-2 border-slate-700 rounded-lg flex items-center justify-center overflow-hidden shrink-0 shadow-[3px_3px_0_rgba(0,0,0,0.5)]">
+                          <img 
+                            src={player.pfp || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.name || player.id}`} 
+                            className="w-full h-full object-cover" 
+                            alt="" 
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black text-white italic leading-none truncate">{player.name || 'Anonymous'}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[7px] text-slate-500 font-bold uppercase">LVL {player.level || 1}</span>
+                            {player.platform === 'farcaster' ? (
+                              <span className="px-1 py-0 bg-purple-600/20 text-purple-400 border border-purple-600/30 rounded text-[6px] font-black italic">FC</span>
+                            ) : (
+                              <span className="px-1 py-0 bg-slate-600/20 text-slate-400 border border-slate-600/30 rounded text-[6px] font-black italic">GOOGLE</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Wallet Row */}
+                      {hasWallet ? (
+                        <div className="flex items-center gap-1.5" onClick={() => { navigator.clipboard.writeText(player.walletAddress); setMessage({type:'success', text:`Wallet copied: ${player.walletAddress.slice(0,6)}...`}); }}>
+                          <Wallet size={10} className="text-amber-500/60" />
+                          <span className="text-[9px] text-amber-500/80 font-mono tracking-tighter cursor-pointer">{player.walletAddress.slice(0,6)}...{player.walletAddress.slice(-4)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[9px] text-slate-600 font-bold italic block">No wallet linked</span>
+                      )}
+
+                      {/* Status Badges Row */}
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Sapphire</p>
+                          {sapphireClaimed ? (
+                            <div className="flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-950/40 border border-cyan-500/30 rounded text-[8px] font-black text-cyan-400 uppercase">
+                                <CheckCircle size={9} /> Claimed
+                              </span>
+                              {sapphireTx && (
+                                <a href={`https://basescan.org/tx/${sapphireTx}`} target="_blank" rel="noreferrer" className="text-[7px] font-black text-cyan-600 uppercase">
+                                  TX <ExternalLink size={8} className="inline" />
+                                </a>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">Not claimed</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Emerald</p>
+                          {emeraldClaimed ? (
+                            <div className="flex items-center gap-1">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/40 border border-emerald-500/30 rounded text-[8px] font-black text-emerald-400 uppercase">
+                                <CheckCircle size={9} /> Claimed
+                              </span>
+                              {emeraldTx && (
+                                <a href={`https://basescan.org/tx/${emeraldTx}`} target="_blank" rel="noreferrer" className="text-[7px] font-black text-emerald-600 uppercase">
+                                  TX <ExternalLink size={8} className="inline" />
+                                </a>
+                              )}
+                            </div>
+                          ) : emeraldReserved ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-950/40 border border-amber-500/30 rounded text-[8px] font-black text-amber-400 uppercase">
+                              🔒 Reserved
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">Not eligible</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            /* Empty State */
+            <div className="py-16 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 bg-slate-900 border-2 border-slate-800 rounded-2xl flex items-center justify-center">
+                <Gem size={32} className="text-slate-600" />
+              </div>
+              <h3 className="text-sm font-black text-slate-500 uppercase italic">No NFT Claims Found</h3>
+              <p className="text-[10px] text-slate-600 font-bold mt-1">
+                {searchQuery ? 'No players match your search.' : 'No players have claimed or reserved any Gemx NFTs yet.'}
+              </p>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-black border-4 border-black p-8 shadow-[8px_8px_0_rgba(0,0,0,0.5)] animate-in fade-in slide-in-from-bottom-4">

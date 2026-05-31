@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Map as MapIcon, ChevronRight, Lock, Star, Skull, TrendingUp, Flame, ShieldAlert, Droplets, Zap, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
+import { DungeonPrepModal } from './DungeonPrepModal';
 
 export const MapView = () => {
-  const { player, adventure, gameLoop, openGuide, MAPS, LOOTS, syncPlayer, updateLeaderboard } = useGame();
+  const { player, adventure, gameLoop, openGuide, MAPS, LOOTS, syncPlayer, updateLeaderboard, actions } = useGame();
   const { setView, setDepth, spawnNewEnemy, setSelectedMap } = adventure;
   const { penaltyRemaining } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
@@ -14,6 +15,7 @@ export const MapView = () => {
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [resumePromptMap, setResumePromptMap] = useState(null);
+  const [pendingDungeonEntry, setPendingDungeonEntry] = useState(null); // map object awaiting prep modal
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_map_tutorial') === 'true';
@@ -89,9 +91,22 @@ export const MapView = () => {
     setSelectedMap(map);
     setDepth(1);
     spawnNewEnemy(1, map);
-    setView('dungeon');
+
+    // Show loadout prep modal instead of entering directly
+    actions.clearLoadout?.(); // Clear stale loadout from previous run
+    setPendingDungeonEntry(map);
     setResumePromptMap(null);
   };
+
+  const handlePrepConfirm = useCallback((loadout) => {
+    if (actions.setLoadout) actions.setLoadout(loadout);
+    setPendingDungeonEntry(null);
+    setView('dungeon');
+  }, [actions, setView]);
+
+  const handlePrepCancel = useCallback(() => {
+    setPendingDungeonEntry(null);
+  }, []);
 
   const handleMapSelect = (map) => {
     if (player.level < map.minLevel) return;
@@ -463,6 +478,17 @@ export const MapView = () => {
            </div>
         </div>,
         document.body
+      )}
+
+      {/* Dungeon Loadout Prep Modal */}
+      {pendingDungeonEntry && (
+        <DungeonPrepModal
+          player={player}
+          playerPotions={actions.getPlayerPotionOwned ? actions.getPlayerPotionOwned() : { hp_potion: 0, mega_hp_potion: 0, ultra_hp_potion: 0 }}
+          playerScrolls={actions.getPlayerScrollOwned ? actions.getPlayerScrollOwned() : { auto_scroll: 0, auto_scroll_3m: 0, auto_scroll_6m: 0, auto_scroll_9m: 0, auto_scroll_12m: 0 }}
+          onConfirm={handlePrepConfirm}
+          onCancel={handlePrepCancel}
+        />
       )}
 
     </div>
