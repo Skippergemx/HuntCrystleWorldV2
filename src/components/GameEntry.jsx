@@ -83,11 +83,12 @@ export const GameEntry = ({ onLogout }) => {
 
   const handleWalletReady = useCallback(async (address) => {
     if (!hasClaimed) {
-      await doClaimNft(address);
+      // Show the same gift-reveal moment Google users see — don't skip straight to claim
+      setFlowState('gift-reveal');
     } else {
       setFlowState('done');
     }
-  }, [hasClaimed, doClaimNft]);
+  }, [hasClaimed]);
 
   const handleSkipWallet = useCallback(() => {
     setFlowState('done');
