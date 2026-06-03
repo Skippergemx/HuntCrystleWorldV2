@@ -302,7 +302,11 @@ export const usePlayerSync = (user, db, appId) => {
                 cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
                 cursor = cursor[parts[i]];
               }
-              cursor[parts[parts.length - 1]] = value;
+              if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+                delete cursor[parts[parts.length - 1]];
+              } else {
+                cursor[parts[parts.length - 1]] = value;
+              }
             } else {
               fullySanitized[key] = value;
             }
@@ -485,7 +489,11 @@ export const usePlayerSync = (user, db, appId) => {
                 cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
                 cursor = cursor[parts[i]];
               }
-              cursor[parts[parts.length - 1]] = value;
+              if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+                delete cursor[parts[parts.length - 1]];
+              } else {
+                cursor[parts[parts.length - 1]] = value;
+              }
             } else {
               fullySanitized[key] = value;
             }

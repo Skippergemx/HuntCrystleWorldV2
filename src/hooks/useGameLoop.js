@@ -107,12 +107,13 @@ export const useGameLoop = ({
       const notMissed  = (c.missRef?.current || 0) <= 0;
 
       if (busOpen && notStunned && notMissed) {
-        // Priority 1: Heal when low HP
+        // Priority 1: Heal when low HP (but only if loadout still has potions)
         const selPotion = p.selectedPotionId || 'hp_potion';
         const invPotions = Object.values(p.inventory || {}).filter(i => i && i.id?.startsWith(selPotion)).length;
         const totalPotions = selPotion === 'hp_potion' ? (invPotions + (p.potions || 0)) : invPotions;
+        const loadoutPotions = a.getTotalPotionLoadout ? a.getTotalPotionLoadout() : 0;
 
-        if (p.hp < (totalStats?.maxHp || p.maxHp) * 0.4 && totalPotions > 0) {
+        if (p.hp < (totalStats?.maxHp || p.maxHp) * 0.4 && totalPotions > 0 && loadoutPotions > 0) {
           a.handleHeal();
         }
         // Priority 2: Synchronous enemy check via ref (no closure lag)

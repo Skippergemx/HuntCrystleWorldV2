@@ -130,6 +130,12 @@ export const InventoryView = React.memo(() => {
      const unequipped = Object.keys(unequippedCounts).map(baseId => {
        return { ...unequippedFirsts[baseId], count: unequippedCounts[baseId] };
      });
+     // Stable sort: prevents list shuffle when Firestore syncs keys in a different order
+     unequipped.sort((a, b) => {
+       const nameA = (a.master?.name || a.name || '').toLowerCase();
+       const nameB = (b.master?.name || b.name || '').toLowerCase();
+       return nameA.localeCompare(nameB);
+     });
      
      const equipped = Object.values(player.equipped || {}).filter(i => i && typeof i === 'object').map(i => {
        return { ...i, isEquipped: true, count: 1, master: getMasterData(i) };

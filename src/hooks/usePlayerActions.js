@@ -287,9 +287,24 @@ export const usePlayerActions = (
     playSFX(SOUNDS.sellItem);
     
     if (addOptimisticUpdate) {
+      const optimisticDeletes = {};
+      if (qty > 1) {
+        // For stacked/grouped sells, remove ALL matching instances optimistically
+        // so the UI doesn't show phantom copies after the cloud function clears them
+        let removed = 0;
+        Object.entries(player.inventory || {}).forEach(([key, invItem]) => {
+          if (removed >= qty || !invItem) return;
+          if (extractBaseId(invItem.id || key) === itemBaseId) {
+            optimisticDeletes[`inventory.${key}`] = { _methodName: 'deleteField' };
+            removed++;
+          }
+        });
+      } else {
+        optimisticDeletes[`inventory.${itemId}`] = { _methodName: 'deleteField' };
+      }
       addOptimisticUpdate({
         tokens: (player.tokens || 0) + totalValue,
-        [`inventory.${itemId}`]: { _methodName: 'deleteField' }
+        ...optimisticDeletes
       });
     }
 
@@ -1530,17 +1545,30 @@ export const usePlayerActions = (
       return;
     }
     
-    // Deduct 4 sparks
-    const updates = {};
-    sparks.slice(0, 4).forEach(([uniqueId]) => {
-      updates[`inventory.${uniqueId}`] = deleteField();
+    // Snapshot the 4 spark entries BEFORE deleting, so we can roll back on failure
+    const consumedSparks = sparks.slice(0, 4);
+    const sparkDeletes = {};
+    const sparkRestore = {};
+    consumedSparks.forEach(([uniqueId, item]) => {
+      sparkDeletes[`inventory.${uniqueId}`] = deleteField();
+      sparkRestore[`inventory.${uniqueId}`] = item; // snapshot for rollback
     });
     
     addLog("✨ AETHER EXCHANGE: Harmonizing sparks... Initiating Treasury Signal.");
     
+    // Helper to restore sparks if the faucet fails
+    const rollbackSparks = async (reason) => {
+      try {
+        await syncPlayer(sparkRestore, true);
+        addLog(`🏙️ AETHER EXCHANGE: ${reason} Sparks returned safely.`);
+      } catch (rollbackErr) {
+        console.error("Aether spark rollback failed:", rollbackErr);
+      }
+    };
+
     try {
-      // Use blocking sync to ensure inventory is updated before payout
-      await syncPlayer(updates, true); 
+      // Deduct sparks immediately (blocking sync)
+      await syncPlayer(sparkDeletes, true); 
       
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
       const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
@@ -1553,11 +1581,12 @@ export const usePlayerActions = (
           setFaucetResult({ success: true, txHash: data.txHash, message: "Aether Exchange Authorized" });
         }
       } else {
-        addLog(`🏙️ EXCHANGE SIGNAL: ${data.message}`);
+        // Faucet declined (probability miss, daily limit, etc.) — restore sparks
+        await rollbackSparks(data.message);
       }
     } catch (e) {
-      console.warn("✨ EXCHANGE_ERROR:", e.message);
-      addLog("🏙️ EXCHANGE: The signal failed. Try again later.");
+      console.warn("✨ AETHER_EXCHANGE_ERROR:", e.message);
+      await rollbackSparks("Transmission failed.");
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
 
@@ -1573,18 +1602,11 @@ export const usePlayerActions = (
       return;
     }
     
-    // Deduct 4 sparks
-    const updates = {};
-    sparks.slice(0, 4).forEach(([uniqueId]) => {
-      updates[`inventory.${uniqueId}`] = deleteField();
-    });
-    
+    // The cloud function will atomically verify & deduct sparks in its transaction.
+    // Do NOT pre-delete here — that races with the cloud function's spark check.
     addLog(`⚡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
     
     try {
-      // Use blocking sync to ensure inventory is updated before payout
-      await syncPlayer(updates, true); 
-      
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
       const result = await claimFaucet({ 
         targetWalletAddress: player.walletAddress,

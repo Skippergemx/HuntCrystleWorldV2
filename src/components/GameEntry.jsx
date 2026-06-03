@@ -33,7 +33,7 @@ export const GameEntry = ({ onLogout }) => {
     // Ensure wallet is synced to player profile first (cloud function validates this)
     if (!player?.walletAddress || player.walletAddress.toLowerCase() !== walletAddr.toLowerCase()) {
       try {
-        await syncPlayer({ walletAddress: walletAddr.toLowerCase().trim() });
+        await syncPlayer({ walletAddress: walletAddr.toLowerCase().trim() }, true);
       } catch (e) {
         console.error('Failed to sync wallet before NFT claim:', e);
       }
