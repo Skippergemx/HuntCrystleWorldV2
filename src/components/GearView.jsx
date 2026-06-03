@@ -151,7 +151,8 @@ export const GearView = React.memo(() => {
       }
     });
 
-    const dragon = (player.dragon?.level || 0) * 5;
+    const dragonActive = dragonTimeLeft > 0 || (player.dragon?.summonUntil || 0) > Date.now();
+    const dragon = dragonActive ? (player.dragon?.level || 0) * 5 : 0;
     
     let mateMult = { str: 1, agi: 1, dex: 1 };
     if (buffTimeLeft > 0 && currentMate) {

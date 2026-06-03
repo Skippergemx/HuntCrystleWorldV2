@@ -167,6 +167,10 @@ export const usePlayerActions = (
     addLog(`Healed for ${spec.label} Max HP (+${healAmt} HP).`);
 
     // 2. Secure Backend Commitment
+    // Flush any pending HP writes (e.g. monster damage queued via debounced syncPlayer)
+    // so the cloud function reads the correct current HP and isn't overwritten later.
+    syncPlayer({ hp: player.hp }, true);
+
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       const result = await callAction({
@@ -181,7 +185,7 @@ export const usePlayerActions = (
       console.error("Failed to commit potion usage securely:", e);
       addLog("🚨 UPLINK ERROR: Potion consumption could not be verified.");
     }
-  }, [player, totalStats.maxHp, setPlayer, addLog, playSFX, SOUNDS, functions]);
+  }, [player, totalStats.maxHp, setPlayer, syncPlayer, addLog, playSFX, SOUNDS, functions]);
 
   const cyclePotion = () => {
     const allPotions = ['hp_potion', 'mega_hp_potion', 'ultra_hp_potion'];
