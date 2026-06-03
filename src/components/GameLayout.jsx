@@ -10,7 +10,7 @@ import {
   Calendar, Wallet, ShieldAlert,
   Share2, Twitter, MessageSquare,
   Bug, ShieldAlert as AlertShield, Terminal, Sparkles as SparkleIcon, AlertTriangle,
-  Rocket, ExternalLink, FlaskConical
+  Rocket, ExternalLink, FlaskConical, CheckCircle
 } from 'lucide-react';
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
@@ -164,6 +164,29 @@ export const GameLayout = ({ onLogout }) => {
   const [showRepackModal, setShowRepackModal] = useState(false);
   const fullTipText = "STUTTERING? TOGGLE LOW-FX MODE TO STABILIZE UPLINK.";
 
+  // ── Daily Supply Gift Banner ──
+  const [showDailyBanner, setShowDailyBanner] = useState(true);
+  const [dailyClaimed, setDailyClaimed] = useState(false);
+  const [dailyClaiming, setDailyClaiming] = useState(false);
+
+  useEffect(() => {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    let playerClaimKey = null;
+    if (player?.dailyGiftClaimedAt) {
+      if (player.dailyGiftClaimedAt._seconds) {
+        playerClaimKey = new Date(player.dailyGiftClaimedAt._seconds * 1000).toISOString().slice(0, 10);
+      } else if (typeof player.dailyGiftClaimedAt === 'number') {
+        playerClaimKey = new Date(player.dailyGiftClaimedAt).toISOString().slice(0, 10);
+      }
+    }
+    if (playerClaimKey === todayKey) {
+      setDailyClaimed(true);
+    } else {
+      setDailyClaimed(false);
+      setShowDailyBanner(true);
+    }
+  }, [player?.dailyGiftClaimedAt]);
+
   useEffect(() => {
     let timeout;
     if (displayedTip.length < fullTipText.length) {
@@ -182,7 +205,7 @@ export const GameLayout = ({ onLogout }) => {
 
   const { view, setView, depth, setDepth, enemy, spawnNewEnemy, selectedMap, setSelectedMap, enemyFlinch, isHurt, handleSkip } = adventure;
   const { stunTimeLeft, missTimeLeft, combatState, triggerHitEffects, impactSplash, playerImpactSplash, strikingSide, currentTaunt, playerTaunt, killsInFloor, lastLoot, sessionRewards, showDefeatedWindow, showVictoryWindow, setShowVictoryWindow, handleAttack, handleDismissDefeat } = combat;
-  const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem } = actions;
+  const { handleHeal, activateAutoScroll, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, forgeCrystle, mixLaboratoryItem, claimDailyGift } = actions;
   const { autoTimeLeft, buffTimeLeft, dragonTimeLeft, penaltyRemaining } = gameLoop;
   const { isMusicOn, setIsMusicOn, isSfxOn, setIsSfxOn, playSFX, skipTrack } = audio;
   const { marketplace, purchaseMarketItem, listMarketItem, cancelMarketListing } = market;
@@ -710,6 +733,64 @@ export const GameLayout = ({ onLogout }) => {
           </div>
         </div>
       </nav>
+
+      {/* ── Daily Supply Gift Banner ── */}
+      {showDailyBanner && !dailyClaimed && (
+        <div className="max-w-4xl mx-auto px-3 pt-3">
+          <div className="relative bg-slate-900 border-[3px] border-cyan-500 rounded-2xl p-4 shadow-[0_0_20px_rgba(6,182,212,0.2)] overflow-hidden">
+            <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+            <div className="relative z-10 flex items-center gap-4">
+              <div className="w-12 h-12 bg-cyan-500/20 border-2 border-cyan-500 rounded-xl flex items-center justify-center shrink-0">
+                <span className="text-2xl">🎁</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-black text-cyan-400 uppercase italic tracking-wider">Daily Supply Drop Ready</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
+                  +100 GX &nbsp;•&nbsp; +10 Potions &nbsp;•&nbsp; +10 Scrolls
+                </p>
+              </div>
+              <button
+                onClick={async () => {
+                  setDailyClaiming(true);
+                  const result = await claimDailyGift();
+                  setDailyClaiming(false);
+                  if (result?.success) setDailyClaimed(true);
+                }}
+                disabled={dailyClaiming}
+                className="bg-cyan-500 text-black px-4 py-2 rounded-xl font-black uppercase italic text-[10px] border-[2px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-y-0.5 active:shadow-none transition-all shrink-0 disabled:opacity-50"
+              >
+                {dailyClaiming ? 'Claiming...' : 'Claim Now'}
+              </button>
+              <button
+                onClick={() => setShowDailyBanner(false)}
+                className="text-slate-600 hover:text-white transition-colors shrink-0"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDailyBanner && dailyClaimed && (
+        <div className="max-w-4xl mx-auto px-3 pt-3">
+          <div className="bg-emerald-950/40 border-2 border-emerald-500/40 rounded-2xl p-3 flex items-center gap-3">
+            <div className="w-8 h-8 bg-emerald-500/20 border border-emerald-500 rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle size={16} className="text-emerald-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-emerald-400 uppercase italic">Daily Supply Collected</p>
+              <p className="text-[8px] font-bold text-slate-500 uppercase">Come back at UTC midnight for more!</p>
+            </div>
+            <button
+              onClick={() => setShowDailyBanner(false)}
+              className="text-slate-600 hover:text-white transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto p-3 space-y-4">
         <div className="grid grid-cols-3 gap-2">

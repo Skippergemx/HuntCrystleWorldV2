@@ -2158,6 +2158,52 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       return { success: true, hp: updates.hp };
     }
 
+    if (action === 'CLAIM_DAILY_GIFT') {
+      const now = Date.now();
+      const todayKey = new Date(now).toISOString().slice(0, 10);
+
+      // Determine last claim date key (handles Firestore Timestamp and millis)
+      let lastClaimKey: string | null = null;
+      if (userData.dailyGiftClaimedAt) {
+        if (userData.dailyGiftClaimedAt._seconds) {
+          lastClaimKey = new Date(userData.dailyGiftClaimedAt._seconds * 1000).toISOString().slice(0, 10);
+        } else if (typeof userData.dailyGiftClaimedAt === 'number') {
+          lastClaimKey = new Date(userData.dailyGiftClaimedAt).toISOString().slice(0, 10);
+        }
+      }
+
+      if (lastClaimKey === todayKey) {
+        throw new HttpsError('already-exists', 'Daily gift already claimed today. Come back at UTC midnight!');
+      }
+
+      // Award gifts atomically within the existing transaction
+      const inv = userData.inventory || {};
+      const scrollsToAdd: any = {};
+      for (let i = 0; i < 10; i++) {
+        const uid = `gift_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        scrollsToAdd[uid] = {
+          id: 'auto_scroll',
+          name: 'Auto-Scroll (1m)',
+          icon: '📜',
+          type: 'Scroll',
+          rarity: 'Common',
+          description: 'Hunts for 1 minute',
+          sellValue: 120,
+          cost: 300
+        };
+      }
+
+      transaction.update(userRef, {
+        tokens: (userData.tokens || 0) + 100,
+        potions: (userData.potions || 0) + 10,
+        inventory: { ...inv, ...scrollsToAdd },
+        dailyGiftClaimedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return { success: true, message: 'Daily supply delivered!', tokens: 100, potions: 10, scrolls: 10 };
+    }
+
     throw new HttpsError('unimplemented', 'Action Not Recognized.');
   });
 };

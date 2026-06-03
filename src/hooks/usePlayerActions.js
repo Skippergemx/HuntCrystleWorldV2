@@ -1638,12 +1638,30 @@ export const usePlayerActions = (
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
 
+  const claimDailyGift = useCallback(async () => {
+    try {
+      const callAction = httpsCallable(functions, 'secureGameAction');
+      const result = await callAction({ action: 'CLAIM_DAILY_GIFT', payload: {} });
+      const data = result.data || {};
+      if (data.success) {
+        addLog(`🎁 DAILY SUPPLY: +100 GX, +10 Potions, +10 Scrolls delivered!`);
+        playSFX(SOUNDS.obtainLoot);
+        return data;
+      }
+      return { success: false, message: data.message || 'Claim failed.' };
+    } catch (e) {
+      console.error('Daily gift claim failed:', e);
+      return { success: false, message: e.message || 'Uplink error.' };
+    }
+  }, [functions, addLog, playSFX, SOUNDS]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
     createSyndicate, joinSyndicate, leaveSyndicate, dissolveSyndicate, sendSyndicateMessage, donateToSyndicateLab,
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
     eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks,
-    setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned
+    setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned,
+    claimDailyGift
   };
 };
