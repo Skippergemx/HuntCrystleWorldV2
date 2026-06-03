@@ -173,7 +173,9 @@ export const GameLayout = ({ onLogout }) => {
     const todayKey = new Date().toISOString().slice(0, 10);
     let playerClaimKey = null;
     if (player?.dailyGiftClaimedAt) {
-      if (player.dailyGiftClaimedAt._seconds) {
+      if (player.dailyGiftClaimedAt.seconds) {
+        playerClaimKey = new Date(player.dailyGiftClaimedAt.seconds * 1000).toISOString().slice(0, 10);
+      } else if (player.dailyGiftClaimedAt._seconds) {
         playerClaimKey = new Date(player.dailyGiftClaimedAt._seconds * 1000).toISOString().slice(0, 10);
       } else if (typeof player.dailyGiftClaimedAt === 'number') {
         playerClaimKey = new Date(player.dailyGiftClaimedAt).toISOString().slice(0, 10);
