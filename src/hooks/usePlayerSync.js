@@ -322,13 +322,45 @@ export const usePlayerSync = (user, db, appId) => {
           const finalEarned = (Number(finalLevel) || 1) * 5;
           fullySanitized.abilityPoints = Math.max(0, isNaN(finalEarned - finalSpent) ? 0 : (finalEarned - finalSpent));
 
-          setPlayer(fullySanitized);
-
           // --- ARTIFACT CURE PROTOCOL ---
           if (Array.isArray(data.inventory)) {
             await updateDoc(docRef, { inventory: fullySanitized.inventory });
             console.warn("System V4: Self-healed corrupted Array inventory format on Backend.");
           }
+
+          // --- COUNTER-ITEM PHANTOM CLEANUP ---
+          // Items whose base ID matches counter pools (hp_potion, auto_scroll) should
+          // never live in inventory — they cause phantom slot bloat. One-shot cleanup.
+          const counterItemBaseIds = ['hp_potion', 'auto_scroll'];
+          const phantomKeys = [];
+          const inv = fullySanitized.inventory || {};
+          Object.entries(inv).forEach(([key, item]) => {
+            if (!item || typeof item !== 'object') return;
+            const itemId = (item.id || key || '').toString();
+            // Only match EXACT base-id prefixes (not auto_scroll_3m, mega_hp_potion, etc.)
+            for (const baseId of counterItemBaseIds) {
+              if (itemId === baseId || itemId.startsWith(baseId + '_')) {
+                // Verify it's the base type, not a variant
+                const afterBase = itemId.slice(baseId.length);
+                if (afterBase === '' || afterBase.startsWith('_TOWN_') || afterBase.startsWith('_RET_') || /^_\d{10,}/.test(afterBase)) {
+                  phantomKeys.push(key);
+                  break;
+                }
+              }
+            }
+          });
+          if (phantomKeys.length > 0) {
+            const cleanInventory = { ...inv };
+            phantomKeys.forEach(k => delete cleanInventory[k]);
+            fullySanitized.inventory = cleanInventory;
+            // Persist cleanup to Firestore
+            const firestoreDeletes = {};
+            phantomKeys.forEach(k => { firestoreDeletes[`inventory.${k}`] = deleteField(); });
+            await updateDoc(docRef, firestoreDeletes).catch(() => {});
+            console.warn(`System V6: Cleaned ${phantomKeys.length} phantom counter-item(s) from inventory.`);
+          }
+
+          setPlayer(fullySanitized);
 
           // Step 4: Register Local Session
           await setDoc(docRef, { sessionId: localSessionId }, { merge: true });

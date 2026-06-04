@@ -167,9 +167,10 @@ export const usePlayerActions = (
     addLog(`Healed for ${spec.label} Max HP (+${healAmt} HP).`);
 
     // 2. Secure Backend Commitment
-    // Flush any pending HP writes (e.g. monster damage queued via debounced syncPlayer)
-    // so the cloud function reads the correct current HP and isn't overwritten later.
-    syncPlayer({ hp: player.hp }, true);
+    // Flush the HEALED HP immediately so pending monster-damage writes can't race
+    // and overwrite the cloud function's healing result.
+    const healedHp = Math.min(totalStats.maxHp, player.hp + healAmt);
+    syncPlayer({ hp: healedHp }, true);
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');

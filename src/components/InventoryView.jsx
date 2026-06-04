@@ -21,7 +21,7 @@ export const InventoryView = React.memo(() => {
   const { setView } = adventure;
   const { sellItem, unequipItem, learnRecipe } = actions;
   
-  const currentSlots = Object.keys(player?.inventory || {}).length;
+  const currentSlots = Object.values(player?.inventory || {}).filter(v => v && typeof v === 'object' && (v.id || v.name)).length;
   const maxSlots = player?.maxInventorySlots || 50;
 
   const [filter, setFilter] = useState('All');

@@ -2117,18 +2117,20 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       let usedItemId: string | null = null;
 
       if (selection === 'hp_potion') {
-        const count = userData.potions || 0;
-        if (count > 0) {
+        // Prefer physical inventory items (quest rewards, daily gifts) over the abstract counter.
+        // This MUST match the frontend's priority to prevent phantom-slot desync.
+        const targetKey = Object.keys(inventory).find(key => {
+          const item = inventory[key];
+          return item && typeof item.id === 'string' && item.id.startsWith('hp_potion');
+        });
+        if (targetKey) {
           hasPotion = true;
-          updates.potions = count - 1;
+          usedItemId = targetKey;
         } else {
-          const targetKey = Object.keys(inventory).find(key => {
-            const item = inventory[key];
-            return item && typeof item.id === 'string' && item.id.startsWith('hp_potion');
-          });
-          if (targetKey) {
+          const count = userData.potions || 0;
+          if (count > 0) {
             hasPotion = true;
-            usedItemId = targetKey;
+            updates.potions = count - 1;
           }
         }
       } else {
@@ -2177,26 +2179,11 @@ export const handleSecureGameAction = async (request: any, db: admin.firestore.F
       }
 
       // Award gifts atomically within the existing transaction
-      const inv = userData.inventory || {};
-      const scrollsToAdd: any = {};
-      for (let i = 0; i < 10; i++) {
-        const uid = `gift_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-        scrollsToAdd[uid] = {
-          id: 'auto_scroll',
-          name: 'Auto-Scroll (1m)',
-          icon: '📜',
-          type: 'Scroll',
-          rarity: 'Common',
-          description: 'Hunts for 1 minute',
-          sellValue: 120,
-          cost: 300
-        };
-      }
 
       transaction.update(userRef, {
         tokens: (userData.tokens || 0) + 100,
         potions: (userData.potions || 0) + 10,
-        inventory: { ...inv, ...scrollsToAdd },
+        autoScrolls: (userData.autoScrolls || 0) + 10,
         dailyGiftClaimedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });

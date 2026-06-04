@@ -236,7 +236,9 @@ export const GameLayout = ({ onLogout }) => {
     }
   };
 
-  const currentSlots = player?.inventory ? Object.keys(player.inventory).length : 0;
+  const currentSlots = player?.inventory
+    ? Object.values(player.inventory).filter(v => v && typeof v === 'object' && (v.id || v.name)).length
+    : 0;
   const maxSlots = player?.maxInventorySlots || 50;
   const isOverburdened = currentSlots >= maxSlots;
 
