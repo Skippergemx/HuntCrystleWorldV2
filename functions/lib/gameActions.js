@@ -1523,6 +1523,10 @@ const handleSecureGameAction = async (request, db) => {
             if (trueSellValue <= 0)
                 throw new https_1.HttpsError('failed-precondition', 'This item cannot be sold.');
             const baseId = extractBaseId(targetItem.id || itemId);
+            // Hunt Sparks and Aether Sparks are exchange-only — block server-side.
+            if (baseId === 'hunt_spark' || baseId === 'aether_spark') {
+                throw new https_1.HttpsError('failed-precondition', 'Exchange artifacts cannot be sold for GX. Visit the Crystle Town Exchange Terminal.');
+            }
             const sellQty = qty;
             let removed = 0;
             // 1. Delete targetItem first to prevent other same-baseId items from being sold instead

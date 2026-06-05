@@ -26,7 +26,7 @@ export const ShopView = React.memo(() => {
 
   // Filter items for the Industrial Market
   const INDUSTRIAL_ITEMS = useMemo(() => {
-    return ITEMS.filter(i => (i.category === 'Loot' || i.type === 'Material' || i.type === 'Component') && i.sellValue > 0)
+    return ITEMS.filter(i => (i.category === 'Loot' || i.type === 'Material' || i.type === 'Component') && i.sellValue > 0 && i.id !== 'hunt_spark' && i.id !== 'aether_spark')
       .sort((a,b) => (a.sellValue || 0) - (b.sellValue || 0));
   }, [ITEMS]);
 
@@ -197,7 +197,7 @@ export const ShopView = React.memo(() => {
                 if (baselineFilter === 'ALL') return true;
                 const cat = item.category?.toUpperCase();
                 const type = item.type?.toUpperCase();
-                return cat === baselineFilter || type === baselineFilter;
+                return cat === baselineFilter || type === baselineFilter || (baselineFilter === 'FRUIT' && cat === 'FOOD');
              }).map((item, index) => (
                 <BaselineItemCard key={item.id} item={item} player={player} onBuy={() => handleBuyClick(item)} />
              ))

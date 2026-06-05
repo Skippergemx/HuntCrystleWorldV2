@@ -279,6 +279,13 @@ export const usePlayerActions = (
     };
 
     const itemBaseId = extractBaseId(item.id || itemId);
+
+    // Hunt Sparks and Aether Sparks are exchange-only — they cannot be sold for GX.
+    if (itemBaseId === 'hunt_spark' || itemBaseId === 'aether_spark') {
+      addLog('⚡ Exchange-only artifacts must be used at the Crystle Town Exchange Terminal.');
+      return false;
+    }
+
     const master = ITEMS.find(i => i.id === itemBaseId) || item;
     
     let value = 0;

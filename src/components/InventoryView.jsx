@@ -417,6 +417,9 @@ export const InventoryView = React.memo(() => {
                                   >Unequip</button>
                                 ) : (
                                   !item.id?.includes('_99999') && (
+                                    (item.id?.startsWith('hunt_spark') || item.id?.startsWith('aether_spark')) ? (
+                                      <span className="text-[8px] font-black uppercase italic text-amber-600 tracking-tight">Visit Crystle Town Exchange</span>
+                                    ) : (
                                     <>
                                        <button onClick={async (e) => {
                                             e.persist();
@@ -435,6 +438,7 @@ export const InventoryView = React.memo(() => {
                                          >Sell All</button>
                                        )}
                                     </>
+                                    )
                                   )
                                 )}
                              </div>

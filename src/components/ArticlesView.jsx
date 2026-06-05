@@ -31,6 +31,116 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-hunt-spark-guide',
+    date: '2026-05-29',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Hunt Spark Field Manual: How to Earn and Exchange',
+    subtitle: 'Everything you need to know about farming Hunt Sparks — drop rates, target priorities, and turning sparks into on-chain $HUNT or $DWGX.',
+    category: 'GUIDE & REWARDS',
+    type: 'article',
+    tag: 'NEW',
+    color: 'amber',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'Hunt Sparks are the great equalizer. Unlike Aether Sparks — which only reveal themselves to Level 100 veterans — Hunt Sparks drop for every Hunter, at every level, in every sector of the grid. They are your gateway from in-game progression to on-chain value. This field manual covers everything: where they come from, how to maximize your yield, and exactly how to turn them into $HUNT or $DWGX.'
+      },
+      {
+        type: 'heading',
+        text: 'What Is a Hunt Spark?'
+      },
+      {
+        type: 'paragraph',
+        text: 'A Hunt Spark is a Rare-tier artifact — a condensed fragment of combat energy extracted from defeated monsters. Each spark occupies exactly one inventory slot and carries a base sell value of 250 GX if you choose to liquidate it at the shop. But its true power lies in accumulation: collect 4 sparks, and you unlock the ability to exchange them for real, on-chain tokens at the Crystle Town Exchange Terminal.'
+      },
+      {
+        type: 'heading',
+        text: 'Where Hunt Sparks Drop'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Sparks drop from dungeon combat — and importantly, they drop for hunters at any level. There is no level gate, no minimum floor requirement. If you can fight, you can earn. The source matters, though. Not all enemies carry the same spark density.'
+      },
+      {
+        type: 'heading',
+        text: 'Drop Rates by Enemy Type'
+      },
+      {
+        type: 'paragraph',
+        text: 'Boss Monsters carry a guaranteed Hunt Spark. Every single boss kill — from the Neon Slums to the Abyssal Trench — will yield one spark. This is the most reliable farming strategy: target boss-heavy sectors and stack your runs.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Elite Champions have a 20% drop chance. One in five Champion kills will produce a spark. Since Champions appear more frequently than bosses and carry their own valuable loot tables, they are the most efficient mid-tier farming target.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Normal monsters carry a 2% drop rate — a long shot, but not zero. In a deep dungeon run with dozens of kills, these low-probability drops add up. Every kill is a lottery ticket, and the grid pays out more often than you might expect.'
+      },
+      {
+        type: 'image',
+        src: '/assets/monsters/Neon Slums/Azure Glider.jpg',
+        caption: 'Boss-tier enemies like the Azure Glider guarantee a Hunt Spark on every defeat.'
+      },
+      {
+        type: 'heading',
+        text: 'Auto-Hunt and Sparks'
+      },
+      {
+        type: 'paragraph',
+        text: 'Yes — Auto-Scrolls earn Hunt Sparks. When you activate an Auto-Scroll and your Hunter fights autonomously, every kill goes through the same combat reward pipeline. Sparks earned during auto-hunt are automatically deposited into your inventory. Activating a scroll before you step away is one of the most passive ways to accumulate sparks over time.'
+      },
+      {
+        type: 'heading',
+        text: 'Satchel Awareness'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Sparks take inventory slots — one slot per spark. If your satchel is full when a spark would drop, it is abandoned on the grid floor and lost permanently. Before heading into a spark-farming run, make sure you have at least a few open slots. Selling junk loot or upgrading your storage capacity at the Storage Core are both smart pre-run moves.'
+      },
+      {
+        type: 'heading',
+        text: 'The Exchange: 4 Sparks = On-Chain Rewards'
+      },
+      {
+        type: 'paragraph',
+        text: 'Once you have collected 4 Hunt Sparks, head to Crystle Town and locate the Exchange Terminal. You will be presented with a choice: burn your 4 sparks to receive either 0.01 $HUNT or 0.1 $DWGX, delivered directly to your linked Base wallet.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The exchange is processed server-side via a secure Cloud Function. Your sparks are verified and deducted atomically — meaning you cannot lose sparks without receiving your tokens, and you cannot claim tokens without burning sparks. If the on-chain transfer fails for any reason, the transaction rolls back and your sparks are preserved.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Crystle Town Exchange Terminal — your bridge from dungeon loot to on-chain value.'
+      },
+      {
+        type: 'heading',
+        text: 'Farming Strategy: Target Priorities'
+      },
+      {
+        type: 'paragraph',
+        text: 'If your goal is maximum sparks per hour, your priority order is clear. First: boss-heavy maps. Every boss kill is a guaranteed spark, so sectors with high boss density — especially at deeper floors where bosses appear more frequently — are your best bet. Second: Elite Champions. With a 20% rate and higher spawn frequency than bosses, Champions are your steady income stream. Third: volume. The 2% rate on normal monsters means the more you kill, the more you earn. Stack Auto-Scrolls during downtime and let the grid work for you.'
+      },
+      {
+        type: 'paragraph',
+        text: 'One more tip: your Sync-Drive Elemental Skill accelerates kills, which accelerates spark drops. Level up your chosen element and use skills aggressively against Champions and Bosses to shorten fight duration and increase your kills-per-minute.'
+      },
+      {
+        type: 'heading',
+        text: 'Quick Summary'
+      },
+      {
+        type: 'paragraph',
+        text: 'Bosses: 100% drop. Elite Champions: 20% drop. Normal Monsters: 2% drop. Auto-Scrolls: yes, they earn sparks. Exchange: 4 sparks = 0.01 $HUNT or 0.1 $DWGX at Crystle Town. Inventory: 1 slot per spark — keep space open. The grid is full of sparks, Hunter. Go earn them.'
+      }
+    ],
+    media: '/assets/monsters/Neon Slums/Azure Glider.jpg'
+  },
+  {
     id: 'dwg-nft-gift-guide',
     date: '2026-05-29',
     author: 'Commander Gemx',

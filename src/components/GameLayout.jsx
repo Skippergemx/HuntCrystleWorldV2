@@ -168,6 +168,7 @@ export const GameLayout = ({ onLogout }) => {
   const [showDailyBanner, setShowDailyBanner] = useState(true);
   const [dailyClaimed, setDailyClaimed] = useState(false);
   const [dailyClaiming, setDailyClaiming] = useState(false);
+  const [dailyCelebrating, setDailyCelebrating] = useState(false);
 
   useEffect(() => {
     const todayKey = new Date().toISOString().slice(0, 10);
@@ -188,6 +189,13 @@ export const GameLayout = ({ onLogout }) => {
       setShowDailyBanner(true);
     }
   }, [player?.dailyGiftClaimedAt]);
+
+  // Auto-dismiss celebration after 2.5s
+  useEffect(() => {
+    if (!dailyCelebrating) return;
+    const timer = setTimeout(() => setDailyCelebrating(false), 2500);
+    return () => clearTimeout(timer);
+  }, [dailyCelebrating]);
 
   useEffect(() => {
     let timeout;
@@ -758,7 +766,10 @@ export const GameLayout = ({ onLogout }) => {
                   setDailyClaiming(true);
                   const result = await claimDailyGift();
                   setDailyClaiming(false);
-                  if (result?.success) setDailyClaimed(true);
+                  if (result?.success) {
+                    setDailyClaimed(true);
+                    setDailyCelebrating(true);
+                  }
                 }}
                 disabled={dailyClaiming}
                 className="bg-cyan-500 text-black px-4 py-2 rounded-xl font-black uppercase italic text-[10px] border-[2px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-cyan-400 active:translate-y-0.5 active:shadow-none transition-all shrink-0 disabled:opacity-50"
@@ -792,6 +803,35 @@ export const GameLayout = ({ onLogout }) => {
             >
               <X size={14} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Celebration Overlay ── */}
+      {dailyCelebrating && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative flex flex-col items-center gap-3 animate-in zoom-in fade-in duration-300">
+            {/* Pulsing gift icon */}
+            <div className="text-7xl md:text-8xl animate-spark-pulse drop-shadow-[0_0_35px_rgba(6,182,212,0.8)]">
+              🎁
+            </div>
+            {/* Title */}
+            <div className="font-black text-3xl md:text-4xl uppercase italic tracking-tighter text-cyan-300 drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+              SUPPLY LOCKED!
+            </div>
+            {/* Reward breakdown */}
+            <div className="flex gap-3 text-sm md:text-base font-black text-white/90 tracking-wide">
+              <span className="bg-cyan-500/20 border border-cyan-500/50 px-3 py-1 rounded-lg">+100 GX</span>
+              <span className="bg-cyan-500/20 border border-cyan-500/50 px-3 py-1 rounded-lg">+10 🧪</span>
+              <span className="bg-cyan-500/20 border border-cyan-500/50 px-3 py-1 rounded-lg">+10 📜</span>
+            </div>
+            {/* Particle accents */}
+            <div className="flex gap-1 mt-2">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className="text-xs animate-bounce" style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }}>✨</span>
+              ))}
+            </div>
           </div>
         </div>
       )}
