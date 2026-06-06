@@ -1478,12 +1478,25 @@ export const usePlayerActions = (
        updates.quizSlots = player.quizSlots.filter(id => id !== quiz.id);
     }
     
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preQuizSnapshot = {
+      xp: player.xp,
+      level: player.level,
+      maxHp: player.maxHp,
+      hp: player.hp,
+      tokens: player.tokens,
+      potions: player.potions,
+      quizSlots: player.quizSlots ? [...player.quizSlots] : undefined,
+      inventory: player.inventory ? { ...player.inventory } : undefined,
+    };
+
     // Apply optimistic updates locally first
     if (addOptimisticUpdate) {
       addOptimisticUpdate(updates);
     }
     
     console.log("🎒 iLEARN: Initiating secure completeQuiz action...");
+    let quizVerified = false;
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
       const result = await callAction({
@@ -1500,16 +1513,25 @@ export const usePlayerActions = (
         }
       });
       const data = result.data || {};
-      if (!data.success) {
+      if (data.success) {
+        quizVerified = true;
+        addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
+        playSFX(SOUNDS.lvlUp);
+      } else {
         console.warn("Backend failed to confirm quiz completion:", data.message);
       }
     } catch (e) {
       console.error("Failed to commit quiz completion securely:", e);
-      addLog("🚨 UPLINK ERROR: Quiz completion could not be verified securely.");
     }
-    
-    addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
-    playSFX(SOUNDS.lvlUp);
+
+    if (!quizVerified) {
+      addLog("🚨 UPLINK ERROR: Quiz completion could not be verified securely.");
+      // Roll back the optimistic XP/level/inventory changes so nothing appears to reset later
+      if (syncPlayer) {
+        syncPlayer(preQuizSnapshot);
+      }
+      return;
+    }
 
     // --- Neural Faucet Protocol: Automated Reward Trigger ---
     if (functions && player.walletAddress) {

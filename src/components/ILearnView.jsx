@@ -143,12 +143,13 @@ export const ILearnView = React.memo(() => {
   const quizSlots = player?.quizSlots || [];
   const completedQuizzes = player?.completedQuizzes || {};
 
-  // Find actual quiz objects for active slots
+  // Find actual quiz objects for active slots, excluding already-completed quizzes
   const activeQuizzes = useMemo(() => {
     return quizSlots
+      .filter(id => !completedQuizzes[id])
       .map(id => QUIZZES.find(q => q.id === id))
       .filter(Boolean);
-  }, [quizSlots]);
+  }, [quizSlots, completedQuizzes]);
 
   // Legacy Sanity Check removed to support infinite repeatable cycles.
 
@@ -163,16 +164,16 @@ export const ILearnView = React.memo(() => {
       return;
     }
 
-    // Refill logic: if under 10 slots, pick any new ones not already in active slots
+    // Refill logic: if under 10 slots, pick fresh quizzes not yet completed
     if (quizSlots.length < 10) {
-      const available = QUIZZES.filter(q => !quizSlots.includes(q.id));
+      const available = QUIZZES.filter(q => !quizSlots.includes(q.id) && !completedQuizzes[q.id]);
       if (available.length > 0) {
         const needed = 10 - quizSlots.length;
         const picks = [...available].sort(() => Math.random() - 0.5).slice(0, needed).map(q => q.id);
         syncPlayer({ quizSlots: [...quizSlots, ...picks] });
       }
     }
-  }, [quizSlots.length, player]);
+  }, [quizSlots.length, player, completedQuizzes]);
 
   const triggerConfetti = useCallback(() => {
     const end = Date.now() + 3000;
