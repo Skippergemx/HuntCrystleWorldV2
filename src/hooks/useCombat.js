@@ -364,7 +364,7 @@ export const useCombat = (
   }, [showDefeatedWindow, player, totalStats, addLog, triggerHitEffects, syncPlayer, STUN_DURATION_CRIT, STUN_DURATION_NORMAL, PENALTY_DURATION, DEFEAT_WINDOW_DURATION, setDepth, setView, triggerFlinch, triggerHurt, battleMode, enemyRef, enemy, recordWarResult, gvgContext, triggerFloatingNumber, monsterTurnCount, triggerMonsterSkill]);
 
   const [isTreasury, setIsTreasury] = useState(false);
-  const MAX_DUNGEON_DEPTH = 40;
+  const MAX_DUNGEON_DEPTH = 10;
 
   const handleTreasuryReached = useCallback(() => {
     setIsTreasury(true);
@@ -659,7 +659,9 @@ export const useCombat = (
 
             // --- AETHER SPARK PROTOCOL (Lv100 Elite Drops) ---
             let finalLootItems = dropToTrack ? [dropToTrack] : [];
-            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
+            // Map-gate: at Lv100+, Aether Sparks only drop in Level 30 dungeons
+            const aetherSparkGate = player?.level < 100 || (selectedMap?.minLevel || 1) >= 30;
+            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10 && aetherSparkGate) {
               const spark = LOOTS.find(l => l.id === 'aether_spark');
               if (spark) {
                 if (slotsCount >= maxSlotsCount) {
@@ -676,7 +678,15 @@ export const useCombat = (
               }
             }
 
-            // --- HUNT SPARK PROTOCOL (Beginner-Level Drops) ---
+            // --- HUNT SPARK PROTOCOL (Progressive Map-Gated Drops) ---
+            const mapMinLvl = selectedMap?.minLevel || 1;
+            const plvl = player?.level || 1;
+            let huntSparkGate = true;
+            if (plvl >= 30 && mapMinLvl < 30) huntSparkGate = false;
+            else if (mapMinLvl === 1 && plvl >= 10) huntSparkGate = false;
+            else if (mapMinLvl === 10 && plvl >= 25) huntSparkGate = false;
+            else if (mapMinLvl === 25 && plvl >= 30) huntSparkGate = false;
+
             const isBoss = view === 'boss' || enemy?.id?.includes('boss');
             const sparkRoll = Math.random();
             let huntSparkDrop = false;
@@ -689,7 +699,7 @@ export const useCombat = (
               huntSparkDrop = true; // 2% from Normals
             }
 
-            if (huntSparkDrop) {
+            if (huntSparkDrop && huntSparkGate) {
               const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
               if (hSpark) {
                 if (slotsCount >= maxSlotsCount) {
@@ -718,7 +728,9 @@ export const useCombat = (
             let slotsCount = Object.keys(player?.inventory || {}).length;
             const maxSlotsCount = player?.maxInventorySlots || 50;
 
-            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10) {
+            // Map-gate: at Lv100+, Aether Sparks only drop in Level 30 dungeons
+            const aetherSparkGate = player?.level < 100 || (selectedMap?.minLevel || 1) >= 30;
+            if (player?.level >= 100 && enemy?.isElite && Math.random() < 0.10 && aetherSparkGate) {
               const spark = LOOTS.find(l => l.id === 'aether_spark');
               if (spark) {
                 if (slotsCount >= maxSlotsCount) {
@@ -736,6 +748,14 @@ export const useCombat = (
             }
 
             // --- HUNT SPARK FALLBACK ---
+            const mapMinLvl = selectedMap?.minLevel || 1;
+            const plvl = player?.level || 1;
+            let huntSparkGate = true;
+            if (plvl >= 30 && mapMinLvl < 30) huntSparkGate = false;
+            else if (mapMinLvl === 1 && plvl >= 10) huntSparkGate = false;
+            else if (mapMinLvl === 10 && plvl >= 25) huntSparkGate = false;
+            else if (mapMinLvl === 25 && plvl >= 30) huntSparkGate = false;
+
             const isBoss = view === 'boss' || enemy?.id?.includes('boss');
             const sparkRoll = Math.random();
             let huntSparkDrop = false;
@@ -748,7 +768,7 @@ export const useCombat = (
               huntSparkDrop = true;
             }
 
-            if (huntSparkDrop) {
+            if (huntSparkDrop && huntSparkGate) {
               const hSpark = LOOTS.find(l => l.id === 'hunt_spark');
               if (hSpark) {
                 if (slotsCount >= maxSlotsCount) {
