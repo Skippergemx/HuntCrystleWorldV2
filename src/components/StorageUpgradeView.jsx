@@ -124,6 +124,14 @@ export const StorageUpgradeView = () => {
       
       const data = result.data;
       if (data.success) {
+        // Immediately reflect GX deduction and new slot count locally
+        const cost = maxSlots >= 100 ? 30000 : maxSlots >= 70 ? 15000 : 5000;
+        const syncUpdates = { maxInventorySlots: data.newMax };
+        if (method === 'GX') {
+          syncUpdates.tokens = (player?.tokens || 0) - cost;
+        }
+        syncPlayer(syncUpdates);
+
         setSuccessMessage(`EXPANSION STABLE: Storage successfully upgraded to ${data.newMax} slots!`);
         addLog(`🎒 SATCHEL SUCCESS: Upgraded capacity to ${data.newMax} slots.`);
         if (playSFX) playSFX(SOUNDS.levelup);

@@ -1637,7 +1637,13 @@ export const usePlayerActions = (
     }
     
     // The cloud function will atomically verify & deduct sparks in its transaction.
-    // Do NOT pre-delete here — that races with the cloud function's spark check.
+    // Snapshot the 4 consumed keys now so we can update local UI on success.
+    const consumedSparks = sparks.slice(0, 4);
+    const sparkDeletes = {};
+    consumedSparks.forEach(([uniqueId]) => {
+      sparkDeletes[`inventory.${uniqueId}`] = deleteField();
+    });
+    
     addLog(`⚡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
     
     try {
@@ -1650,6 +1656,9 @@ export const usePlayerActions = (
       const data = result.data;
       
       if (data.success) {
+        // Immediately remove consumed sparks from local state
+        syncPlayer(sparkDeletes);
+
         addLog(`🎁 HUNT REWARD: ${data.message}`);
         playSFX(SOUNDS.obtainLoot);
         if (setFaucetResult) {

@@ -806,7 +806,8 @@ export const useCombat = (
       level: nextLvl,
       maxHp: nextMaxHp,
       hp: updates.hp,
-      abilityPoints: updates.abilityPoints || prev?.abilityPoints || 0
+      abilityPoints: updates.abilityPoints || prev?.abilityPoints || 0,
+      inventory: { ...prev.inventory, ...Object.fromEntries(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => [(k.split('.')[1]), v])) }
     }));
 
     secureCommit();
