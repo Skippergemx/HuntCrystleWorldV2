@@ -1271,7 +1271,7 @@ const getCatalogEntry = (itemId) => {
     return ITEM_CATALOG[baseId] ?? ITEM_CATALOG[itemId] ?? null;
 };
 // Rate limit helper: max 1 kill reward per 3 seconds
-const MIN_KILL_INTERVAL_MS = 3000;
+const MIN_KILL_INTERVAL_MS = 500;
 const handleSecureGameAction = async (request, db) => {
     if (!request.auth || !request.auth.uid) {
         throw new https_1.HttpsError('unauthenticated', 'Security Clearance Denied.');

@@ -1272,7 +1272,7 @@ const getCatalogEntry = (itemId: string) => {
 };
 
 // Rate limit helper: max 1 kill reward per 3 seconds
-const MIN_KILL_INTERVAL_MS = 3000;
+const MIN_KILL_INTERVAL_MS = 500;
 
 export const handleSecureGameAction = async (request: any, db: admin.firestore.Firestore) => {
   if (!request.auth || !request.auth.uid) {
