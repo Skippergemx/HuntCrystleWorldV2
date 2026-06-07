@@ -36,6 +36,7 @@ import { AdminPanelView } from './AdminPanelView';
 import { VioAuditView } from './VioAuditView';
 import { StorageUpgradeView } from './StorageUpgradeView';
 import { DragonsGroundView } from './DragonsGroundView';
+import { HuntTownView } from './HuntTownView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
@@ -952,6 +953,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'dragons_ground' && (
             <DragonsGroundView />
+          )}
+
+          {view === 'hunt_town' && (
+            <HuntTownView />
           )}
 
           {view === 'laboratory' && (
