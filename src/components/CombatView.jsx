@@ -32,6 +32,10 @@ export const CombatView = React.memo(() => {
   const isMateBuffActive = (buffTimeLeft || 0) > 0;
   const activeMate = isMateBuffActive ? TAVERN_MATES.find(m => m.id === player.hiredMate) : null;
 
+  const currentInvSlots = Object.keys(player?.inventory || {}).length;
+  const maxInvSlots = player?.maxInventorySlots || 50;
+  const isSatchelFull = currentInvSlots >= maxInvSlots;
+
   const activePet = useMemo(() => {
     if (!player.petId || !PETS_METADATA) return null;
     return PETS_METADATA.find(p => p.id === player.petId) || null;
@@ -635,76 +639,49 @@ export const CombatView = React.memo(() => {
                     </div>
                   )}
 
-                  {/* QUICK-STRIKE TACTICAL OVERLAY */}
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!combat.combatBusRef.current && !combat.showVictoryWindow && !combat.showDefeatedWindow) {
-                        combat.handleAttack();
-                      }
-                    }}
-                    className={`absolute top-1 left-1 z-40 bg-red-600 border-2 border-white rounded md:rounded-lg p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white hover:border-red-600 group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${(combat.combatBusRef.current) ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}
-                  >
-                    <span className="text-xs md:text-xl group-hover:animate-bounce">⚔️</span>
-                    <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-red-600 uppercase italic tracking-tighter leading-none mt-0.5">STRIKE</span>
-                  </button>
+                  {/* TAME TRIGGER OVERLAY */}
+                  {combat.battleMode !== 'GVG' && ['taming_pyro', 'taming_hydro', 'taming_gale', 'taming_earthen', 'taming_cosmic'].some(id => inventoryCounts[id] > 0) && (
+                    (() => {
+                      const targetElement = getMonsterElement(enemy);
+                      const matchingPrismBaseId = `taming_${targetElement.toLowerCase()}`;
+                      const hasMatchingPrism = inventoryCounts[matchingPrismBaseId] > 0;
+                      const elementIcons = { 'Pyro': '🔥', 'Hydro': '💧', 'Gale': '🌪️', 'Earthen': '⛰️', 'Cosmic': '⚛️' };
+                      const chance = Math.floor((0.9 - ((enemy.hp / enemy.maxHp) * 0.6)) * 100);
 
-                  {/* SKIP & TAME TRIGGER OVERLAY */}
-                  {combat.battleMode !== 'GVG' && (
-                    <div className="absolute top-1 right-1 z-40 flex flex-col gap-1">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSkip();
-                        }}
-                        className="bg-blue-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
-                      >
-                        <span className="text-xs md:text-xl group-hover:animate-pulse">⏭️</span>
-                        <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-blue-600 uppercase italic tracking-tighter leading-none mt-0.5">SKIP</span>
-                      </button>
-
-                      {['taming_pyro', 'taming_hydro', 'taming_gale', 'taming_earthen', 'taming_cosmic'].some(id => inventoryCounts[id] > 0) && (
-                        (() => {
-                          const targetElement = getMonsterElement(enemy);
-                          const matchingPrismBaseId = `taming_${targetElement.toLowerCase()}`;
-                          const hasMatchingPrism = inventoryCounts[matchingPrismBaseId] > 0;
-                          const elementIcons = { 'Pyro': '🔥', 'Hydro': '💧', 'Gale': '🌪️', 'Earthen': '⛰️', 'Cosmic': '⚛️' };
-                          const chance = Math.floor((0.9 - ((enemy.hp / enemy.maxHp) * 0.6)) * 100);
-
-                          return (
-                            <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (tameAnimation || !hasMatchingPrism) return;
-                                
-                                setTameAnimation('ATTEMPTING');
-                                const initialPetCount = (player.unlockedPets || []).length;
-                                await actions.handlePurify(enemy, matchingPrismBaseId);
-                                
+                      return (
+                        <div className="absolute top-1 right-1 z-40">
+                          <button 
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (tameAnimation || !hasMatchingPrism) return;
+                              
+                              setTameAnimation('ATTEMPTING');
+                              const initialPetCount = (player.unlockedPets || []).length;
+                              await actions.handlePurify(enemy, matchingPrismBaseId);
+                              
+                              setTimeout(() => {
+                                const currentPetCount = (player.unlockedPets || []).length;
+                                const isSuccess = currentPetCount > initialPetCount;
+                                setTameAnimation(isSuccess ? 'SUCCESS' : 'FAIL');
                                 setTimeout(() => {
-                                  const currentPetCount = (player.unlockedPets || []).length;
-                                  const isSuccess = currentPetCount > initialPetCount;
-                                  setTameAnimation(isSuccess ? 'SUCCESS' : 'FAIL');
-                                  setTimeout(() => {
-                                    setTameAnimation(null);
-                                    adventure.setEnemy(null);
-                                    handleSkip(); 
-                                  }, 2500);
-                                }, 1500);
-                              }}
-                              className={`bg-emerald-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${!hasMatchingPrism ? 'opacity-30 grayscale cursor-not-allowed' : 'animate-pulse'}`}
-                            >
-                              <span className="text-xs md:text-xl group-hover:rotate-12 transition-transform">
-                                {elementIcons[targetElement] || '💠'}
-                              </span>
-                              <span className="text-[5px] md:text-[8px] font-black text-white group-hover:text-emerald-600 uppercase italic tracking-tighter leading-none mt-0.5 whitespace-nowrap">
-                                {!hasMatchingPrism ? `NEED ${targetElement}` : `${chance}% TAME`}
-                              </span>
-                            </button>
-                          );
-                        })()
-                      )}
-                    </div>
+                                  setTameAnimation(null);
+                                  adventure.setEnemy(null);
+                                  handleSkip(); 
+                                }, 2500);
+                              }, 1500);
+                            }}
+                            className={`bg-emerald-600 border-2 border-white rounded p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95 ${!hasMatchingPrism ? 'opacity-30 grayscale cursor-not-allowed' : 'animate-pulse'}`}
+                          >
+                            <span className="text-xs md:text-xl group-hover:rotate-12 transition-transform">
+                              {elementIcons[targetElement] || '💠'}
+                            </span>
+                            <span className="text-[5px] md:text-[8px] font-black text-white group-hover:text-emerald-600 uppercase italic tracking-tighter leading-none mt-0.5 whitespace-nowrap">
+                              {!hasMatchingPrism ? `NEED ${targetElement}` : `${chance}% TAME`}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })()
                   )}
 
                   <ImpactSplash splash={impactSplash} />
@@ -747,36 +724,6 @@ export const CombatView = React.memo(() => {
                         </p>
                       </div>
                     )}
-
-                    {/* TACTICAL WITHDRAWAL & REWARDS OVERLAY */}
-                    <div className="absolute top-1 right-1 z-40 flex flex-row gap-1">
-                      {/* RETREAT TRIGGER */}
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowRetreatConfirm(true);
-                        }}
-                        className="bg-slate-800 border-2 border-white rounded md:rounded-lg p-0.5 md:p-1 flex flex-col items-center transition-all hover:bg-white group shadow-[1px_1px_0_rgba(0,0,0,1)] active:scale-95"
-                      >
-                        <span className="text-xs md:text-lg group-hover:animate-out group-hover:slide-out-to-right-4 transition-all">🏃</span>
-                        <span className="text-[4px] md:text-[6px] font-black text-white group-hover:text-slate-800 uppercase italic tracking-tighter leading-none mt-0.5">RETREAT</span>
-                      </button>
-
-                      {/* REWARDS TRIGGER */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsLootModalOpen(true);
-                        }}
-                        className="group relative flex flex-col items-center justify-center bg-slate-900 border-2 border-amber-500 rounded md:rounded-lg p-0.5 md:p-1 shadow-[1px_1px_0_rgba(0,0,0,1)] hover:bg-amber-500 transition-all active:scale-95"
-                      >
-                        <Gift size={10} className="text-amber-500 group-hover:text-black transition-colors md:w-5 md:h-5" />
-                        <div className="absolute -top-1 -right-1 bg-black border border-amber-500 px-1 py-0.5 text-[4px] md:text-[6px] font-black text-amber-500 rounded uppercase animate-pulse">
-                          {combat.sessionRewards?.loots?.length || 0}
-                        </div>
-                        <span className="text-[4px] md:text-[6px] font-black text-amber-500 group-hover:text-black uppercase italic tracking-tighter leading-none mt-0.5">LOOT</span>
-                      </button>
-                    </div>
 
                     <ImpactSplash splash={playerImpactSplash} />
                   </div>
@@ -852,6 +799,32 @@ export const CombatView = React.memo(() => {
                   </div>
                 </div>
               </div>
+
+              {/* COMBAT ACTIONS — positioned below enemy stats */}
+              <div className="w-full max-w-[280px] md:max-w-[320px] mt-3 flex gap-2 md:gap-3">
+                {/* STRIKE */}
+                <button 
+                  onClick={() => {
+                    if (!combat.combatBusRef.current && !combat.showVictoryWindow && !combat.showDefeatedWindow) {
+                      combat.handleAttack();
+                    }
+                  }}
+                  disabled={combat.combatBusRef.current}
+                  className="flex-1 py-3 md:py-4 bg-red-600 border-[3px] md:border-[4px] border-white rounded-lg md:rounded-xl shadow-[4px_4px_0px_0px_var(--neon-pink)] md:shadow-[6px_6px_0px_0px_var(--neon-pink)] flex items-center justify-center gap-2 md:gap-3 transition-all hover:bg-red-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_var(--neon-pink)] md:active:shadow-[4px_4px_0px_0px_var(--neon-pink)] disabled:opacity-30 disabled:grayscale disabled:pointer-events-none group"
+                >
+                  <span className="text-xl md:text-3xl group-hover:animate-bounce transition-transform">⚔️</span>
+                  <span className="text-sm md:text-2xl font-[1000] text-white uppercase italic tracking-tighter bungee drop-shadow-lg">STRIKE</span>
+                </button>
+
+                {/* SKIP */}
+                <button 
+                  onClick={() => handleSkip()}
+                  className="flex-1 py-3 md:py-4 bg-blue-600 border-[3px] md:border-[4px] border-white rounded-lg md:rounded-xl shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] md:shadow-[6px_6px_0px_0px_rgba(37,99,235,1)] flex items-center justify-center gap-2 md:gap-3 transition-all hover:bg-blue-500 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(37,99,235,1)] md:active:shadow-[4px_4px_0px_0px_rgba(37,99,235,1)] group"
+                >
+                  <span className="text-xl md:text-3xl group-hover:animate-pulse transition-transform">⏭️</span>
+                  <span className="text-sm md:text-2xl font-[1000] text-white uppercase italic tracking-tighter bungee">SKIP</span>
+                </button>
+              </div>
           </div>
 
           {/* PLAYER STATUS */}
@@ -914,6 +887,32 @@ export const CombatView = React.memo(() => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* TACTICAL ACTIONS — positioned below player stats for consistent flow */}
+              <div className="w-full max-w-[280px] md:max-w-[320px] mt-3 flex gap-2 md:gap-3">
+                {/* RETREAT */}
+                <button 
+                  onClick={() => setShowRetreatConfirm(true)}
+                  className="flex-1 py-2 md:py-4 bg-slate-800 border-[3px] md:border-[4px] border-white rounded-lg md:rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 md:gap-2.5 transition-all hover:bg-slate-700 active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:active:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group"
+                >
+                  <span className="text-base md:text-2xl group-hover:-translate-x-1 transition-transform">🏃</span>
+                  <span className="text-[11px] md:text-lg font-[1000] text-white uppercase italic tracking-tighter bungee">RETREAT</span>
+                </button>
+
+                {/* LOOT — warns when satchel is full */}
+                <button
+                  onClick={() => setIsLootModalOpen(true)}
+                  className={`relative flex-1 py-2 md:py-4 border-[3px] md:border-[4px] border-white rounded-lg md:rounded-xl flex items-center justify-center gap-1.5 md:gap-2.5 transition-all active:translate-x-[2px] active:translate-y-[2px] group ${isSatchelFull ? 'bg-red-700 hover:bg-red-600 animate-pulse shadow-[4px_4px_0px_0px_rgba(239,68,68,1)] md:shadow-[6px_6px_0px_0px_rgba(239,68,68,1)] active:shadow-[2px_2px_0px_0px_rgba(239,68,68,1)] md:active:shadow-[4px_4px_0px_0px_rgba(239,68,68,1)]' : 'bg-slate-900 hover:bg-amber-500 shadow-[4px_4px_0px_0px_rgba(245,158,11,1)] md:shadow-[6px_6px_0px_0px_rgba(245,158,11,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] md:active:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}`}
+                >
+                  <Gift size={16} className={`transition-colors md:w-6 md:h-6 ${isSatchelFull ? 'text-red-200 group-hover:text-white' : 'text-amber-500 group-hover:text-black'}`} />
+                  <div className={`absolute -top-2 -right-2 px-1.5 py-0.5 border rounded-full font-[1000] text-[8px] md:text-xs uppercase ${isSatchelFull ? 'bg-red-950 border-red-400 text-red-300 animate-pulse' : 'bg-black border-amber-500 text-amber-500'}`}>
+                    {combat.sessionRewards?.loots?.length || 0}
+                  </div>
+                  <span className={`text-[11px] md:text-lg font-[1000] uppercase italic tracking-tighter bungee ${isSatchelFull ? 'text-red-100' : 'text-amber-500 group-hover:text-black'}`}>
+                    {isSatchelFull ? 'SATCHEL FULL' : 'LOOT'}
+                  </span>
+                </button>
               </div>
 
               {/* DEDICATED REALTIME COMBAT DROPS UI */}
