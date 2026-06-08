@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import { Building, Sparkles, ArrowLeft, TrendingUp, Info, X, Zap, Clock, HelpCircle, Shield, Lock, Gem, Users, ChevronUp, Check } from 'lucide-react';
+import { Building, Sparkles, ArrowLeft, TrendingUp, Info, X, Zap, HelpCircle, Shield, Lock, Gem, Users, ChevronUp, Check } from 'lucide-react';
 import { Header, CitizenMedia } from './GameUI';
 import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
@@ -181,8 +181,9 @@ export const HuntTownView = React.memo(() => {
   const { player, syncPlayer, adventure, wallet, addLog } = useGame();
   const { setView } = adventure;
 
-  // ── NFT balance check (batched: one RPC client, sequential calls) ──
-  const hasNft = useHuntTownAccess(wallet.address);
+  // ── NFT balance check — use live wallet, fall back to stored profile address (mobile reconnect) ──
+  const checkAddress = wallet.address || player.walletAddress;
+  const hasNft = useHuntTownAccess(checkAddress);
 
   // ── Hunt Building state from player record ──
   const huntBuilding = player.huntBuilding || { level: 1, sparks: 0 };
@@ -191,21 +192,6 @@ export const HuntTownView = React.memo(() => {
 
   // ── Launch event state ──
   const eventActive = isLaunchEventActive();
-  const [timeRemaining, setTimeRemaining] = useState('');
-  useEffect(() => {
-    const tick = () => {
-      if (!eventActive) { setTimeRemaining(''); return; }
-      const diff = LAUNCH_EVENT_END.getTime() - Date.now();
-      if (diff <= 0) { setTimeRemaining(''); return; }
-      const d = Math.floor(diff / 86400000);
-      const h = Math.floor((diff % 86400000) / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      setTimeRemaining(`${d}d ${h}h ${m}m`);
-    };
-    tick();
-    const timer = setInterval(tick, 60000);
-    return () => clearInterval(timer);
-  }, [eventActive]);
 
   const [message, setMessage] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -359,9 +345,14 @@ export const HuntTownView = React.memo(() => {
               <p className="text-[9px] font-mono text-slate-600 break-all">0x475f...57adf2a</p>
               <p className="text-[9px] font-mono text-slate-600 break-all">0x1A71...c0a23</p>
             </div>
-            {!wallet.address && (
+            {!wallet.address && !player.walletAddress && (
               <p className="text-amber-400 text-[10px] font-black uppercase italic">
                 ⚠️ No wallet connected. Connect your wallet first.
+              </p>
+            )}
+            {!wallet.address && player.walletAddress && (
+              <p className="text-amber-400 text-[10px] font-black uppercase italic">
+                🔗 Your linked wallet doesn't hold a Hunt Building NFT.
               </p>
             )}
           </div>
@@ -410,29 +401,6 @@ export const HuntTownView = React.memo(() => {
             setShowTutorial(true);
           }}
         />
-
-        {/* Launch Event Banner */}
-        {eventActive && (
-          <div className="bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 border-[3px] border-white rounded-xl px-4 py-2.5 shadow-[4px_4px_0_rgba(236,72,153,0.6)] animate-pulse flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🎉</span>
-              <div>
-                <p className="text-[10px] md:text-xs font-[1000] text-white uppercase italic tracking-tighter drop-shadow-md">
-                  5× Launch Event Active!
-                </p>
-                <p className="text-[7px] md:text-[8px] font-black text-pink-200 uppercase tracking-wider">
-                  Hunt Spark & GX drop rates boosted 5×
-                </p>
-              </div>
-            </div>
-            {timeRemaining && (
-              <div className="bg-black/40 border-2 border-white/30 rounded-lg px-3 py-1 flex items-center gap-1.5">
-                <Clock size={12} className="text-white" />
-                <span className="text-[10px] md:text-xs font-black text-white uppercase italic tracking-tighter">{timeRemaining}</span>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Stats bar */}
         <div className="flex items-center gap-3 flex-wrap">
