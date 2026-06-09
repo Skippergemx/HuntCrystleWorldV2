@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { deleteField } from 'firebase/firestore';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import { Building, Sparkles, X, Zap, Lock, Users, Check, Package, CalendarDays } from 'lucide-react';
+import { Building, Sparkles, X, Zap, Lock, Users, Check, Package, CalendarDays, Twitter } from 'lucide-react';
 import { Header, CitizenMedia } from './GameUI';
 import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
@@ -348,6 +348,7 @@ export const HuntTownView = React.memo(() => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [levelUpModal, setLevelUpModal] = useState(null); // { newLevel, citizens }
 
   // Auto-tutorial trigger
   useEffect(() => {
@@ -424,7 +425,8 @@ export const HuntTownView = React.memo(() => {
       sparkDeletes['huntBuilding.level'] = newLevel;
       sparkDeletes['huntBuilding.sparksFed'] = 0;
       syncPlayer(sparkDeletes);
-      setMessage({ type: 'success', text: `🏗️ Hunt Building upgraded to Level ${newLevel}!` });
+      const citizens = newLevel * MAX_CITIZENS_PER_LEVEL;
+      setLevelUpModal({ newLevel, citizens });
       addLog(`🏗️ HUNT TOWN: Building reached Level ${newLevel}!`);
     } else {
       syncPlayer(sparkDeletes);
@@ -726,6 +728,16 @@ export const HuntTownView = React.memo(() => {
         </div>
       </div>
 
+      {levelUpModal && createPortal(
+        <LevelUpModal
+          newLevel={levelUpModal.newLevel}
+          citizens={levelUpModal.citizens}
+          buildingLevel={buildingLevel}
+          onClose={() => setLevelUpModal(null)}
+        />,
+        document.body
+      )}
+
       {showTutorial && createPortal(
         <TutorialModal
           step={tutorialStep}
@@ -740,6 +752,131 @@ export const HuntTownView = React.memo(() => {
     </div>
   );
 });
+
+/* ──────────────── Level-Up Celebration Modal ──────────────── */
+const FarcasterIcon = ({ size = 16, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M5.83 2h12.34L22 7.45v2.33l-6.17 6.17h-2.33L7.32 9.77V7.45L5.83 2Z"/>
+    <path d="M2 7.45h3.33v9.23H2V7.45Z"/>
+  </svg>
+);
+
+const LevelUpModal = ({ newLevel, citizens, onClose, buildingLevel }) => {
+  const shareText = encodeURIComponent(
+    `🏗️ Just upgraded my Hunt Building to Level ${newLevel} in Dungeons With Gems! My settlement now attracts ${citizens} citizens. \n\nThe 5× Launch Event is live — come build your town! 🔥\n\nmetaverse.dungeonswithgems.quest`
+  );
+  const farcasterUrl = `https://warpcast.com/~/compose?text=${shareText}`;
+  const xUrl = `https://twitter.com/intent/tweet?text=${shareText}&hashtags=DungeonsWithGems,Base,Web3Gaming`;
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-xl flex items-center justify-center p-2 animate-in fade-in zoom-in duration-300" onClick={onClose}>
+      <div className="relative w-full max-w-sm flex flex-col justify-center" onClick={e => e.stopPropagation()}>
+        {/* Background shadow block */}
+        <div className="absolute inset-x-0 top-0 bottom-0 bg-purple-800 rounded-3xl transform translate-x-1.5 translate-y-1.5 md:translate-x-2 md:translate-y-2 mt-1 mb-1 pointer-events-none"></div>
+
+        <div className="relative bg-slate-900 border-[3px] md:border-[4px] border-black rounded-3xl z-10 flex flex-col items-center overflow-hidden">
+          <div className="absolute inset-0 opacity-10 pointer-events-none rounded-3xl" style={{ backgroundImage: 'radial-gradient(circle, #a855f7 1px, transparent 1px)', backgroundSize: '8px 8px' }}></div>
+
+          {/* Celebration Header */}
+          <div className="w-full bg-gradient-to-r from-purple-600 via-amber-500 to-purple-600 py-3 md:py-4 border-b-[3px] md:border-b-[4px] border-black transform -rotate-1 relative z-10 shadow-lg flex-shrink-0">
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles size={20} className="text-yellow-200 animate-pulse" />
+              <h2 className="text-xl md:text-2xl font-black text-white text-center uppercase tracking-tighter italic drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
+                Building Upgraded!
+              </h2>
+              <Sparkles size={20} className="text-yellow-200 animate-pulse" />
+            </div>
+          </div>
+
+          {/* Building Preview */}
+          <div className="py-4 md:py-5 relative flex flex-col items-center gap-3 w-full z-10">
+            <div className="relative">
+              <div className="absolute inset-0 bg-purple-400 blur-2xl opacity-30 animate-pulse rounded-full"></div>
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl border-[4px] border-black overflow-hidden relative shadow-[6px_6px_0_rgba(0,0,0,1)] bg-slate-800">
+                <img
+                  src={`/assets/huntbuildings/Level ${newLevel} Hunt Building.png`}
+                  alt={`Hunt Building Level ${newLevel}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }}
+                />
+              </div>
+              {/* Level badge */}
+              <div className="absolute -bottom-2 -right-2 bg-amber-400 text-black text-lg md:text-xl font-black px-3 py-1 rounded-xl border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] rotate-6">
+                LVL {newLevel}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-3">
+              <div className="bg-black/60 border border-purple-500/30 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                <Users size={14} className="text-purple-400" />
+                <span className="text-xs font-black text-white uppercase italic">{citizens} Citizens</span>
+              </div>
+              <div className="bg-black/60 border border-amber-500/30 rounded-lg px-3 py-1.5 flex items-center gap-2">
+                <Zap size={14} className="text-amber-400" />
+                <span className="text-xs font-black text-white uppercase italic">More Drops</span>
+              </div>
+            </div>
+
+            {/* Congratulatory text */}
+            <p className="text-[10px] md:text-xs font-bold text-purple-300 uppercase italic text-center leading-relaxed px-4">
+              "The settlement grows stronger! More citizens roam the town, bringing with them greater wealth and opportunity."
+            </p>
+          </div>
+
+          {/* Share Section */}
+          <div className="px-4 pb-4 w-full relative z-10 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2 w-full">
+              <div className="flex-1 h-px bg-purple-500/30"></div>
+              <span className="text-[8px] font-black text-purple-400 uppercase tracking-[0.3em] italic">Share Your Achievement</span>
+              <div className="flex-1 h-px bg-purple-500/30"></div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {/* Farcaster Share */}
+              <a
+                href={farcasterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-[#8a63d2] hover:bg-[#9b74e3] text-white px-4 py-2.5 rounded-xl font-black uppercase italic text-[10px] md:text-xs border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              >
+                <FarcasterIcon size={16} className="text-white" />
+                Warpcast
+              </a>
+
+              {/* X / Twitter Share */}
+              <a
+                href={xUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-black hover:bg-slate-800 text-white px-4 py-2.5 rounded-xl font-black uppercase italic text-[10px] md:text-xs border-[3px] border-slate-600 shadow-[3px_3px_0_rgba(255,255,255,0.15)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all"
+              >
+                <Twitter size={16} />
+                X
+              </a>
+            </div>
+          </div>
+
+          {/* Continue Button */}
+          <div className="px-4 pb-4 w-full relative z-10">
+            <button
+              onClick={onClose}
+              className="w-full bg-amber-500 hover:bg-amber-400 text-black py-3 rounded-xl font-black uppercase tracking-widest italic text-sm border-[3px] border-black shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-x-0.5 active:translate-y-0.5 active:shadow-none transition-all flex items-center justify-center gap-2"
+            >
+              <Sparkles size={16} />
+              Continue Building
+            </button>
+          </div>
+        </div>
+
+        {/* Close button */}
+        <button onClick={onClose} className="absolute -top-2 -right-2 w-8 h-8 bg-red-600 border-2 border-black rounded-full flex items-center justify-center z-20 shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-red-500 transition-colors">
+          <X size={14} className="text-white" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /* ──────────────── Shared Tutorial Modal ──────────────── */
 const TutorialModal = ({ step, steps, onNext, onClose, dontShowAgain, setDontShowAgain }) => {
