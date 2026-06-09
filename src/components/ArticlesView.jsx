@@ -31,6 +31,112 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-hunt-town-launch',
+    date: '2026-06-09',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Hunt Town: The Living Settlement Is Now Live',
+    subtitle: 'Introducing the passive citizen drop economy — a brand-new sector where your NFT holdings attract roaming citizens that generate Hunt Sparks and GX around the clock.',
+    category: 'MAJOR FEATURE RELEASE',
+    type: 'article',
+    tag: 'NEW',
+    color: 'amber',
+    readingTime: '5 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The grid just got bigger — and busier. Today we are launching Hunt Town, a brand-new passive settlement sector that rewards NFT holders with a living, breathing economy of roaming citizens, collectible Hunt Sparks, and a steady stream of GX income. If you own a Hunt Building or DWGXFB NFT, you now have a permanent second home on the grid.'
+      },
+      {
+        type: 'heading',
+        text: 'What Exactly Is Hunt Town?'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Town is a persistent, always-on settlement populated by Crystle Citizens who wander the town square in real time. These citizens appear, move toward destinations, and — this is the important part — occasionally drop valuable resources as they go about their day. You do not need to fight anything. You do not need to click anything to start the flow. Simply keeping the Hunt Town screen open turns your NFT into a passive drop engine.'
+      },
+      {
+        type: 'image',
+        src: '/assets/huntbuildings/Level 1 Hunt Building.png',
+        caption: 'The Level 1 Hunt Building — your anchor in the settlement. Upgrade it to attract more citizens.'
+      },
+      {
+        type: 'heading',
+        text: 'How the Drops Work'
+      },
+      {
+        type: 'paragraph',
+        text: 'Every second, the settlement ticks. Citizens spawn from the edges of the town, walk toward random destinations, and when they arrive, the system rolls two independent drop checks. The first roll determines whether they leave behind a Hunt Spark — a Rare-tier artifact that fuels building upgrades and can be exchanged for on-chain tokens at Crystle Town. The second roll determines whether they drop a GX token — raw credits added directly to your player balance when collected.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Both drops appear as clickable ground items. Sparks glow with purple energy. GX tokens shimmer with amber light. Click them to collect — sparks go into your inventory, and GX adds +10 credits to your wallet. The ground can hold up to 20 items at any time, so check in regularly to clear the board.'
+      },
+      {
+        type: 'heading',
+        text: 'Drop Rates & The 5× Launch Event'
+      },
+      {
+        type: 'paragraph',
+        text: 'Under normal conditions, each citizen arrival carries a 2% chance to drop a Hunt Spark and an 8% chance to drop a GX token. But right now — and running through June 30, 2026 — the Hunt Town Launch Event is active, applying a 5× multiplier to both rates. That means citizens are currently dropping sparks at 10% and GX at 40% per arrival. This is the best time to park your Hunter in Hunt Town and let the settlement work for you.'
+      },
+      {
+        type: 'heading',
+        text: 'The Hunt Building — Your Settlement Anchor'
+      },
+      {
+        type: 'paragraph',
+        text: 'At the heart of Hunt Town sits your Hunt Building. It starts at Level 1 with the capacity to attract 5 roaming citizens. Every 50 Hunt Sparks you feed into the building raises its level — up to a maximum of Level 4 — and each level adds 5 more citizen slots. At Level 4, your town supports 20 citizens simultaneously, dramatically increasing your passive drop throughput.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Feeding the building is simple: collect Hunt Sparks from the ground (click them!), then click the building itself to consume one spark from your inventory. The progress bar fills with each feed. When it maxes out at 50 sparks, the building levels up automatically. Higher building levels also change the settlement background, giving your town a visual upgrade that reflects your investment.'
+      },
+      {
+        type: 'image',
+        src: '/assets/huntbuildings/Level 4 Hunt Building.png',
+        caption: 'A Level 4 Hunt Building — the peak of prosperity, supporting 20 citizens and maximum passive income.'
+      },
+      {
+        type: 'heading',
+        text: 'NFT Access: Who Gets In'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Town is an exclusive sector. Access is verified on-chain against three Hunt Building / DWGXFB NFT contracts deployed on Base. If your connected wallet holds a balance greater than zero on any of these ERC-1155 tokens, the town gates swing open. If the NFT leaves your wallet, the town immediately freezes — the citizens stop roaming, and no new drops generate until you reacquire access.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The verified contracts are 0x0c9bb1fff512a5b4f01aca6ad964ec6d7fc60c96, 0x475f8e3ee5457f7b4aaca7e989d35418657adf2a, and 0x1A7154D518C28B09B311217Bf5514C9223ec0a23 — all on the Base mainnet. The access check runs sequentially through all three, so holding any one of them is enough.'
+      },
+      {
+        type: 'heading',
+        text: 'Satchel Awareness'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Sparks occupy one inventory slot each, just like dungeon loot. If your satchel is full when you click a spark, the collection fails and the spark stays on the ground. Before you settle in for a long Hunt Town session, make sure you have a few open slots. GX tokens, on the other hand, never take inventory space — they flow directly into your Credits balance, making them the most friction-free income source in the game.'
+      },
+      {
+        type: 'heading',
+        text: 'The Bigger Picture'
+      },
+      {
+        type: 'paragraph',
+        text: 'Hunt Town represents a new design philosophy for Dungeons With Gems: passive utility. Your NFTs are no longer just collectibles or combat gear — they are now economic engines that generate value simply by existing. The settlement rewards patience, rewards NFT ownership, and creates a natural reason to keep the game open even when you are not actively raiding dungeons.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Combined with the existing Dragons Ground sector — where feeding fruits levels up your dragon — Hunt Town completes a dual-passive economy that lets you earn sparks, GX, and dragon XP simultaneously. Two sectors, two passive streams, one connected wallet.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The settlement is live. The citizens are roaming. The 5× multiplier is active through June 30. Head to Hunt Town from the Main Menu and start collecting — the grid rewards those who show up.'
+      }
+    ],
+    media: '/assets/huntbuildings/Level 4 Hunt Building.png'
+  },
+  {
     id: 'dwg-hunt-spark-guide',
     date: '2026-05-29',
     author: 'Commander Gemx',

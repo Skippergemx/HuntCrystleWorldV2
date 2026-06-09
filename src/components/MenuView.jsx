@@ -450,7 +450,7 @@ export const MenuView = React.memo(() => {
                 <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-800 italic">Operations & Logistics</span>
                 <div className="w-12 h-[2px] bg-black opacity-10" />
             </div>
-            <div className="flex items-center justify-center gap-4 md:gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full max-w-xl mx-auto justify-items-center">
                {[
                  { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS & GEAR', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
                  { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },

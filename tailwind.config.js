@@ -30,6 +30,11 @@ export default {
         'pulse-glow': {
           '0%, 100%': { boxShadow: '0 0 5px rgba(6, 182, 212, 0.4)' },
           '50%': { boxShadow: '0 0 15px rgba(6, 182, 212, 0.8)' }
+        },
+        'drop-float': {
+          '0%': { transform: 'translateY(0) scale(1)', opacity: '1' },
+          '40%': { transform: 'translateY(-20px) scale(1.15)', opacity: '0.9' },
+          '100%': { transform: 'translateY(-50px) scale(0.6)', opacity: '0' }
         }
       },
       animation: {
@@ -37,7 +42,8 @@ export default {
         'strike-left': 'strike-left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
         'strike-right': 'strike-right 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
         'float': 'float 3s ease-in-out infinite',
-        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+        'pulse-glow': 'pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'drop-float': 'drop-float 1.2s ease-out forwards'
       }
     },
   },
