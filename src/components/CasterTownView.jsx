@@ -33,10 +33,11 @@ const TUTORIAL_STEPS = [
 ];
 
 /* ──────────────── Caster Town Ground (Roaming + Rendering) ──────────────── */
-const CasterTownGround = React.memo(({ db, user, player, gridId, onSelfPositionRef }) => {
+const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSelfPositionRef }) => {
   const [remotePlayers, setRemotePlayers] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const ownPosRef = useRef({ x: 50, y: 50, targetX: 20 + Math.random() * 60, targetY: 20 + Math.random() * 60, speed: 0.4 + Math.random() * 0.4 });
+  const [ownPosition, setOwnPosition] = useState(() => ownPosRef.current);
 
   // ── Expose own position ref to parent for Firestore writes ──
   useEffect(() => {
@@ -67,6 +68,7 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, onSelfPositionR
       }
 
       ownPosRef.current = { x: newX, y: newY, targetX: newTargetX, targetY: newTargetY, speed: pos.speed };
+      setOwnPosition({ x: newX, y: newY, targetX: newTargetX, targetY: newTargetY, speed: pos.speed });
 
       // Write position to Firestore (fire-and-forget)
       updateDoc(doc(db, 'caster_town', user.uid), {
@@ -126,6 +128,36 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, onSelfPositionR
 
   return (
     <div className="absolute inset-0 pointer-events-none">
+      {/* Own avatar — YOU */}
+      <div
+        className="absolute transition-all duration-1000 z-20"
+        style={{ left: `${ownPosition.x}%`, top: `${ownPosition.y}%` }}
+      >
+        <div className="relative flex flex-col items-center -translate-x-1/2 -translate-y-1/2">
+          {/* Own speech bubble */}
+          {ownBubble && (
+            <div className="bg-yellow-300 text-black px-2 py-1 rounded-xl border-2 border-black shadow-[2px_2px_0_rgba(0,0,0,1)] mb-1 animate-in fade-in zoom-in duration-300 max-w-[120px]">
+              <p className="text-[8px] md:text-[10px] font-black uppercase italic leading-tight text-center break-words">
+                {ownBubble}
+              </p>
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-yellow-300 border-r-2 border-b-2 border-black transform rotate-45"></div>
+            </div>
+          )}
+
+          {/* Avatar with colored ring */}
+          <div className="w-9 h-9 md:w-12 md:h-12 rounded-full border-[3px] md:border-4 border-yellow-400 bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden ring-2 ring-yellow-400/50">
+            <AvatarMedia num={player.avatar} animated={true} className="w-full h-full object-cover object-top" />
+          </div>
+
+          {/* Name label */}
+          <div className="bg-yellow-500/90 px-1.5 py-0.5 rounded border border-yellow-600/50 mt-0.5">
+            <span className="text-[6px] md:text-[7px] font-black text-black uppercase italic truncate max-w-[60px] block text-center">
+              YOU
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Remote players */}
       {remotePlayers.map(p => (
         <div
@@ -209,6 +241,7 @@ export const CasterTownView = React.memo(() => {
 
   const [isJoining, setIsJoining] = useState(true);
   const [chatInput, setChatInput] = useState('');
+  const [ownBubble, setOwnBubble] = useState('');
   const [message, setMessage] = useState(null);
   const [playerCount, setPlayerCount] = useState(0);
 
@@ -341,9 +374,13 @@ export const CasterTownView = React.memo(() => {
         lastAction: Date.now(),
       });
 
+      // Show own bubble locally
+      setOwnBubble(text.slice(0, MAX_MESSAGE_LENGTH));
+
       // Clear own message after 6 seconds
       setTimeout(() => {
         updateDoc(doc(db, 'caster_town', user.uid), { message: '' }).catch(() => {});
+        setOwnBubble('');
       }, 6000);
 
       addLog(`💬 CASTER TOWN: You said "${text.slice(0, MAX_MESSAGE_LENGTH)}"`);
@@ -426,6 +463,7 @@ export const CasterTownView = React.memo(() => {
           user={user}
           player={player}
           gridId={gridId}
+          ownBubble={ownBubble}
           onSelfPositionRef={handleSelfPositionRef}
         />
       </div>
