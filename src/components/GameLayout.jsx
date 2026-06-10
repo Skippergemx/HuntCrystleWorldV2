@@ -37,6 +37,7 @@ import { VioAuditView } from './VioAuditView';
 import { StorageUpgradeView } from './StorageUpgradeView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { HuntTownView } from './HuntTownView';
+import { CasterTownView } from './CasterTownView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
@@ -957,6 +958,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'hunt_town' && (
             <HuntTownView />
+          )}
+
+          {view === 'caster_town' && (
+            <CasterTownView />
           )}
 
           {view === 'laboratory' && (

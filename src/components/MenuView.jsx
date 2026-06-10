@@ -482,6 +482,34 @@ export const MenuView = React.memo(() => {
           </div>
          </div>
 
+         {/* SOCIAL HUB ROW */}
+         <div className="mt-10 md:mt-14 flex flex-col items-center gap-8 animate-in fade-in duration-1000" style={{ animationDelay: '300ms' }}>
+            <div className="flex items-center gap-2">
+                <div className="w-12 h-[2px] bg-purple-500/30" />
+                <span className="text-[10px] font-black uppercase tracking-[0.6em] text-purple-400 italic">Social Hub</span>
+                <div className="w-12 h-[2px] bg-purple-500/30" />
+            </div>
+            <div className="flex items-center justify-center gap-4 md:gap-8 w-full max-w-xl mx-auto">
+              <button
+                onClick={() => setView('caster_town')}
+                className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] rounded-xl rotate-1 relative overflow-hidden"
+              >
+                  <div className="absolute inset-0 z-0">
+                     <CitizenMedia num={13} className="w-full h-full object-cover grayscale-[0.2] transition-transform group-hover:scale-110 duration-700" />
+                     <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
+                  </div>
+                  <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
+                     <div className="w-10 h-10 flex items-center justify-center bg-purple-500 border-[3px] border-black shadow-[4px_4px_0px_0px_black] rounded-lg transition-all group-hover:rotate-6">
+                        <Users className="text-white" size={18} />
+                     </div>
+                     <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
+                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">CASTER TOWN</div>
+                     </div>
+                  </div>
+              </button>
+            </div>
+         </div>
+
       {/* SYSTEM UTILITY FOOTER */}
       <div className="bg-black border-t-[4px] border-white p-3 md:p-4 flex items-center justify-center gap-3 md:gap-6 relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
          <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-white text-black border-2 border-black px-4 py-0.5 rounded-t-xl text-[8px] font-black uppercase tracking-[0.3em] italic bungee">Utility Uplink</div>
