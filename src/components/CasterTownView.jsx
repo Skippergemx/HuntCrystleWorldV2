@@ -145,15 +145,30 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSe
           )}
 
           {/* Avatar with colored ring */}
-          <div className="w-9 h-9 md:w-12 md:h-12 rounded-full border-[3px] md:border-4 border-yellow-400 bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden ring-2 ring-yellow-400/50">
-            <AvatarMedia num={player.avatar} animated={true} className="w-full h-full object-cover object-top" />
+          <div className={`w-9 h-9 md:w-12 md:h-12 rounded-full border-[3px] md:border-4 border-yellow-400 bg-slate-800 shadow-[4px_4px_0_rgba(0,0,0,1)] overflow-hidden ring-2 ring-yellow-400/50 ${user.platform === 'farcaster' ? 'ring-purple-400/60' : ''}`}>
+            {user.platform === 'farcaster' && user.pfp ? (
+              <img
+                src={user.pfp}
+                alt={player.name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${user.uid}`;
+                }}
+              />
+            ) : (
+              <AvatarMedia num={player.avatar} animated={true} className="w-full h-full object-cover object-top" />
+            )}
           </div>
 
           {/* Name label */}
-          <div className="bg-yellow-500/90 px-1.5 py-0.5 rounded border border-yellow-600/50 mt-0.5">
-            <span className="text-[6px] md:text-[7px] font-black text-black uppercase italic truncate max-w-[60px] block text-center">
+          <div className={`px-1.5 py-0.5 rounded border mt-0.5 flex items-center gap-1 ${user.platform === 'farcaster' ? 'bg-purple-900/80 border-purple-500/50' : 'bg-yellow-500/90 border-yellow-600/50'}`}>
+            <span className={`text-[6px] md:text-[7px] font-black uppercase italic truncate max-w-[60px] block text-center ${user.platform === 'farcaster' ? 'text-purple-200' : 'text-black'}`}>
               YOU
             </span>
+            {user.platform === 'farcaster' && (
+              <span className="text-[6px] font-black text-purple-300 bg-purple-800/60 px-1 rounded-full leading-none">FC</span>
+            )}
           </div>
         </div>
       </div>
@@ -177,15 +192,30 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSe
             )}
 
             {/* Avatar */}
-            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-[2px] md:border-[3px] border-black bg-slate-800 shadow-[3px_3px_0_rgba(0,0,0,1)] overflow-hidden">
-              <AvatarMedia num={p.avatar} animated={true} className="w-full h-full object-cover object-top" />
+            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-[2px] md:border-[3px] border-black bg-slate-800 shadow-[3px_3px_0_rgba(0,0,0,1)] overflow-hidden relative ${p.platform === 'farcaster' ? 'ring-1 ring-purple-400/60' : ''}`}>
+              {p.platform === 'farcaster' && p.pfp ? (
+                <img
+                  src={p.pfp}
+                  alt={p.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://api.dicebear.com/7.x/identicon/svg?seed=${p.uid}`;
+                  }}
+                />
+              ) : (
+                <AvatarMedia num={p.avatar} animated={true} className="w-full h-full object-cover object-top" />
+              )}
             </div>
 
             {/* Name label */}
-            <div className="bg-black/80 px-1.5 py-0.5 rounded border border-white/20 mt-0.5">
+            <div className={`px-1.5 py-0.5 rounded border mt-0.5 flex items-center gap-1 ${p.platform === 'farcaster' ? 'bg-purple-900/80 border-purple-500/50' : 'bg-black/80 border-white/20'}`}>
               <span className="text-[6px] md:text-[7px] font-black text-white uppercase italic truncate max-w-[60px] block text-center">
                 {p.name}
               </span>
+              {p.platform === 'farcaster' && (
+                <span className="text-[6px] font-black text-purple-300 bg-purple-800/60 px-1 rounded-full leading-none">FC</span>
+              )}
             </div>
           </div>
         </div>
@@ -284,6 +314,8 @@ export const CasterTownView = React.memo(() => {
           name: player.name,
           level: player.level,
           avatar: player.avatar,
+          platform: user.platform || 'browser',
+          pfp: user.pfp || '',
           x: pos.x,
           y: pos.y,
           targetX: pos.targetX,
@@ -330,8 +362,10 @@ export const CasterTownView = React.memo(() => {
       name: player.name,
       level: player.level,
       avatar: player.avatar,
+      platform: user.platform || 'browser',
+      pfp: user.pfp || '',
     }).catch(() => {});
-  }, [player.name, player.level, player.avatar, db, user?.uid, isJoining]);
+  }, [player.name, player.level, player.avatar, user.platform, user.pfp, db, user?.uid, isJoining]);
 
   // ── Player count listener (for header) ──
   useEffect(() => {
