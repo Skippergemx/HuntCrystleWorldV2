@@ -264,7 +264,7 @@ export const CasterTownView = React.memo(() => {
         addLog('🏘️ CASTER TOWN: Entered the social hub!');
       } catch (err) {
         console.error('Caster Town join error:', err);
-        addLog('🚨 ERROR: Failed to enter Caster Town.');
+        addLog(`🚨 CASTER TOWN: ${err.message || 'Failed to enter.'}`);
         setView('menu');
       }
     };
