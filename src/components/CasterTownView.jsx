@@ -10,6 +10,22 @@ import { useGame } from '../contexts/GameContext';
 const MAX_MESSAGE_LENGTH = 20;
 const MAX_PLAYERS = 50;
 
+/* ──────────────── Deterministic Roam Engine ──────────────── */
+const simpleHash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return Math.abs(h); };
+
+/** All clients compute identical positions for any player at any time bucket. */
+const deterministicRoam = (uid, bucket) => {
+  const baseX   = 25 + (simpleHash(uid) % 5000) / 100;            // centre 25–75
+  const baseY   = 25 + (simpleHash(uid + 'y') % 5000) / 100;
+  const phaseX  = simpleHash(uid + 'px') % 1000 / 100;            // 0–10
+  const phaseY  = simpleHash(uid + 'py') % 1000 / 100;
+  const ampX    = 15 + simpleHash(uid + 'ax') % 3000 / 100;       // 15–45
+  const ampY    = 15 + simpleHash(uid + 'ay') % 3000 / 100;
+  const x = baseX + Math.sin((bucket + phaseX) * 0.15) * ampX;
+  const y = baseY + Math.cos((bucket + phaseY) * 0.2)  * ampY;
+  return { x: Math.max(3, Math.min(97, x)), y: Math.max(3, Math.min(97, y)) };
+};
+
 /* ──────────────── Tutorial Steps ──────────────── */
 const TUTORIAL_STEPS = [
   {
@@ -33,54 +49,18 @@ const TUTORIAL_STEPS = [
 ];
 
 /* ──────────────── Caster Town Ground (Roaming + Rendering) ──────────────── */
-const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositionRef }) => {
+const CasterTownGround = React.memo(({ db, user, player, ownBubble, onPlayerCountChange }) => {
   const [remotePlayers, setRemotePlayers] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
-  const ownPosRef = useRef({ x: 50, y: 50, targetX: 20 + Math.random() * 60, targetY: 20 + Math.random() * 60, speed: 0.4 + Math.random() * 0.4 });
-  const [ownPosition, setOwnPosition] = useState(() => ownPosRef.current);
+  const [tick, setTick] = useState(() => Math.floor(Date.now() / 2000));
 
-  // ── Expose own position ref to parent for Firestore writes ──
+  // ── Tick counter (2s interval, drives all position computation locally) ──
   useEffect(() => {
-    if (onSelfPositionRef) onSelfPositionRef(ownPosRef);
-  }, [onSelfPositionRef]);
-
-  // ── Self roaming engine (interval-based, writes to Firestore) ──
-  useEffect(() => {
-    if (!user?.uid || !db) return;
-
-    const timer = setInterval(() => {
-      const pos = ownPosRef.current;
-      const dx = pos.targetX - pos.x;
-      const dy = pos.targetY - pos.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      let newX, newY, newTargetX, newTargetY;
-      if (dist < 1.5) {
-        newX = pos.targetX;
-        newY = pos.targetY;
-        newTargetX = 5 + Math.random() * 90;
-        newTargetY = 5 + Math.random() * 90;
-      } else {
-        newX = pos.x + (dx / dist) * pos.speed;
-        newY = pos.y + (dy / dist) * pos.speed;
-        newTargetX = pos.targetX;
-        newTargetY = pos.targetY;
-      }
-
-      ownPosRef.current = { x: newX, y: newY, targetX: newTargetX, targetY: newTargetY, speed: pos.speed };
-      setOwnPosition({ x: newX, y: newY, targetX: newTargetX, targetY: newTargetY, speed: pos.speed });
-
-      // Write position to Firestore (fire-and-forget)
-      updateDoc(doc(db, 'caster_town', user.uid), {
-        x: newX,
-        y: newY,
-        targetX: newTargetX,
-        targetY: newTargetY,
-      }).catch(() => {});
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [db, user?.uid]);
+    const interval = setInterval(() => {
+      setTick(Math.floor(Date.now() / 2000));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Remote players listener ──
   useEffect(() => {
@@ -95,6 +75,7 @@ const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositi
         .filter(p => !p.lastAction || (now - p.lastAction) < 25000); // garbage collection
 
       setRemotePlayers(pList);
+      if (onPlayerCountChange) onPlayerCountChange(pList.length + 1);
     });
 
     return () => unsubscribe();
@@ -122,16 +103,22 @@ const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositi
   // Build a lookup: player uid → current position (for anchoring chat bubbles)
   const playerPositions = useMemo(() => {
     const map = {};
-    remotePlayers.forEach(p => { map[p.uid] = { x: p.x, y: p.y, name: p.name, avatar: p.avatar }; });
+    remotePlayers.forEach(p => {
+      const pos = deterministicRoam(p.uid, tick);
+      map[p.uid] = { x: pos.x, y: pos.y, name: p.name, avatar: p.avatar };
+    });
     return map;
-  }, [remotePlayers]);
+  }, [remotePlayers, tick]);
+
+  // ── Compute own position deterministically ──
+  const ownPos = useMemo(() => deterministicRoam(user.uid, tick), [user.uid, tick]);
 
   return (
     <div className="absolute inset-0 pointer-events-none">
       {/* Own avatar — YOU */}
       <div
-        className="absolute transition-all duration-1000 z-20"
-        style={{ left: `${ownPosition.x}%`, top: `${ownPosition.y}%` }}
+        className="absolute transition-all duration-[2000ms] z-20"
+        style={{ left: `${ownPos.x}%`, top: `${ownPos.y}%` }}
       >
         <div className="relative flex flex-col items-center -translate-x-1/2 -translate-y-1/2">
           {/* Own speech bubble */}
@@ -174,11 +161,13 @@ const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositi
       </div>
 
       {/* Remote players */}
-      {remotePlayers.map(p => (
+      {remotePlayers.map(p => {
+        const rPos = deterministicRoam(p.uid, tick);
+        return (
         <div
           key={p.uid}
-          className="absolute transition-all duration-1000 z-10"
-          style={{ left: `${p.x}%`, top: `${p.y}%` }}
+          className="absolute transition-all duration-[2000ms] z-10"
+          style={{ left: `${rPos.x}%`, top: `${rPos.y}%` }}
         >
           <div className="relative flex flex-col items-center -translate-x-1/2 -translate-y-1/2">
             {/* Speech bubble above avatar (from presence message) */}
@@ -219,7 +208,8 @@ const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositi
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Floating chat bubbles (anchored to player positions) */}
       {chatMessages.map(m => {
@@ -278,9 +268,6 @@ export const CasterTownView = React.memo(() => {
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
-  // Ref for own position (populated by CasterTownGround)
-  const ownPosRef = useRef(null);
-
   // ── Auto-tutorial trigger ──
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_caster_town_tutorial') === 'true';
@@ -304,7 +291,6 @@ export const CasterTownView = React.memo(() => {
     if (!user?.uid || !db) return;
 
     const casterDocRef = doc(db, 'caster_town', user.uid);
-    const pos = ownPosRef.current || { x: 50, y: 50, targetX: 20 + Math.random() * 60, targetY: 20 + Math.random() * 60, speed: 0.4 + Math.random() * 0.4 };
 
     const joinRoom = async () => {
       try {
@@ -330,11 +316,6 @@ export const CasterTownView = React.memo(() => {
           avatar: player.avatar,
           platform: user.platform || 'browser',
           pfp: user.pfp || '',
-          x: pos.x,
-          y: pos.y,
-          targetX: pos.targetX,
-          targetY: pos.targetY,
-          speed: pos.speed,
           message: '',
           lastAction: Date.now(),
         });
@@ -354,17 +335,20 @@ export const CasterTownView = React.memo(() => {
     };
   }, [db, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Heartbeat ──
+  // ── Heartbeat (lightweight — only writes lastAction every 10s) ──
   useEffect(() => {
     if (!user?.uid || !db || isJoining) return;
-
     const casterDocRef = doc(db, 'caster_town', user.uid);
     const interval = setInterval(() => {
       updateDoc(casterDocRef, { lastAction: Date.now() }).catch(() => {});
     }, 10000);
-
     return () => clearInterval(interval);
   }, [db, user?.uid, isJoining]);
+
+  // ── Player count handler (fed by CasterTownGround) ──
+  const handlePlayerCountChange = useCallback((count) => {
+    setPlayerCount(count);
+  }, []);
 
   // ── Stats sync (name/level/avatar changes) ──
   useEffect(() => {
@@ -379,23 +363,6 @@ export const CasterTownView = React.memo(() => {
       pfp: user.pfp || '',
     }).catch(() => {});
   }, [player.name, player.level, player.avatar, user.platform, user.pfp, db, user?.uid, isJoining]);
-
-  // ── Player count listener (for header) ──
-  useEffect(() => {
-    if (!db || !user?.uid) return;
-
-    const q = query(collection(db, 'caster_town'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const now = Date.now();
-      const count = snapshot.docs
-        .map(d => d.data())
-        .filter(p => !p.lastAction || (now - p.lastAction) < 25000)
-        .length;
-      setPlayerCount(count);
-    });
-
-    return () => unsubscribe();
-  }, [db, user?.uid]);
 
   // ── Send chat message ──
   const sendMessage = async (e) => {
@@ -442,11 +409,6 @@ export const CasterTownView = React.memo(() => {
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
     addLog('📡 CASTER TOWN: Invite link shared!');
   };
-
-  // ── Handle own position ref callback ──
-  const handleSelfPositionRef = useCallback((ref) => {
-    ownPosRef.current = ref;
-  }, []);
 
   if (isJoining) {
     return (
@@ -527,7 +489,7 @@ export const CasterTownView = React.memo(() => {
           user={user}
           player={player}
           ownBubble={ownBubble}
-          onSelfPositionRef={handleSelfPositionRef}
+          onPlayerCountChange={handlePlayerCountChange}
         />
       </div>
 
