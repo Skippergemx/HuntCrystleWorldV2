@@ -26,10 +26,10 @@ export const ShopView = React.memo(() => {
 
   // Filter items for the Industrial Market
   const INDUSTRIAL_ITEMS = useMemo(() => {
-    return ITEMS.filter(i => (i.category === 'Loot' || i.type === 'Material' || i.type === 'Component') && i.sellValue > 0 && i.id !== 'hunt_spark' && i.id !== 'aether_spark')
+    const excludedTypes = ['Relic', 'Schematic', 'Artifact', 'Data', 'Heart', 'Tool', 'Token', 'Currency', 'Key'];
+    return ITEMS.filter(i => (i.category === 'Loot' || i.type === 'Material' || i.type === 'Component') && !excludedTypes.includes(i.type) && i.sellValue > 0 && i.id !== 'hunt_spark' && i.id !== 'aether_spark')
       .sort((a,b) => (a.sellValue || 0) - (b.sellValue || 0));
   }, [ITEMS]);
-
 
 
   const getIndustrialData = (item) => {
@@ -40,7 +40,8 @@ export const ShopView = React.memo(() => {
     if (rarity === 'epic') mult = 80;
     if (rarity === 'legendary') mult = 150;
     
-    const scavPrice = (item.sellValue || 0) * mult;
+    const baseValue = item.scrapValue || item.sellValue || 0;
+    const scavPrice = baseValue * mult;
     return { ...item, cost: scavPrice, rarity };
   };
 

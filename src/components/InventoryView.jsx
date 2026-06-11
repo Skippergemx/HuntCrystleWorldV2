@@ -156,7 +156,7 @@ export const InventoryView = React.memo(() => {
           const master = i.master || getMasterData(i);
           const iType = i.type || master?.type;
           const iCat = i.category || master?.category;
-          if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact'].includes(iType);
+          if (filter === 'Loot') return ['Material', 'Component', 'Energy', 'Loot', 'Token', 'Currency', 'Data', 'Heart', 'Artifact', 'Relic'].includes(iType);
           if (filter === 'Fruit') return iType === 'Fruit' || iCat === 'Fruit';
           if (filter === 'Food') return iType === 'Food' || iCat === 'Food';
           if (filter === 'Consumable') return iType === 'Consumable' || iCat === 'Consumable';

@@ -26,7 +26,7 @@
   { "id": "void_capacitor", "name": "Void Capacitor", "sellValue": 1800, "reqLvl": 15, "icon": "🔋", "stats": { "str": 15, "dex": 50, "agi": 15 }, "type": "Relic", "category": "Equipment", "rarity": "Epic", "effect": { "type": "CritSpike", "mult": 3.5 }, "description": "Stabilizes energy (Crits deal 3.5x damage)." },
   { "id": "omega_sigil", "name": "Omega Sigil", "sellValue": 3200, "reqLvl": 25, "icon": "🌟", "stats": { "str": 50, "dex": 50, "agi": 50 }, "type": "Relic", "category": "Equipment", "rarity": "Legendary", "effect": { "type": "AllInOne", "chance": 0.1 }, "description": "Fragment of Ω-field (10% chance for Quad Damage)." },
 
-  { "id": "crystle_shard", "name": "Crystle Shard", "rarity": "Common", "icon": "💎", "description": "A glowing fragment of raw energy.", "type": "Material", "category": "Loot", "sellValue": 10 },
+  { "id": "crystle_shard", "name": "Crystle Shard", "rarity": "Common", "icon": "💎", "description": "A glowing fragment of raw energy.", "type": "Material", "category": "Loot", "sellValue": 500, "scrapValue": 5000 },
   { "id": "beast_hide", "name": "Hardened Hide", "rarity": "Common", "icon": "📜", "description": "Tough skin from a dungeon inhabitant.", "type": "Material", "category": "Loot", "sellValue": 15 },
   { "id": "void_essence", "name": "Void Essence", "rarity": "Uncommon", "icon": "🌀", "description": "Swirling dark energy trapped in a vial.", "type": "Material", "category": "Loot", "sellValue": 50 },
   { "id": "ancient_gear", "name": "Ancient Gear", "rarity": "Rare", "icon": "⚙️", "description": "A complex mechanism from a forgotten age.", "type": "Component", "category": "Loot", "sellValue": 200 },

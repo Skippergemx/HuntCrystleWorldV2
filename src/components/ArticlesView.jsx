@@ -31,6 +31,91 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-caster-town-launch',
+    date: '2026-05-29',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Caster Town: The Social Hub Is Now Live',
+    subtitle: 'Introducing the first open multiplayer social space — see your friends online, roam the town in real-time, and leave your mark with speech bubbles. No NFTs, no combat — just pure community.',
+    category: 'MAJOR FEATURE RELEASE',
+    type: 'article',
+    tag: 'NEW',
+    color: 'cyan',
+    readingTime: '4 min',
+    content: [
+      {
+        type: 'paragraph',
+        text: 'The grid just got a lot more social. Today we are launching Caster Town — the first open multiplayer social hub in the Dungeons With Gems metaverse. This is not a combat zone, not a resource farm, and not a quest terminal. It is a place to simply hang out. See your friends when they are online. Roam the town streets. Leave a speech bubble that floats above your avatar for everyone to see. Caster Town is the space between the dungeons — and it is open to everyone.'
+      },
+      {
+        type: 'heading',
+        text: 'What Is Caster Town?'
+      },
+      {
+        type: 'paragraph',
+        text: 'Caster Town is a live, multiplayer social space where every hunter who steps in becomes a visible avatar on the town grid. You will see other players walking around the plaza in real time — their names, their levels, their custom avatar art, and even their profile pictures if they are signed in via Farcaster. It is a shared, persistent room that exists in the cloud. Everyone on the grid sees the same town, the same people, and the same energy.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'Caster Town — a live social space where every avatar is a real hunter roaming the grid.'
+      },
+      {
+        type: 'heading',
+        text: 'How It Works: Real-Time, No Lag'
+      },
+      {
+        type: 'paragraph',
+        text: 'Under the hood, Caster Town runs on a deterministic position engine. Every client computes avatar positions locally using a shared seed — meaning all 50 players in the room see the exact same movement without any server-side position broadcasting. Your avatar drifts through the town autonomously, and everyone else sees you drift the same way. The only data written to Firestore is your name, level, avatar ID, platform, and optional message — lightweight presence docs that update every 10 seconds via a heartbeat, with stale entries garbage-collected after 25 seconds.'
+      },
+      {
+        type: 'paragraph',
+        text: 'This architecture means Caster Town feels fluid and alive without hammering your connection. No stuttering. No rubber-banding. Just a smooth, shared experience where every hunter glides through the grid together.'
+      },
+      {
+        type: 'heading',
+        text: 'Speech Bubbles: Leave Your Mark'
+      },
+      {
+        type: 'paragraph',
+        text: 'Every hunter in Caster Town can broadcast a message to the entire room. Type up to 20 characters in the chat bar at the bottom of the screen, hit send, and your message appears as a floating speech bubble above your avatar — visible to everyone currently in the town. Bubbles auto-fade after 6 to 8 seconds, and the most recent messages scroll through a live chat feed anchored to the side of the screen.'
+      },
+      {
+        type: 'paragraph',
+        text: 'This is not a full chat room — it is a billboard. A calling card. Use it to say hi, drop your social handle, rally for a dungeon run, or just let the town know you are there. Short, punchy, and iconic — that is the Caster Town way.'
+      },
+      {
+        type: 'heading',
+        text: 'Open to Everyone — No Gate, No NFT Required'
+      },
+      {
+        type: 'paragraph',
+        text: 'Unlike some sectors of the grid that require NFT access, Caster Town has zero entry requirements. If you can log in to Dungeons With Gems, you can enter Caster Town. Google-authenticated hunters and Farcaster-authenticated hunters share the exact same room, the same presence collection, and the same speech bubble feed. The grid does not care which platform you arrived from — it just cares that you showed up.'
+      },
+      {
+        type: 'heading',
+        text: '50 Hunters, One Shared Room'
+      },
+      {
+        type: 'paragraph',
+        text: 'Caster Town operates as a single unified room with a hard cap of 50 simultaneous players. A live counter in the top banner shows how many hunters are currently present — displayed as "Hunters Online: X / 50." If the room is full when you try to enter, you will see a dedicated wait screen with the live count and a "Back to Menu" button. Try again later — spots open up as hunters come and go throughout the day.'
+      },
+      {
+        type: 'heading',
+        text: 'The Bigger Picture'
+      },
+      {
+        type: 'paragraph',
+        text: 'Caster Town represents something new for Dungeons With Gems: a space that exists purely for community. No loot tables. No XP grinding. No economy loops. Just a place to be visible, be present, and be part of the grid alongside other real people. Combined with Hunt Town (your passive spark-and-GX settlement) and Dragons Ground (your dragon-feeding sanctuary), Caster Town completes the third pillar of the metaverse: the social layer.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The town is live. The avatars are roaming. The speech bubbles are floating. Head to Caster Town from the Main Menu — look for the town icon with the glowing energy ring — and say hello. The grid has a heartbeat now, and it belongs to everyone who shows up.'
+      }
+    ],
+    media: '/assets/gamescreenshot/mainmenuscreenshot.png'
+  },
+  {
     id: 'dwg-hunt-town-launch',
     date: '2026-06-09',
     author: 'Commander Gemx',
