@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { doc, setDoc, deleteDoc, onSnapshot, collection, query, where, updateDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, onSnapshot, collection, query, updateDoc, addDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import { Users, X, MessageSquare, Send, Check, Sparkles } from 'lucide-react';
 import { Header, AvatarMedia } from './GameUI';
 import { NPCCard } from './NPCCard';
 import { useGame } from '../contexts/GameContext';
 
-/* ──────────────── Sharding ──────────────── */
-const GRIDS = ['Nexus', 'Prism', 'Echo', 'Flare'];
+/* ──────────────── Constants ──────────────── */
 const MAX_MESSAGE_LENGTH = 20;
+const MAX_PLAYERS = 50;
 
 /* ──────────────── Tutorial Steps ──────────────── */
 const TUTORIAL_STEPS = [
@@ -33,7 +33,7 @@ const TUTORIAL_STEPS = [
 ];
 
 /* ──────────────── Caster Town Ground (Roaming + Rendering) ──────────────── */
-const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSelfPositionRef }) => {
+const CasterTownGround = React.memo(({ db, user, player, ownBubble, onSelfPositionRef }) => {
   const [remotePlayers, setRemotePlayers] = useState([]);
   const [chatMessages, setChatMessages] = useState([]);
   const ownPosRef = useRef({ x: 50, y: 50, targetX: 20 + Math.random() * 60, targetY: 20 + Math.random() * 60, speed: 0.4 + Math.random() * 0.4 });
@@ -86,7 +86,7 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSe
   useEffect(() => {
     if (!db || !user?.uid) return;
 
-    const q = query(collection(db, 'caster_town'), where('gridId', '==', gridId));
+    const q = query(collection(db, 'caster_town'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const now = Date.now();
       const pList = snapshot.docs
@@ -98,7 +98,7 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSe
     });
 
     return () => unsubscribe();
-  }, [db, user?.uid, gridId]);
+  }, [db, user?.uid]);
 
   // ── Chat messages listener ──
   useEffect(() => {
@@ -250,7 +250,7 @@ const CasterTownGround = React.memo(({ db, user, player, gridId, ownBubble, onSe
           <div className="bg-black/60 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 text-center">
             <Users size={32} className="text-slate-500 mx-auto mb-2" />
             <p className="text-[10px] md:text-xs font-black text-slate-400 uppercase italic tracking-wider">
-              No other hunters in this sector
+              No other hunters in town
             </p>
             <p className="text-[8px] text-slate-600 uppercase mt-1">
               Share the link to bring people in!
@@ -267,9 +267,8 @@ export const CasterTownView = React.memo(() => {
   const { player, adventure, db, user, addLog } = useGame();
   const { setView } = adventure;
 
-  const gridId = useMemo(() => GRIDS[Math.floor(Math.random() * GRIDS.length)], []);
-
   const [isJoining, setIsJoining] = useState(true);
+  const [isFull, setIsFull] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [ownBubble, setOwnBubble] = useState('');
   const [message, setMessage] = useState(null);
@@ -309,6 +308,21 @@ export const CasterTownView = React.memo(() => {
 
     const joinRoom = async () => {
       try {
+        // ── Check player cap ──
+        const snapshot = await getDocs(query(collection(db, 'caster_town')));
+        const now = Date.now();
+        const activeCount = snapshot.docs
+          .map(d => d.data())
+          .filter(p => !p.lastAction || (now - p.lastAction) < 25000)
+          .length;
+
+        if (activeCount >= MAX_PLAYERS) {
+          setIsFull(true);
+          setIsJoining(false);
+          addLog(`🏘️ CASTER TOWN: Full right now (${activeCount}/${MAX_PLAYERS}). Try again later!`);
+          return;
+        }
+
         await setDoc(casterDocRef, {
           uid: user.uid,
           name: player.name,
@@ -323,7 +337,6 @@ export const CasterTownView = React.memo(() => {
           speed: pos.speed,
           message: '',
           lastAction: Date.now(),
-          gridId: gridId,
         });
         setIsJoining(false);
         addLog('🏘️ CASTER TOWN: Entered the social hub!');
@@ -339,7 +352,7 @@ export const CasterTownView = React.memo(() => {
     return () => {
       deleteDoc(casterDocRef).catch(() => {});
     };
-  }, [db, user?.uid, gridId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [db, user?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Heartbeat ──
   useEffect(() => {
@@ -371,7 +384,7 @@ export const CasterTownView = React.memo(() => {
   useEffect(() => {
     if (!db || !user?.uid) return;
 
-    const q = query(collection(db, 'caster_town'), where('gridId', '==', gridId));
+    const q = query(collection(db, 'caster_town'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const now = Date.now();
       const count = snapshot.docs
@@ -382,7 +395,7 @@ export const CasterTownView = React.memo(() => {
     });
 
     return () => unsubscribe();
-  }, [db, user?.uid, gridId]);
+  }, [db, user?.uid]);
 
   // ── Send chat message ──
   const sendMessage = async (e) => {
@@ -444,6 +457,23 @@ export const CasterTownView = React.memo(() => {
     );
   }
 
+  if (isFull) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-slate-900 font-comic h-full min-h-[500px] gap-4">
+        <div className="text-5xl mb-2">🏘️</div>
+        <p className="text-lg font-black text-purple-400 uppercase italic tracking-wider">Caster Town is Full!</p>
+        <p className="text-xs font-black text-slate-400 uppercase">{playerCount} / {MAX_PLAYERS} hunters inside</p>
+        <p className="text-[10px] text-slate-600 uppercase">Try again in a moment — spots open as hunters leave.</p>
+        <button
+          onClick={() => setView('menu')}
+          className="mt-4 px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-full border-2 border-black font-black uppercase italic text-xs shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none transition-all"
+        >
+          Back to Menu
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col relative overflow-hidden bg-slate-900 font-comic h-full min-h-[500px]">
       {/* Header */}
@@ -462,9 +492,9 @@ export const CasterTownView = React.memo(() => {
       {/* Status Bar */}
       <div className="mx-2 md:mx-4 mt-1 md:mt-2 p-2 md:p-4 bg-black/40 border-[3px] md:border-4 border-black rounded-xl md:rounded-2xl flex justify-between items-center shadow-[4px_4px_0_rgba(0,0,0,0.5)] z-10 shrink-0">
         <div>
-          <p className="text-[8px] md:text-[10px] font-black text-purple-400 uppercase tracking-widest leading-none">Sector {gridId}</p>
+          <p className="text-[8px] md:text-[10px] font-black text-purple-400 uppercase tracking-widest leading-none">Social Hub</p>
           <p className="text-sm md:text-2xl font-black text-white uppercase italic tracking-tighter mt-1">
-            Hunters Online: {playerCount}
+            Hunters Online: {playerCount} / {MAX_PLAYERS}
           </p>
         </div>
         <button
@@ -496,7 +526,6 @@ export const CasterTownView = React.memo(() => {
           db={db}
           user={user}
           player={player}
-          gridId={gridId}
           ownBubble={ownBubble}
           onSelfPositionRef={handleSelfPositionRef}
         />
