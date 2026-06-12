@@ -38,6 +38,7 @@ import { StorageUpgradeView } from './StorageUpgradeView';
 import { DragonsGroundView } from './DragonsGroundView';
 import { HuntTownView } from './HuntTownView';
 import { CasterTownView } from './CasterTownView';
+import { GardenOSView } from './GardenOSView';
 import { PvpRoomView } from './PvpRoomView';
 import { LaboratoryView } from './LaboratoryView';
 import { SyndicateView } from './SyndicateView';
@@ -962,6 +963,10 @@ export const GameLayout = ({ onLogout }) => {
 
           {view === 'caster_town' && (
             <CasterTownView />
+          )}
+
+          {view === 'garden_os' && (
+            <GardenOSView />
           )}
 
           {view === 'laboratory' && (

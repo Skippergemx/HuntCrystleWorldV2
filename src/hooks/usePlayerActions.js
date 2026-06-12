@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect } from 'react';
+﻿import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { calculateNagaStats, getXpRequired, AP_PER_LEVEL, getMonsterElement } from '../utils/gameLogic';
@@ -35,7 +35,7 @@ export const usePlayerActions = (
     remainingApRef.current = player?.abilityPoints || 0;
   }, [player?.abilityPoints]);
 
-  // ── DUNGEON LOADOUT SYSTEM ──
+  // â”€â”€ DUNGEON LOADOUT SYSTEM â”€â”€
   // Session-only caps: 20 potion uses & 20 scroll uses per dungeon run.
   // Stored in a ref so reads are always current without re-render chains.
   const EMPTY_LOADOUT = {
@@ -99,10 +99,10 @@ export const usePlayerActions = (
         console.error("System V4: Battle Bridge Offline. Context missing.");
         return;
     }
-    console.log(`🚀 [WAR_PROTOCOL_V4]: Transitioning to Combat Bridge | Target: ${opponentId}`);
+    console.log(`ðŸš€ [WAR_PROTOCOL_V4]: Transitioning to Combat Bridge | Target: ${opponentId}`);
     setGvgContext({ warId, opponentId });
     setView('naga_combat');
-    addLog(`🚩 NAGA RAID: Targeting [${syndicateTag}] ${defenderData.name}!`);
+    addLog(`ðŸš© NAGA RAID: Targeting [${syndicateTag}] ${defenderData.name}!`);
   }, [setGvgContext, setView, addLog]);
 
   const handleHeal = useCallback(async () => {
@@ -120,7 +120,7 @@ export const usePlayerActions = (
     const targetItem = inventory.find(i => i && i.id?.startsWith(selection));
     const hasCounter = (player.potions || 0) > 0;
 
-    // ── LOADOUT GUARD ──
+    // â”€â”€ LOADOUT GUARD â”€â”€
     const loadoutPotionCount = loadoutRef.current.potions[selection] || 0;
     if (loadoutPotionCount <= 0) {
       return addLog(`No ${selection.replace(/_/g, ' ')} packed for this run!`);
@@ -184,7 +184,7 @@ export const usePlayerActions = (
       }
     } catch (e) {
       console.error("Failed to commit potion usage securely:", e);
-      addLog("🚨 UPLINK ERROR: Potion consumption could not be verified.");
+      addLog("ðŸš¨ UPLINK ERROR: Potion consumption could not be verified.");
     }
   }, [player, totalStats.maxHp, setPlayer, syncPlayer, addLog, playSFX, SOUNDS, functions]);
 
@@ -229,7 +229,7 @@ export const usePlayerActions = (
       addLog(`Contract signed: ${mate.name} joined!`);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Contract failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Contract failed.");
     }
   };
 
@@ -258,11 +258,11 @@ export const usePlayerActions = (
         action: 'SUMMON_DRAGON', 
         payload: { cost, summonUntil } 
       });
-      addLog(`✨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
+      addLog(`âœ¨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Summon failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Summon failed.");
     }
   };
 
@@ -280,9 +280,9 @@ export const usePlayerActions = (
 
     const itemBaseId = extractBaseId(item.id || itemId);
 
-    // Hunt Sparks and Aether Sparks are exchange-only — they cannot be sold for GX.
+    // Hunt Sparks and Aether Sparks are exchange-only â€” they cannot be sold for GX.
     if (itemBaseId === 'hunt_spark' || itemBaseId === 'aether_spark') {
-      addLog('⚡ Exchange-only artifacts must be used at the Crystle Town Exchange Terminal.');
+      addLog('âš¡ Exchange-only artifacts must be used at the Crystle Town Exchange Terminal.');
       return false;
     }
 
@@ -327,13 +327,13 @@ export const usePlayerActions = (
         payload: { itemId, value: totalValue, qty } 
       });
       if (result.data?.success) {
-         addLog(`💰 Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
+         addLog(`ðŸ’° Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
          return totalValue;
       }
       return false;
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Sale failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Sale failed.");
       return false;
     }
   }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
@@ -371,7 +371,7 @@ export const usePlayerActions = (
       addLog(`Installed Tech: ${item.name}`);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Install failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Install failed.");
     }
   }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
 
@@ -397,7 +397,7 @@ export const usePlayerActions = (
       addLog(`Uninstalled Tech: ${item.name}`);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Uninstall failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Uninstall failed.");
     }
   }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
 
@@ -426,7 +426,7 @@ export const usePlayerActions = (
       addLog(`Upgraded ${statName.toUpperCase()} via Secure Uplink.`);
     } catch (e) {
       console.error("Secure Stat Allocation Failed:", e);
-      addLog("🚨 UPLINK ERROR: Stat synchronization failed. Please refresh.");
+      addLog("ðŸš¨ UPLINK ERROR: Stat synchronization failed. Please refresh.");
     }
   };
 
@@ -436,13 +436,13 @@ export const usePlayerActions = (
       return false;
     }
     if (qty < 1 || !Number.isInteger(qty)) {
-      addLog('🚨 ERROR: Invalid quantity.');
+      addLog('ðŸš¨ ERROR: Invalid quantity.');
       return false;
     }
     
     const totalCost = item.cost * qty;
     if ((player.tokens || 0) < totalCost) {
-      addLog("🚨 ERROR: Insufficient GX for this transaction.");
+      addLog("ðŸš¨ ERROR: Insufficient GX for this transaction.");
       return false;
     }
 
@@ -452,7 +452,7 @@ export const usePlayerActions = (
       const currentSlots = Object.keys(player.inventory || {}).length;
       const maxSlots = player.maxInventorySlots || 50;
       if (currentSlots + qty > maxSlots) {
-        addLog(`🎒 BAG FULL! ${currentSlots}/${maxSlots} slots used. Sell items or upgrade your storage first.`);
+        addLog(`ðŸŽ’ BAG FULL! ${currentSlots}/${maxSlots} slots used. Sell items or upgrade your storage first.`);
         return false;
       }
     }
@@ -502,7 +502,7 @@ export const usePlayerActions = (
       return false;
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
+      addLog("ðŸš¨ UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
       return false;
     }
   };
@@ -536,7 +536,7 @@ export const usePlayerActions = (
       return addLog(`Wait! No ${selection.replace(/_/g, ' ')}'s found in bag or pool.`);
     }
 
-    // ── LOADOUT GUARD ──
+    // â”€â”€ LOADOUT GUARD â”€â”€
     const loadoutScrollCount = loadoutRef.current.scrolls[selection] || 0;
     if (loadoutScrollCount <= 0) {
       return addLog(`No ${selection.replace(/_/g, ' ')} packed for this run!`);
@@ -570,20 +570,20 @@ export const usePlayerActions = (
       addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
     } catch (e) {
       console.error(e);
-      addLog("🚨 UPLINK ERROR: Activation failed.");
+      addLog("ðŸš¨ UPLINK ERROR: Activation failed.");
     }
   };
 
   const mixLaboratoryItem = async (recipe) => {
     const masterData = ITEMS.find(i => i.id === recipe.id);
-    if (!masterData) return addLog("❌ MIX ERROR: Unknown formula.");
+    if (!masterData) return addLog("âŒ MIX ERROR: Unknown formula.");
     
     if ((player.tokens || 0) < (recipe.cost || 0)) {
-      return addLog(`🚨 LAB ERROR: Insufficient GX for fusion.`);
+      return addLog(`ðŸš¨ LAB ERROR: Insufficient GX for fusion.`);
     }
 
     try {
-      addLog(`🧪 MIXING: Initiating molecular fusion for ${masterData.name || recipe.id}...`);
+      addLog(`ðŸ§ª MIXING: Initiating molecular fusion for ${masterData.name || recipe.id}...`);
 
       const inventory = Object.entries(player.inventory || {});
       const itemsToConsume = [];
@@ -609,10 +609,10 @@ export const usePlayerActions = (
       });
 
       if (missingMat) {
-        return addLog(`🚨 LAB ERROR: Experimental materials shifted. Missing ${missingMat}.`);
+        return addLog(`ðŸš¨ LAB ERROR: Experimental materials shifted. Missing ${missingMat}.`);
       }
 
-      // 🛡️ Atomic Execution Context Setup
+      // ðŸ›¡ï¸ Atomic Execution Context Setup
       const updates = { tokens: (player.tokens || 0) - (recipe.cost || 0) };
       itemsToConsume.forEach(loot => {
         updates[`inventory.${loot.key}`] = deleteField();
@@ -636,7 +636,7 @@ export const usePlayerActions = (
           if (setForgeResult) {
             setForgeResult({ success: true, item: masterData });
           }
-          addLog(`✅ SUCCESS: Created ${masterData.name}!`);
+          addLog(`âœ… SUCCESS: Created ${masterData.name}!`);
           playSFX(SOUNDS.obtainLoot);
         } else {
           throw new Error(result.data?.message || "Fusion failed.");
@@ -646,11 +646,11 @@ export const usePlayerActions = (
         if (setForgeResult) {
           setForgeResult({ success: false, error: "Molecular fusion destabilized." });
         }
-        addLog(`🚨 UPLINK ERROR: Mixing failed during neural handshake.`);
+        addLog(`ðŸš¨ UPLINK ERROR: Mixing failed during neural handshake.`);
       }
     } catch (e) {
       console.error(e);
-      addLog("🚨 LAB ERROR: Formula calculation error.");
+      addLog("ðŸš¨ LAB ERROR: Formula calculation error.");
     }
   };
 
@@ -662,14 +662,14 @@ export const usePlayerActions = (
     // Check if player has the tool
     const inventory = Object.values(player.inventory || {});
     const targetTool = inventory.find(i => i && i.id?.startsWith(tamingItemId));
-    if (!targetTool) return addLog(`❌ PURIFY FAILED: Missing ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism!`);
+    if (!targetTool) return addLog(`âŒ PURIFY FAILED: Missing ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism!`);
 
     // --- SMART ELEMENT DETECTION ---
     const element = getMonsterElement(monster);
 
     // Verify Prism Element Match
     if (!tamingItemId.includes(element.toLowerCase())) {
-        return addLog(`❌ RESONANCE ERROR: This ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism cannot purify ${element} corruption!`);
+        return addLog(`âŒ RESONANCE ERROR: This ${tamingItemId.replace(/taming_/g, '').toUpperCase()} Prism cannot purify ${element} corruption!`);
     }
 
     // --- DYNAMIC SUCCESS RATE (Addressing One-Hit Defeat issue) ---
@@ -678,7 +678,7 @@ export const usePlayerActions = (
     const successChance = 0.9 - (hpFactor * 0.6); 
     
     playSFX(SOUNDS.useHeal);
-    addLog(`💠 ACTIVATING ${element.toUpperCase()} PRISM: Signal resonance at ${Math.floor(successChance * 100)}%...`);
+    addLog(`ðŸ’  ACTIVATING ${element.toUpperCase()} PRISM: Signal resonance at ${Math.floor(successChance * 100)}%...`);
     
     const success = Math.random() < successChance;
     
@@ -690,7 +690,7 @@ export const usePlayerActions = (
         // Find all pets of this element
         const elementPets = PETS_METADATA.filter(p => p.element === element);
         if (elementPets.length === 0) {
-          addLog(`❌ VOID SIGNAL: No compatible pet spirits found for ${element}.`);
+          addLog(`âŒ VOID SIGNAL: No compatible pet spirits found for ${element}.`);
           if (setEnemy) setEnemy(null);
           if (setView) setView('menu');
           return;
@@ -712,14 +712,14 @@ export const usePlayerActions = (
           updates.petLevel = 1;
           updates.unlockedPets = arrayUnion(newPet.id);
           
-          addLog(`✨ SUCCESS: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
+          addLog(`âœ¨ SUCCESS: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
           playSFX(SOUNDS.obtainLevel);
-          if (setForgeResult) setForgeResult({ success: true, item: { ...newPet, icon: '✨' } });
+          if (setForgeResult) setForgeResult({ success: true, item: { ...newPet, icon: 'âœ¨' } });
         }
         
         // Victory! End combat will be handled by UI after animation
     } else {
-        addLog(`🌫️ DISSIPATED: The purification beam failed to stabilize. The monster vanished!`);
+        addLog(`ðŸŒ«ï¸ DISSIPATED: The purification beam failed to stabilize. The monster vanished!`);
         playSFX(SOUNDS.monsterAttack);
         
         // Vanish! End combat will be handled by UI after animation
@@ -733,11 +733,11 @@ export const usePlayerActions = (
     const itemName = masterData?.name || recipe.name || "Unknown Tech";
     
     if ((player.tokens || 0) < (recipe.cost || 0)) {
-      return addLog(`🚨 FORGE ERROR: Insufficient GX for assembly.`);
+      return addLog(`ðŸš¨ FORGE ERROR: Insufficient GX for assembly.`);
     }
 
     try {
-      addLog(`⚒️ FORGING: Initiating atomic assembly for ${itemName}...`);
+      addLog(`âš’ï¸ FORGING: Initiating atomic assembly for ${itemName}...`);
       
       const inventory = Object.entries(player.inventory || {});
       const itemsToConsume = [];
@@ -762,10 +762,10 @@ export const usePlayerActions = (
       });
 
       if (missingMat) {
-        return addLog(`🚨 FORGE ERROR: Materials have shifted. Assembly aborted.`);
+        return addLog(`ðŸš¨ FORGE ERROR: Materials have shifted. Assembly aborted.`);
       }
 
-      // 🛡️ Logic Check: All materials found and GX sufficient.
+      // ðŸ›¡ï¸ Logic Check: All materials found and GX sufficient.
       const currentDex = (player.baseStats?.dex || 10); // Simplified stat check
       const successRate = Math.min(95, 50 + Math.floor(currentDex / 2));
       const roll = Math.random() * 100;
@@ -788,38 +788,38 @@ export const usePlayerActions = (
       }
     } catch (e) {
       console.error(e);
-      addLog(`🚨 UPLINK ERROR: Forging failed during neural handshake.`);
+      addLog(`ðŸš¨ UPLINK ERROR: Forging failed during neural handshake.`);
     }
   };
 
   const learnRecipe = (item) => {
     const master = ITEMS.find(i => i.id === item.id?.replace(/(_\d+)+$/, '')) || item;
-    if (master.type !== 'Schematic' || !master.recipeId) return addLog("❌ DECIPHER FAILED: Object integrity compromised.");
+    if (master.type !== 'Schematic' || !master.recipeId) return addLog("âŒ DECIPHER FAILED: Object integrity compromised.");
     
     const currentRecipes = Array.isArray(player.recipes) ? [...player.recipes] : [];
     const alreadyKnown = currentRecipes.includes(master.recipeId);
 
-    // BUG-03 FIX: Check by key (O(1)) and use dot-notation delete — never overwrite full inventory
-    if (!player.inventory?.[item.id]) return addLog("❌ ERROR: Schematic no longer in bag.");
+    // BUG-03 FIX: Check by key (O(1)) and use dot-notation delete â€” never overwrite full inventory
+    if (!player.inventory?.[item.id]) return addLog("âŒ ERROR: Schematic no longer in bag.");
 
     const updates = { [`inventory.${item.id}`]: deleteField() }; // dot-notation remove
 
     if (alreadyKnown) {
       syncPlayer(updates);
-      return addLog(`📜 DUPLICATE: Pattern memory preserved.`);
+      return addLog(`ðŸ“œ DUPLICATE: Pattern memory preserved.`);
     }
 
     updates.recipes = [...currentRecipes, master.recipeId];
     syncPlayer(updates);
-    addLog(`✨ DECRYPTED: ${master.name}!`);
+    addLog(`âœ¨ DECRYPTED: ${master.name}!`);
     playSFX(SOUNDS.obtainLoot);
   };
 
   // --- GUILD PROTOCOLS (V2) ---
   const createSyndicate = async (name, tag) => {
-    if ((player.tokens || 0) < 50000) return addLog("🚨 INSUFFICIENT GX: Need 50,000 GX!");
-    if (player.guildId) return addLog("🚨 ERROR: Active uplink detected.");
-    if (!name || name.length < 3) return addLog("🚨 INVALID NAME: Minimum 3 characters.");
+    if ((player.tokens || 0) < 50000) return addLog("ðŸš¨ INSUFFICIENT GX: Need 50,000 GX!");
+    if (player.guildId) return addLog("ðŸš¨ ERROR: Active uplink detected.");
+    if (!name || name.length < 3) return addLog("ðŸš¨ INVALID NAME: Minimum 3 characters.");
     
     const guildId = `guild_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     
@@ -841,34 +841,34 @@ export const usePlayerActions = (
       });
       
       syncPlayer({ tokens: player.tokens - 50000, guildId: guildId, guildRole: 'LEADER' });
-      addLog(`🏮 SYNDICATE FORMED: Welcome, Leader of ${name}!`);
+      addLog(`ðŸ® SYNDICATE FORMED: Welcome, Leader of ${name}!`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error("Guild Creation Error:", e);
-      addLog("🚨 ERROR: Faction build failed.");
+      addLog("ðŸš¨ ERROR: Faction build failed.");
     }
   };
 
   const joinSyndicate = async (guildId) => {
-    if (player.guildId) return addLog("🚨 ERROR: Disconnect existing link first.");
+    if (player.guildId) return addLog("ðŸš¨ ERROR: Disconnect existing link first.");
     try {
       const guildRef = doc(db, 'guilds', guildId); // V2: Root Path
       const guildSnap = await getDoc(guildRef);
-      if (!guildSnap.exists()) return addLog("🚨 ERROR: Syndicate non-existent.");
+      if (!guildSnap.exists()) return addLog("ðŸš¨ ERROR: Syndicate non-existent.");
       
       const data = guildSnap.data();
-      if (data.members?.length >= 30) return addLog("🚨 ERROR: Faction at capacity.");
+      if (data.members?.length >= 30) return addLog("ðŸš¨ ERROR: Faction at capacity.");
       
       await updateDoc(guildRef, { 
          members: arrayUnion(player.uid),
          [`memberNames.${player.uid}`]: player.name
       });
       syncPlayer({ guildId: guildId, guildRole: 'MEMBER' });
-      addLog(`🏮 UPLINK SECURED: Joined ${data.name}!`);
+      addLog(`ðŸ® UPLINK SECURED: Joined ${data.name}!`);
       playSFX(SOUNDS.obtainLevel);
     } catch (e) {
       console.error("Guild Join Error:", e);
-      addLog("🚨 ERROR: Uplink failed.");
+      addLog("ðŸš¨ ERROR: Uplink failed.");
     }
   };
 
@@ -881,16 +881,16 @@ export const usePlayerActions = (
          [`memberNames.${player.uid}`]: deleteField()
       });
       syncPlayer({ guildId: null, guildRole: null });
-      addLog(`🏮 UPLINK TERMINATED: Syndicate link detached.`);
+      addLog(`ðŸ® UPLINK TERMINATED: Syndicate link detached.`);
     } catch (e) {
       console.error("Guild Leave Error:", e);
-      addLog("🚨 ERROR: Detachment failed.");
+      addLog("ðŸš¨ ERROR: Detachment failed.");
     }
   };
 
   const dissolveSyndicate = async () => {
     if (!player.guildId || player.guildRole !== 'LEADER') return;
-    if (!window.confirm("🚨 NUCLEAR OPTION: Dissolve your Faction forever?")) return;
+    if (!window.confirm("ðŸš¨ NUCLEAR OPTION: Dissolve your Faction forever?")) return;
     try {
       const guildRef = doc(db, 'guilds', player.guildId);
       const guildSnap = await getDoc(guildRef);
@@ -906,10 +906,10 @@ export const usePlayerActions = (
       }
       await deleteDoc(guildRef);
       syncPlayer({ guildId: null, guildRole: null });
-      addLog(`💥 PROTOCOL 66: Syndicate erased from the grid.`);
+      addLog(`ðŸ’¥ PROTOCOL 66: Syndicate erased from the grid.`);
     } catch (e) {
       console.error("Guild Dissolve Error:", e);
-      addLog("🚨 ERROR: Dissolution failed.");
+      addLog("ðŸš¨ ERROR: Dissolution failed.");
     }
   };
 
@@ -923,13 +923,13 @@ export const usePlayerActions = (
 
   const donateToSyndicateLab = async () => {
     if (!player.guildId) return;
-    if ((player.tokens || 0) < 10000) return addLog("🚨 INSUFFICIENT GX: Lab Upgrade costs 10,000 GX.");
+    if ((player.tokens || 0) < 10000) return addLog("ðŸš¨ INSUFFICIENT GX: Lab Upgrade costs 10,000 GX.");
     
     try {
       const guildRef = doc(db, 'guilds', player.guildId);
       await updateDoc(guildRef, { labLevel: increment(1), gxVault: increment(10000) });
       syncPlayer({ tokens: player.tokens - 10000 });
-      addLog("🧪 LAB UPGRADE SUCCESS: Syndicate global combat power increased by 5%.");
+      addLog("ðŸ§ª LAB UPGRADE SUCCESS: Syndicate global combat power increased by 5%.");
       playSFX(SOUNDS.obtainLevel);
     } catch (e) {
       console.error("Lab Error:", e);
@@ -939,7 +939,7 @@ export const usePlayerActions = (
   // --- NAGA WAR PROTOCOLS (V2) ---
   const initiateSyndicateWar = async (targetGuildId, warSize = 2) => {
     if (!player.guildId || player.guildRole !== 'LEADER') return;
-    if (player.guildId === targetGuildId) return addLog("🚨 Cannot declare war on your own faction.");
+    if (player.guildId === targetGuildId) return addLog("ðŸš¨ Cannot declare war on your own faction.");
     try {
       const warId = `war_${Date.now()}`;
       const warRef = doc(db, 'guild_wars', warId);
@@ -959,7 +959,7 @@ export const usePlayerActions = (
       });
       await updateDoc(doc(db, 'guilds', player.guildId), { activeWarId: warId });
       await updateDoc(doc(db, 'guilds', targetGuildId), { activeWarId: warId });
-      addLog(`⚔️ NAGA WAR DECLARED: Request sent to rival Syndicate!`);
+      addLog(`âš”ï¸ NAGA WAR DECLARED: Request sent to rival Syndicate!`);
     } catch (e) { console.error("War Init Error:", e); }
   };
 
@@ -969,14 +969,14 @@ export const usePlayerActions = (
       const warRef = doc(db, 'guild_wars', warId);
       if (accepted) {
         await updateDoc(warRef, { status: 'ENROLLMENT', acceptedAt: serverTimestamp() });
-        addLog(`⚔️ NAGA WAR ACCEPTED! Guild members must now enroll their Nagas.`);
+        addLog(`âš”ï¸ NAGA WAR ACCEPTED! Guild members must now enroll their Nagas.`);
       } else {
         const warSnap = await getDoc(warRef);
         const data = warSnap.data();
         await deleteDoc(warRef);
         await updateDoc(doc(db, 'guilds', data.guildA), { activeWarId: null });
         await updateDoc(doc(db, 'guilds', data.guildB), { activeWarId: null });
-        addLog(`🛡️ CHALLENGE REJECTED.`);
+        addLog(`ðŸ›¡ï¸ CHALLENGE REJECTED.`);
       }
     } catch (e) { console.error("War Response Error:", e); }
   };
@@ -993,28 +993,28 @@ export const usePlayerActions = (
       await deleteDoc(warRef);
       await updateDoc(doc(db, 'guilds', data.guildA), { activeWarId: null });
       await updateDoc(doc(db, 'guilds', data.guildB), { activeWarId: null });
-      addLog(`🛑 NAGA WAR ABORTED: The preparation phase was manually terminated.`);
+      addLog(`ðŸ›‘ NAGA WAR ABORTED: The preparation phase was manually terminated.`);
     } catch (e) { console.error("War Abort Error:", e); }
   };
 
   const enrollNagaInWar = async (warId) => {
-    if (!player.guildId) return addLog("🚨 No Active Guild.");
+    if (!player.guildId) return addLog("ðŸš¨ No Active Guild.");
     try {
       const warRef = doc(db, 'guild_wars', warId);
       const warSnap = await getDoc(warRef);
-      if (!warSnap.exists()) return addLog("🚨 War not found.");
+      if (!warSnap.exists()) return addLog("ðŸš¨ War not found.");
       
       const data = warSnap.data();
-      if (data.status !== 'ENROLLMENT') return addLog("🚨 War is not in the enrollment phase.");
+      if (data.status !== 'ENROLLMENT') return addLog("ðŸš¨ War is not in the enrollment phase.");
 
       const side = data.guildA === player.guildId ? 'defendersA' : 'defendersB';
       const sideDefenders = data[side] || {};
 
       if (Object.keys(sideDefenders).length >= data.warSize) {
-         return addLog("🚨 Your guild's roster is already full!");
+         return addLog("ðŸš¨ Your guild's roster is already full!");
       }
       if (sideDefenders[player.uid]) {
-         return addLog("🚨 You have already enrolled your Naga.");
+         return addLog("ðŸš¨ You have already enrolled your Naga.");
       }
 
       const guildRef = doc(db, 'guilds', player.guildId);
@@ -1047,9 +1047,9 @@ export const usePlayerActions = (
 
       if (countA >= updatedData.warSize && countB >= updatedData.warSize) {
          await updateDoc(warRef, { status: 'BATTLE', battleStartedAt: serverTimestamp() });
-         addLog(`⚔️ BOARDS ARE SET: The Naga War has begun!`);
+         addLog(`âš”ï¸ BOARDS ARE SET: The Naga War has begun!`);
       } else {
-         addLog(`🛡️ NAGA ENROLLED: Roster is filling up (${Object.keys(updatedData[side] || {}).length}/${updatedData.warSize}).`);
+         addLog(`ðŸ›¡ï¸ NAGA ENROLLED: Roster is filling up (${Object.keys(updatedData[side] || {}).length}/${updatedData.warSize}).`);
       }
     } catch (e) { console.error("Enrollment error:", e); }
   };
@@ -1071,7 +1071,7 @@ export const usePlayerActions = (
         [starField]: earnedStars,
         [`guild${side}_Attacks.${player.uid}`]: arrayUnion({ stars: earnedStars, opponentId, damagePercent, timestamp: Date.now() })
       });
-      addLog(`🎖️ RAID STATUS: Secured ${earnedStars} Stars!`);
+      addLog(`ðŸŽ–ï¸ RAID STATUS: Secured ${earnedStars} Stars!`);
     } catch (e) { console.error("War Result Error:", e); }
   };
 
@@ -1106,7 +1106,7 @@ export const usePlayerActions = (
       await updateDoc(doc(db, 'guilds', d.guildA), { activeWarId: null });
       await updateDoc(doc(db, 'guilds', d.guildB), { activeWarId: null });
       
-      addLog(`🏆 NAGA WAR TALLY COMPLETE: Scoring finalization successful.`);
+      addLog(`ðŸ† NAGA WAR TALLY COMPLETE: Scoring finalization successful.`);
     } catch (e) { console.error("War Conclude Error:", e); }
   };
 
@@ -1122,12 +1122,12 @@ export const usePlayerActions = (
       
       const side = d.guildA === player.guildId ? 'defendersA' : 'defendersB';
       if (!d[side] || !d[side][player.uid]) {
-         addLog(`❌ DENIED: You did not enroll a Naga into this specific war.`);
+         addLog(`âŒ DENIED: You did not enroll a Naga into this specific war.`);
          return;
       }
       
       if (d.claimed && d.claimed[player.uid]) {
-         addLog(`⚠️ ALREADY CLAIMED: You have secured your bounty.`);
+         addLog(`âš ï¸ ALREADY CLAIMED: You have secured your bounty.`);
          return;
       }
       
@@ -1149,7 +1149,7 @@ export const usePlayerActions = (
       await updateDoc(warRef, { [`claimed.${player.uid}`]: true });
       syncPlayer(updates);
       
-      addLog(`🎁 WAR BOUNTY SECURED: +${gxReward} GX and +${scrollCount}x Auto Scrolls(12m)!`);
+      addLog(`ðŸŽ WAR BOUNTY SECURED: +${gxReward} GX and +${scrollCount}x Auto Scrolls(12m)!`);
     } catch (e) { console.error("Claim Reward Error:", e); }
   };
 
@@ -1161,17 +1161,17 @@ export const usePlayerActions = (
 
     const rarity = targets[0].rarity;
     if (!targets.every(t => t.rarity === rarity)) {
-      return addLog("❌ SALVAGE ERROR: Materials must share the same rarity.");
+      return addLog("âŒ SALVAGE ERROR: Materials must share the same rarity.");
     }
 
     let required = 0;
     let nextRarity = "";
     if (rarity === "Common") { required = 10; nextRarity = "Uncommon"; }
     else if (rarity === "Uncommon") { required = 5; nextRarity = "Rare"; }
-    else { return addLog("❌ SALVAGE ERROR: Only Common and Uncommon items can be salvaged."); }
+    else { return addLog("âŒ SALVAGE ERROR: Only Common and Uncommon items can be salvaged."); }
 
     if (targets.length < required) {
-      return addLog(`❌ SALVAGE ERROR: Need ${required} ${rarity} items (have ${targets.length}).`);
+      return addLog(`âŒ SALVAGE ERROR: Need ${required} ${rarity} items (have ${targets.length}).`);
     }
 
     // Pick top 'required' items
@@ -1189,13 +1189,13 @@ export const usePlayerActions = (
     updates[`inventory.${reward.id}`] = reward;
     syncPlayer(updates);
     
-    addLog(`♻️ SALVAGE SUCCESS: Recycled ${required} ${rarity} items into ${reward.name}!`);
+    addLog(`â™»ï¸ SALVAGE SUCCESS: Recycled ${required} ${rarity} items into ${reward.name}!`);
     playSFX(SOUNDS.obtainLoot);
     if (setForgeResult) setForgeResult({ success: true, item: reward });
   }, [player, ITEMS, syncPlayer, addLog, playSFX, SOUNDS, setForgeResult]);
 
   const claimGuildBounty = useCallback(async (guildData) => {
-    if (!player.guildId || !guildData) return addLog("❌ BOUNTY ERROR: No active Syndicate link.");
+    if (!player.guildId || !guildData) return addLog("âŒ BOUNTY ERROR: No active Syndicate link.");
     
     const now = Date.now();
     const lastClaim = player.lastBountyClaimed || 0;
@@ -1203,7 +1203,7 @@ export const usePlayerActions = (
 
     if (now - lastClaim < cooldown) {
       const wait = Math.ceil((cooldown - (now - lastClaim)) / (60 * 60 * 1000));
-      return addLog(`❌ BOUNTY ERROR: Recharge in progress. Wait ${wait}h.`);
+      return addLog(`âŒ BOUNTY ERROR: Recharge in progress. Wait ${wait}h.`);
     }
 
     const reward = 5000 + ((guildData.labLevel || 0) * 1000);
@@ -1214,19 +1214,19 @@ export const usePlayerActions = (
 
     try {
       await syncPlayer(updates);
-      addLog(`💎 BOUNTY SECURED: +${reward} GX Syndicate Subsidy claimed!`);
+      addLog(`ðŸ’Ž BOUNTY SECURED: +${reward} GX Syndicate Subsidy claimed!`);
       playSFX(SOUNDS.success);
     } catch (e) {
       console.error("Bounty Claim Error:", e);
-      addLog("❌ BOUNTY ERROR: Transmission failed.");
+      addLog("âŒ BOUNTY ERROR: Transmission failed.");
     }
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
   const eatFood = useCallback((foodItem) => {
-    if (!foodItem || !foodItem.effect) return addLog('❌ Invalid food item.');
+    if (!foodItem || !foodItem.effect) return addLog('âŒ Invalid food item.');
     const now = Date.now();
     const alreadyActive = (player?.activeFoodUntil || 0) > now;
-    if (alreadyActive) return addLog('❌ A food buff is already active. Wait for it to expire.');
+    if (alreadyActive) return addLog('âŒ A food buff is already active. Wait for it to expire.');
 
     const effect = foodItem.effect;
     const expiry = now + effect.duration;
@@ -1251,7 +1251,7 @@ export const usePlayerActions = (
     }
 
     syncPlayer(updates);
-    addLog(`🍽️ ATE: ${foodItem.name} — ${foodItem.effectLabel || ''}`);
+    addLog(`ðŸ½ï¸ ATE: ${foodItem.name} â€” ${foodItem.effectLabel || ''}`);
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
@@ -1263,7 +1263,7 @@ export const usePlayerActions = (
     for (const req of quest.requires) {
       const ownedCount = Object.values(inventory).filter(i => i?.id?.startsWith(req.itemId)).length;
       if (ownedCount < req.qty) {
-        return addLog(`❌ QUEST: Missing ${req.qty - ownedCount}x ${req.itemId}`);
+        return addLog(`âŒ QUEST: Missing ${req.qty - ownedCount}x ${req.itemId}`);
       }
     }
 
@@ -1274,7 +1274,7 @@ export const usePlayerActions = (
     const rewardPotion = quest.reward?.potionId ? ITEMS?.find(i => i.id === quest.reward.potionId) : null;
 
     if (!functions) {
-      addLog("❌ QUEST ERROR: Backend connection unavailable.");
+      addLog("âŒ QUEST ERROR: Backend connection unavailable.");
       return;
     }
 
@@ -1294,27 +1294,27 @@ export const usePlayerActions = (
       if (data.success) {
         if (data.leveledUp) {
           playSFX(SOUNDS.lvlUp);
-          addLog(`🌟 TOWN RENOWN INCREASED! You are now Level ${data.nextLvl} in Crystle Town!`);
+          addLog(`ðŸŒŸ TOWN RENOWN INCREASED! You are now Level ${data.nextLvl} in Crystle Town!`);
         } else {
           playSFX(SOUNDS.obtainLoot);
         }
         
-        addLog(`🏙️ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
+        addLog(`ðŸ™ï¸ QUEST COMPLETE: Handed over items to ${quest.npcName}! (+5 Town Influence XP)`);
       }
     } catch (e) {
-      addLog("❌ QUEST FAILED: " + e.message);
+      addLog("âŒ QUEST FAILED: " + e.message);
       return;
     }
 
     // --- Faucet Protocol: Automated Reward Trigger ---
     if (functions && player.walletAddress) {
-       console.log("🏙️ FAUCET: Attempting reward transmission sequence...");
+       console.log("ðŸ™ï¸ FAUCET: Attempting reward transmission sequence...");
        const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
        try {
          const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
          const data = result.data;
          if (data.success) {
-            addLog(`🎁 CRYSTLE FAUCET: ${data.message}`);
+            addLog(`ðŸŽ CRYSTLE FAUCET: ${data.message}`);
             playSFX(SOUNDS.obtainLoot);
             if (setFaucetResult) {
                setFaucetResult({ success: true, txHash: data.txHash, message: data.message });
@@ -1330,12 +1330,12 @@ export const usePlayerActions = (
             });
          } else {
             // Silently log level or rate limit issues unless critical
-            console.log(`🏙️ FAUCET_SIGNAL: ${data.message}`);
+            console.log(`ðŸ™ï¸ FAUCET_SIGNAL: ${data.message}`);
          }
        } catch (e) {
-          console.warn("🏙️ FAUCET_ERROR:", e.message);
+          console.warn("ðŸ™ï¸ FAUCET_ERROR:", e.message);
           if (e.message.includes("depleted")) {
-             addLog("🏙️ FAUCET: The town treasury is temporarily dry.");
+             addLog("ðŸ™ï¸ FAUCET: The town treasury is temporarily dry.");
           }
        }
     }
@@ -1352,14 +1352,14 @@ export const usePlayerActions = (
     currentSlots.push(cooldownId);
     
     syncPlayer({ townQuestSlots: currentSlots });
-    addLog("🗑️ REQUEST SKIPPED: Slot locked for 30 minutes.");
+    addLog("ðŸ—‘ï¸ REQUEST SKIPPED: Slot locked for 30 minutes.");
   }, [player, syncPlayer, addLog]);
 
   const rushTownQuestCooldown = useCallback((cooldownId) => {
     if (!player) return;
     const fee = 2000;
     if ((player.tokens || 0) < fee) {
-       return addLog(`🚨 INSUFFICIENT GX: Need ${fee} GX to bypass cooldown.`);
+       return addLog(`ðŸš¨ INSUFFICIENT GX: Need ${fee} GX to bypass cooldown.`);
     }
     
     const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== cooldownId);
@@ -1368,7 +1368,7 @@ export const usePlayerActions = (
        tokens: player.tokens - fee
     }, true);
     
-    addLog("⚡ FAST TRACK: Dispatched new prospect instantly!");
+    addLog("âš¡ FAST TRACK: Dispatched new prospect instantly!");
     playSFX(SOUNDS.obtainLoot);
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
@@ -1376,7 +1376,7 @@ export const usePlayerActions = (
     if (!quiz || !player) return;
     
     if (!isCorrect) {
-      addLog(`🎒 O QUIZ: Incorrect answer. Transmission severed.`);
+      addLog(`ðŸŽ’ O QUIZ: Incorrect answer. Transmission severed.`);
       playSFX(SOUNDS.hurt);
       return;
     }
@@ -1395,14 +1395,14 @@ export const usePlayerActions = (
       nextLvl++;
       nextMaxHp += 50;
       apGained += AP_PER_LEVEL;
-      addLog(`🛡️ LVL UP! +5 AP gained through knowledge syncing.`);
+      addLog(`ðŸ›¡ï¸ LVL UP! +5 AP gained through knowledge syncing.`);
     }
 
     if (nextLvl >= MAX_LEVEL) {
       overflowGx = nextXp * GX_PER_XP;
       nextXp = 0;
       if (overflowGx > 0) {
-        addLog(`✨ LEVEL CAP: ${quiz.xpReward} XP converted to ${Math.floor(overflowGx)} GX!`);
+        addLog(`âœ¨ LEVEL CAP: ${quiz.xpReward} XP converted to ${Math.floor(overflowGx)} GX!`);
       }
     }
 
@@ -1469,7 +1469,7 @@ export const usePlayerActions = (
               loots.push(newLootItem);
            }
         }
-        addLog(`🎁 KNOWLEDGE REWARD: Acquired ${rQty}x ${masterDrop.name}!`);
+        addLog(`ðŸŽ KNOWLEDGE REWARD: Acquired ${rQty}x ${masterDrop.name}!`);
       }
     }
 
@@ -1495,7 +1495,7 @@ export const usePlayerActions = (
       addOptimisticUpdate(updates);
     }
     
-    console.log("🎒 iLEARN: Initiating secure completeQuiz action...");
+    console.log("ðŸŽ’ iLEARN: Initiating secure completeQuiz action...");
     let quizVerified = false;
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -1515,7 +1515,7 @@ export const usePlayerActions = (
       const data = result.data || {};
       if (data.success) {
         quizVerified = true;
-        addLog(`🎒 QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
+        addLog(`ðŸŽ’ QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
         playSFX(SOUNDS.lvlUp);
       } else {
         console.warn("Backend failed to confirm quiz completion:", data.message);
@@ -1525,7 +1525,7 @@ export const usePlayerActions = (
     }
 
     if (!quizVerified) {
-      addLog("🚨 UPLINK ERROR: Quiz completion could not be verified securely.");
+      addLog("ðŸš¨ UPLINK ERROR: Quiz completion could not be verified securely.");
       // Roll back the optimistic XP/level/inventory changes so nothing appears to reset later
       if (syncPlayer) {
         syncPlayer(preQuizSnapshot);
@@ -1535,13 +1535,13 @@ export const usePlayerActions = (
 
     // --- Neural Faucet Protocol: Automated Reward Trigger ---
     if (functions && player.walletAddress) {
-      console.log("🎒 iLEARN_FAUCET: Attempting reward transmission sequence...");
+      console.log("ðŸŽ’ iLEARN_FAUCET: Attempting reward transmission sequence...");
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
       try {
         const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
         const data = result.data;
         if (data.success) {
-          addLog(`💎 iLEARN REWARD: ETH subsidy transmitted!`);
+          addLog(`ðŸ’Ž iLEARN REWARD: ETH subsidy transmitted!`);
           playSFX(SOUNDS.obtainLoot);
           if (setFaucetResult) {
             setFaucetResult({ success: true, txHash: data.txHash, message: "Neural Link Subsidy Authorized" });
@@ -1557,9 +1557,9 @@ export const usePlayerActions = (
           });
         }
       } catch (e) {
-        console.warn("🎒 iLEARN_FAUCET_ERR:", e.message);
+        console.warn("ðŸŽ’ iLEARN_FAUCET_ERR:", e.message);
         if (e.message.includes("depleted")) {
-          addLog("🏙️ FAUCET: The neural treasury is temporarily dry.");
+          addLog("ðŸ™ï¸ FAUCET: The neural treasury is temporarily dry.");
         }
       }
     }
@@ -1575,7 +1575,7 @@ export const usePlayerActions = (
       .filter(([id, item]) => item && item.id && item.id.startsWith('aether_spark'));
     
     if (sparks.length < 4) {
-      addLog(`🚨 INSUFFICIENT SPARKS: You need 4 Aether Sparks. You have ${sparks.length}.`);
+      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Aether Sparks. You have ${sparks.length}.`);
       return;
     }
     
@@ -1588,13 +1588,13 @@ export const usePlayerActions = (
       sparkRestore[`inventory.${uniqueId}`] = item; // snapshot for rollback
     });
     
-    addLog("✨ AETHER EXCHANGE: Harmonizing sparks... Initiating Treasury Signal.");
+    addLog("âœ¨ AETHER EXCHANGE: Harmonizing sparks... Initiating Treasury Signal.");
     
     // Helper to restore sparks if the faucet fails
     const rollbackSparks = async (reason) => {
       try {
         await syncPlayer(sparkRestore, true);
-        addLog(`🏙️ AETHER EXCHANGE: ${reason} Sparks returned safely.`);
+        addLog(`ðŸ™ï¸ AETHER EXCHANGE: ${reason} Sparks returned safely.`);
       } catch (rollbackErr) {
         console.error("Aether spark rollback failed:", rollbackErr);
       }
@@ -1609,17 +1609,17 @@ export const usePlayerActions = (
       const data = result.data;
       
       if (data.success) {
-        addLog(`🎁 AETHER REWARD: ${data.message}`);
+        addLog(`ðŸŽ AETHER REWARD: ${data.message}`);
         playSFX(SOUNDS.obtainLoot);
         if (setFaucetResult) {
           setFaucetResult({ success: true, txHash: data.txHash, message: "Aether Exchange Authorized" });
         }
       } else {
-        // Faucet declined (probability miss, daily limit, etc.) — restore sparks
+        // Faucet declined (probability miss, daily limit, etc.) â€” restore sparks
         await rollbackSparks(data.message);
       }
     } catch (e) {
-      console.warn("✨ AETHER_EXCHANGE_ERROR:", e.message);
+      console.warn("âœ¨ AETHER_EXCHANGE_ERROR:", e.message);
       await rollbackSparks("Transmission failed.");
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
@@ -1632,7 +1632,7 @@ export const usePlayerActions = (
       .filter(([id, item]) => item && item.id && item.id.startsWith('hunt_spark'));
     
     if (sparks.length < 4) {
-      addLog(`🚨 INSUFFICIENT SPARKS: You need 4 Hunt Sparks. You have ${sparks.length}.`);
+      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Hunt Sparks. You have ${sparks.length}.`);
       return;
     }
     
@@ -1644,7 +1644,7 @@ export const usePlayerActions = (
       sparkDeletes[`inventory.${uniqueId}`] = deleteField();
     });
     
-    addLog(`⚡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
+    addLog(`âš¡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
     
     try {
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
@@ -1659,7 +1659,7 @@ export const usePlayerActions = (
         // Immediately remove consumed sparks from local state
         syncPlayer(sparkDeletes);
 
-        addLog(`🎁 HUNT REWARD: ${data.message}`);
+        addLog(`ðŸŽ HUNT REWARD: ${data.message}`);
         playSFX(SOUNDS.obtainLoot);
         if (setFaucetResult) {
           setFaucetResult({ 
@@ -1669,11 +1669,11 @@ export const usePlayerActions = (
           });
         }
       } else {
-        addLog(`🏙️ EXCHANGE SIGNAL: ${data.message}`);
+        addLog(`ðŸ™ï¸ EXCHANGE SIGNAL: ${data.message}`);
       }
     } catch (e) {
-      console.warn("⚡ HUNT_EXCHANGE_ERROR:", e.message);
-      addLog("🏙️ EXCHANGE: The signal failed. Treasury may be dry.");
+      console.warn("âš¡ HUNT_EXCHANGE_ERROR:", e.message);
+      addLog("ðŸ™ï¸ EXCHANGE: The signal failed. Treasury may be dry.");
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
 
@@ -1683,7 +1683,7 @@ export const usePlayerActions = (
       const result = await callAction({ action: 'CLAIM_DAILY_GIFT', payload: {} });
       const data = result.data || {};
       if (data.success) {
-        addLog(`🎁 DAILY SUPPLY: +100 GX, +10 Potions, +10 Scrolls delivered!`);
+        addLog(`ðŸŽ DAILY SUPPLY: +100 GX, +10 Potions, +10 Scrolls delivered!`);
         playSFX(SOUNDS.obtainLoot);
         return data;
       }
@@ -1694,6 +1694,132 @@ export const usePlayerActions = (
     }
   }, [functions, addLog, playSFX, SOUNDS]);
 
+  // â”€â”€ GARDEN OS: Complete a virtue question and deliver rewards â”€â”€
+  const GARDEN_FOOD_POOL = [
+    { id: 'grilled_steak', reqLvl: 20 },
+    { id: 'techno_ramen', reqLvl: 18 },
+    { id: 'focus_brew', reqLvl: 20 },
+    { id: 'neon_bubble_tea', reqLvl: 18 },
+    { id: 'energy_shot', reqLvl: 20 },
+    { id: 'turbo_smoothie', reqLvl: 18 },
+  ];
+  const GARDEN_RARE_FOODS = [
+    { id: 'power_curry', reqLvl: 30 },
+    { id: 'hearty_gruel', reqLvl: 30 },
+    { id: 'void_sushi', reqLvl: 30 },
+  ];
+  const HUNT_SPARK_TEMPLATE = {
+    id: 'hunt_spark',
+    name: 'Hunt Spark',
+    rarity: 'Rare',
+    icon: 'âš¡',
+    description: 'A beginner\'s catalyst for wealth. 4 sparks can be exchanged for $HUNT or $DWGX in Crystle Town.',
+    type: 'Artifact',
+    category: 'Loot',
+    sellValue: 250
+  };
+
+  const completeGardenQuestion = useCallback(async (questionId, rewardTier, FOODS) => {
+    if (!player) return null;
+
+    const playerLevel = player.level || 1;
+    const maxSlots = player.maxInventorySlots || 50;
+    const usedSlots = Object.keys(player.inventory || {}).length;
+    const updates = {};
+    const rewards = [];
+
+    // Mark question as completed
+    const completedIds = player.gardenCompletedIds || [];
+    if (!completedIds.includes(questionId)) {
+      updates.gardenCompletedIds = [...completedIds, questionId];
+    }
+    updates.gardenSessions = (player.gardenSessions || 0);
+
+    // Determine rewards based on tier
+    let giveHuntSpark = false;
+    let giveFood = false;
+    let potionFallback = null;
+
+    switch (rewardTier) {
+      case 'premium':
+        giveHuntSpark = true;
+        giveFood = true;
+        potionFallback = { id: 'ultra_hp_potion', name: 'Ultra HP Potion', icon: 'ðŸ’Š' };
+        break;
+      case 'standard':
+        giveHuntSpark = true;
+        potionFallback = { id: 'mega_hp_potion', name: 'Mega HP Potion', icon: 'ðŸ’Š' };
+        break;
+      case 'basic':
+        potionFallback = { id: 'hp_potion', name: 'HP Potion', icon: 'ðŸ’Š' };
+        break;
+      case 'minimal':
+      default:
+        break;
+    }
+
+    // Deliver Hunt Spark
+    if (giveHuntSpark && usedSlots + rewards.length < maxSlots) {
+      const sparkId = `hunt_spark_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+      updates[`inventory.${sparkId}`] = HUNT_SPARK_TEMPLATE;
+      rewards.push({ id: sparkId, name: 'Hunt Spark', icon: 'âš¡' });
+    }
+
+    // Deliver Food (level-gated with potion fallback)
+    if (giveFood) {
+      // 10% chance for rare dual-stat food if player is high enough level
+      const rollRare = Math.random() < 0.1;
+      let selectedFood = null;
+
+      if (rollRare) {
+        const eligibleRare = GARDEN_RARE_FOODS.filter(f => playerLevel >= f.reqLvl);
+        if (eligibleRare.length > 0) {
+          const pick = eligibleRare[Math.floor(Math.random() * eligibleRare.length)];
+          selectedFood = FOODS.find(f => f.id === pick.id);
+        }
+      }
+
+      if (!selectedFood) {
+        const eligible = GARDEN_FOOD_POOL.filter(f => playerLevel >= f.reqLvl);
+        if (eligible.length > 0) {
+          const pick = eligible[Math.floor(Math.random() * eligible.length)];
+          selectedFood = FOODS.find(f => f.id === pick.id);
+        }
+      }
+
+      if (selectedFood && usedSlots + rewards.length < maxSlots) {
+        const foodId = `garden_food_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+        updates[`inventory.${foodId}`] = selectedFood;
+        rewards.push({ id: foodId, name: selectedFood.name, icon: selectedFood.icon });
+      } else if (potionFallback && usedSlots + rewards.length < maxSlots) {
+        const potId = `garden_potion_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+        updates[`inventory.${potId}`] = potionFallback;
+        rewards.push({ id: potId, name: potionFallback.name, icon: potionFallback.icon });
+      }
+    } else if (potionFallback && usedSlots + rewards.length < maxSlots) {
+      // Standard/Basic tier: deliver potion
+      const potId = `garden_potion_${Date.now()}_${Math.floor(Math.random() * 9999)}`;
+      updates[`inventory.${potId}`] = potionFallback;
+      rewards.push({ id: potId, name: potionFallback.name, icon: potionFallback.icon });
+    }
+
+    // Apply updates
+    if (Object.keys(updates).length > 0) {
+      syncPlayer(updates);
+    }
+
+    // Log rewards
+    if (rewards.length > 0) {
+      const rewardNames = rewards.map(r => `${r.icon} ${r.name}`).join(', ');
+      addLog(`ðŸŒ± GARDEN OS: ${rewardNames} harvested!`);
+      playSFX(SOUNDS.obtainLoot);
+    } else {
+      addLog(`ðŸŒ± GARDEN OS: Reflection complete. The garden observes your choices.`);
+    }
+
+    return { rewards, questionId, rewardTier };
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
@@ -1701,6 +1827,6 @@ export const usePlayerActions = (
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
     eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks,
     setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned,
-    claimDailyGift
+    claimDailyGift, completeGardenQuestion
   };
 };

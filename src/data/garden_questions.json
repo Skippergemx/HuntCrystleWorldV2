@@ -1,0 +1,290 @@
+[
+  {
+    "id": "garden_001",
+    "category": "Integrity",
+    "scenario": "You discover a critical bug in a teammate's code that could cost the project. They don't know yet. What do you do?",
+    "options": [
+      { "text": "Tell them privately and help fix it together", "virtue": "integrity", "rewardTier": "premium" },
+      { "text": "Fix it silently without telling anyone", "virtue": "humility", "rewardTier": "standard" },
+      { "text": "Report it to the project lead immediately", "virtue": "duty", "rewardTier": "basic" },
+      { "text": "Wait and see if anyone else notices", "virtue": "passive", "rewardTier": "minimal" }
+    ],
+    "reflection": "In the Garden, integrity means speaking truth even when silence is easier. The strongest roots grow from honest ground."
+  },
+  {
+    "id": "garden_002",
+    "category": "Community",
+    "scenario": "A newcomer joins your community with zero experience but high enthusiasm. The group is busy with a deadline.",
+    "options": [
+      { "text": "Take 10 minutes to welcome and orient them personally", "virtue": "stewardship", "rewardTier": "premium" },
+      { "text": "Send them the onboarding docs and check in later", "virtue": "efficiency", "rewardTier": "standard" },
+      { "text": "Ask someone who's less busy to handle it", "virtue": "delegation", "rewardTier": "basic" },
+      { "text": "They'll figure it out — everyone does", "virtue": "neglect", "rewardTier": "minimal" }
+    ],
+    "reflection": "The garden grows when we grow together. Every mighty oak was once a seed that needed someone to water it."
+  },
+  {
+    "id": "garden_003",
+    "category": "Builder",
+    "scenario": "You find a clever shortcut that makes your code 10x faster but harder for others to understand. The team relies on readable code.",
+    "options": [
+      { "text": "Write it cleanly with thorough comments explaining the logic", "virtue": "craftsmanship", "rewardTier": "premium" },
+      { "text": "Use the shortcut but add a README note", "virtue": "pragmatism", "rewardTier": "standard" },
+      { "text": "Use the shortcut — performance matters most", "virtue": "optimization", "rewardTier": "basic" },
+      { "text": "Ship it as-is, document later (maybe)", "virtue": "recklessness", "rewardTier": "minimal" }
+    ],
+    "reflection": "A builder's legacy is not what they built alone, but what others can build upon. Clean foundations invite collaboration."
+  },
+  {
+    "id": "garden_004",
+    "category": "Creator",
+    "scenario": "You see another creator's work being copied without credit in your community. The copier is popular and well-connected.",
+    "options": [
+      { "text": "Privately message the copier and ask them to add attribution", "virtue": "courage", "rewardTier": "premium" },
+      { "text": "Reach out to the original creator to let them know", "virtue": "loyalty", "rewardTier": "standard" },
+      { "text": "Post about the importance of attribution generally", "virtue": "diplomacy", "rewardTier": "basic" },
+      { "text": "It's not your problem — stay out of it", "virtue": "apathy", "rewardTier": "minimal" }
+    ],
+    "reflection": "Creators plant seeds of culture. When we honor original work, we fertilize the soil where new ideas grow."
+  },
+  {
+    "id": "garden_005",
+    "category": "Stewardship",
+    "scenario": "You've spent months mastering a complex skill. A new team member asks you to teach them, but it will slow your current project.",
+    "options": [
+      { "text": "Create a short guide and schedule mentoring sessions", "virtue": "generosity", "rewardTier": "premium" },
+      { "text": "Share your notes and answer questions when free", "virtue": "balance", "rewardTier": "standard" },
+      { "text": "Point them to external resources and tutorials", "virtue": "efficiency", "rewardTier": "basic" },
+      { "text": "Tell them to learn it themselves — you did", "virtue": "gatekeeping", "rewardTier": "minimal" }
+    ],
+    "reflection": "Knowledge hoarded is knowledge wasted. The Garden's institutional memory lives in those who pass it forward."
+  },
+  {
+    "id": "garden_006",
+    "category": "Connectivity",
+    "scenario": "You notice two separate teams working on similar problems without knowing about each other. Connecting them could benefit both.",
+    "options": [
+      { "text": "Set up a joint call and introduce both leads with context", "virtue": "catalysis", "rewardTier": "premium" },
+      { "text": "Send both teams an email suggesting they connect", "virtue": "facilitation", "rewardTier": "standard" },
+      { "text": "Mention it casually in a shared channel", "virtue": "awareness", "rewardTier": "basic" },
+      { "text": "They should find each other organically", "virtue": "inaction", "rewardTier": "minimal" }
+    ],
+    "reflection": "The Contribution Graph shows how one connector creates ripples across an entire ecosystem. You are the bridge."
+  },
+  {
+    "id": "garden_007",
+    "category": "Integrity",
+    "scenario": "Your project receives unexpected funding. Nobody is tracking how it's spent. A friend asks for a small portion for a personal project.",
+    "options": [
+      { "text": "Decline and document every expense transparently", "virtue": "accountability", "rewardTier": "premium" },
+      { "text": "Decline but don't bother with formal documentation", "virtue": "honesty", "rewardTier": "standard" },
+      { "text": "Give a small amount — it won't be noticed", "virtue": "corruption", "rewardTier": "basic" },
+      { "text": "Help yourself too — nobody's watching", "virtue": "greed", "rewardTier": "minimal" }
+    ],
+    "reflection": "Trust is the soil where communities take root. When no one watches, character speaks loudest."
+  },
+  {
+    "id": "garden_008",
+    "category": "Community",
+    "scenario": "Your community is growing fast but conversations are becoming shallow. Quality is dropping as quantity rises.",
+    "options": [
+      { "text": "Create structured discussion threads and moderate actively", "virtue": "cultivation", "rewardTier": "premium" },
+      { "text": "Pin guidelines about quality and lead by example", "virtue": "leadership", "rewardTier": "standard" },
+      { "text": "Let the community self-regulate naturally", "virtue": "laissez-faire", "rewardTier": "basic" },
+      { "text": "More members = more hype, don't slow it down", "virtue": "hype-chasing", "rewardTier": "minimal" }
+    ],
+    "reflection": "A garden untended grows weeds alongside flowers. True community gardeners prune with purpose and plant with patience."
+  },
+  {
+    "id": "garden_009",
+    "category": "Builder",
+    "scenario": "A critical open-source dependency your project relies on has a security vulnerability. Your users haven't noticed yet.",
+    "options": [
+      { "text": "Patch immediately, notify all users, and contribute the fix upstream", "virtue": "responsibility", "rewardTier": "premium" },
+      { "text": "Patch your own project and quietly move on", "virtue": "self-preservation", "rewardTier": "standard" },
+      { "text": "Wait for the upstream maintainers to fix it", "virtue": "dependency", "rewardTier": "basic" },
+      { "text": "If nobody's reported it, it's probably fine", "virtue": "denial", "rewardTier": "minimal" }
+    ],
+    "reflection": "Builders who protect others' gardens strengthen the entire ecosystem. Security is not a feature — it's a foundation."
+  },
+  {
+    "id": "garden_010",
+    "category": "Creator",
+    "scenario": "You've been commissioned to create content for a project you personally disagree with ethically. The pay is excellent.",
+    "options": [
+      { "text": "Decline and explain your values respectfully", "virtue": "conviction", "rewardTier": "premium" },
+      { "text": "Accept but negotiate to include your own perspective", "virtue": "compromise", "rewardTier": "standard" },
+      { "text": "Accept — separate art from personal beliefs", "virtue": "detachment", "rewardTier": "basic" },
+      { "text": "Take the money and pretend to be enthusiastic", "virtue": "dishonesty", "rewardTier": "minimal" }
+    ],
+    "reflection": "A creator's integrity is their most valuable asset. When art and values align, the work resonates across the Garden."
+  },
+  {
+    "id": "garden_011",
+    "category": "Stewardship",
+    "scenario": "Your team is moving fast and decisions are being made in private DMs. There's no written record of why things were decided.",
+    "options": [
+      { "text": "Start a decision log and share it with the team", "virtue": "transparency", "rewardTier": "premium" },
+      { "text": "Take personal notes in case you need them later", "virtue": "self-documentation", "rewardTier": "standard" },
+      { "text": "Ask the lead to summarize decisions in the group chat", "virtue": "delegation", "rewardTier": "basic" },
+      { "text": "If it's important, people will remember", "virtue": "amnesia", "rewardTier": "minimal" }
+    ],
+    "reflection": "Institutional memory is the root system of any ecosystem. What isn't written down dies with the person who knew it."
+  },
+  {
+    "id": "garden_012",
+    "category": "Connectivity",
+    "scenario": "You're invited to speak at an event but you know someone in your community who would benefit more from the exposure.",
+    "options": [
+      { "text": "Recommend them to the organizers and help them prepare", "virtue": "magnanimity", "rewardTier": "premium" },
+      { "text": "Suggest them as a co-speaker", "virtue": "collaboration", "rewardTier": "standard" },
+      { "text": "Take the slot but mention them during your talk", "virtue": "acknowledgment", "rewardTier": "basic" },
+      { "text": "Take the slot — you earned it", "virtue": "self-interest", "rewardTier": "minimal" }
+    ],
+    "reflection": "The most powerful node in any network isn't the one with the most connections — it's the one that creates new connections for others."
+  },
+  {
+    "id": "garden_013",
+    "category": "Integrity",
+    "scenario": "A competitor's project is failing publicly. Your community is watching. You could capitalize on their misfortune.",
+    "options": [
+      { "text": "Reach out privately to offer help or encouragement", "virtue": "compassion", "rewardTier": "premium" },
+      { "text": "Stay neutral and focus on your own work", "virtue": "discipline", "rewardTier": "standard" },
+      { "text": "Subtly highlight their failures in your marketing", "virtue": "opportunism", "rewardTier": "basic" },
+      { "text": "Publicly celebrate their failure to attract their users", "virtue": "malice", "rewardTier": "minimal" }
+    ],
+    "reflection": "In the Garden, we don't climb over fallen trees — we help them regrow. A rising tide lifts all roots."
+  },
+  {
+    "id": "garden_014",
+    "category": "Community",
+    "scenario": "Two respected community members have a public disagreement. Others are taking sides and the energy is turning toxic.",
+    "options": [
+      { "text": "Mediate privately with both parties and find common ground", "virtue": "peacemaking", "rewardTier": "premium" },
+      { "text": "Post a community reminder about respectful discourse", "virtue": "moderation", "rewardTier": "standard" },
+      { "text": "Support the person you agree with publicly", "virtue": "tribalism", "rewardTier": "basic" },
+      { "text": "Let them fight it out — drama drives engagement", "virtue": "exploitation", "rewardTier": "minimal" }
+    ],
+    "reflection": "Communities don't break from disagreement — they break from how disagreement is handled. The gardener tends to all plants, even the thorny ones."
+  },
+  {
+    "id": "garden_015",
+    "category": "Builder",
+    "scenario": "You've built something impressive but a junior builder asks to fork it and take it in a very different direction. You think their direction is wrong.",
+    "options": [
+      { "text": "Encourage their fork and offer guidance if they want it", "virtue": "openness", "rewardTier": "premium" },
+      { "text": "Let them fork but share your concerns honestly", "virtue": "mentorship", "rewardTier": "standard" },
+      { "text": "Let them fork without comment — not your problem", "virtue": "detachment", "rewardTier": "basic" },
+      { "text": "Add a license restriction to prevent unwanted forks", "virtue": "control", "rewardTier": "minimal" }
+    ],
+    "reflection": "The Garden's greatest gift is permissionless innovation. Plant your seeds and let the wind carry them to unexpected soil."
+  },
+  {
+    "id": "garden_016",
+    "category": "Creator",
+    "scenario": "You notice your content is being shared widely without any link back to you. It's growing someone else's platform, not yours.",
+    "options": [
+      { "text": "Add a subtle watermark and keep creating — reach matters more", "virtue": "adaptability", "rewardTier": "premium" },
+      { "text": "Politely ask sharers to credit you in future posts", "virtue": "self-advocacy", "rewardTier": "standard" },
+      { "text": "Stop sharing publicly and go private", "virtue": "withdrawal", "rewardTier": "basic" },
+      { "text": "Publicly shame people who share without credit", "virtue": "vengeance", "rewardTier": "minimal" }
+    ],
+    "reflection": "A creator's work is a seed — once planted in the world, it grows in ways you can't control. Focus on planting well."
+  },
+  {
+    "id": "garden_017",
+    "category": "Stewardship",
+    "scenario": "You're leaving a project you helped build from scratch. How do you handle the transition?",
+    "options": [
+      { "text": "Write comprehensive handoff docs and train your replacement", "virtue": "legacy", "rewardTier": "premium" },
+      { "text": "Share your key contacts and answer questions for 2 weeks", "virtue": "grace", "rewardTier": "standard" },
+      { "text": "Give a 2-week notice and leave cleanly", "virtue": "professionalism", "rewardTier": "basic" },
+      { "text": "Leave immediately — you owe them nothing", "virtue": "abandonment", "rewardTier": "minimal" }
+    ],
+    "reflection": "The measure of a steward is what remains after they're gone. Build things that don't need you to survive."
+  },
+  {
+    "id": "garden_018",
+    "category": "Connectivity",
+    "scenario": "You've built a successful program in one region. Another region wants to replicate it but lacks your resources and experience.",
+    "options": [
+      { "text": "Create a full playbook and offer monthly check-in calls", "virtue": "empowerment", "rewardTier": "premium" },
+      { "text": "Share your templates and key lessons learned", "virtue": "knowledge-sharing", "rewardTier": "standard" },
+      { "text": "Point them to public resources that helped you", "virtue": "guidance", "rewardTier": "basic" },
+      { "text": "Your success is your competitive advantage — keep it close", "virtue": "hoarding", "rewardTier": "minimal" }
+    ],
+    "reflection": "The Contribution Graph shows: one playbook shared becomes ten programs launched. Your experience multiplied is your greatest impact."
+  },
+  {
+    "id": "garden_019",
+    "category": "Integrity",
+    "scenario": "You promised to deliver something by Friday. It's Thursday and you know you won't make it. Nobody has asked yet.",
+    "options": [
+      { "text": "Proactively communicate the delay with a new timeline", "virtue": "reliability", "rewardTier": "premium" },
+      { "text": "Work overtime to try to hit the deadline anyway", "virtue": "dedication", "rewardTier": "standard" },
+      { "text": "Say nothing and deliver when ready — quality over speed", "virtue": "avoidance", "rewardTier": "basic" },
+      { "text": "Blame external factors when they eventually ask", "virtue": "deflection", "rewardTier": "minimal" }
+    ],
+    "reflection": "A promise is a seed. Breaking it poisons the soil. Communicating delays honestly nourishes trust even in difficult seasons."
+  },
+  {
+    "id": "garden_020",
+    "category": "Community",
+    "scenario": "Your community receives funding to host events. You could spend it all on one flagship event or spread it across many small meetups.",
+    "options": [
+      { "text": "Survey the community first and allocate based on their needs", "virtue": "servant-leadership", "rewardTier": "premium" },
+      { "text": "Split evenly — many small events reach more people", "virtue": "inclusion", "rewardTier": "standard" },
+      { "text": "One big event — it creates the most buzz", "virtue": "spectacle", "rewardTier": "basic" },
+      { "text": "Use it for your own travel to represent the community", "virtue": "self-promotion", "rewardTier": "minimal" }
+    ],
+    "reflection": "Community resources are seeds, not fruit. Spend them to grow more, not to feed the few. The best gardeners ask the garden what it needs."
+  },
+  {
+    "id": "garden_021",
+    "category": "Builder",
+    "scenario": "You're reviewing a pull request from a contributor who's been consistently delivering excellent code. This one has a subtle issue you could easily fix yourself.",
+    "options": [
+      { "text": "Leave thoughtful feedback explaining the issue and why it matters", "virtue": "teaching", "rewardTier": "premium" },
+      { "text": "Approve it and fix the issue yourself in a follow-up commit", "virtue": "pragmatism", "rewardTier": "standard" },
+      { "text": "Approve it — the issue is minor and they're trusted", "virtue": "trust", "rewardTier": "basic" },
+      { "text": "Reject it without explanation to make them figure it out", "virtue": "power-tripping", "rewardTier": "minimal" }
+    ],
+    "reflection": "Code review is not gatekeeping — it's gardening. Every comment is a chance to help someone grow, not prove you know more."
+  },
+  {
+    "id": "garden_022",
+    "category": "Creator",
+    "scenario": "An up-and-coming creator in your community asks for honest feedback on their work. It's... not great. But they're clearly passionate.",
+    "options": [
+      { "text": "Acknowledge their passion, highlight what works, and give specific improvement areas", "virtue": "constructive-honesty", "rewardTier": "premium" },
+      { "text": "Focus on the positives — encouragement matters most early on", "virtue": "encouragement", "rewardTier": "standard" },
+      { "text": "Tell them it's great even though it's not — keep them motivated", "virtue": "false-praise", "rewardTier": "basic" },
+      { "text": "Be brutally honest — they need to hear the truth", "virtue": "cruelty", "rewardTier": "minimal" }
+    ],
+    "reflection": "The Garden grows through honest rain AND warm sun. A true mentor gives both truth and encouragement in the right measure."
+  },
+  {
+    "id": "garden_023",
+    "category": "Stewardship",
+    "scenario": "You've discovered a highly effective process that gives your team a significant edge. Sharing it openly would help competitors too.",
+    "options": [
+      { "text": "Publish it openly — a rising tide lifts all ecosystems", "virtue": "abundance-mindset", "rewardTier": "premium" },
+      { "text": "Share it within your broader community but not publicly", "virtue": "community-first", "rewardTier": "standard" },
+      { "text": "Keep it internal — your team earned this advantage", "virtue": "competitive-instinct", "rewardTier": "basic" },
+      { "text": "Actively mislead others about what works for you", "virtue": "sabotage", "rewardTier": "minimal" }
+    ],
+    "reflection": "The Garden OS thrives on abundance thinking. Knowledge shared freely returns tenfold through the network's collective intelligence."
+  },
+  {
+    "id": "garden_024",
+    "category": "Connectivity",
+    "scenario": "You attend a conference and meet someone whose work perfectly complements a project your friend is building. Both would benefit from the connection.",
+    "options": [
+      { "text": "Make a warm introduction with context about both projects within 24 hours", "virtue": "intentional-bridging", "rewardTier": "premium" },
+      { "text": "Share their contact info with your friend and let them connect", "virtue": "facilitation", "rewardTier": "standard" },
+      { "text": "Mention it casually next time you talk to your friend", "virtue": "passive-help", "rewardTier": "basic" },
+      { "text": "Keep the connection for yourself — networking is competitive", "virtue": "possessiveness", "rewardTier": "minimal" }
+    ],
+    "reflection": "You are a node in the Contribution Graph. Every introduction you make creates edges that didn't exist before. Be the connector."
+  }
+]

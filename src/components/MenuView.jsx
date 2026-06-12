@@ -29,6 +29,7 @@ import {
   Newspaper,
   PieChart,
   Building,
+  Flower2,
 } from 'lucide-react';
 import { 
   Header, 
@@ -504,6 +505,24 @@ export const MenuView = React.memo(() => {
                      </div>
                      <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
                         <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">CASTER TOWN</div>
+                     </div>
+                  </div>
+              </button>
+
+              <button
+                onClick={() => setView('garden_os')}
+                className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_#10b981] rounded-xl -rotate-1 relative overflow-hidden"
+              >
+                  <div className="absolute inset-0 z-0 bg-gradient-to-br from-emerald-900/60 via-slate-900 to-black">
+                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+                     <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
+                  </div>
+                  <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
+                     <div className="w-10 h-10 flex items-center justify-center bg-emerald-500 border-[3px] border-black shadow-[4px_4px_0px_0px_black] rounded-lg transition-all group-hover:rotate-6">
+                        <Flower2 className="text-white" size={18} />
+                     </div>
+                     <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full">
+                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">GARDEN OS</div>
                      </div>
                   </div>
               </button>
