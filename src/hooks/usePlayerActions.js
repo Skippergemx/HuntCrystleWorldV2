@@ -1719,7 +1719,7 @@ export const usePlayerActions = (
     sellValue: 250
   };
 
-  const completeGardenQuestion = useCallback(async (questionId, rewardTier, FOODS) => {
+  const completeGardenQuestion = useCallback(async (questionId, rewardTier, FOODS, virtue, category) => {
     if (!player) return null;
 
     const playerLevel = player.level || 1;
@@ -1733,7 +1733,18 @@ export const usePlayerActions = (
     if (!completedIds.includes(questionId)) {
       updates.gardenCompletedIds = [...completedIds, questionId];
     }
-    updates.gardenSessions = (player.gardenSessions || 0);
+    updates.gardenSessions = (player.gardenSessions || 0) + 1;
+
+    // Track answer history for stats (virtue, tier, category)
+    if (virtue) {
+      updates.gardenAnswerHistory = [...(player.gardenAnswerHistory || []), {
+        questionId,
+        virtue,
+        rewardTier,
+        category: category || 'Unknown',
+        timestamp: Date.now(),
+      }];
+    }
 
     // Determine rewards based on tier
     let giveHuntSpark = false;
@@ -1820,6 +1831,37 @@ export const usePlayerActions = (
     return { rewards, questionId, rewardTier };
   }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
 
+  // Refresh garden: spend 10,000 GX to clear all completed questions and replay
+  const refreshGarden = useCallback(() => {
+    if (!player) return false;
+    const cost = 10000;
+    if ((player.tokens || 0) < cost) {
+      addLog(`🚨 INSUFFICIENT GX: Need ${cost.toLocaleString()} GX to refresh the garden.`);
+      return false;
+    }
+    syncPlayer({
+      tokens: player.tokens - cost,
+      gardenCompletedIds: [],
+      gardenSessions: 0,
+      gardenAnswerHistory: [],
+      gardenProfile: null,
+    }, true);
+    addLog(`🌱 GARDEN REFRESHED: The garden blooms anew! 10,000 GX spent.`);
+    playSFX(SOUNDS.obtainLevel);
+    return true;
+  }, [player, syncPlayer, addLog, playSFX, SOUNDS]);
+  
+  // Save Garden Profile to Firestore (persist AI-generated profile across sessions)
+  const saveGardenProfile = useCallback((profile) => {
+    if (!player || !profile) return;
+    syncPlayer({
+      gardenProfile: {
+        ...profile,
+        lastGeneratedAt: Date.now(),
+      },
+    }, true);
+  }, [player, syncPlayer]);
+  
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
     mixLaboratoryItem, forgeCrystle, learnRecipe, cyclePotion, cycleScroll, handlePurify, salvageItems, claimGuildBounty,
@@ -1827,6 +1869,6 @@ export const usePlayerActions = (
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
     eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks,
     setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned,
-    claimDailyGift, completeGardenQuestion
+    claimDailyGift, completeGardenQuestion, refreshGarden, saveGardenProfile
   };
 };
