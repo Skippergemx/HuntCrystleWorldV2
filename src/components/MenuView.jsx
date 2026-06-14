@@ -513,8 +513,8 @@ export const MenuView = React.memo(() => {
                 onClick={() => setView('garden_os')}
                 className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_#10b981] rounded-xl -rotate-1 relative overflow-hidden"
               >
-                  <div className="absolute inset-0 z-0 bg-gradient-to-br from-emerald-900/60 via-slate-900 to-black">
-                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+                  <div className="absolute inset-0 z-0">
+                     <CitizenMedia num={25} className="w-full h-full object-cover grayscale-[0.2] transition-transform group-hover:scale-110 duration-700" />
                      <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
                   </div>
                   <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">

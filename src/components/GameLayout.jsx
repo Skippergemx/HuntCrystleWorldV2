@@ -15,6 +15,7 @@ import {
 
 import { BOSS, BOSS_MEDIA_FILES, getXpRequired, DEFEAT_WINDOW_DURATION } from '../utils/gameLogic';
 import { Header, NavBtn, StatTile, AttributeRow, AvatarMedia, SquadHUD, GuideModal } from './GameUI';
+import SocialShare from './SocialShare';
 import { ImpactSplash, BossImpactSplash } from './CombatEffects';
 import { MenuView } from './MenuView';
 import { CombatView } from './CombatView';
@@ -446,6 +447,16 @@ export const GameLayout = ({ onLogout }) => {
                        </div>
                      </div>
 
+                     <SocialShare
+                       shareText={(() => {
+                         const lootHighlights = physicalDrops.slice(0, 3).map(l => l.name).join(' · ');
+                         const lootPart = lootHighlights ? `\nLoot: ${lootHighlights}.` : '';
+                         return `⚔️ Conquered the dungeons in Dungeons With Gems!\n\n+${sessionRewards.tokens} GX · +${sessionRewards.xp} XP${lootPart}\n\nCome hunt: metaverse.dungeonswithgems.quest 🏆`;
+                       })()}
+                       variant="vertical"
+                       dividerText="Share Your Victory"
+                     />
+
                      <button
                        onClick={() => { setShowSuccessWindow(false); combat.handleCloseVictoryWindow(); }}
                        className="w-full shrink-0 bg-black text-white py-4 mt-2 rounded-xl font-black uppercase tracking-tighter hover:bg-slate-800 transition-all border-[3px] border-black shadow-[6px_6px_0_rgba(0,0,0,0.3)] active:translate-x-1 active:translate-y-1 active:shadow-none italic text-lg"
@@ -834,6 +845,14 @@ export const GameLayout = ({ onLogout }) => {
               {[...Array(5)].map((_, i) => (
                 <span key={i} className="text-xs animate-bounce" style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }}>✨</span>
               ))}
+            </div>
+            {/* Share */}
+            <div className="pointer-events-auto mt-2">
+              <SocialShare
+                shareText={`🎁 Just claimed my daily supply drop in Dungeons With Gems!\n\n+100 GX · +10 Potions · +10 Scrolls\n\nCome claim yours: metaverse.dungeonswithgems.quest`}
+                variant="inline"
+                hashtags="DungeonsWithGems,Base,Web3Gaming"
+              />
             </div>
           </div>
         </div>

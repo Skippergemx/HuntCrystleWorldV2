@@ -1861,6 +1861,32 @@ export const usePlayerActions = (
       },
     }, true);
   }, [player, syncPlayer]);
+
+  // Save AI-generated questions to Firestore (persist across sessions, no duplicates)
+  const saveAIQuestions = useCallback((newQuestions) => {
+    if (!player || !newQuestions?.length) return;
+    const existing = player.gardenAIQuestions || [];
+    const existingIds = new Set(existing.map(q => q.id));
+    const unique = newQuestions.filter(q => !existingIds.has(q.id));
+    if (unique.length === 0) return;
+    syncPlayer({
+      gardenAIQuestions: [...existing, ...unique],
+    }, true);
+    addLog(`🌿 ${unique.length} fresh question${unique.length > 1 ? 's' : ''} sprouted in the Garden!`);
+  }, [player, syncPlayer, addLog]);
+
+  // Save daily reflection story to Firestore (one per day, overwrites previous)
+  const saveReflectionStory = useCallback((story) => {
+    if (!player || !story?.title || !story?.story) return;
+    syncPlayer({
+      gardenReflectionStory: {
+        title: story.title,
+        story: story.story,
+        generatedAt: Date.now(),
+      },
+    }, true);
+    addLog(`📖 "${story.title}" — today's garden story has arrived!`);
+  }, [player, syncPlayer, addLog]);
   
   return {
     handleHeal, hireMate, dismissMate, summonDragon, sellItem, equipItem, unequipItem, allocateStat, buyItem, activateAutoScroll,
@@ -1869,6 +1895,6 @@ export const usePlayerActions = (
     initiateSyndicateWar, respondToSyndicateWar, recordWarResult, enrollNagaInWar, concludeNagaWar, claimNagaWarRewards, startGvGRaid, abortSyndicateWar,
     eatFood, completeTownQuest, abandonTownQuest, rushTownQuestCooldown, completeQuiz, exchangeAetherSparks, exchangeHuntSparks,
     setLoadout, clearLoadout, getLoadout, getTotalPotionLoadout, getTotalScrollLoadout, getPlayerPotionOwned, getPlayerScrollOwned,
-    claimDailyGift, completeGardenQuestion, refreshGarden, saveGardenProfile
+    claimDailyGift, completeGardenQuestion, refreshGarden, saveGardenProfile, saveAIQuestions, saveReflectionStory
   };
 };

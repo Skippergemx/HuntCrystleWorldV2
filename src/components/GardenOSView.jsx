@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, User, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { useGardenAI } from '../hooks/useGardenAI';
-import { Header, CitizenMedia } from './GameUI';
+import { Header, CitizenMedia, AvatarMedia } from './GameUI';
 import { TalkingNPC } from './SharedQuestUI';
 import { BattleParticles } from './CombatEffects';
+import SocialShare from './SocialShare';
 import QUESTIONS from '../data/garden_questions.json';
 
 const QUESTIONS_PER_SESSION = 5;
@@ -88,6 +89,7 @@ const GARDEN_KEYFRAMES = `
   .garden-fade-3 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.5s; }
   .garden-fade-4 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.7s; }
   .garden-fade-5 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.9s; }
+  .garden-fade-6 { animation: fadeInUp 0.6s ease-out both; animation-delay: 1.1s; }
   @keyframes agcNeonPulse {
     0%, 100% { text-shadow: 0 0 7px rgba(16,185,129,0.3), 0 0 14px rgba(16,185,129,0.15); }
     50% { text-shadow: 0 0 14px rgba(16,185,129,0.6), 0 0 28px rgba(6,182,212,0.35), 0 0 42px rgba(168,85,247,0.25); }
@@ -134,7 +136,7 @@ export const GardenOSView = React.memo(() => {
   const { setView } = adventure;
 
   // Garden AI hook
-  const { generateReflection, generateSessionSummary, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
+  const { generateReflection, generateSessionSummary, generateQuestionBatch, generateReflectionStory, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
 
   // Particle effects ref
   const particlesRef = useRef(null);
@@ -145,6 +147,24 @@ export const GardenOSView = React.memo(() => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [reflection, setReflection] = useState(null);
+
+  // Stable shuffled options per question within a session
+  const shuffledOptionsRef = useRef({});
+  const shuffledOptionsKeyRef = useRef(sessionKey);
+  // Reset shuffle cache when session changes
+  if (shuffledOptionsKeyRef.current !== sessionKey) {
+    shuffledOptionsRef.current = {};
+    shuffledOptionsKeyRef.current = sessionKey;
+  }
+
+  const getShuffledOptions = (question) => {
+    if (!question) return [];
+    const cached = shuffledOptionsRef.current[question.id];
+    if (cached) return cached;
+    const shuffled = [...question.options].sort(() => Math.random() - 0.5);
+    shuffledOptionsRef.current[question.id] = shuffled;
+    return shuffled;
+  };
   const [rewardResult, setRewardResult] = useState(null);
   const [sessionResults, setSessionResults] = useState([]);
   const [sessionSummary, setSessionSummary] = useState(null);
@@ -170,6 +190,7 @@ export const GardenOSView = React.memo(() => {
     if (to === 'quiz' || to === 'profile') return 'animate-in slide-in-from-right fade-in duration-500';
     if (to === 'dashboard') return 'animate-in slide-in-from-left fade-in duration-500';
     if (to === 'complete') return 'animate-in zoom-in-95 fade-in duration-400';
+    if (to === 'reflection') return 'animate-in slide-in-from-right fade-in duration-500';
     return 'animate-in fade-in duration-300';
   };
 
@@ -223,13 +244,52 @@ export const GardenOSView = React.memo(() => {
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize session: pick 5 questions not yet completed
+  // Initialize session: pick 5 questions with weighted selection
   useEffect(() => {
     resetSession();
     const completed = new Set(player?.gardenCompletedIds || []);
-    const available = QUESTIONS.filter(q => !completed.has(q.id));
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
-    setSessionQuestions(shuffled.slice(0, QUESTIONS_PER_SESSION));
+    const answerHistory = player?.gardenAnswerHistory || [];
+    const recentIds = new Set(answerHistory.slice(-10).map(a => a.questionId));
+
+    // Merge static questions with player's AI-generated questions from Firestore
+    const aiQuestions = player?.gardenAIQuestions || [];
+    const allQuestions = [...QUESTIONS, ...aiQuestions];
+    const allIds = allQuestions.map(q => q.id);
+
+    // Weighted selection: unseen = 10, seen = 1, recently seen = 0.1
+    const pool = allQuestions.map(q => {
+      let weight = completed.has(q.id) ? 1 : 10;
+      if (recentIds.has(q.id)) weight = 0.1;
+      return { q, weight };
+    });
+
+    // Check pool variety — if average weight < 2, trigger AI batch generation
+    const avgWeight = pool.reduce((s, item) => s + item.weight, 0) / pool.length;
+    if (avgWeight < 2 && aiQuestions.length < 50) {
+      console.log('Garden: Pool variety low, triggering AI question generation...');
+      generateQuestionBatch(allIds).then(batch => {
+        if (batch?.length) {
+          actions.saveAIQuestions(batch);
+        }
+      });
+    }
+
+    // Weighted random selection without replacement
+    const selected = [];
+    const remaining = [...pool];
+    for (let i = 0; i < QUESTIONS_PER_SESSION && remaining.length > 0; i++) {
+      const totalWeight = remaining.reduce((s, item) => s + item.weight, 0);
+      let r = Math.random() * totalWeight;
+      let pickIdx = 0;
+      for (let j = 0; j < remaining.length; j++) {
+        r -= remaining[j].weight;
+        if (r <= 0) { pickIdx = j; break; }
+      }
+      selected.push(remaining[pickIdx].q);
+      remaining.splice(pickIdx, 1);
+    }
+
+    setSessionQuestions(selected);
     setCurrentIdx(0);
     setSelectedOption(null);
     setReflection(null);
@@ -360,6 +420,25 @@ export const GardenOSView = React.memo(() => {
   // Close view
   const handleClose = () => setView('menu');
 
+  // ── Social share handlers ──
+  const buildShareText = () => {
+    const p = player?.gardenProfile;
+    const answered = player?.gardenAnswerHistory?.length || 0;
+    const title = p?.profileTitle || 'Garden Seeker';
+    const virtue = p?.dominantVirtue || 'Wisdom';
+    return encodeURIComponent(
+      `🌿 ${title}\n` +
+      `✨ ${virtue} · ${answered} reflections in the Garden Oracle\n\n` +
+      `⚔️ Play DungeonsWithGems:`
+    );
+  };
+  const shareFarcaster = () => {
+    window.open(`https://warpcast.com/~/compose?text=${buildShareText()}`, '_blank', 'noopener,noreferrer');
+  };
+  const shareX = () => {
+    window.open(`https://x.com/intent/tweet?text=${buildShareText()}`, '_blank', 'noopener,noreferrer');
+  };
+
   // Open profile from any view with return tracking
   const openProfile = useCallback((returnTo) => {
     setProfileReturnTo(returnTo);
@@ -380,274 +459,23 @@ export const GardenOSView = React.memo(() => {
     }
   };
 
-  // ── Oracle Dashboard ──
-  if (phase === 'dashboard') {
-    const answerHistory = player?.gardenAnswerHistory || [];
-    const totalAnswered = answerHistory.length;
-    const profile = player?.gardenProfile;
-    const questionsRemaining = QUESTIONS.length - (player?.gardenCompletedIds?.length || 0);
-    const sessionSize = Math.min(questionsRemaining, QUESTIONS_PER_SESSION);
+  // ── Daily Reflection Story auto-generation ──
+  // Trigger once per day when entering dashboard
+  useEffect(() => {
+    if (phase !== 'dashboard') return;
+    const story = player?.gardenReflectionStory;
+    const today = new Date().toDateString();
+    const storyDate = story?.generatedAt ? new Date(story.generatedAt).toDateString() : null;
+    if (storyDate === today) return; // Already have today's story
 
-    // Category counts for constellation
-    const dashCategoryCounts = {};
-    answerHistory.forEach(a => { dashCategoryCounts[a.category] = (dashCategoryCounts[a.category] || 0) + 1; });
-
-    return (
-      <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'dashboard')}`}>
-        <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose} />
-        <BattleParticles ref={particlesRef} />
-        <style>{GARDEN_KEYFRAMES}</style>
-
-        <div className="p-4 md:p-6 flex flex-col items-center relative">
-          {/* ── Oracle HUD Portrait (superimposed, futuristic) ── */}
-          <div className="garden-fade-1 relative mb-4 mt-2">
-            {/* Pulsing aura behind portrait */}
-            <div className="absolute inset-0 w-28 h-28 rounded-full bg-emerald-500/20 blur-2xl animate-pulse" style={{ top: '-8px', left: '-8px', width: 'calc(100% + 16px)', height: 'calc(100% + 16px)' }} />
-            {/* Scan-line overlay on portrait */}
-            <div className="relative w-28 h-28 rounded-full border-[3px] border-white overflow-hidden" style={{ animation: 'oracleGlow 3s ease-in-out infinite' }}>
-              <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
-              <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(16,185,129,0.08) 2px, rgba(16,185,129,0.08) 4px)' }} />
-            </div>
-            {/* Manga name tag at bottom */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-emerald-500 border-[3px] border-black px-3 py-0.5 transform -rotate-1 shadow-[3px_3px_0_rgba(0,0,0,1)]">
-              <span className="text-[8px] font-black text-black uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: "'Bungee', cursive" }}>GARDEN ORACLE</span>
-            </div>
-            {/* Orbiting emoji sprites */}
-            {ORBIT_EMOJIS.slice(0, 3).map((emoji, i) => (
-              <span key={i} className="absolute top-1/2 left-1/2 text-sm pointer-events-none" style={{ animation: `orbit${i + 1} ${6 + i * 2}s linear infinite` }}>{emoji}</span>
-            ))}
-            {/* Floating sparkle dots */}
-            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400/60" style={{ animation: 'floatUp 2.5s ease-in-out infinite' }} />
-            <div className="absolute -bottom-1 -left-2 w-2 h-2 rounded-full bg-lime-400/50" style={{ animation: 'floatUp 3s ease-in-out infinite 0.5s' }} />
-          </div>
-
-          {/* ── Oracle Speech Bubble (comic style) ── */}
-          <div className="garden-fade-1 relative max-w-xs w-full mb-6">
-            <div className="bg-white border-[4px] border-black rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] p-4 transform -rotate-1">
-              <div className="absolute inset-0 rounded-2xl pointer-events-none" style={HALFTONE_STYLE} />
-              <p className="text-sm text-slate-800 font-black uppercase italic leading-relaxed relative">
-                "{oracleDisplay}<span className="animate-pulse text-emerald-600">|</span>"
-              </p>
-            </div>
-            {/* Speech bubble tail pointing down */}
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-[4px] border-b-[4px] border-black rotate-45" />
-          </div>
-
-          {/* ── Player Status Strip (comic cards) ── */}
-          {profile && (
-            <div className="garden-fade-2 w-full grid grid-cols-2 gap-3 mb-6">
-              <div className={`${COMIC_CARD_COMPACT} transform rotate-1 p-3`}>
-                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-xl pointer-events-none" />
-                <div className="relative">
-                  <div className={`${COMIC_BADGE} inline-block mb-1.5 transform -rotate-2`}>Your Archetype</div>
-                  <div className="text-sm font-black text-slate-800 uppercase mt-1">{profile.profileTitle}</div>
-                  <div className="mt-1 flex items-center gap-1">
-                    <span className="text-xs">🌿</span>
-                    <span className="text-[9px] text-emerald-700 capitalize font-bold">{profile.dominantVirtue}</span>
-                  </div>
-                </div>
-              </div>
-              <div className={`${COMIC_CARD_COMPACT} transform -rotate-1 p-3`}>
-                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-xl pointer-events-none" />
-                <div className="relative">
-                  <div className={`${COMIC_BADGE} inline-block mb-1.5`}>Garden Progress</div>
-                  <div className="text-lg font-black text-slate-800">
-                    {totalAnswered}<span className="text-xs text-slate-400">/{QUESTIONS.length}</span>
-                  </div>
-                  {/* Emoji progress bar */}
-                  <div className="flex gap-0.5 mt-1.5">
-                    {Array.from({ length: Math.min(10, Math.ceil((totalAnswered / QUESTIONS.length) * 10)) }, (_, i) => (
-                      <span key={i} className="text-[10px]">🌿</span>
-                    ))}
-                    {Array.from({ length: Math.max(0, 10 - Math.ceil((totalAnswered / QUESTIONS.length) * 10)) }, (_, i) => (
-                      <span key={`e${i}`} className="text-[10px] opacity-20">🌑</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Category Constellation ── */}
-          {totalAnswered > 0 && (
-            <div className="garden-fade-3 w-full mb-6">
-              <div className="flex items-center justify-center gap-0 flex-wrap">
-                {Object.entries(CATEGORY_ICONS).map(([cat, icon], i) => (
-                  <React.Fragment key={cat}>
-                    {i > 0 && <div className="w-4 border-t border-dashed border-black/20 mx-0.5" />}
-                    <div className="flex flex-col items-center gap-0.5" style={{ animation: `floatUp 3s ease-in-out infinite ${i * 0.3}s` }}>
-                      <div className={`${COMIC_BADGE} transform ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}>
-                        {icon} {dashCategoryCounts[cat] || 0}
-                      </div>
-                    </div>
-                  </React.Fragment>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── CTA Section ── */}
-          <div className="garden-fade-4 w-full flex flex-col items-center gap-3">
-            {sessionSize <= 0 ? (
-              <>
-                <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
-                  <p className="text-sm text-slate-700 font-black uppercase italic">All Questions Tended</p>
-                  <p className="text-xs text-slate-500 mt-1">The garden will bloom again soon.</p>
-                </div>
-                <button
-                  onClick={handleRefreshGarden}
-                  disabled={!canAffordRefresh}
-                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:translate-y-0 disabled:cursor-not-allowed`}
-                >
-                  <span className="text-lg">🌱</span>
-                  <span>Refresh Garden</span>
-                  <span className="ml-1 px-2 py-0.5 bg-black/20 rounded text-xs">{GARDEN_REFRESH_COST.toLocaleString()} GX</span>
-                </button>
-                {!canAffordRefresh && (
-                  <p className="text-[10px] text-red-600 font-bold">Insufficient GX. You need {GARDEN_REFRESH_COST.toLocaleString()} GX to refresh.</p>
-                )}
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleStartQuiz}
-                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 group`}
-                  style={{ animation: 'oracleGlow 3s ease-in-out infinite' }}
-                >
-                  <span className="text-lg">🌿</span>
-                  <span>Tend the Garden</span>
-                  <ChevronDown size={16} className="animate-bounce" />
-                </button>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                  {sessionSize} question{sessionSize !== 1 ? 's' : ''} await
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* ── Secondary Actions ── */}
-          <div className="garden-fade-5 w-full flex flex-col items-center gap-2 mt-4">
-            {(profile || totalAnswered > 0) && (
-              <button
-                onClick={() => openProfile('dashboard')}
-                className={`${BUTTON_GHOST} flex items-center gap-2 px-4 py-2`}
-              >
-                <User size={12} />
-                <span className="text-[10px]">View Garden Profile</span>
-              </button>
-            )}
-            <button onClick={handleClose} className="text-[10px] text-slate-500 hover:text-slate-700 uppercase font-bold tracking-wider transition-colors">
-              Return to Menu
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // No questions available (from quiz phase, should rarely happen)
-  if (sessionQuestions.length === 0) {
-    return (
-      <div key={transitionKey} className={`flex flex-col items-center justify-center min-h-[400px] p-6 text-center ${getTransitionClass(prevPhase, 'dashboard')}`}>
-        <div className="relative mb-4">
-          <div className="w-20 h-20 rounded-full border-[3px] border-black overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)]">
-            <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
-          </div>
-        </div>
-        <div className={`${COMIC_CARD} p-6 max-w-sm mb-4 transform -rotate-1`}>
-          <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
-          <div className="relative">
-            <h2 className="text-xl font-black text-slate-800 uppercase mb-2" style={{ fontFamily: "'Bungee', cursive" }}>Garden Complete</h2>
-            <p className="text-sm text-slate-600 italic">You have tended to all available questions. The garden will bloom again soon.</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button onClick={() => navigateTo('dashboard')} className={`${BUTTON_PRIMARY} w-full py-4 flex items-center justify-center gap-2`}>
-            <span className="text-lg">🔮</span>
-            Return to Oracle
-          </button>
-          <button onClick={handleClose} className={`${BUTTON_SECONDARY} w-full py-3 flex items-center justify-center gap-2`}>
-            Return to Menu
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Session complete - show summary
-  if (isComplete) {
-    return (
-      <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'complete')}`}>
-        <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose} />
-        <BattleParticles ref={particlesRef} />
-
-        <div className="p-4 md:p-6">
-          {/* Profile Card */}
-          <div className={`${COMIC_CARD} p-6 mb-6 transform -rotate-1`}>
-            <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl border-[3px] border-black overflow-hidden shadow-[3px_3px_0_rgba(0,0,0,1)]">
-                  <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-black text-slate-800 uppercase" style={{ fontFamily: "'Bungee', cursive" }}>{sessionSummary.profileTitle}</h2>
-                    <span className={`${COMIC_BADGE} text-[7px]`}>New!</span>
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mb-4 italic leading-relaxed">"{sessionSummary.summary}"</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-emerald-50 rounded-xl p-3 border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1">
-                  <div className={`${COMIC_BADGE} inline-block mb-1`}>Dominant Virtue</div>
-                  <div className="text-slate-800 font-bold capitalize">{sessionSummary.dominantVirtue}</div>
-                </div>
-                <div className="bg-amber-50 rounded-xl p-3 border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform -rotate-1">
-                  <div className={`${COMIC_BADGE} inline-block mb-1`}>Growth Area</div>
-                  <div className="text-slate-800 text-xs">{sessionSummary.growthArea}</div>
-                </div>
-              </div>
-              <div className="mt-4 p-3 border-l-[6px] border-emerald-500 bg-emerald-50/50 rounded-r-xl">
-                <p className="text-xs text-emerald-800 italic text-center">"{sessionSummary.gardenMetaphor}"</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Session Harvest */}
-          <div className={`${COMIC_CARD_COMPACT} p-4 mb-6 transform rotate-1`}>
-            <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2" style={{ fontFamily: "'Bungee', cursive" }}>
-              <span className="text-lg">⚡</span> Session Harvest
-            </h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform -rotate-1">
-                <span className="text-lg">⚡</span>
-                <span className="text-amber-700 font-black">{sessionResults.filter(r => r.rewardTier === 'premium' || r.rewardTier === 'standard').length}</span>
-                <span className="text-[9px] text-amber-600 uppercase font-bold">Sparks</span>
-              </div>
-              <div className="flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-lg border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1">
-                <span className="text-lg">🌱</span>
-                <span className="text-emerald-700 font-black">{sessionResults.length}</span>
-                <span className="text-[9px] text-emerald-600 uppercase font-bold">Reflections</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col gap-3">
-            <button onClick={handleReturnToOracle} className={`${BUTTON_PRIMARY} w-full py-4 flex items-center justify-center gap-2`}>
-              <span className="text-lg">🔮</span>
-              Return to Oracle
-            </button>
-            <button onClick={handleClose} className={`${BUTTON_SECONDARY} w-full py-3 flex items-center justify-center gap-2`}>
-              <span>🌿</span>
-              Return to Menu
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    // Generate new story (fire and forget — shows loading state then populates)
+    console.log('Garden: Generating daily reflection story...');
+    generateReflectionStory(player?.name || 'Hunter').then((newStory) => {
+      if (newStory?.title && newStory?.story) {
+        actions.saveReflectionStory(newStory);
+      }
+    });
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Garden Profile View (toggle from quiz header) ──
   if (showProfile) {
@@ -859,27 +687,486 @@ export const GardenOSView = React.memo(() => {
     );
   }
 
+  // ── Oracle Dashboard ──
+  if (phase === 'dashboard') {
+    const answerHistory = player?.gardenAnswerHistory || [];
+    const totalAnswered = answerHistory.length;
+    const profile = player?.gardenProfile;
+    const questionsRemaining = QUESTIONS.length - (player?.gardenCompletedIds?.length || 0);
+    const sessionSize = Math.min(questionsRemaining, QUESTIONS_PER_SESSION);
+
+    // Category counts for constellation
+    const dashCategoryCounts = {};
+    answerHistory.forEach(a => { dashCategoryCounts[a.category] = (dashCategoryCounts[a.category] || 0) + 1; });
+
+    return (
+      <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'dashboard')}`}>
+        <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose} />
+        <BattleParticles ref={particlesRef} />
+        <style>{GARDEN_KEYFRAMES}</style>
+
+        <div className="p-4 md:p-6 flex flex-col items-center relative">
+          {/* ── Oracle HUD Portrait (superimposed, futuristic) ── */}
+          <div className="garden-fade-1 relative mb-4 mt-2">
+            {/* Pulsing aura behind portrait */}
+            <div className="absolute inset-0 w-28 h-28 rounded-full bg-emerald-500/20 blur-2xl animate-pulse" style={{ top: '-8px', left: '-8px', width: 'calc(100% + 16px)', height: 'calc(100% + 16px)' }} />
+            {/* Scan-line overlay on portrait */}
+            <div className="relative w-28 h-28 rounded-full border-[3px] border-white overflow-hidden" style={{ animation: 'oracleGlow 3s ease-in-out infinite' }}>
+              <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
+              <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(16,185,129,0.08) 2px, rgba(16,185,129,0.08) 4px)' }} />
+            </div>
+            {/* Manga name tag at bottom */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-emerald-500 border-[3px] border-black px-3 py-0.5 transform -rotate-1 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+              <span className="text-[8px] font-black text-black uppercase tracking-wider whitespace-nowrap" style={{ fontFamily: "'Bungee', cursive" }}>GARDEN ORACLE</span>
+            </div>
+            {/* Orbiting emoji sprites */}
+            {ORBIT_EMOJIS.slice(0, 3).map((emoji, i) => (
+              <span key={i} className="absolute top-1/2 left-1/2 text-sm pointer-events-none" style={{ animation: `orbit${i + 1} ${6 + i * 2}s linear infinite` }}>{emoji}</span>
+            ))}
+            {/* Floating sparkle dots */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400/60" style={{ animation: 'floatUp 2.5s ease-in-out infinite' }} />
+            <div className="absolute -bottom-1 -left-2 w-2 h-2 rounded-full bg-lime-400/50" style={{ animation: 'floatUp 3s ease-in-out infinite 0.5s' }} />
+          </div>
+
+          {/* ── Oracle Speech Bubble (comic style) ── */}
+          <div className="garden-fade-1 relative max-w-xs w-full mb-6">
+            <div className="bg-white border-[4px] border-black rounded-2xl shadow-[6px_6px_0_rgba(0,0,0,1)] p-4 transform -rotate-1">
+              <div className="absolute inset-0 rounded-2xl pointer-events-none" style={HALFTONE_STYLE} />
+              <p className="text-sm text-slate-800 font-black uppercase italic leading-relaxed relative">
+                "{oracleDisplay}<span className="animate-pulse text-emerald-600">|</span>"
+              </p>
+            </div>
+            {/* Speech bubble tail pointing down */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r-[4px] border-b-[4px] border-black rotate-45" />
+          </div>
+
+          {/* ── Daily Reflection Story (comic card) ── */}
+          <div className="garden-fade-2 w-full mb-6">
+            {player?.gardenReflectionStory ? (
+              <div className={`${COMIC_CARD} p-5 transform rotate-1`}>
+                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                <div className="relative z-10">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📖</span>
+                      <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider" style={{ fontFamily: "'Bungee', cursive" }}>
+                        Today's Reflection
+                      </h3>
+                    </div>
+                    <span className={`${COMIC_BADGE} transform rotate-2 text-[8px]`}>🌅 Daily Story</span>
+                  </div>
+                  {/* Story title */}
+                  <p className="text-[11px] text-emerald-700 font-black uppercase italic mb-2 tracking-wide">
+                    "{player.gardenReflectionStory.title}"
+                  </p>
+                  {/* Story preview with drop cap */}
+                  <div className="bg-emerald-50/50 rounded-xl border-2 border-emerald-200 p-4 max-h-32 overflow-y-auto relative">
+                    <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                      <span className="float-left text-4xl font-black text-emerald-600 leading-[0.8] mr-2 pt-1" style={{ fontFamily: "'Bungee', cursive" }}>{player.gardenReflectionStory.story.charAt(0)}</span>
+                      {player.gardenReflectionStory.story.slice(1).substring(0, 200)}...
+                    </p>
+                    {/* Gradient fade at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-emerald-50/90 to-transparent pointer-events-none rounded-b-xl" />
+                  </div>
+                  {/* Read Full Story button */}
+                  <button
+                    onClick={() => navigateTo('reflection')}
+                    className="mt-3 w-full py-2 bg-emerald-500 text-black font-black uppercase italic rounded-lg border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-all active:translate-y-0 active:shadow-none text-[11px] tracking-wider flex items-center justify-center gap-1"
+                  >
+                    Read Full Story
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Skeleton/loading state while generating */
+              <div className={`${COMIC_CARD} p-5 transform rotate-1 animate-pulse`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">📖</span>
+                  <div className="h-4 w-28 bg-slate-200 rounded" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-3 bg-slate-100 rounded w-full" />
+                  <div className="h-3 bg-slate-100 rounded w-5/6" />
+                  <div className="h-3 bg-slate-100 rounded w-4/6" />
+                </div>
+                <p className="text-[9px] text-slate-400 italic mt-3 text-center">The Oracle is weaving today's story...</p>
+              </div>
+            )}
+          </div>
+
+          {/* ── Player Status Strip (comic cards) ── */}
+          {profile && (
+            <div className="garden-fade-3 w-full grid grid-cols-2 gap-3 mb-6">
+              <div className={`${COMIC_CARD_COMPACT} transform rotate-1 p-3`}>
+                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-xl pointer-events-none" />
+                <div className="relative">
+                  <div className={`${COMIC_BADGE} inline-block mb-1.5 transform -rotate-2`}>Your Archetype</div>
+                  <div className="text-sm font-black text-slate-800 uppercase mt-1">{profile.profileTitle}</div>
+                  <div className="mt-1 flex items-center gap-1">
+                    <span className="text-xs">🌿</span>
+                    <span className="text-[9px] text-emerald-700 capitalize font-bold">{profile.dominantVirtue}</span>
+                  </div>
+                </div>
+              </div>
+              <div className={`${COMIC_CARD_COMPACT} transform -rotate-1 p-3`}>
+                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-xl pointer-events-none" />
+                <div className="relative">
+                  <div className={`${COMIC_BADGE} inline-block mb-1.5`}>Garden Progress</div>
+                  <div className="text-lg font-black text-slate-800">
+                    {totalAnswered}<span className="text-xs text-slate-400">/{QUESTIONS.length}</span>
+                  </div>
+                  {/* Emoji progress bar */}
+                  <div className="flex gap-0.5 mt-1.5">
+                    {Array.from({ length: Math.min(10, Math.ceil((totalAnswered / QUESTIONS.length) * 10)) }, (_, i) => (
+                      <span key={i} className="text-[10px]">🌿</span>
+                    ))}
+                    {Array.from({ length: Math.max(0, 10 - Math.ceil((totalAnswered / QUESTIONS.length) * 10)) }, (_, i) => (
+                      <span key={`e${i}`} className="text-[10px] opacity-20">🌑</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Category Constellation ── */}
+          {totalAnswered > 0 && (
+            <div className="garden-fade-4 w-full mb-6">
+              <div className="flex items-center justify-center gap-0 flex-wrap">
+                {Object.entries(CATEGORY_ICONS).map(([cat, icon], i) => (
+                  <React.Fragment key={cat}>
+                    {i > 0 && <div className="w-4 border-t border-dashed border-black/20 mx-0.5" />}
+                    <div className="flex flex-col items-center gap-0.5" style={{ animation: `floatUp 3s ease-in-out infinite ${i * 0.3}s` }}>
+                      <div className={`${COMIC_BADGE} transform ${i % 2 === 0 ? 'rotate-1' : '-rotate-1'}`}>
+                        {icon} {dashCategoryCounts[cat] || 0}
+                      </div>
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── CTA Section ── */}
+          <div className="garden-fade-5 w-full flex flex-col items-center gap-3">
+            {sessionSize <= 0 ? (
+              <>
+                <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
+                  <p className="text-sm text-slate-700 font-black uppercase italic">All Questions Tended</p>
+                  <p className="text-xs text-slate-500 mt-1">The garden will bloom again soon.</p>
+                </div>
+                <button
+                  onClick={handleRefreshGarden}
+                  disabled={!canAffordRefresh}
+                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:translate-y-0 disabled:cursor-not-allowed`}
+                >
+                  <span className="text-lg">🌱</span>
+                  <span>Refresh Garden</span>
+                  <span className="ml-1 px-2 py-0.5 bg-black/20 rounded text-xs">{GARDEN_REFRESH_COST.toLocaleString()} GX</span>
+                </button>
+                {!canAffordRefresh && (
+                  <p className="text-[10px] text-red-600 font-bold">Insufficient GX. You need {GARDEN_REFRESH_COST.toLocaleString()} GX to refresh.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleStartQuiz}
+                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 group`}
+                  style={{ animation: 'oracleGlow 3s ease-in-out infinite' }}
+                >
+                  <span className="text-lg">🌿</span>
+                  <span>Tend the Garden</span>
+                  <ChevronDown size={16} className="animate-bounce" />
+                </button>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
+                  {sessionSize} question{sessionSize !== 1 ? 's' : ''} await
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* ── Secondary Actions ── */}
+          <div className="garden-fade-6 w-full flex flex-col items-center gap-2 mt-4">
+            {(profile || totalAnswered > 0) && (
+              <button
+                onClick={() => openProfile('dashboard')}
+                className={`${BUTTON_GHOST} flex items-center gap-2 px-4 py-2`}
+              >
+                <User size={12} />
+                <span className="text-[10px]">View Garden Profile</span>
+              </button>
+            )}
+            <button onClick={handleClose} className="text-[10px] text-slate-500 hover:text-slate-700 uppercase font-bold tracking-wider transition-colors">
+              Return to Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full Reflection Story View ──
+  if (phase === 'reflection') {
+    const story = player?.gardenReflectionStory;
+    return (
+      <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'reflection')}`}>
+        <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose} />
+        <BattleParticles ref={particlesRef} />
+
+        <div className="p-4 md:p-6">
+          {/* Dashboard breadcrumb */}
+          <div className="mb-4">
+            <button
+              onClick={() => navigateTo('dashboard')}
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-emerald-600 uppercase tracking-wider transition-colors group"
+              title="Back to Oracle Dashboard"
+            >
+              <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+              Dashboard
+            </button>
+          </div>
+
+          {/* Story Card */}
+          <div className={`${COMIC_CARD} p-6 md:p-8 mb-6 transform -rotate-1`}>
+            <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+            {/* Warm ambient glow */}
+            <div className="absolute inset-0 rounded-2xl pointer-events-none" style={{ boxShadow: 'inset 0 0 80px rgba(16,185,129,0.08)' }} />
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📖</span>
+                  <div>
+                    <h2 className="text-lg font-black text-slate-800 uppercase tracking-wider" style={{ fontFamily: "'Bungee', cursive" }}>
+                      Today's Reflection
+                    </h2>
+                    <p className="text-[11px] text-emerald-700 font-black uppercase italic tracking-wide mt-0.5">
+                      "{story?.title || 'A Story from the Garden'}"
+                    </p>
+                  </div>
+                </div>
+                <span className={`${COMIC_BADGE} transform rotate-2`}>🌅 {story?.generatedAt ? new Date(story.generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today'}</span>
+              </div>
+
+              {/* Decorative rule */}
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex-1 border-t-2 border-dashed border-emerald-200" />
+                <span className="text-emerald-400 text-xs">🌿 ✨ 🌿</span>
+                <div className="flex-1 border-t-2 border-dashed border-emerald-200" />
+              </div>
+
+              {/* Story text */}
+              <div className="bg-gradient-to-b from-emerald-50/30 to-white rounded-xl p-5 md:p-6">
+                <p className="text-sm md:text-base text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                  <span className="float-left text-5xl font-black text-emerald-600 leading-[0.8] mr-3 pt-1" style={{ fontFamily: "'Bungee', cursive" }}>{(story?.story || 'T')[0]}</span>
+                  {(story?.story || 'The garden is quiet today. Come back soon for a new story woven from the threads of light and root.').slice(1)}
+                </p>
+              </div>
+
+              {/* Bottom action */}
+              <div className="mt-6 flex items-center justify-center">
+                <button
+                  onClick={() => navigateTo('dashboard')}
+                  className={`${BUTTON_GHOST} flex items-center gap-2 px-4 py-2`}
+                >
+                  <ArrowLeft size={14} />
+                  <span className="text-[10px]">Return to Dashboard</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Share Story */}
+          <div className="mb-4 flex justify-center">
+            <SocialShare
+              shareText={`📖 "${story?.title || 'A Garden Tale'}" — today's Garden Oracle story in Dungeons With Gems. The garden grows when we grow together. 🌿\n\nmetaverse.dungeonswithgems.quest`}
+              variant="inline"
+              hashtags="DungeonsWithGems,Base,Web3Gaming"
+            />
+          </div>
+
+          {/* Persona Banner */}
+          <div className="mt-4">
+            <TalkingNPC
+              npcIndex={GARDEN_SAGE_NPC}
+              name="GARDEN SAGE"
+              dialogue="I hope this story warmed your heart, grower. The garden tells a new tale each day."
+              accentColor="bg-emerald-500"
+              isTalking={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No questions available (from quiz phase, should rarely happen)
+  if (sessionQuestions.length === 0) {
+    return (
+      <div key={transitionKey} className={`flex flex-col items-center justify-center min-h-[400px] p-6 text-center ${getTransitionClass(prevPhase, 'dashboard')}`}>
+        <div className="relative mb-4">
+          <div className="w-20 h-20 rounded-full border-[3px] border-black overflow-hidden shadow-[4px_4px_0_rgba(0,0,0,1)]">
+            <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
+          </div>
+        </div>
+        <div className={`${COMIC_CARD} p-6 max-w-sm mb-4 transform -rotate-1`}>
+          <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <h2 className="text-xl font-black text-slate-800 uppercase mb-2" style={{ fontFamily: "'Bungee', cursive" }}>Garden Complete</h2>
+            <p className="text-sm text-slate-600 italic">You have tended to all available questions. The garden will bloom again soon.</p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <button onClick={() => navigateTo('dashboard')} className={`${BUTTON_PRIMARY} w-full py-4 flex items-center justify-center gap-2`}>
+            <span className="text-lg">🔮</span>
+            Return to Oracle
+          </button>
+          <button onClick={handleClose} className={`${BUTTON_SECONDARY} w-full py-3 flex items-center justify-center gap-2`}>
+            Return to Menu
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Session complete - show summary
+  if (isComplete) {
+    return (
+      <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'complete')}`}>
+        <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose} />
+        <BattleParticles ref={particlesRef} />
+
+        <div className="p-4 md:p-6">
+          {/* Profile Card */}
+          <div className={`${COMIC_CARD} p-6 mb-6 transform -rotate-1`}>
+            <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-12 h-12 rounded-xl border-[3px] border-black overflow-hidden shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                  <CitizenMedia num={GARDEN_SAGE_NPC} className="w-full h-full object-cover object-top" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-black text-slate-800 uppercase" style={{ fontFamily: "'Bungee', cursive" }}>{sessionSummary.profileTitle}</h2>
+                    <span className={`${COMIC_BADGE} text-[7px]`}>New!</span>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 mb-4 italic leading-relaxed">"{sessionSummary.summary}"</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-emerald-50 rounded-xl p-3 border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1">
+                  <div className={`${COMIC_BADGE} inline-block mb-1`}>Dominant Virtue</div>
+                  <div className="text-slate-800 font-bold capitalize">{sessionSummary.dominantVirtue}</div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-3 border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform -rotate-1">
+                  <div className={`${COMIC_BADGE} inline-block mb-1`}>Growth Area</div>
+                  <div className="text-slate-800 text-xs">{sessionSummary.growthArea}</div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 border-l-[6px] border-emerald-500 bg-emerald-50/50 rounded-r-xl">
+                <p className="text-xs text-emerald-800 italic text-center">"{sessionSummary.gardenMetaphor}"</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Session Harvest */}
+          <div className={`${COMIC_CARD_COMPACT} p-4 mb-6 transform rotate-1`}>
+            <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-2" style={{ fontFamily: "'Bungee', cursive" }}>
+              <span className="text-lg">⚡</span> Session Harvest
+            </h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform -rotate-1">
+                <span className="text-lg">⚡</span>
+                <span className="text-amber-700 font-black">{sessionResults.filter(r => r.rewardTier === 'premium' || r.rewardTier === 'standard').length}</span>
+                <span className="text-[9px] text-amber-600 uppercase font-bold">Sparks</span>
+              </div>
+              <div className="flex items-center gap-2 bg-emerald-50 px-3 py-2 rounded-lg border-[2px] border-black shadow-[2px_2px_0_rgba(0,0,0,1)] transform rotate-1">
+                <span className="text-lg">🌱</span>
+                <span className="text-emerald-700 font-black">{sessionResults.length}</span>
+                <span className="text-[9px] text-emerald-600 uppercase font-bold">Reflections</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Share Garden Profile */}
+          <div className="mb-6">
+            <SocialShare
+              shareText={(() => {
+                const p = player?.gardenProfile;
+                const answered = player?.gardenAnswerHistory?.length || 0;
+                const title = p?.profileTitle || 'Garden Seeker';
+                const virtue = p?.dominantVirtue || 'Wisdom';
+                return `🌿 ${title}\n✨ ${virtue} · ${answered} reflections in the Garden Oracle\n\n⚔️ Play DungeonsWithGems: metaverse.dungeonswithgems.quest`;
+              })()}
+              variant="vertical"
+              dividerText="Share Your Garden"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <button onClick={handleReturnToOracle} className={`${BUTTON_PRIMARY} w-full py-4 flex items-center justify-center gap-2`}>
+              <span className="text-lg">🔮</span>
+              Return to Oracle
+            </button>
+            <button onClick={handleClose} className={`${BUTTON_SECONDARY} w-full py-3 flex items-center justify-center gap-2`}>
+              <span>🌿</span>
+              Return to Menu
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Question view
   return (
     <div key={transitionKey} className={`flex flex-col h-full overflow-y-auto ${getTransitionClass(prevPhase, 'quiz')}`}>
       {/* Shared Header with Garden Sage NPC */}
       <Header title="GARDEN ORACLE" npcNum={GARDEN_SAGE_NPC} onClose={handleClose}>
         <div className="flex items-center gap-2">
-          <span className={`${COMIC_BADGE} transform rotate-1`}>🌿 Q {progress}</span>
-          <span className={`${COMIC_BADGE} transform -rotate-1`}>
-            <span className="text-emerald-600">✦</span> AI: {aiCallsRemaining}
-          </span>
-          {/* Profile button — view Garden Profile anytime */}
+          {/* PROFILE — player avatar + label */}
           {(player?.gardenProfile || (player?.gardenAnswerHistory?.length > 0)) && (
             <button
               onClick={() => openProfile('quiz')}
-              className={`${COMIC_BADGE} transform rotate-1 hover:bg-emerald-50 transition-colors inline-flex items-center gap-1 cursor-pointer`}
+              className="flex items-center gap-1.5 bg-white border-[3px] border-black rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,1)] px-2.5 py-1.5 group"
               title="View Garden Profile"
             >
-              <User size={9} className="text-emerald-600" />
-              Profile
+              <div className="w-8 h-8 rounded-lg border-[2px] border-black overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)] shrink-0 bg-emerald-100 group-hover:border-emerald-500 transition-colors">
+                <AvatarMedia num={player.avatar || 1} animated={false} className="w-full h-full object-cover object-top" />
+              </div>
+              <span className="text-[11px] font-black uppercase italic text-slate-800 tracking-wider group-hover:text-emerald-700 transition-colors" style={{ fontFamily: "'Bungee', cursive" }}>
+                PROFILE
+              </span>
             </button>
           )}
+
+          {/* Farcaster Share */}
+          <button
+            onClick={shareFarcaster}
+            title="Share on Farcaster"
+            className="flex items-center gap-1.5 bg-white border-[3px] border-black rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,1)] px-2.5 py-1.5 group"
+          >
+            <span className="text-sm">🟣</span>
+            <span className="text-[11px] font-black uppercase italic text-purple-700 tracking-wider group-hover:text-purple-900 transition-colors" style={{ fontFamily: "'Bungee', cursive" }}>
+              FC
+            </span>
+          </button>
+
+          {/* X Share */}
+          <button
+            onClick={shareX}
+            title="Share on X"
+            className="flex items-center gap-1.5 bg-white border-[3px] border-black rounded-xl shadow-[4px_4px_0_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,1)] transition-all active:translate-y-0 active:shadow-[2px_2px_0_rgba(0,0,0,1)] px-2.5 py-1.5 group"
+          >
+            <span className="text-sm">𝕏</span>
+            <span className="text-[11px] font-black uppercase italic text-slate-800 tracking-wider group-hover:text-zinc-600 transition-colors" style={{ fontFamily: "'Bungee', cursive" }}>
+              X
+            </span>
+          </button>
         </div>
       </Header>
 
@@ -887,6 +1174,18 @@ export const GardenOSView = React.memo(() => {
       <BattleParticles ref={particlesRef} />
 
       <div className="p-4 md:p-6">
+        {/* Dashboard breadcrumb — back to Oracle home */}
+        <div className="mb-3">
+          <button
+            onClick={() => navigateTo('dashboard')}
+            className="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-emerald-600 uppercase tracking-wider transition-colors group"
+            title="Back to Oracle Dashboard"
+          >
+            <ArrowLeft className="w-3 h-3 group-hover:-translate-x-0.5 transition-transform" />
+            Dashboard
+          </button>
+        </div>
+
         {/* Emoji Progress Bar */}
         <div className="flex gap-0.5 mb-4 justify-center">
           {Array.from({ length: totalQuestions }, (_, i) => (
@@ -1084,7 +1383,7 @@ export const GardenOSView = React.memo(() => {
 
                 {/* Options */}
                 <div className="grid grid-cols-1 gap-3 mb-6">
-                  {currentQuestion.options.map((option, i) => (
+                  {getShuffledOptions(currentQuestion).map((option, i) => (
                     <button
                       key={i}
                       onClick={() => handleSelectOption(option)}

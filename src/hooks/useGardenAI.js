@@ -313,6 +313,264 @@ Respond ONLY with this JSON (no other text):
   }, []);
 
   /**
+   * Generate a batch of fresh virtue questions in a single API call.
+   * Used as a fallback when the static question pool is exhausted.
+   * Returns an array of question objects matching garden_questions.json format.
+   */
+  const generateQuestionBatch = useCallback(async (existingIds, count = 5) => {
+    if (!API_KEY) return null;
+    if (sessionCallsRef.current >= MAX_CALLS_PER_SESSION) return null;
+
+    const now = Date.now();
+    if (now - lastRequestTimeRef.current < COOLDOWN_MS) return null;
+
+    setIsAnalyzing(true);
+    lastRequestTimeRef.current = now;
+
+    try {
+      const existingList = (existingIds || []).slice(0, 30).join(', ');
+      const batchId = `garden_ai_${Date.now()}`;
+
+      const systemPrompt = `You are the Garden Oracle's question crafter for a fantasy RPG virtue quiz.
+Generate ethical scenarios that test virtues: Integrity, Community, Builder, Creator, Stewardship, Courage, Wisdom, Empathy.
+
+RULES:
+- Output ONLY a JSON array. No reasoning, no planning, no markdown, no backticks.
+- Each question has exactly 4 options with rewardTiers: premium, standard, basic, minimal.
+- Scenarios should feel personal and emotionally resonant.
+- The first option in each set should be the premium-tier (most virtuous) choice.
+- Avoid topics similar to: ${existingList || 'none yet'}`;
+
+      const userPrompt = `Generate ${count} fresh virtue scenarios. Respond with ONLY a JSON array:
+[
+  {"id": "${batchId}_1", "category": "VirtueName", "scenario": "A vivid ethical crossroads (1-2 sentences)...", "options": [
+    {"text": "Most virtuous action", "virtue": "primaryVirtue", "rewardTier": "premium"},
+    {"text": "Good but imperfect action", "virtue": "secondaryVirtue", "rewardTier": "standard"},
+    {"text": "Neutral/pragmatic action", "virtue": "neutralVirtue", "rewardTier": "basic"},
+    {"text": "Avoidant or selfish action", "virtue": "flaw", "rewardTier": "minimal"}
+  ], "reflection": "A single poetic sentence reflecting on this virtue"}
+]`;
+
+      const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [{ parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 4000
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.warn(`Garden AI: Question batch API error ${response.status}:`, errorBody);
+        return null;
+      }
+
+      const json = await response.json();
+      const parts = json.candidates?.[0]?.content?.parts || [];
+      const responsePart = parts.find(p => !p.thought) || parts[0];
+      const rawContent = responsePart?.text;
+      if (!rawContent) return null;
+
+      console.log('Garden AI: Raw question batch (first 300):', rawContent.slice(0, 300));
+
+      // Strip markdown code fences (Gemma 4 often wraps JSON in ```json ... ```)
+      let cleaned = rawContent.trim();
+      const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch) cleaned = fenceMatch[1].trim();
+
+      // Try parsing as raw JSON array first
+      let parsed = null;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        // Try to extract JSON array from whatever remains
+        const match = cleaned.match(/\[[\s\S]*\]/);
+        if (match) {
+          let jsonStr = match[0];
+          // Try to repair truncated JSON (Gemma may hit maxOutputTokens)
+          try {
+            parsed = JSON.parse(jsonStr);
+          } catch (_) {
+            // JSON is likely truncated — try appending closing brackets
+            // Count unclosed structures and close them
+            let repaired = jsonStr;
+            let braceDepth = 0, bracketDepth = 0, inString = false, escaped = false;
+            for (const ch of jsonStr) {
+              if (escaped) { escaped = false; continue; }
+              if (ch === '\\') { escaped = true; continue; }
+              if (ch === '"') { inString = !inString; continue; }
+              if (inString) continue;
+              if (ch === '{') braceDepth++;
+              if (ch === '}') braceDepth--;
+              if (ch === '[') bracketDepth++;
+              if (ch === ']') bracketDepth--;
+            }
+            // Close any unclosed objects first, then the array
+            if (braceDepth > 0) {
+              // Remove the last partial object (it's incomplete) and close
+              const lastBraceOpen = repaired.lastIndexOf('{');
+              repaired = repaired.slice(0, lastBraceOpen).trimEnd();
+              if (repaired.endsWith(',')) repaired = repaired.slice(0, -1);
+              repaired += ']';
+            } else if (bracketDepth > 0) {
+              repaired += ']';
+            }
+            try { parsed = JSON.parse(repaired); } catch (_2) { /* truly broken */ }
+          }
+        }
+      }
+
+      if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+        console.warn('Garden AI: Could not parse question batch JSON. Raw:', rawContent.slice(0, 500));
+        return null;
+      }
+
+      // Validate each question has required fields
+      const valid = parsed.filter(q =>
+        q.id && q.category && q.scenario &&
+        Array.isArray(q.options) && q.options.length === 4 &&
+        q.reflection
+      );
+
+      if (valid.length === 0) {
+        console.warn('Garden AI: No valid questions in batch');
+        return null;
+      }
+
+      console.log(`Garden AI: Generated ${valid.length} questions`);
+      sessionCallsRef.current++;
+      setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
+      return valid;
+    } catch (err) {
+      console.warn('Garden AI: Question batch generation error:', err.message);
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  /**
+   * Generate a warm, uplifting reflection story for the daily Garden OS dashboard.
+   * Crafted to boost oxytocin/positive emotion through narrative, not quiz logic.
+   * Returns { title, story } — regenerated once per day.
+   */
+  const generateReflectionStory = useCallback(async (playerName) => {
+    if (!API_KEY) return null;
+    if (sessionCallsRef.current >= MAX_CALLS_PER_SESSION) return null;
+
+    const now = Date.now();
+    if (now - lastRequestTimeRef.current < COOLDOWN_MS) return null;
+
+    setIsAnalyzing(true);
+    lastRequestTimeRef.current = now;
+
+    try {
+      const displayName = playerName || 'Hunter';
+
+      const systemPrompt = `You are the Garden Oracle — an ancient, sentient intelligence that tells warm, uplifting stories.
+Your voice is poetic, intimate, and comforting — like a beloved grandparent telling a bedtime story.
+
+RULES:
+- Output ONLY a JSON object. No reasoning, no planning, no bullet points, no markdown.
+- Never use markdown formatting (no *, no **, no backticks).
+- The story must feel like a gift — no quiz, no tests, no moral lessons.
+- Weave in nature imagery: gardens, forests, seasons, roots, light, soil, stars.`;
+
+      const userPrompt = `Tell a warm, uplifting short story (250-350 words) for ${displayName}. Open with a vivid nature scene, weave gentle resilience, close with a tender image.
+
+Respond ONLY with this JSON (no other text):
+{"title": "A 4-8 word poetic story title", "story": "The complete story text, 250-350 words of warm narrative. Use paragraph breaks with \\n\\n."}`;
+
+      const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [{ parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1200
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.warn(`Garden AI: Story API error ${response.status}:`, errorBody);
+        return null;
+      }
+
+      const json = await response.json();
+      const parts = json.candidates?.[0]?.content?.parts || [];
+      const responsePart = parts.find(p => !p.thought) || parts[0];
+      const rawContent = responsePart?.text;
+      if (!rawContent) return null;
+
+      console.log('Garden AI: Raw story (first 200):', rawContent.slice(0, 200));
+
+      let parsed = extractBestJSON(rawContent);
+      if (!parsed) {
+        // Try to salvage — look for title + story in the raw output
+        const titleMatch = rawContent.match(/"?title"?\s*[:.]\s*"([^"]+)"/i);
+        const storyStart = rawContent.indexOf('"story"');
+        if (titleMatch && storyStart > -1) {
+          const storyRest = rawContent.slice(storyStart);
+          const storyMatch = storyRest.match(/"story"\s*:\s*"([\s\S]+?)"\s*\}?$/);
+          if (storyMatch) {
+            parsed = { title: titleMatch[1], story: storyMatch[1].replace(/\\n/g, '\n') };
+          }
+        }
+        // If still no JSON, try bullet-point salvage: look for a long prose paragraph
+        if (!parsed) {
+          const lines = rawContent.split('\n').map(l => l.trim()).filter(l => l.length > 40 && !l.startsWith('*') && !l.startsWith('-') && !l.startsWith('{') && !l.startsWith('}'));
+          if (lines.length > 0) {
+            // Filter out instruction regurgitation — look for warm, narrative text
+            const narrative = lines.filter(l =>
+              !l.includes('Output ONLY') && !l.includes('Respond ONLY') &&
+              !l.includes('No reasoning') && !l.includes('RULES') &&
+              !l.includes('Persona') && !l.includes('Mantra') && !l.includes('Tone') &&
+              !l.includes('Goal') && !l.includes('Task') && !l.includes('Constraints') &&
+              !l.includes('Requirements') && !l.includes('Core Philosophy') &&
+              !l.includes('User:') && !l.includes('Recipient:')
+            );
+            if (narrative.length > 0) {
+              // Use first substantial line as title, rest as story
+              const storyText = narrative.join('\n\n');
+              const autoTitle = narrative[0].length > 60 ? narrative[0].slice(0, 50).trim().replace(/[.,;:!?]$/, '') : 'A Garden Tale';
+              parsed = { title: autoTitle, story: storyText };
+              console.log('Garden AI: Salvaged story from prose text');
+            }
+          }
+        }
+      }
+
+      if (!parsed || !parsed.title || !parsed.story || parsed.story.length < 50) {
+        console.warn('Garden AI: Could not parse story JSON. Raw:', rawContent.slice(0, 500));
+        return null;
+      }
+
+      console.log('Garden AI: Generated story:', parsed.title);
+      sessionCallsRef.current++;
+      setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
+      return parsed;
+    } catch (err) {
+      console.warn('Garden AI: Story generation error:', err.message);
+      return null;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, []);
+
+  /**
    * Reset session counters (call when entering Garden OS view).
    */
   const resetSession = useCallback(() => {
@@ -324,6 +582,8 @@ Respond ONLY with this JSON (no other text):
   return {
     generateReflection,
     generateSessionSummary,
+    generateQuestionBatch,
+    generateReflectionStory,
     resetSession,
     isAnalyzing,
     aiCallsRemaining
