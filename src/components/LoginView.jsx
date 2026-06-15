@@ -15,12 +15,17 @@ export const LoginView = ({ handleGoogleLogin, handleDevLogin }) => {
   const [activeMobileShot, setActiveMobileShot] = useState(0);
   const [activeDesktopShot, setActiveDesktopShot] = useState(0);
   const [utilityOverlay, setUtilityOverlay] = useState(null);
+  const [utilityArticleId, setUtilityArticleId] = useState(null);
 
-  // Open overlay from URL hash (e.g. #articles, #manual, #tokenomics, #devlog)
+  // Open overlay from URL hash (e.g. #articles/dwg-caster-town-launch, #manual, #tokenomics, #devlog)
   useEffect(() => {
-    const hash = window.location.hash.replace('#', '');
+    const raw = window.location.hash.replace('#', '');
+    const [base, articleId] = raw.split('/');
     const valid = ['articles', 'manual', 'tokenomics', 'devlog'];
-    if (valid.includes(hash)) setUtilityOverlay(hash);
+    if (valid.includes(base)) {
+      setUtilityOverlay(base);
+      if (articleId) setUtilityArticleId(articleId);
+    }
   }, []);
 
   const mobileShots = [
@@ -438,7 +443,7 @@ export const LoginView = ({ handleGoogleLogin, handleDevLogin }) => {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {utilityOverlay === 'articles' && <ArticlesView />}
+            {utilityOverlay === 'articles' && <ArticlesView initialArticleId={utilityArticleId} />}
             {utilityOverlay === 'manual' && <ManualView />}
             {utilityOverlay === 'tokenomics' && <TokenomicsView />}
             {utilityOverlay === 'devlog' && <DevlogView />}

@@ -1010,14 +1010,17 @@ const ARTICLES_DATA = [
   }
 ];
 
-export const ArticlesView = () => {
+export const ArticlesView = ({ initialArticleId } = {}) => {
   const game = useGame() || {};
   const adventure = game.adventure || {};
   const setView = adventure.setView || (() => {});
-  const [selectedArticle, setSelectedArticle] = useState(null);
+  const [selectedArticle, setSelectedArticle] = useState(() => {
+    if (initialArticleId) return ARTICLES_DATA.find(a => a.id === initialArticleId) || null;
+    return null;
+  });
 
   const shareToX = (article) => {
-    const text = `🚨 NEW ARTICLE: "${article.title}"\n\n${article.subtitle}\n\n📡 Read more: https://metaverse.dungeonswithgems.quest\n\n@DungeonsWithGems #Base #Web3Gaming #GameDev`;
+    const text = `🚨 NEW ARTICLE: "${article.title}"\n\n${article.subtitle}\n\n📡 Read here: https://metaverse.dungeonswithgems.quest/#articles/${article.id}\n\n@DungeonsWithGems #Base #Web3Gaming #GameDev`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
