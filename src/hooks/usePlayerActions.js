@@ -1,4 +1,4 @@
-﻿import { useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { calculateNagaStats, getXpRequired, AP_PER_LEVEL, getMonsterElement } from '../utils/gameLogic';
@@ -25,7 +25,8 @@ export const usePlayerActions = (
   gvgActions = {},
   functions = null,
   setFaucetResult = null,
-  addOptimisticUpdate = null
+  addOptimisticUpdate = null,
+  clearOptimisticUpdates = null
 ) => {
   const { setBattleMode, setGvgContext, setEnemy, setView } = gvgActions;
 
@@ -229,6 +230,7 @@ export const usePlayerActions = (
       addLog(`Contract signed: ${mate.name} joined!`);
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Contract failed.");
     }
   };
@@ -262,6 +264,7 @@ export const usePlayerActions = (
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Summon failed.");
     }
   };
@@ -330,13 +333,15 @@ export const usePlayerActions = (
          addLog(`ðŸ’° Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
          return totalValue;
       }
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       return false;
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Sale failed.");
       return false;
     }
-  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
+  }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate, clearOptimisticUpdates]);
 
   const equipItem = useCallback(async (itemOrId) => {
     const itemId = typeof itemOrId === 'object' ? itemOrId.id : itemOrId;
@@ -371,6 +376,7 @@ export const usePlayerActions = (
       addLog(`Installed Tech: ${item.name}`);
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Install failed.");
     }
   }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
@@ -397,6 +403,7 @@ export const usePlayerActions = (
       addLog(`Uninstalled Tech: ${item.name}`);
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Uninstall failed.");
     }
   }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
@@ -502,6 +509,7 @@ export const usePlayerActions = (
       return false;
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
       return false;
     }
@@ -570,6 +578,7 @@ export const usePlayerActions = (
       addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Activation failed.");
     }
   };
@@ -650,6 +659,7 @@ export const usePlayerActions = (
       }
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ LAB ERROR: Formula calculation error.");
     }
   };
@@ -788,6 +798,7 @@ export const usePlayerActions = (
       }
     } catch (e) {
       console.error(e);
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog(`ðŸš¨ UPLINK ERROR: Forging failed during neural handshake.`);
     }
   };

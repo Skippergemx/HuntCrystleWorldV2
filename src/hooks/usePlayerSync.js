@@ -107,6 +107,14 @@ export const usePlayerSync = (user, db, appId) => {
     });
   }, []);
 
+  /**
+   * Clear all active optimistic updates — used when a cloud function fails
+   * and we need to revert local state to the server truth immediately.
+   */
+  const clearOptimisticUpdates = useCallback(() => {
+    optimisticUpdatesRef.current = {};
+  }, []);
+
   // 1. Unified Player Hydration (Primary Entry Point)
   useEffect(() => {
     // GUARD: No auth context — bail out
@@ -783,5 +791,5 @@ export const usePlayerSync = (user, db, appId) => {
     }
   }, [activeDocId, db]);
 
-  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict, isSyncing, lastSyncFailed, addOptimisticUpdate };
+  return { player, setPlayer, syncPlayer, linkWallet, migrateProfile, identitySentry, loadingPlayer, sessionConflict, isSyncing, lastSyncFailed, addOptimisticUpdate, clearOptimisticUpdates };
 };
