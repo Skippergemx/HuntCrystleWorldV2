@@ -23,8 +23,9 @@ import { Header } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 
 export const ManualView = () => {
-  const { adventure } = useGame();
-  const { setView } = adventure;
+  const game = useGame() || {};
+  const adventure = game.adventure || {};
+  const setView = adventure.setView || (() => {});
   const [activeTab, setActiveTab] = useState('systems');
 
   const sections = {
@@ -125,7 +126,7 @@ export const ManualView = () => {
 
   return (
     <div className="flex-1 p-4 md:p-6 flex flex-col relative overflow-hidden bg-slate-900/40">
-      <Header title="Hunter manual v2.0" onClose={adventure.goBack} npcNum={2} />
+      <Header title="Hunter manual v2.0" onClose={adventure.goBack || (() => {})} npcNum={2} />
 
       {/* Hero Banner */}
       <div className="relative mb-6 group cursor-default">

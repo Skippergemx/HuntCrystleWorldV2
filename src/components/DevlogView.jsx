@@ -489,8 +489,9 @@ const DEVLOG_ENTRIES = [
 ];
 
 export const DevlogView = () => {
-  const { adventure } = useGame();
-  const { setView } = adventure;
+  const game = useGame() || {};
+  const adventure = game.adventure || {};
+  const setView = adventure.setView || (() => {});
   const [selectedEntry, setSelectedEntry] = useState(null);
 
   const shareToWarpcast = (entry) => {
@@ -523,7 +524,7 @@ export const DevlogView = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(6,182,212,0.1),transparent_70%)]" />
       </div>
 
-      <Header title="DEVLOG INTERFACE" onClose={adventure.goBack} npcNum={24} />
+      <Header title="DEVLOG INTERFACE" onClose={adventure.goBack || (() => {})} npcNum={24} />
 
       {/* Main Terminal Feed */}
       <div className="flex-1 overflow-y-auto custom-scrollbar space-y-6 relative z-10 pr-2">

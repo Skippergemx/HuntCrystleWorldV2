@@ -3,13 +3,18 @@ import {
   Sword, Shield, Zap, Globe, Lock, ChevronRight, Info, ShieldCheck, Database, Award, 
   Coins, Hammer, Package, Activity, TrendingUp, Target, Sparkles, Map as MapIcon, 
   Trophy, MousePointer, Heart, Beer, ShoppingBag, Tag, Book, Trees, FlaskConical, Swords, AlertCircle,
-  Github, Twitter, MessageCircle
+  Github, Twitter, MessageCircle, Newspaper, BookOpen, PieChart, Radio, X
 } from 'lucide-react';
+import { ArticlesView } from './ArticlesView';
+import { ManualView } from './ManualView';
+import { TokenomicsView } from './TokenomicsView';
+import { DevlogView } from './DevlogView';
 
 export const LoginView = ({ handleGoogleLogin, handleDevLogin }) => {
   const [activeTab, setActiveTab] = useState('mission');
   const [activeMobileShot, setActiveMobileShot] = useState(0);
   const [activeDesktopShot, setActiveDesktopShot] = useState(0);
+  const [utilityOverlay, setUtilityOverlay] = useState(null);
 
   const mobileShots = [
     '/assets/gamescreenshot/Mobilescreenshot (1).png',
@@ -389,9 +394,50 @@ export const LoginView = ({ handleGoogleLogin, handleDevLogin }) => {
                     <span className="text-[9px] font-black uppercase tracking-tight">Discord</span>
                  </div>
               </div>
+
+              {/* UTILITY LINKS */}
+              <div className="flex items-center gap-1 opacity-50 hover:opacity-100 transition-opacity">
+                 <span className="text-[7px] font-black text-slate-500 uppercase tracking-[0.3em] italic mr-2">Browse:</span>
+                 {[
+                   { id: 'articles', icon: <Newspaper size={12} />, label: 'ARTICLES' },
+                   { id: 'manual', icon: <BookOpen size={12} />, label: 'MANUAL' },
+                   { id: 'tokenomics', icon: <PieChart size={12} />, label: 'TOKENOMICS' },
+                   { id: 'devlog', icon: <Radio size={12} />, label: 'DEVLOG' },
+                 ].map(link => (
+                   <button
+                     key={link.id}
+                     onClick={() => setUtilityOverlay(link.id)}
+                     className="flex items-center gap-1 text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                   >
+                     {link.icon}
+                     <span className="text-[8px] font-black uppercase tracking-tight">{link.label}</span>
+                   </button>
+                 ))}
+              </div>
            </div>
         </div>
       </div>
+
+      {/* ─── UTILITY OVERLAY (preview without login) ─── */}
+      {utilityOverlay && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950 flex flex-col">
+          <div className="flex items-center justify-between p-3 bg-black border-b-2 border-white/10 shrink-0">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">PREVIEW MODE — LOGIN TO INTERACT</span>
+            <button
+              onClick={() => setUtilityOverlay(null)}
+              className="flex items-center gap-1.5 bg-white text-black px-3 py-1.5 rounded-xl border-[2px] border-black font-black uppercase text-[10px] italic hover:bg-slate-200 transition-colors"
+            >
+              <X size={12} /> CLOSE
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {utilityOverlay === 'articles' && <ArticlesView />}
+            {utilityOverlay === 'manual' && <ManualView />}
+            {utilityOverlay === 'tokenomics' && <TokenomicsView />}
+            {utilityOverlay === 'devlog' && <DevlogView />}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
