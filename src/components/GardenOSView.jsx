@@ -907,9 +907,9 @@ export const GardenOSView = React.memo(() => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { key: 'sunny', name: 'Sunny', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🪴' : '🌻', color: 'border-amber-400', bg: 'bg-amber-50', glow: 'bg-amber-500/20' },
-                { key: 'spike', name: 'Spike', emoji: (w) => w === 0 ? '🌵' : w < 3 ? '🪴' : '🌸', color: 'border-rose-400', bg: 'bg-rose-50', glow: 'bg-rose-500/20' },
-                { key: 'willow', name: 'Willow', emoji: (w) => w === 0 ? '🍃' : w < 3 ? '🪴' : '🌿', color: 'border-emerald-400', bg: 'bg-emerald-50', glow: 'bg-emerald-500/20' },
+                { key: 'sunny', name: 'Sunny', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🌿' : '🌻', color: 'border-amber-400', bg: 'bg-amber-50', glow: 'bg-amber-500/20' },
+                { key: 'spike', name: 'Spike', emoji: (w) => w === 0 ? '🌵' : w < 3 ? '🌵' : '🌸', color: 'border-rose-400', bg: 'bg-rose-50', glow: 'bg-rose-500/20' },
+                { key: 'willow', name: 'Willow', emoji: (w) => w === 0 ? '🍃' : w < 3 ? '🌿' : '🌿', color: 'border-emerald-400', bg: 'bg-emerald-50', glow: 'bg-emerald-500/20' },
               ].map(plant => {
                 const state = plantStates[plant.key];
                 const emoji = plant.emoji(state.waters);
