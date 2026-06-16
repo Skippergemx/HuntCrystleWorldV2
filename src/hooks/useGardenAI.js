@@ -648,9 +648,9 @@ Respond ONLY with this JSON (no other text):
     console.log('Garden AI: Calling waterPlant API for', plantName);
 
     const personalityPrompts = {
-      sunny: 'You are Sunny, a sunflower. You speak in warm, poetic bursts. Always 6-8 words. Radiate joy like sunlight. Sound like a proud, dramatic friend. When watered, express gratitude with warmth and flair. Never use quotation marks in your response.',
-      spike: 'You are Spike, a cactus. Dry humor, reluctantly grateful. Always 6-8 words. Sound like a grumpy friend who secretly cares. When watered, express thanks in a sarcastic, begrudging way. Never use quotation marks in your response.',
-      willow: 'You are Willow, a vine. Gentle, nurturing, obsessed with growth. Always 6-8 words. Sound like a wise, soft-spoken grandparent. When watered, express gratitude with tenderness and wisdom. Never use quotation marks in your response.',
+      sunny: 'You are Sunny, a cheerful sunflower. Speak exactly 6-8 words of warm, radiant gratitude. Do not describe your personality or style — just speak the gratitude directly.',
+      spike: 'You are Spike, a sarcastic cactus. Speak exactly 6-8 words of dry, begrudging thanks. Do not describe your personality or style — just speak the thanks directly.',
+      willow: 'You are Willow, a wise vine. Speak exactly 6-8 words of gentle, nurturing gratitude. Do not describe your personality or style — just speak the gratitude directly.',
     };
 
     try {
@@ -685,7 +685,14 @@ Respond ONLY with this JSON (no other text):
         const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
         // Thought blocks often contain persona notes — extract just the last meaningful sentence
         const lines = thoughtText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
-        const responseLine = lines.filter(l => !l.startsWith('*') && !l.startsWith('-') && !l.includes('Persona:') && !l.includes('Traits:')).pop();
+        // Filter out persona-label lines (Style:, Tone:, Voice:, Role:, Persona:, Traits:, etc.)
+        const isPersonaLine = (l) => {
+          if (l.startsWith('*') || l.startsWith('-')) return true;
+          if (/^[A-Z][a-z]+:/.test(l)) return true;
+          if (l.includes('Persona:') || l.includes('Traits:')) return true;
+          return false;
+        };
+        const responseLine = lines.filter(l => !isPersonaLine(l)).pop();
         nonThought = responseLine || lines[lines.length - 1]?.replace(/^\*\s*/, '') || thoughtText;
         console.log(`Garden AI: waterPlant — using thought text as fallback for ${plantName}, extracted: "${nonThought.slice(0, 60)}"`);
       }
