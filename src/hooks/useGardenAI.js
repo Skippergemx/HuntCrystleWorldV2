@@ -648,9 +648,9 @@ Respond ONLY with this JSON (no other text):
     console.log('Garden AI: Calling waterPlant API for', plantName);
 
     const personalityPrompts = {
-      sunny: 'You are Sunny, a cheerful sunflower. Speak exactly 6-8 words of warm, radiant gratitude. Do not describe your personality or style — just speak the gratitude directly.',
-      spike: 'You are Spike, a sarcastic cactus. Speak exactly 6-8 words of dry, begrudging thanks. Do not describe your personality or style — just speak the thanks directly.',
-      willow: 'You are Willow, a wise vine. Speak exactly 6-8 words of gentle, nurturing gratitude. Do not describe your personality or style — just speak the gratitude directly.',
+      sunny: 'a cheerful sunflower',
+      spike: 'a sarcastic cactus',
+      willow: 'a wise vine',
     };
 
     try {
@@ -658,13 +658,10 @@ Respond ONLY with this JSON (no other text):
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: personalityPrompts[personality] || personalityPrompts.sunny }]
-          },
-          contents: [{ parts: [{ text: `${plantName} was just watered by the gardener. Speak exactly 6 to 8 words. No more. No less. Just your response — no explanation.` }] }],
+          contents: [{ parts: [{ text: `You are ${plantName}, ${personalityPrompts[personality] || personalityPrompts.sunny}. A gardener just watered you. Say thank you in exactly 6 to 8 words.\n\nRespond in this format and nothing else:\nRESPONSE: [your 6-8 word gratitude]` }] }],
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 256
+            maxOutputTokens: 100
           }
         })
       });
@@ -679,24 +676,31 @@ Respond ONLY with this JSON (no other text):
       const parts = json.candidates?.[0]?.content?.parts || [];
       console.log(`Garden AI: waterPlant raw parts for ${plantName}:`, parts.map(p => ({ thought: !!p.thought, textLen: (p.text || '').length, preview: (p.text || '').slice(0, 40) })));
       
-      // Prefer non-thought text, but fall back to thought text if needed (Gemma sometimes puts response in thought block)
+      // Prefer non-thought text, but fall back to thought text if needed
       let nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
+      
+      // Combine all text (thought + non-thought) for RESPONSE: marker extraction
+      const allText = parts.map(p => p.text).join(' ').trim();
+      
       if (!nonThought || nonThought.length === 0) {
-        const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
-        // Thought blocks often contain persona notes mixed with inline * bullets.
-        // Split by newlines first, then flatten inline * markers so each item is a separate line.
-        const rawLines = thoughtText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
-        const lines = rawLines.flatMap(l => l.split(/\*\s*/).map(s => s.trim()).filter(s => s.length > 0));
-        // Filter out persona-label lines (Style:, Tone:, Voice:, Role:, Persona:, Traits:, Context:, Task:, etc.)
-        const isPersonaLine = (l) => {
-          if (l.startsWith('-')) return true;
-          if (/^[A-Z][a-z]+:/.test(l)) return true;
-          if (/^(Persona|Traits|Style|Tone|Voice|Role|Context|Task|Goal|Action|Response)$/i.test(l)) return true;
-          return false;
-        };
-        const responseLine = lines.filter(l => !isPersonaLine(l)).pop();
-        nonThought = responseLine || (lines.length > 0 ? lines[lines.length - 1]?.replace(/^\*\s*/, '') : null) || thoughtText;
-        console.log(`Garden AI: waterPlant — using thought text as fallback for ${plantName}, extracted: "${nonThought.slice(0, 60)}"`);
+        // Primary extraction: look for RESPONSE: marker anywhere in the output
+        const responseMatch = allText.match(/RESPONSE:\s*(.+?)(?:\n|$)/i);
+        if (responseMatch && responseMatch[1].trim().length > 0) {
+          nonThought = responseMatch[1].trim();
+          console.log(`Garden AI: waterPlant — extracted via RESPONSE: marker for ${plantName}: "${nonThought.slice(0, 60)}"`);
+        } else {
+          // Fallback: try to find a short sentence that looks like dialogue (no colons, under 60 chars)
+          const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
+          const fragments = thoughtText.split(/[\n*]+/).map(s => s.trim()).filter(s => s.length > 0);
+          // Keep only short fragments without label patterns (Persona:, Style:, etc.)
+          const dialogueFragments = fragments.filter(f => 
+            f.length >= 10 && f.length <= 60 && 
+            !/^[A-Z][a-z]+:/.test(f) &&
+            !/^(Persona|Traits|Style|Tone|Voice|Role|Context|Task|Goal|Action|Response)$/i.test(f)
+          );
+          nonThought = dialogueFragments.pop() || '';
+          console.log(`Garden AI: waterPlant — using dialogue fragment fallback for ${plantName}, extracted: "${nonThought.slice(0, 60)}"`);
+        }
       }
 
       if (nonThought && nonThought.length > 0) {
