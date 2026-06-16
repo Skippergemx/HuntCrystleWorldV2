@@ -155,6 +155,8 @@ export const useGardenAI = () => {
   const [aiCallsRemaining, setAiCallsRemaining] = useState(MAX_CALLS_PER_SESSION);
   const sessionCallsRef = useRef(0);
   const lastRequestTimeRef = useRef(0);
+  const plantCooldownRef = useRef(0); // separate cooldown for plant watering
+  const usedFallbacksRef = useRef({ sunny: [], spike: [], willow: [] }); // track used fallbacks per plant
 
   /**
    * Generate a personalized reflection after a player answers a question.
@@ -593,29 +595,57 @@ Respond ONLY with this JSON (no other text):
   }, []);
 
   /**
+   * Pick a fallback that hasn't been used yet for this plant.
+   * Resets the used list when all fallbacks have been exhausted.
+   */
+  const pickFreshFallback = (personality) => {
+    const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+    const used = usedFallbacksRef.current[personality] || [];
+    const available = fallbacks.filter(f => !used.includes(f));
+    if (available.length === 0) {
+      // All used — reset and pick any
+      usedFallbacksRef.current[personality] = [];
+      const fresh = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      usedFallbacksRef.current[personality].push(fresh);
+      console.log(`Garden AI: waterPlant fallback (reset cycle) for ${personality}: "${fresh}"`);
+      return fresh;
+    }
+    const pick = available[Math.floor(Math.random() * available.length)];
+    usedFallbacksRef.current[personality] = [...used, pick];
+    console.log(`Garden AI: waterPlant fallback for ${personality}: "${pick}"`);
+    return pick;
+  };
+
+  /**
    * Water a plant — generates a short 6-8 word comedic response.
    * Three plant personalities: sunny, spike, willow.
    * Falls back to pre-written responses if API unavailable.
    */
   const waterPlant = useCallback(async (plantName, personality) => {
+    console.log(`Garden AI: waterPlant called for ${plantName} (${personality})`);
+
     // Check session call limit
     if (sessionCallsRef.current >= MAX_CALLS_PER_SESSION) {
-      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      console.log('Garden AI: waterPlant — session call limit reached, using fallback');
+      const fallback = pickFreshFallback(personality);
+      return fallback;
     }
 
     const now = Date.now();
-    if (now - lastRequestTimeRef.current < COOLDOWN_MS) {
-      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    if (now - plantCooldownRef.current < COOLDOWN_MS) {
+      console.log('Garden AI: waterPlant — plant cooldown active, using fallback');
+      const fallback = pickFreshFallback(personality);
+      return fallback;
     }
 
     if (!API_KEY) {
-      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      console.log('Garden AI: waterPlant — no API key, using fallback');
+      const fallback = pickFreshFallback(personality);
+      return fallback;
     }
 
-    lastRequestTimeRef.current = now;
+    plantCooldownRef.current = now;
+    console.log('Garden AI: Calling waterPlant API for', plantName);
 
     const personalityPrompts = {
       sunny: 'You are Sunny, a sunflower. You speak in warm, poetic bursts. Always 6-8 words. Radiate joy like sunlight. Sound like a proud, dramatic friend. When watered, express gratitude with warmth and flair. Never use quotation marks in your response.',
@@ -640,29 +670,32 @@ Respond ONLY with this JSON (no other text):
       });
 
       if (!response.ok) {
-        const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-        return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        console.warn(`Garden AI: waterPlant API error ${response.status} for ${plantName}`);
+        const fallback = pickFreshFallback(personality);
+        return fallback;
       }
 
       const json = await response.json();
       const parts = json.candidates?.[0]?.content?.parts || [];
+      console.log(`Garden AI: waterPlant raw parts for ${plantName}:`, parts.map(p => ({ thought: !!p.thought, textLen: (p.text || '').length })));
       const nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
 
       if (nonThought && nonThought.length > 0) {
         sessionCallsRef.current++;
         setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
-        // Clean up: remove quotes, trim to ~8 words
         const cleaned = nonThought.replace(/["]/g, '').replace(/^\s+|\s+$/g, '');
         const words = cleaned.split(/\s+/).slice(0, 10).join(' ');
+        console.log(`Garden AI: waterPlant SUCCESS for ${plantName}: "${words}"`);
         return words;
       }
 
-      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      console.warn(`Garden AI: waterPlant — empty non-thought text for ${plantName}, using fallback`);
+      const fallback = pickFreshFallback(personality);
+      return fallback;
     } catch (err) {
       console.warn('Garden AI: Plant watering error:', err.message);
-      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      const fallback = pickFreshFallback(personality);
+      return fallback;
     }
   }, []);
 
