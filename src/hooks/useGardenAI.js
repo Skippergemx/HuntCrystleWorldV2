@@ -677,8 +677,14 @@ Respond ONLY with this JSON (no other text):
 
       const json = await response.json();
       const parts = json.candidates?.[0]?.content?.parts || [];
-      console.log(`Garden AI: waterPlant raw parts for ${plantName}:`, parts.map(p => ({ thought: !!p.thought, textLen: (p.text || '').length })));
-      const nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
+      console.log(`Garden AI: waterPlant raw parts for ${plantName}:`, parts.map(p => ({ thought: !!p.thought, textLen: (p.text || '').length, preview: (p.text || '').slice(0, 40) })));
+      
+      // Prefer non-thought text, but fall back to thought text if needed (Gemma sometimes puts response in thought block)
+      let nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
+      if (!nonThought || nonThought.length === 0) {
+        nonThought = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
+        console.log(`Garden AI: waterPlant — using thought text as fallback for ${plantName}`);
+      }
 
       if (nonThought && nonThought.length > 0) {
         sessionCallsRef.current++;
