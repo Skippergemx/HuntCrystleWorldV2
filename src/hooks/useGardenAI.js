@@ -46,18 +46,51 @@ const PLANT_FALLBACKS = {
     "You've made my petals dance with joy.",
     "A friend like you makes growing easy.",
     "Your water carries the warmth of home.",
+    "You shower me with love, dear gardener!",
+    "My leaves are singing because of you.",
+    "Every drop you give me radiates pure joy.",
+    "The sun itself envies your warm heart.",
+    "You turn ordinary water into golden kindness.",
+    "I bloom brighter just knowing you're here.",
+    "Your care paints the garden in joy.",
+    "Standing tall because you believed in me.",
+    "You're the sunshine after every rain, friend.",
+    "My golden petals are blushing with gratitude.",
+    "Thank you for making the world more beautiful.",
   ],
   spike: [
     "Fine. That was acceptable. Come back tomorrow.",
     "I suppose you're not the worst gardener.",
     "Water received. Gratitude... reluctantly given.",
     "Don't tell the others I said thanks.",
+    "You're tolerable. For a human, anyway.",
+    "I've had worse caretakers. Much worse.",
+    "Alright, that hit the spot. Barely.",
+    "You remembered I exist. How thoughtful.",
+    "If I had feelings, they'd be appreciative.",
+    "Not bad. I'll hold off the prickles today.",
+    "You earn one cactus-point. Don't spend it.",
+    "Surprisingly competent watering technique.",
+    "Fine, fine. You're growing on me.",
+    "I won't jab you today. You earned it.",
+    "Grudging respect earned. Don't let it go.",
   ],
   willow: [
     "Each drop makes our roots grow stronger.",
     "Your gentle care nourishes the whole garden.",
     "Growth happens when kindness flows freely.",
     "You tend more than soil, dear friend.",
+    "Patience and water — the oldest wisdom of all.",
+    "Your hands carry the memory of rain.",
+    "In your care, even stone would bloom.",
+    "The garden whispers thanks through every leaf.",
+    "You water not just roots, but spirits.",
+    "Slow and steady, like the vine we grow.",
+    "Kindness planted here will reach the sky.",
+    "You understand what roots truly need, friend.",
+    "Every watering is a promise of tomorrow.",
+    "The earth remembers every gentle hand.",
+    "Together we weave a tapestry of green.",
   ],
 };
 
@@ -157,6 +190,7 @@ export const useGardenAI = () => {
   const lastRequestTimeRef = useRef(0);
   const plantCooldownRef = useRef(0); // separate cooldown for plant watering
   const usedFallbacksRef = useRef({ sunny: [], spike: [], willow: [] }); // track used fallbacks per plant
+  const enrichmentPoolRef = useRef({}); // API responses that pass validation, served occasionally
 
   /**
    * Generate a personalized reflection after a player answers a question.
@@ -601,125 +635,124 @@ Respond ONLY with this JSON (no other text):
   const pickFreshFallback = (personality) => {
     const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
     const used = usedFallbacksRef.current[personality] || [];
+    const pool = enrichmentPoolRef.current[personality] || [];
+    
+    // Occasionally serve from enrichment pool (30% chance if pool has items)
+    if (pool.length > 0 && Math.random() < 0.3) {
+      const poolPick = pool[Math.floor(Math.random() * pool.length)];
+      console.log(`Garden AI: serving from enrichment pool for ${personality}: "${poolPick}"`);
+      return poolPick;
+    }
+    
     const available = fallbacks.filter(f => !used.includes(f));
     if (available.length === 0) {
       // All used — reset and pick any
       usedFallbacksRef.current[personality] = [];
       const fresh = fallbacks[Math.floor(Math.random() * fallbacks.length)];
       usedFallbacksRef.current[personality].push(fresh);
-      console.log(`Garden AI: waterPlant fallback (reset cycle) for ${personality}: "${fresh}"`);
+      console.log(`Garden AI: curated response (reset cycle) for ${personality}: "${fresh}"`);
       return fresh;
     }
     const pick = available[Math.floor(Math.random() * available.length)];
     usedFallbacksRef.current[personality] = [...used, pick];
-    console.log(`Garden AI: waterPlant fallback for ${personality}: "${pick}"`);
+    console.log(`Garden AI: curated response for ${personality}: "${pick}"`);
     return pick;
   };
 
   /**
-   * Water a plant — generates a short 6-8 word comedic response.
+   * Validate an API-generated response — must be actual dialogue, not template text, persona notes, or labels.
+   */
+  const isValidDialogue = (text) => {
+    if (!text || text.length < 6) return false;
+    // Reject template placeholders
+    if (text.includes('[') || text.includes(']')) return false;
+    // Reject persona/label echoes
+    if (/^(Persona|Traits|Style|Tone|Voice|Role|Context|Task|Goal|Action|Response)\s*:/i.test(text)) return false;
+    // Reject single-word nonsense
+    const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+    if (wordCount < 3 || wordCount > 15) return false;
+    return true;
+  };
+
+  /**
+   * Water a plant — always returns an immediate curated response.
+   * API is called silently in the background to enrich the pool for future waterings.
    * Three plant personalities: sunny, spike, willow.
-   * Falls back to pre-written responses if API unavailable.
    */
   const waterPlant = useCallback(async (plantName, personality) => {
     console.log(`Garden AI: waterPlant called for ${plantName} (${personality})`);
 
-    // Check session call limit
-    if (sessionCallsRef.current >= MAX_CALLS_PER_SESSION) {
-      console.log('Garden AI: waterPlant — session call limit reached, using fallback');
-      const fallback = pickFreshFallback(personality);
-      return fallback;
-    }
+    // Always pick a curated response immediately
+    const curated = pickFreshFallback(personality);
 
+    // Fire API in background to enrich pool (don't block the response)
     const now = Date.now();
-    if (now - plantCooldownRef.current < COOLDOWN_MS) {
-      console.log('Garden AI: waterPlant — plant cooldown active, using fallback');
-      const fallback = pickFreshFallback(personality);
-      return fallback;
-    }
+    if (
+      API_KEY &&
+      sessionCallsRef.current < MAX_CALLS_PER_SESSION &&
+      now - plantCooldownRef.current >= COOLDOWN_MS
+    ) {
+      plantCooldownRef.current = now;
+      console.log('Garden AI: background API enrichment for', plantName);
+      
+      // Fire-and-forget — we don't await this
+      (async () => {
+        try {
+          const personalityLabels = {
+            sunny: 'a cheerful sunflower',
+            spike: 'a sarcastic cactus',
+            willow: 'a wise vine',
+          };
+          const resp = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `You are ${plantName}, ${personalityLabels[personality] || personalityLabels.sunny}. A gardener just watered you. Say thank you in exactly 6 to 8 words.\n\nRespond in this format and nothing else:\nRESPONSE: [your 6-8 word gratitude]` }] }],
+              generationConfig: { temperature: 0.9, maxOutputTokens: 100 }
+            })
+          });
 
-    if (!API_KEY) {
-      console.log('Garden AI: waterPlant — no API key, using fallback');
-      const fallback = pickFreshFallback(personality);
-      return fallback;
-    }
-
-    plantCooldownRef.current = now;
-    console.log('Garden AI: Calling waterPlant API for', plantName);
-
-    const personalityPrompts = {
-      sunny: 'a cheerful sunflower',
-      spike: 'a sarcastic cactus',
-      willow: 'a wise vine',
-    };
-
-    try {
-      const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `You are ${plantName}, ${personalityPrompts[personality] || personalityPrompts.sunny}. A gardener just watered you. Say thank you in exactly 6 to 8 words.\n\nRespond in this format and nothing else:\nRESPONSE: [your 6-8 word gratitude]` }] }],
-          generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 100
+          if (!resp.ok) return;
+          const json = await resp.json();
+          const parts = json.candidates?.[0]?.content?.parts || [];
+          
+          // Try RESPONSE: marker first, then non-thought text, then dialogue fragments
+          const allText = parts.map(p => p.text).join(' ').trim();
+          let extracted = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
+          
+          if (!extracted) {
+            const m = allText.match(/RESPONSE:\s*(.+?)(?:\n|$)/i);
+            if (m && m[1].trim()) {
+              extracted = m[1].trim();
+            } else {
+              const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
+              const fragments = thoughtText.split(/[\n*]+/).map(s => s.trim()).filter(s => s.length > 0);
+              const dialogue = fragments.filter(f => 
+                f.length >= 10 && f.length <= 60 && 
+                !/^[A-Z][a-z]+:/.test(f) &&
+                !/^(Persona|Traits|Style|Tone|Voice|Role|Context|Task|Goal|Action|Response)$/i.test(f)
+              );
+              extracted = dialogue.pop() || '';
+            }
           }
-        })
-      });
 
-      if (!response.ok) {
-        console.warn(`Garden AI: waterPlant API error ${response.status} for ${plantName}`);
-        const fallback = pickFreshFallback(personality);
-        return fallback;
-      }
-
-      const json = await response.json();
-      const parts = json.candidates?.[0]?.content?.parts || [];
-      console.log(`Garden AI: waterPlant raw parts for ${plantName}:`, parts.map(p => ({ thought: !!p.thought, textLen: (p.text || '').length, preview: (p.text || '').slice(0, 40) })));
-      
-      // Prefer non-thought text, but fall back to thought text if needed
-      let nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
-      
-      // Combine all text (thought + non-thought) for RESPONSE: marker extraction
-      const allText = parts.map(p => p.text).join(' ').trim();
-      
-      if (!nonThought || nonThought.length === 0) {
-        // Primary extraction: look for RESPONSE: marker anywhere in the output
-        const responseMatch = allText.match(/RESPONSE:\s*(.+?)(?:\n|$)/i);
-        if (responseMatch && responseMatch[1].trim().length > 0) {
-          nonThought = responseMatch[1].trim();
-          console.log(`Garden AI: waterPlant — extracted via RESPONSE: marker for ${plantName}: "${nonThought.slice(0, 60)}"`);
-        } else {
-          // Fallback: try to find a short sentence that looks like dialogue (no colons, under 60 chars)
-          const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
-          const fragments = thoughtText.split(/[\n*]+/).map(s => s.trim()).filter(s => s.length > 0);
-          // Keep only short fragments without label patterns (Persona:, Style:, etc.)
-          const dialogueFragments = fragments.filter(f => 
-            f.length >= 10 && f.length <= 60 && 
-            !/^[A-Z][a-z]+:/.test(f) &&
-            !/^(Persona|Traits|Style|Tone|Voice|Role|Context|Task|Goal|Action|Response)$/i.test(f)
-          );
-          nonThought = dialogueFragments.pop() || '';
-          console.log(`Garden AI: waterPlant — using dialogue fragment fallback for ${plantName}, extracted: "${nonThought.slice(0, 60)}"`);
+          if (isValidDialogue(extracted)) {
+            sessionCallsRef.current++;
+            setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
+            const cleaned = extracted.replace(/["]/g, '').trim();
+            const words = cleaned.split(/\s+/).slice(0, 10).join(' ');
+            // Add to enrichment pool
+            if (!enrichmentPoolRef.current[personality]) enrichmentPoolRef.current[personality] = [];
+            enrichmentPoolRef.current[personality].push(words);
+            console.log(`Garden AI: enrichment pool added for ${personality}: "${words}" (pool size: ${enrichmentPoolRef.current[personality].length})`);
+          }
+        } catch (e) {
+          // Silent fail — enrichment is best-effort
         }
-      }
-
-      if (nonThought && nonThought.length > 0) {
-        sessionCallsRef.current++;
-        setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
-        const cleaned = nonThought.replace(/["]/g, '').replace(/^\s+|\s+$/g, '');
-        const words = cleaned.split(/\s+/).slice(0, 10).join(' ');
-        console.log(`Garden AI: waterPlant SUCCESS for ${plantName}: "${words}"`);
-        return words;
-      }
-
-      console.warn(`Garden AI: waterPlant — empty non-thought text for ${plantName}, using fallback`);
-      const fallback = pickFreshFallback(personality);
-      return fallback;
-    } catch (err) {
-      console.warn('Garden AI: Plant watering error:', err.message);
-      const fallback = pickFreshFallback(personality);
-      return fallback;
+      })();
     }
+
+    return curated;
   }, []);
 
   /**
