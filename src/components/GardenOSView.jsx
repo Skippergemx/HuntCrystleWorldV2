@@ -84,6 +84,15 @@ const GARDEN_KEYFRAMES = `
   @keyframes orbit1 { from { transform: rotate(0deg) translateX(60px) rotate(0deg); } to { transform: rotate(360deg) translateX(60px) rotate(-360deg); } }
   @keyframes orbit2 { from { transform: rotate(0deg) translateX(80px) rotate(0deg); } to { transform: rotate(-360deg) translateX(80px) rotate(360deg); } }
   @keyframes orbit3 { from { transform: rotate(0deg) translateX(70px) rotate(0deg); } to { transform: rotate(360deg) translateX(70px) rotate(-360deg); } }
+  @keyframes waterDrop {
+    0% { opacity: 1; transform: translateY(-20px) scale(0.5); }
+    50% { opacity: 1; transform: translateY(10px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(40px) scale(0.3); }
+  }
+  @keyframes plantBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
   .garden-fade-1 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.1s; }
   .garden-fade-2 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.3s; }
   .garden-fade-3 { animation: fadeInUp 0.6s ease-out both; animation-delay: 0.5s; }
@@ -136,7 +145,7 @@ export const GardenOSView = React.memo(() => {
   const { setView } = adventure;
 
   // Garden AI hook
-  const { generateReflection, generateSessionSummary, generateQuestionBatch, generateReflectionStory, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
+  const { generateReflection, generateSessionSummary, generateQuestionBatch, generateReflectionStory, waterPlant, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
 
   // Particle effects ref
   const particlesRef = useRef(null);
@@ -173,6 +182,13 @@ export const GardenOSView = React.memo(() => {
   const [showProfile, setShowProfile] = useState(false);
   const [phase, setPhase] = useState('dashboard'); // 'dashboard' | 'quiz'
   const [profileReturnTo, setProfileReturnTo] = useState('quiz'); // where "Back" goes from profile
+
+  // ── Talking Plants state ──
+  const [plantStates, setPlantStates] = useState({
+    sunny: { waters: 0, dialogue: null, isWatering: false },
+    spike: { waters: 0, dialogue: null, isWatering: false },
+    willow: { waters: 0, dialogue: null, isWatering: false },
+  });
 
   // Panel transition animation state
   const [transitionKey, setTransitionKey] = useState(0);
@@ -458,6 +474,37 @@ export const GardenOSView = React.memo(() => {
       setSessionKey(prev => prev + 1);
     }
   };
+
+  // ── Talking Plants: water a plant, get AI dialogue ──
+  const handleWaterPlant = useCallback(async (plantKey, plantName) => {
+    const plant = plantStates[plantKey];
+    if (!plant || plant.isWatering || plant.waters >= 3) return;
+
+    setPlantStates(prev => ({
+      ...prev,
+      [plantKey]: { ...prev[plantKey], isWatering: true, dialogue: null },
+    }));
+
+    try {
+      const dialogue = await waterPlant(plantName, plantKey);
+      setPlantStates(prev => ({
+        ...prev,
+        [plantKey]: { ...prev[plantKey], isWatering: false, dialogue, waters: prev[plantKey].waters + 1 },
+      }));
+      // Auto-clear dialogue after 8 seconds
+      setTimeout(() => {
+        setPlantStates(prev => ({
+          ...prev,
+          [plantKey]: { ...prev[plantKey], dialogue: null },
+        }));
+      }, 8000);
+    } catch {
+      setPlantStates(prev => ({
+        ...prev,
+        [plantKey]: { ...prev[plantKey], isWatering: false },
+      }));
+    }
+  }, [plantStates, waterPlant]);
 
   // ── Daily Reflection Story auto-generation ──
   // Trigger once per day when entering dashboard
@@ -849,8 +896,100 @@ export const GardenOSView = React.memo(() => {
             </div>
           )}
 
+          {/* ── The Garden Grove: Talking Plants ── */}
+          <div className="garden-fade-5 w-full mb-6">
+            <div className="flex items-center gap-2 mb-3 justify-center">
+              <div className={`${COMIC_BADGE} transform -rotate-1 text-[10px]`}>
+                🌱 THE GARDEN GROVE
+              </div>
+            </div>
+            <p className="text-center text-[10px] text-slate-500 italic mb-4">Water the plants. They talk back.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { key: 'sunny', name: 'Sunny', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🪴' : '🌻', color: 'border-amber-400', bg: 'bg-amber-50', glow: 'bg-amber-500/20' },
+                { key: 'spike', name: 'Spike', emoji: (w) => w === 0 ? '🌵' : w < 3 ? '🪴' : '🌸', color: 'border-rose-400', bg: 'bg-rose-50', glow: 'bg-rose-500/20' },
+                { key: 'willow', name: 'Willow', emoji: (w) => w === 0 ? '🍃' : w < 3 ? '🪴' : '🌿', color: 'border-emerald-400', bg: 'bg-emerald-50', glow: 'bg-emerald-500/20' },
+              ].map(plant => {
+                const state = plantStates[plant.key];
+                const emoji = plant.emoji(state.waters);
+                const isFull = state.waters >= 3;
+                const canWater = !state.isWatering && !isFull;
+
+                return (
+                  <div key={plant.key} className={`${COMIC_CARD} p-5 flex flex-col items-center transform ${plant.key === 'sunny' ? '-rotate-1' : plant.key === 'spike' ? 'rotate-1' : '-rotate-2'}`}>
+                    <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                    <div className="relative z-10 flex flex-col items-center w-full">
+                      {/* Plant Emoji with glow */}
+                      <div className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full border-[4px] border-black flex items-center justify-center mb-2 shadow-[4px_4px_0_rgba(0,0,0,1)] ${plant.bg}`}>
+                        <div className={`absolute inset-0 rounded-full ${plant.glow} blur-xl`} />
+                        <span 
+                          className={`text-4xl md:text-5xl relative z-10 select-none ${state.isWatering ? '' : ''}`}
+                          style={{ animation: state.isWatering ? 'plantBob 0.4s ease-in-out 3' : 'none' }}
+                        >
+                          {emoji}
+                        </span>
+                        {/* Water drops animation */}
+                        {state.isWatering && (
+                          <>
+                            <span className="absolute -top-1 left-1/4 text-lg pointer-events-none" style={{ animation: 'waterDrop 0.6s ease-out infinite' }}>💧</span>
+                            <span className="absolute -top-1 left-1/2 text-lg pointer-events-none" style={{ animation: 'waterDrop 0.7s ease-out infinite 0.2s' }}>💧</span>
+                            <span className="absolute -top-1 left-3/4 text-lg pointer-events-none" style={{ animation: 'waterDrop 0.5s ease-out infinite 0.4s' }}>💧</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Plant Name Badge */}
+                      <div className={`${COMIC_BADGE} mb-2 transform rotate-1`}>
+                        {plant.name}
+                      </div>
+
+                      {/* Growth stage label */}
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                        {state.waters === 0 ? 'Seedling' : state.waters < 3 ? 'Sprouting' : 'Blooming'}
+                      </p>
+
+                      {/* Speech Bubble */}
+                      {state.dialogue && (
+                        <div className="w-full mb-3 relative animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <div className="bg-white border-[3px] border-black rounded-2xl p-3 shadow-[3px_3px_0_rgba(0,0,0,1)]">
+                            <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                            <p className="text-xs text-slate-800 font-black uppercase italic leading-snug relative z-10 text-center">
+                              "{state.dialogue}"
+                            </p>
+                          </div>
+                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-t-[3px] border-l-[3px] border-black rotate-45" />
+                        </div>
+                      )}
+
+                      {/* Water Button */}
+                      <button
+                        onClick={() => handleWaterPlant(plant.key, plant.name)}
+                        disabled={!canWater}
+                        className={`${BUTTON_PRIMARY} w-full py-4 flex items-center justify-center gap-2 disabled:opacity-30 disabled:hover:translate-y-0 disabled:cursor-not-allowed text-sm`}
+                      >
+                        <span className="text-lg">
+                          {state.isWatering ? '⏳' : '💧'}
+                        </span>
+                        <span>{state.isWatering ? 'Watering...' : isFull ? 'Full for Today' : 'Water Me'}</span>
+                      </button>
+
+                      {/* Water dots indicator */}
+                      <div className="flex items-center gap-1.5 mt-3">
+                        {[0, 1, 2].map(i => (
+                          <div key={i} className={`w-2.5 h-2.5 rounded-full border-2 border-black transition-colors ${i < state.waters ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                        ))}
+                        <span className="text-[9px] font-black text-slate-400 uppercase ml-1">{state.waters}/3</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* ── CTA Section ── */}
-          <div className="garden-fade-5 w-full flex flex-col items-center gap-3">
+          <div className="garden-fade-6 w-full flex flex-col items-center gap-3">
             {sessionSize <= 0 ? (
               <>
                 <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
@@ -889,7 +1028,7 @@ export const GardenOSView = React.memo(() => {
           </div>
 
           {/* ── Secondary Actions ── */}
-          <div className="garden-fade-6 w-full flex flex-col items-center gap-2 mt-4">
+          <div className="garden-fade-7 w-full flex flex-col items-center gap-2 mt-4">
             {(profile || totalAnswered > 0) && (
               <button
                 onClick={() => openProfile('dashboard')}

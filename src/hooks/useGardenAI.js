@@ -3,7 +3,7 @@ import { useState, useRef, useCallback } from 'react';
 const GEMMA_API = 'https://generativelanguage.googleapis.com/v1beta/models/gemma-4-31b-it:generateContent';
 const API_KEY = import.meta.env.VITE_GARDEN_API_KEY || '';
 
-const MAX_CALLS_PER_SESSION = 6;
+const MAX_CALLS_PER_SESSION = 15; // 6 quiz calls + 9 plant watering calls
 const COOLDOWN_MS = 5000; // 5 seconds between calls (short enough to not block quiz flow)
 
 /**
@@ -37,6 +37,28 @@ const extractBestJSON = (raw) => {
   }
   // All are placeholder templates — return null to trigger fallback
   return null;
+};
+
+// Fallback plant responses — used when API is unavailable or rate-limited
+const PLANT_FALLBACKS = {
+  sunny: [
+    "Your kindness is brighter than sunlight!",
+    "You've made my petals dance with joy.",
+    "A friend like you makes growing easy.",
+    "Your water carries the warmth of home.",
+  ],
+  spike: [
+    "Fine. That was acceptable. Come back tomorrow.",
+    "I suppose you're not the worst gardener.",
+    "Water received. Gratitude... reluctantly given.",
+    "Don't tell the others I said thanks.",
+  ],
+  willow: [
+    "Each drop makes our roots grow stronger.",
+    "Your gentle care nourishes the whole garden.",
+    "Growth happens when kindness flows freely.",
+    "You tend more than soil, dear friend.",
+  ],
 };
 
 /**
@@ -571,6 +593,80 @@ Respond ONLY with this JSON (no other text):
   }, []);
 
   /**
+   * Water a plant — generates a short 6-8 word comedic response.
+   * Three plant personalities: sunny, spike, willow.
+   * Falls back to pre-written responses if API unavailable.
+   */
+  const waterPlant = useCallback(async (plantName, personality) => {
+    // Check session call limit
+    if (sessionCallsRef.current >= MAX_CALLS_PER_SESSION) {
+      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    const now = Date.now();
+    if (now - lastRequestTimeRef.current < COOLDOWN_MS) {
+      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    if (!API_KEY) {
+      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+
+    lastRequestTimeRef.current = now;
+
+    const personalityPrompts = {
+      sunny: 'You are Sunny, a sunflower. You speak in warm, poetic bursts. Always 6-8 words. Radiate joy like sunlight. Sound like a proud, dramatic friend. When watered, express gratitude with warmth and flair. Never use quotation marks in your response.',
+      spike: 'You are Spike, a cactus. Dry humor, reluctantly grateful. Always 6-8 words. Sound like a grumpy friend who secretly cares. When watered, express thanks in a sarcastic, begrudging way. Never use quotation marks in your response.',
+      willow: 'You are Willow, a vine. Gentle, nurturing, obsessed with growth. Always 6-8 words. Sound like a wise, soft-spoken grandparent. When watered, express gratitude with tenderness and wisdom. Never use quotation marks in your response.',
+    };
+
+    try {
+      const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: personalityPrompts[personality] || personalityPrompts.sunny }]
+          },
+          contents: [{ parts: [{ text: `${plantName} was just watered by the gardener. Speak exactly 6 to 8 words. No more. No less. Just your response — no explanation.` }] }],
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 30
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+        return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      }
+
+      const json = await response.json();
+      const parts = json.candidates?.[0]?.content?.parts || [];
+      const nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
+
+      if (nonThought && nonThought.length > 0) {
+        sessionCallsRef.current++;
+        setAiCallsRemaining(MAX_CALLS_PER_SESSION - sessionCallsRef.current);
+        // Clean up: remove quotes, trim to ~8 words
+        const cleaned = nonThought.replace(/["]/g, '').replace(/^\s+|\s+$/g, '');
+        const words = cleaned.split(/\s+/).slice(0, 10).join(' ');
+        return words;
+      }
+
+      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    } catch (err) {
+      console.warn('Garden AI: Plant watering error:', err.message);
+      const fallbacks = PLANT_FALLBACKS[personality] || PLANT_FALLBACKS.sunny;
+      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
+  }, []);
+
+  /**
    * Reset session counters (call when entering Garden OS view).
    */
   const resetSession = useCallback(() => {
@@ -584,6 +680,7 @@ Respond ONLY with this JSON (no other text):
     generateSessionSummary,
     generateQuestionBatch,
     generateReflectionStory,
+    waterPlant,
     resetSession,
     isAnalyzing,
     aiCallsRemaining
