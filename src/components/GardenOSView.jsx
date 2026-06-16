@@ -111,6 +111,25 @@ const GARDEN_KEYFRAMES = `
   @keyframes agcSpeedDash1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes agcSpeedDash2 { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
   @keyframes agcFloatBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes agcSparkleFloat {
+    0% { opacity: 0; transform: translateY(0) translateX(0) scale(0); }
+    10% { opacity: 1; transform: translateY(-10px) translateX(5px) scale(1); }
+    30% { opacity: 0.8; transform: translateY(-30px) translateX(-8px) scale(0.7); }
+    60% { opacity: 0.3; transform: translateY(-60px) translateX(12px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-100px) translateX(-3px) scale(0); }
+  }
+  @keyframes agcRipplePulse {
+    0% { transform: scale(0.6); opacity: 0.6; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes agcOrbitTwinkle {
+    0%, 100% { opacity: 0.4; transform: scale(0.7); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+  @keyframes agcTitleShimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
 `;
 
 const ORBIT_EMOJIS = ['🌱', '🌿', '✨', '🔮', '💎', '🌍'];
@@ -1412,8 +1431,46 @@ export const GardenOSView = React.memo(() => {
                   <div className="absolute inset-x-0 h-[2px] bg-emerald-600" style={{ animation: 'agcScanLine 2s linear infinite' }} />
                 </div>
 
+                {/* ── Floating sparkle field (magical dust) ── */}
+                <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none" style={{ zIndex: 1 }}>
+                  {[
+                    { x: '10%', delay: '0s', col: '#10b981', size: 3 },
+                    { x: '25%', delay: '0.6s', col: '#06b6d4', size: 2 },
+                    { x: '40%', delay: '1.2s', col: '#a855f7', size: 4 },
+                    { x: '55%', delay: '0.3s', col: '#ec4899', size: 2 },
+                    { x: '70%', delay: '0.9s', col: '#f59e0b', size: 3 },
+                    { x: '85%', delay: '1.5s', col: '#10b981', size: 2 },
+                    { x: '18%', delay: '2.0s', col: '#06b6d4', size: 3 },
+                    { x: '48%', delay: '1.7s', col: '#a855f7', size: 2 },
+                    { x: '63%', delay: '2.3s', col: '#ec4899', size: 4 },
+                    { x: '92%', delay: '0.4s', col: '#f59e0b', size: 2 },
+                  ].map((s, i) => (
+                    <div key={i} className="absolute rounded-full"
+                      style={{
+                        left: s.x, bottom: '-12px',
+                        width: s.size, height: s.size,
+                        background: s.col,
+                        opacity: 0,
+                        animation: `agcSparkleFloat 3s ease-out infinite`,
+                        animationDelay: s.delay,
+                        boxShadow: `0 0 ${s.size * 3}px ${s.col}`,
+                      }}
+                    />
+                  ))}
+                </div>
+
                 {/* ── Portrait + speed‑line rings + orbiting emojis ── */}
-                <div className="relative w-32 h-32 flex items-center justify-center">
+                <div className="relative w-32 h-32 flex items-center justify-center" style={{ zIndex: 2 }}>
+                  {/* Ripple pulses emanating from portrait */}
+                  {[0, 1, 2].map(i => (
+                    <div key={`ripple-${i}`} className="absolute inset-0 rounded-full border-2 border-emerald-400/30"
+                      style={{
+                        animation: `agcRipplePulse 2s ease-out infinite`,
+                        animationDelay: `${i * 0.6}s`
+                      }}
+                    />
+                  ))}
+
                   {/* Speed‑line rings (comic action lines) */}
                   <div className="absolute inset-0 rounded-full border-[3px] border-dashed border-emerald-500/35"
                     style={{ animation: 'agcSpinCW 8s linear infinite' }} />
@@ -1433,33 +1490,51 @@ export const GardenOSView = React.memo(() => {
 
                   {/* Orbiting emoji particles */}
                   {[
-                    { e: '🌿', kf: 'orbit1', dur: '6s' },
-                    { e: '✨', kf: 'orbit2', dur: '8s' },
-                    { e: '🔮', kf: 'orbit3', dur: '7s' },
-                    { e: '💎', kf: 'orbit1', dur: '7.5s', rev: true },
-                    { e: '🌱', kf: 'orbit2', dur: '9s', rev: true },
-                    { e: '🌍', kf: 'orbit3', dur: '5.5s', rev: true },
+                    { e: '🌿', kf: 'orbit1', dur: '6s', delay: '0s' },
+                    { e: '✨', kf: 'orbit2', dur: '8s', delay: '0.3s' },
+                    { e: '🔮', kf: 'orbit3', dur: '7s', delay: '0.6s' },
+                    { e: '💎', kf: 'orbit1', dur: '7.5s', rev: true, delay: '0.9s' },
+                    { e: '🌱', kf: 'orbit2', dur: '9s', rev: true, delay: '1.2s' },
+                    { e: '🌍', kf: 'orbit3', dur: '5.5s', rev: true, delay: '1.5s' },
                   ].map((o, i) => (
                     <div key={i} className="absolute pointer-events-none"
                       style={{
                         top: '50%', left: '50%', width: 0, height: 0,
                         animation: `${o.kf} ${o.dur} linear infinite${o.rev ? ' reverse' : ''}`
                       }}>
-                      <span className="text-sm absolute" style={{ transform: 'translate(-50%, -50%)' }}>{o.e}</span>
+                      <span
+                        className="text-sm absolute inline-block"
+                        style={{
+                          transform: 'translate(-50%, -50%)',
+                          animation: `agcOrbitTwinkle 2s ease-in-out infinite`,
+                          animationDelay: o.delay
+                        }}
+                      >{o.e}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* ── Neon title ── */}
-                <div className="text-center">
-                  <p className="text-xs md:text-sm font-black uppercase italic tracking-widest text-emerald-700"
-                    style={{ fontFamily: "'Bungee', cursive", animation: 'agcNeonPulse 2s ease-in-out infinite' }}>
-                    <span className="text-amber-500">⚡</span> Garden Is Reflecting <span className="text-cyan-500">⚡</span>
+                {/* ── Neon title with shimmer ── */}
+                <div className="text-center" style={{ zIndex: 2 }}>
+                  <p
+                    className="text-xs md:text-sm font-black uppercase italic tracking-widest"
+                    style={{
+                      fontFamily: "'Bungee', cursive",
+                      background: 'linear-gradient(90deg, #059669, #0891b2, #7c3aed, #db2777, #d97706, #059669)',
+                      backgroundSize: '200% 100%',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                      animation: 'agcTitleShimmer 3s linear infinite, agcNeonPulse 2s ease-in-out infinite',
+                      filter: 'drop-shadow(0 0 8px rgba(16,185,129,0.4)) drop-shadow(0 0 16px rgba(6,182,212,0.2))',
+                    }}
+                  >
+                    <span className="text-amber-500" style={{ WebkitTextFillColor: '#f59e0b' }}>⚡</span> Garden Is Reflecting <span className="text-cyan-500" style={{ WebkitTextFillColor: '#06b6d4' }}>⚡</span>
                   </p>
                 </div>
 
                 {/* ── Comic loading bar (neon rainbow shimmer) ── */}
-                <div className="w-full max-w-[220px]">
+                <div className="w-full max-w-[220px]" style={{ zIndex: 2 }}>
                   <div className="h-3 bg-white border-[2px] border-black rounded-full overflow-hidden shadow-[2px_2px_0_rgba(0,0,0,1)]">
                     <div className="h-full w-full rounded-full"
                       style={{
@@ -1472,7 +1547,7 @@ export const GardenOSView = React.memo(() => {
                 </div>
 
                 {/* ── Thinking dots (bouncing) ── */}
-                <div className="flex gap-2">
+                <div className="flex gap-2" style={{ zIndex: 2 }}>
                   {[0, 1, 2].map(i => (
                     <div key={i} className="w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black/30 shadow-[1px_1px_0_rgba(0,0,0,0.5)]"
                       style={{ animation: `agcDotPulse 1.2s ease-in-out infinite`, animationDelay: `${i * 0.2}s` }} />
