@@ -664,8 +664,7 @@ Respond ONLY with this JSON (no other text):
           contents: [{ parts: [{ text: `${plantName} was just watered by the gardener. Speak exactly 6 to 8 words. No more. No less. Just your response — no explanation.` }] }],
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 30,
-            thinkingConfig: { thinkingBudget: 0 } // disable thought blocks for direct responses
+            maxOutputTokens: 30
           }
         })
       });

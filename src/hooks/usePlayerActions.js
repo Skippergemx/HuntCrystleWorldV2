@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, runTransaction } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove, getDoc, serverTimestamp, collection, addDoc, deleteDoc, deleteField, increment, runTransaction } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { calculateNagaStats, getXpRequired, AP_PER_LEVEL, getMonsterElement } from '../utils/gameLogic';
 
@@ -219,18 +219,25 @@ export const usePlayerActions = (
        addLog(`Replacing ${old?.name || 'Party Member'} with ${mate.name}...`);
     }
 
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preHirePlayer = player;
     setPlayer(prev => ({ ...prev, tokens: prev.tokens - mate.cost, hiredMate: mate.id, buffUntil: 0 }));
     
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'HIRE_MATE', 
         payload: { mateId: mate.id, cost: mate.cost } 
       });
-      addLog(`Contract signed: ${mate.name} joined!`);
+      if (result.data?.success) {
+        addLog(`Contract signed: ${mate.name} joined!`);
+      } else {
+        setPlayer(preHirePlayer);
+        addLog("ðŸš¨ UPLINK ERROR: Contract could not be verified.");
+      }
     } catch (e) {
       console.error(e);
-      if (clearOptimisticUpdates) clearOptimisticUpdates();
+      setPlayer(preHirePlayer);
       addLog("ðŸš¨ UPLINK ERROR: Contract failed.");
     }
   };
@@ -248,6 +255,8 @@ export const usePlayerActions = (
     if (player.tokens < cost) return addLog(`Insufficient GX! Need ${cost.toLocaleString()} GX.`);
     
     const summonUntil = Date.now() + 86400000;
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preSummonPlayer = player;
     setPlayer(prev => ({
       ...prev,
       tokens: prev.tokens - cost,
@@ -256,15 +265,20 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'SUMMON_DRAGON', 
         payload: { cost, summonUntil } 
       });
-      addLog(`âœ¨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
-      playSFX(SOUNDS.obtainLoot);
+      if (result.data?.success) {
+        addLog(`âœ¨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
+        playSFX(SOUNDS.obtainLoot);
+      } else {
+        setPlayer(preSummonPlayer);
+        addLog("ðŸš¨ UPLINK ERROR: Summon could not be verified.");
+      }
     } catch (e) {
       console.error(e);
-      if (clearOptimisticUpdates) clearOptimisticUpdates();
+      setPlayer(preSummonPlayer);
       addLog("ðŸš¨ UPLINK ERROR: Summon failed.");
     }
   };
@@ -369,17 +383,22 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'EQUIP_ITEM', 
         payload: { itemId, slot } 
       });
-      addLog(`Installed Tech: ${item.name}`);
+      if (result.data?.success) {
+        addLog(`Installed Tech: ${item.name}`);
+      } else {
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
+        addLog("ðŸš¨ UPLINK ERROR: Install failed.");
+      }
     } catch (e) {
       console.error(e);
       if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Install failed.");
     }
-  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate, clearOptimisticUpdates]);
 
   const unequipItem = useCallback(async (slot) => {
     if (!player.equipped?.[slot]) return;
@@ -396,17 +415,22 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'UNEQUIP_ITEM', 
         payload: { slot } 
       });
-      addLog(`Uninstalled Tech: ${item.name}`);
+      if (result.data?.success) {
+        addLog(`Uninstalled Tech: ${item.name}`);
+      } else {
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
+        addLog("ðŸš¨ UPLINK ERROR: Uninstall failed.");
+      }
     } catch (e) {
       console.error(e);
       if (clearOptimisticUpdates) clearOptimisticUpdates();
       addLog("ðŸš¨ UPLINK ERROR: Uninstall failed.");
     }
-  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate]);
+  }, [player, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate, clearOptimisticUpdates]);
 
   const allocateStat = async (statName) => {
     // Guard: synchronous ref prevents rapid-click over-spending before React re-renders
@@ -418,6 +442,8 @@ export const usePlayerActions = (
     const newAP   = Math.max(0, (player?.abilityPoints ?? 0) - 1);
     
     // We update local state, but Firestore update will happen securely via Cloud Function
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preAllocPlayer = player;
     setPlayer(prev => ({
       ...prev,
       baseStats: { ...(prev.baseStats || {}), [statName]: newStat },
@@ -426,13 +452,21 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({ 
+      const result = await callAction({ 
         action: 'ALLOCATE_STAT', 
         payload: { statName } 
       });
-      addLog(`Upgraded ${statName.toUpperCase()} via Secure Uplink.`);
+      if (result.data?.success) {
+        addLog(`Upgraded ${statName.toUpperCase()} via Secure Uplink.`);
+      } else {
+        setPlayer(preAllocPlayer);
+        remainingApRef.current += 1; // restore AP guard
+        addLog("ðŸš¨ UPLINK ERROR: Stat allocation could not be verified.");
+      }
     } catch (e) {
       console.error("Secure Stat Allocation Failed:", e);
+      setPlayer(preAllocPlayer);
+      remainingApRef.current += 1; // restore AP guard
       addLog("ðŸš¨ UPLINK ERROR: Stat synchronization failed. Please refresh.");
     }
   };
@@ -467,6 +501,8 @@ export const usePlayerActions = (
     // --- OPTIMISTIC LOCAL STATE UPDATE ---
     // Apply instantly so UI reflects purchase without waiting for Firestore sync.
     // Cloud function validates & commits the canonical transaction.
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preBuyPlayer = player;
     setPlayer(prev => {
       const next = { ...prev, tokens: (prev.tokens || 0) - totalCost };
       if (item.id === 'hp_potion') {
@@ -506,10 +542,13 @@ export const usePlayerActions = (
         playSFX(SOUNDS.obtainLoot);
         return true;
       }
+      // Roll back optimistic state on non-success
+      setPlayer(preBuyPlayer);
+      addLog("ðŸš¨ UPLINK ERROR: Transaction could not be verified.");
       return false;
     } catch (e) {
       console.error(e);
-      if (clearOptimisticUpdates) clearOptimisticUpdates();
+      setPlayer(preBuyPlayer);
       addLog("ðŸš¨ UPLINK ERROR: Trade failed during neural handshake. Please check your connection.");
       return false;
     }
@@ -555,6 +594,8 @@ export const usePlayerActions = (
     // --- OPTIMISTIC LOCAL STATE UPDATE ---
     // Apply instantly so UI reflects activation without waiting for Firestore sync.
     // Cloud function validates & commits the canonical transaction.
+    // Snapshot pre-update state for rollback if cloud verification fails
+    const preScrollPlayer = player;
     setPlayer(prev => {
       const next = { ...prev, autoUntil: Date.now() + spec.ms, autoTimeLeftSaved: 0 };
       if (targetItemEntry) {
@@ -571,14 +612,21 @@ export const usePlayerActions = (
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
-      await callAction({
+      const result = await callAction({
         action: 'ACTIVATE_SCROLL',
         payload: { selection, ms: spec.ms, val: spec.val, view }
       });
-      addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
+      if (result.data?.success) {
+        addLog(`LOCK-ON ACTIVATED! (Resonance Synchronized)`);
+      } else {
+        setPlayer(preScrollPlayer);
+        loadoutRef.current.scrolls[selection] = loadoutScrollCount; // restore loadout
+        addLog("ðŸš¨ UPLINK ERROR: Activation could not be verified.");
+      }
     } catch (e) {
       console.error(e);
-      if (clearOptimisticUpdates) clearOptimisticUpdates();
+      setPlayer(preScrollPlayer);
+      loadoutRef.current.scrolls[selection] = loadoutScrollCount; // restore loadout
       addLog("ðŸš¨ UPLINK ERROR: Activation failed.");
     }
   };
@@ -1582,30 +1630,54 @@ export const usePlayerActions = (
     if (!player || !functions) return;
     
     const inventory = player.inventory || {};
-    const sparks = Object.entries(inventory)
-      .filter(([id, item]) => item && item.id && item.id.startsWith('aether_spark'));
     
-    if (sparks.length < 4) {
-      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Aether Sparks. You have ${sparks.length}.`);
+    // Count spark UNITS (not inventory slots) to account for stacked items with count > 1
+    let totalSparks = 0;
+    const sparkEntries = Object.entries(inventory)
+      .filter(([id, item]) => item && item.id && item.id.startsWith('aether_spark'))
+      .map(([uniqueId, item]) => {
+        const count = item.count || 1;
+        totalSparks += count;
+        return { uniqueId, item, count };
+      });
+    
+    if (totalSparks < 4) {
+      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Aether Sparks. You have ${totalSparks}.`);
       return;
     }
     
-    // Snapshot the 4 spark entries BEFORE deleting, so we can roll back on failure
-    const consumedSparks = sparks.slice(0, 4);
-    const sparkDeletes = {};
+    // Consume exactly 4 spark units, building update payloads
+    // - Entries with count > 1 get decremented (partial consumption)
+    // - Entries with count === 1 get fully deleted
+    let unitsToConsume = 4;
+    const sparkUpdates = {};
     const sparkRestore = {};
-    consumedSparks.forEach(([uniqueId, item]) => {
-      sparkDeletes[`inventory.${uniqueId}`] = deleteField();
-      sparkRestore[`inventory.${uniqueId}`] = item; // snapshot for rollback
-    });
     
-    addLog("âœ¨ AETHER EXCHANGE: Harmonizing sparks... Initiating Treasury Signal.");
+    for (const { uniqueId, item, count } of sparkEntries) {
+      if (unitsToConsume <= 0) break;
+      
+      const takeFromThis = Math.min(unitsToConsume, count);
+      unitsToConsume -= takeFromThis;
+      const remaining = count - takeFromThis;
+      
+      if (remaining <= 0) {
+        // Fully consumed â€” delete this inventory entry
+        sparkUpdates[`inventory.${uniqueId}`] = deleteField();
+        sparkRestore[`inventory.${uniqueId}`] = item; // snapshot for rollback
+      } else {
+        // Partially consumed â€” decrement the count field
+        sparkUpdates[`inventory.${uniqueId}.count`] = increment(-takeFromThis);
+        sparkRestore[`inventory.${uniqueId}.count`] = increment(takeFromThis); // rollback
+      }
+    }
+    
+    addLog(`âœ¨ AETHER EXCHANGE: Consuming ${4 - unitsToConsume} of ${totalSparks} sparks... Initiating Treasury Signal.`);
     
     // Helper to restore sparks if the faucet fails
     const rollbackSparks = async (reason) => {
       try {
         await syncPlayer(sparkRestore, true);
-        addLog(`ðŸ™ï¸ AETHER EXCHANGE: ${reason} Sparks returned safely.`);
+        addLog(`ðŸ¹ AETHER EXCHANGE: ${reason} Sparks returned safely.`);
       } catch (rollbackErr) {
         console.error("Aether spark rollback failed:", rollbackErr);
       }
@@ -1613,7 +1685,7 @@ export const usePlayerActions = (
 
     try {
       // Deduct sparks immediately (blocking sync)
-      await syncPlayer(sparkDeletes, true); 
+      await syncPlayer(sparkUpdates, true); 
       
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
       const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
@@ -1634,28 +1706,49 @@ export const usePlayerActions = (
       await rollbackSparks("Transmission failed.");
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
-
   const exchangeHuntSparks = useCallback(async (tokenChoice = 'DWGX') => {
     if (!player || !functions) return;
     
     const inventory = player.inventory || {};
-    const sparks = Object.entries(inventory)
-      .filter(([id, item]) => item && item.id && item.id.startsWith('hunt_spark'));
     
-    if (sparks.length < 4) {
-      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Hunt Sparks. You have ${sparks.length}.`);
+    // Count spark UNITS (not inventory slots) to account for stacked items with count > 1
+    let totalSparks = 0;
+    const sparkEntries = Object.entries(inventory)
+      .filter(([id, item]) => item && item.id && item.id.startsWith('hunt_spark'))
+      .map(([uniqueId, item]) => {
+        const count = item.count || 1;
+        totalSparks += count;
+        return { uniqueId, item, count };
+      });
+    
+    if (totalSparks < 4) {
+      addLog(`ðŸš¨ INSUFFICIENT SPARKS: You need 4 Hunt Sparks. You have ${totalSparks}.`);
       return;
     }
     
-    // The cloud function will atomically verify & deduct sparks in its transaction.
-    // Snapshot the 4 consumed keys now so we can update local UI on success.
-    const consumedSparks = sparks.slice(0, 4);
-    const sparkDeletes = {};
-    consumedSparks.forEach(([uniqueId]) => {
-      sparkDeletes[`inventory.${uniqueId}`] = deleteField();
-    });
+    // Consume exactly 4 spark units, building update payloads
+    // - Entries with count > 1 get decremented (partial consumption)
+    // - Entries with count === 1 get fully deleted
+    let unitsToConsume = 4;
+    const sparkUpdates = {};
     
-    addLog(`âš¡ HUNT EXCHANGE: Consuming sparks for ${tokenChoice} transmission...`);
+    for (const { uniqueId, item, count } of sparkEntries) {
+      if (unitsToConsume <= 0) break;
+      
+      const takeFromThis = Math.min(unitsToConsume, count);
+      unitsToConsume -= takeFromThis;
+      const remaining = count - takeFromThis;
+      
+      if (remaining <= 0) {
+        // Fully consumed â€” delete this inventory entry
+        sparkUpdates[`inventory.${uniqueId}`] = deleteField();
+      } else {
+        // Partially consumed â€” decrement the count field
+        sparkUpdates[`inventory.${uniqueId}.count`] = increment(-takeFromThis);
+      }
+    }
+    
+    addLog(`âš¡ HUNT EXCHANGE: Consuming ${4 - unitsToConsume} of ${totalSparks} sparks for ${tokenChoice} transmission...`);
     
     try {
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
@@ -1668,7 +1761,7 @@ export const usePlayerActions = (
       
       if (data.success) {
         // Immediately remove consumed sparks from local state
-        syncPlayer(sparkDeletes);
+        syncPlayer(sparkUpdates);
 
         addLog(`ðŸŽ HUNT REWARD: ${data.message}`);
         playSFX(SOUNDS.obtainLoot);
@@ -1680,14 +1773,13 @@ export const usePlayerActions = (
           });
         }
       } else {
-        addLog(`ðŸ™ï¸ EXCHANGE SIGNAL: ${data.message}`);
+        addLog(`ðŸ¹ EXCHANGE SIGNAL: ${data.message}`);
       }
     } catch (e) {
       console.warn("âš¡ HUNT_EXCHANGE_ERROR:", e.message);
-      addLog("ðŸ™ï¸ EXCHANGE: The signal failed. Treasury may be dry.");
+      addLog("ðŸ¹ EXCHANGE: The signal failed. Treasury may be dry.");
     }
   }, [player, functions, syncPlayer, addLog, playSFX, SOUNDS, setFaucetResult]);
-
   const claimDailyGift = useCallback(async () => {
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
