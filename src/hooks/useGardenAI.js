@@ -664,7 +664,8 @@ Respond ONLY with this JSON (no other text):
           contents: [{ parts: [{ text: `${plantName} was just watered by the gardener. Speak exactly 6 to 8 words. No more. No less. Just your response — no explanation.` }] }],
           generationConfig: {
             temperature: 0.9,
-            maxOutputTokens: 30
+            maxOutputTokens: 30,
+            thinkingConfig: { thinkingBudget: 0 } // disable thought blocks for direct responses
           }
         })
       });
@@ -682,8 +683,12 @@ Respond ONLY with this JSON (no other text):
       // Prefer non-thought text, but fall back to thought text if needed (Gemma sometimes puts response in thought block)
       let nonThought = parts.filter(p => !p.thought).map(p => p.text).join(' ').trim();
       if (!nonThought || nonThought.length === 0) {
-        nonThought = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
-        console.log(`Garden AI: waterPlant — using thought text as fallback for ${plantName}`);
+        const thoughtText = parts.filter(p => p.thought).map(p => p.text).join(' ').trim();
+        // Thought blocks often contain persona notes — extract just the last meaningful sentence
+        const lines = thoughtText.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
+        const responseLine = lines.filter(l => !l.startsWith('*') && !l.startsWith('-') && !l.includes('Persona:') && !l.includes('Traits:')).pop();
+        nonThought = responseLine || lines[lines.length - 1]?.replace(/^\*\s*/, '') || thoughtText;
+        console.log(`Garden AI: waterPlant — using thought text as fallback for ${plantName}, extracted: "${nonThought.slice(0, 60)}"`);
       }
 
       if (nonThought && nonThought.length > 0) {
