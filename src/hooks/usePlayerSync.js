@@ -268,7 +268,7 @@ export const usePlayerSync = (user, db, appId) => {
             selectedPotionId: data.selectedPotionId || 'hp_potion',
             selectedScrollId: data.selectedScrollId || 'auto_scroll',
             avatar: data.avatar || 1,
-            unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+            unlockedPets: [...new Set([1, 11, 21, 31, 41, ...(data.unlockedPets || [])])],
             petId: data.petId || 41,
             dailyFaucetClaims: data.dailyFaucetClaims || 0,
             lastFaucetClaimDate: data.lastFaucetClaimDate || "",
@@ -506,7 +506,7 @@ export const usePlayerSync = (user, db, appId) => {
             inventory: Array.isArray(data.inventory) 
               ? Object.fromEntries(data.inventory.filter(i => i).map(i => [i.id || `ITEM_${Date.now()}`, i])) 
               : (data.inventory || {}),
-            unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+            unlockedPets: [...new Set([1, 11, 21, 31, 41, ...(data.unlockedPets || [])])],
             petId: data.petId || 41,
           };
 
