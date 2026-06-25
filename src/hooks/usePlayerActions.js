@@ -250,8 +250,9 @@ export const usePlayerActions = (
   };
 
   const summonDragon = async () => {
-    if (!player.dragon || player.dragon.level <= 0) return addLog("No dragon to summon!");
-    const cost = 1000 * player.dragon.level;
+    const dragonLevel = player?.dragon?.level ?? 1;
+    if (dragonLevel <= 0) return addLog("No dragon to summon!");
+    const cost = 1000 * dragonLevel;
     if (player.tokens < cost) return addLog(`Insufficient GX! Need ${cost.toLocaleString()} GX.`);
     
     const summonUntil = Date.now() + 86400000;
@@ -270,16 +271,16 @@ export const usePlayerActions = (
         payload: { cost, summonUntil } 
       });
       if (result.data?.success) {
-        addLog(`âœ¨ Dragon Power Summoned! (+${player.dragon.level * 5} ALL STATS)`);
+        addLog(`✨ Dragon Power Summoned! (+${dragonLevel * 5} ALL STATS)`);
         playSFX(SOUNDS.obtainLoot);
       } else {
         setPlayer(preSummonPlayer);
-        addLog("ðŸš¨ UPLINK ERROR: Summon could not be verified.");
+        addLog("🚨 UPLINK ERROR: Summon could not be verified.");
       }
     } catch (e) {
       console.error(e);
       setPlayer(preSummonPlayer);
-      addLog("ðŸš¨ UPLINK ERROR: Summon failed.");
+      addLog("🚨 UPLINK ERROR: Summon failed.");
     }
   };
 
@@ -345,6 +346,7 @@ export const usePlayerActions = (
       });
       if (result.data?.success) {
          addLog(`ðŸ’° Sold ${qty}x ${master.name || item.name} for ${totalValue} GX`);
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
          return totalValue;
       }
       if (clearOptimisticUpdates) clearOptimisticUpdates();
@@ -389,6 +391,7 @@ export const usePlayerActions = (
       });
       if (result.data?.success) {
         addLog(`Installed Tech: ${item.name}`);
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
       } else {
         if (clearOptimisticUpdates) clearOptimisticUpdates();
         addLog("ðŸš¨ UPLINK ERROR: Install failed.");
@@ -421,6 +424,7 @@ export const usePlayerActions = (
       });
       if (result.data?.success) {
         addLog(`Uninstalled Tech: ${item.name}`);
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
       } else {
         if (clearOptimisticUpdates) clearOptimisticUpdates();
         addLog("ðŸš¨ UPLINK ERROR: Uninstall failed.");
@@ -767,7 +771,7 @@ export const usePlayerActions = (
         
         if (newPet) {
           updates.petId = newPet.id;
-          updates.petLevel = 1;
+          updates[`petLevels.${newPet.id}`] = 1;
           updates.unlockedPets = arrayUnion(newPet.id);
           
           addLog(`âœ¨ SUCCESS: ${monster.name}'s spirit manifested as ${newPet.name}! (${newPet.rarity})`);
@@ -1576,6 +1580,7 @@ export const usePlayerActions = (
         quizVerified = true;
         addLog(`ðŸŽ’ QUIZ SURGE: +${quiz.xpReward} XP gained from ${quiz.topic} training!`);
         playSFX(SOUNDS.lvlUp);
+        if (clearOptimisticUpdates) clearOptimisticUpdates();
       } else {
         console.warn("Backend failed to confirm quiz completion:", data.message);
       }
@@ -1586,6 +1591,7 @@ export const usePlayerActions = (
     if (!quizVerified) {
       addLog("ðŸš¨ UPLINK ERROR: Quiz completion could not be verified securely.");
       // Roll back the optimistic XP/level/inventory changes so nothing appears to reset later
+      if (clearOptimisticUpdates) clearOptimisticUpdates();
       if (syncPlayer) {
         syncPlayer(preQuizSnapshot);
       }

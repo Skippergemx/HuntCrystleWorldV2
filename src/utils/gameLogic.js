@@ -220,8 +220,8 @@ export const getMonsterElement = (monster) => {
  * Factors in Dragon Level for base stats, and Gemx Level for Shield HP and bonus stats.
  */
 export const calculateNagaStats = (player, labLevel = 0) => {
-  const dragon = player?.dragon || { level: 1 };
-  const gemx = player?.gemx || { level: 1 };
+  const dragon = { level: player?.dragon?.level ?? 1 };
+  const gemx = { level: player?.gemx?.level ?? 1 };
   const element = player?.gemxElement || 'Cosmic';
 
   // Base Naga Stats

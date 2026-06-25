@@ -154,8 +154,8 @@ export const DragonsGroundView = React.memo(() => {
   const { summonDragon } = actions;
 
   // Use player record directly as source of truth to prevent sync bugs
-  const gemx = player.gemx || { level: 1, crystalsFed: 0 };
-  const dragonStats = player.dragon || { level: 1, fruitsFed: 0 };
+  const gemx = { level: player.gemx?.level ?? 1, crystalsFed: player.gemx?.crystalsFed ?? 0 };
+  const dragonStats = { level: player.dragon?.level ?? 1, fruitsFed: player.dragon?.fruitsFed ?? 0 };
 
   const [message, setMessage] = useState(null);
   const [showOverburdenModal, setShowOverburdenModal] = useState(false);

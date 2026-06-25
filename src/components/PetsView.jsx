@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { deleteField } from 'firebase/firestore';
 import { Sparkles, ShieldCheck, Lock, Check, Heart, Zap, Star, Activity, Hexagon, Fingerprint, X } from 'lucide-react';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
@@ -70,7 +71,7 @@ export const PetsView = () => {
     const petMeta = PETS_METADATA.find(p => p.id === num);
     setLoading(true);
     try {
-      await syncPlayer({ petId: num, petLevel: player.petLevel || 1 });
+      await syncPlayer({ petId: num, [`petLevels.${num}`]: player.petLevels?.[num] || 1 });
       addLog(`🐾 COMPANION SECURED: Activated ${petMeta?.name || `Crystle Pet #${num}`}!`);
       setSelectedPet(null);
     } catch (e) {
@@ -218,7 +219,7 @@ export const PetsView = () => {
 
                                     try {
                                       await syncPlayer({
-                                        [`inventory.${keyToRemove}`]: null,
+                                        [`inventory.${keyToRemove}`]: deleteField(),
                                         [`petExp.${selectedPetMeta.id}`]: currentExp,
                                         [`petLevels.${selectedPetMeta.id}`]: currentLvl
                                       });

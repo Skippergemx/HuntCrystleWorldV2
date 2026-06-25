@@ -171,6 +171,7 @@ export const usePlayerSync = (user, db, appId) => {
               selectedScrollId: 'auto_scroll',
               avatar: 1,
               unlockedPets: [1, 11, 21, 31, 41],
+              petId: 41,
               sessionId: `DEV_SESS_${Date.now()}`,
               walletAddress: null,
               walletConflict: null,
@@ -268,6 +269,7 @@ export const usePlayerSync = (user, db, appId) => {
             selectedScrollId: data.selectedScrollId || 'auto_scroll',
             avatar: data.avatar || 1,
             unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+            petId: data.petId || 41,
             dailyFaucetClaims: data.dailyFaucetClaims || 0,
             lastFaucetClaimDate: data.lastFaucetClaimDate || "",
             // ID MIGRATION: 'dragon' -> 'hatchling_mate'
@@ -303,6 +305,16 @@ export const usePlayerSync = (user, db, appId) => {
               return;
             }
             const value = item.value;
+
+            // Skip re-application if server already has this change — prevents double-counting
+            // when a cloud function already committed the same state to Firestore.
+            const serverValue = key.includes('.')
+              ? key.split('.').reduce((o, k) => o?.[k], fullySanitized)
+              : fullySanitized[key];
+            const isDelete = value && typeof value === 'object' && value._methodName === 'deleteField';
+            if (isDelete && serverValue === undefined) return;
+            if (!isDelete && serverValue === value) return;
+
             if (key.includes('.')) {
               const parts = key.split('.');
               let cursor = fullySanitized;
@@ -310,7 +322,7 @@ export const usePlayerSync = (user, db, appId) => {
                 cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
                 cursor = cursor[parts[i]];
               }
-              if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+              if (isDelete) {
                 delete cursor[parts[parts.length - 1]];
               } else {
                 cursor[parts[parts.length - 1]] = value;
@@ -423,6 +435,7 @@ export const usePlayerSync = (user, db, appId) => {
             selectedScrollId: 'auto_scroll',
             avatar: 1,
             unlockedPets: [1, 11, 21, 31, 41],
+            petId: 41,
             welcomeCompleted: false,
             welcomeNftClaimed: false,
             level10NftReserved: false,
@@ -493,6 +506,8 @@ export const usePlayerSync = (user, db, appId) => {
             inventory: Array.isArray(data.inventory) 
               ? Object.fromEntries(data.inventory.filter(i => i).map(i => [i.id || `ITEM_${Date.now()}`, i])) 
               : (data.inventory || {}),
+            unlockedPets: data.unlockedPets || [1, 11, 21, 31, 41],
+            petId: data.petId || 41,
           };
 
           // Re-apply local pending updates to prevent "Wipeout" flicker
@@ -522,6 +537,16 @@ export const usePlayerSync = (user, db, appId) => {
               return;
             }
             const value = item.value;
+
+            // Skip re-application if server already has this change — prevents double-counting
+            // when a cloud function already committed the same state to Firestore.
+            const serverValue = key.includes('.')
+              ? key.split('.').reduce((o, k) => o?.[k], fullySanitized)
+              : fullySanitized[key];
+            const isDelete = value && typeof value === 'object' && value._methodName === 'deleteField';
+            if (isDelete && serverValue === undefined) return;
+            if (!isDelete && serverValue === value) return;
+
             if (key.includes('.')) {
               const parts = key.split('.');
               let cursor = fullySanitized;
@@ -529,7 +554,7 @@ export const usePlayerSync = (user, db, appId) => {
                 cursor[parts[i]] = { ...(cursor[parts[i]] || {}) };
                 cursor = cursor[parts[i]];
               }
-              if (value && typeof value === 'object' && value._methodName === 'deleteField') {
+              if (isDelete) {
                 delete cursor[parts[parts.length - 1]];
               } else {
                 cursor[parts[parts.length - 1]] = value;
@@ -602,10 +627,30 @@ export const usePlayerSync = (user, db, appId) => {
             else if (value && typeof value === 'object' && value._methodName === 'increment') {
                const op = value._operand ?? 0;
                cursor[parts[parts.length - 1]] = (Number(cursor[parts[parts.length - 1]]) || 0) + Number(op);
+            } else if (value && typeof value === 'object' && value._methodName === 'arrayUnion') {
+               const elements = value._elements || [];
+               const arr = Array.isArray(cursor[parts[parts.length - 1]]) ? [...cursor[parts[parts.length - 1]]] : [];
+               elements.forEach(el => { if (!arr.includes(el)) arr.push(el); });
+               cursor[parts[parts.length - 1]] = arr;
+            } else if (value && typeof value === 'object' && value._methodName === 'arrayRemove') {
+               const elements = value._elements || [];
+               let arr = Array.isArray(cursor[parts[parts.length - 1]]) ? [...cursor[parts[parts.length - 1]]] : [];
+               elements.forEach(el => { const idx = arr.indexOf(el); if (idx >= 0) arr.splice(idx, 1); });
+               cursor[parts[parts.length - 1]] = arr;
             } else { cursor[parts[parts.length - 1]] = value; }
           } else {
             if (value && typeof value === 'object' && value._methodName === 'increment') {
                next[key] = (Number(next[key]) || 0) + Number(value._operand ?? 0);
+            } else if (value && typeof value === 'object' && value._methodName === 'arrayUnion') {
+               const elements = value._elements || [];
+               const arr = Array.isArray(next[key]) ? [...next[key]] : [];
+               elements.forEach(el => { if (!arr.includes(el)) arr.push(el); });
+               next[key] = arr;
+            } else if (value && typeof value === 'object' && value._methodName === 'arrayRemove') {
+               const elements = value._elements || [];
+               let arr = Array.isArray(next[key]) ? [...next[key]] : [];
+               elements.forEach(el => { arr = arr.filter(item => item !== el); });
+               next[key] = arr;
             } else { next[key] = value; }
           }
         });

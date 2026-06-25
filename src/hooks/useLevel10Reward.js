@@ -128,7 +128,8 @@ export const useLevel10Reward = (player, functions, addLog, syncPlayer) => {
       } else {
         setStatus('error');
         setError(msg);
-        triggeredRef.current = false; // allow retry
+        // Do NOT reset triggeredRef — prevents retry-storm on 429/network errors.
+        // User can manually retry via retryClaim().
         if (addLog) addLog(`⚠️ LEVEL 10 REWARD: ${msg}`);
       }
     }

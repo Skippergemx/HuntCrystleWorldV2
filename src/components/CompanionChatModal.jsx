@@ -198,8 +198,9 @@ export const CompanionChatModal = React.memo(({ companion, player, context, onCl
   const levelLabel = useMemo(() => {
     // Pet level can be derived from player petLevel if available
     // For now, show a generic tag
-    if (companion.type === 'pet' && player?.petLevel) {
-      return `LVL ${player.petLevel}`;
+    if (companion.type === 'pet') {
+      const petLvl = player.petLevels?.[player.petId] || player.petLevel || 1;
+      return `LVL ${petLvl}`;
     }
     if (companion.type === 'mate' && player?.hiredMate) {
       return 'HIRED';

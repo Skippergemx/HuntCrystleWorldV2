@@ -453,27 +453,13 @@ export const useCombat = (
 
     addLog(`🎁 TREASURY REWARDS: 5x Auto Scrolls Collected!`);
 
-    const secureCommit = async () => {
-      try {
-        const callAction = httpsCallable(functions, 'secureGameAction');
-        await callAction({
-          action: 'CLAIM_TREASURY_REWARDS',
-          payload: {
-            rewards,
-            autoTimeLeftSaved: updates.autoTimeLeftSaved
-          }
-        });
-      } catch (e) {
-        console.error("Treasury Secure Claim Failed:", e);
-      }
-    };
-
     setSessionRewards(prev => ({
       ...prev,
       loots: [...prev.loots, ...rewards]
     }));
 
-    // Optimistic UI
+    // Snapshot pre-reward state for rollback
+    const preRewardPlayer = player;
     setPlayer(prev => ({
       ...prev,
       inventory: { ...prev.inventory, ...Object.fromEntries(rewards.map(r => [r.id, r])) },
@@ -481,7 +467,18 @@ export const useCombat = (
       autoTimeLeftSaved: updates.autoTimeLeftSaved || prev.autoTimeLeftSaved
     }));
 
-    secureCommit();
+    // Fire cloud function with rollback on failure (fire-and-forget — non-blocking for UX)
+    const callAction = httpsCallable(functions, 'secureGameAction');
+    callAction({
+      action: 'CLAIM_TREASURY_REWARDS',
+      payload: {
+        rewards,
+        autoTimeLeftSaved: updates.autoTimeLeftSaved
+      }
+    }).catch((e) => {
+      console.error("Treasury Secure Claim Failed:", e);
+      setPlayer(preRewardPlayer);
+    });
 
   }, [ITEMS, syncPlayer, addLog, playSFX, SOUNDS, player?.autoUntil]);
 
@@ -796,6 +793,9 @@ export const useCombat = (
       }
     }
 
+    // Snapshot pre-reward state for rollback if cloud function fails
+    const preRewardPlayer = player;
+
     // --- SECURE UPLINK: TRANSITION TO SERVER-SIDE STATE COMMIT ---
     const secureCommit = async () => {
       try {
@@ -815,6 +815,8 @@ export const useCombat = (
       } catch (e) {
         console.error("Secure Reward Sync Failed:", e);
         addLog("🚨 UPLINK ERROR: Reward synchronization failed.");
+        // Rollback optimistic state so rewards don't persist incorrectly on refresh
+        setPlayer(preRewardPlayer);
       }
     };
 
@@ -919,6 +921,8 @@ export const useCombat = (
         playSFX(SOUNDS.obtainLoot);
       }
     }
+    // Snapshot pre-reward state for rollback
+    const preBossPlayer = player;
     // Optimistic UI
     setPlayer(prev => ({ ...prev, totalBossDamage: newTotal, inventory: { ...prev.inventory, ...Object.fromEntries(Object.entries(updates).filter(([k]) => k.startsWith('inventory.')).map(([k, v]) => [(k.split('.')[1]), v])) } }));
 
@@ -933,6 +937,8 @@ export const useCombat = (
       });
     } catch (e) {
       console.error("Boss Hit Sync Failed:", e);
+      // Rollback optimistic state
+      setPlayer(preBossPlayer);
     }
     
     enemyTurn(BOSS, true);
