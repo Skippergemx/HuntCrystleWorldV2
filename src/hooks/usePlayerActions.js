@@ -330,6 +330,13 @@ export const usePlayerActions = (
     const totalValue = value * qty;
     playSFX(SOUNDS.sellItem);
     
+    // Snapshot pre-sell state for rollback if cloud function rejects
+    const preSellPlayer = {
+      ...player,
+      tokens: player.tokens,
+      inventory: player.inventory ? { ...player.inventory } : undefined
+    };
+
     if (addOptimisticUpdate) {
       const optimisticDeletes = {};
       if (qty > 1) {
@@ -364,11 +371,13 @@ export const usePlayerActions = (
          return totalValue;
       }
       if (clearOptimisticUpdates) clearOptimisticUpdates();
+      setPlayer(preSellPlayer);
       return false;
     } catch (e) {
       console.error(e);
       if (clearOptimisticUpdates) clearOptimisticUpdates();
       const reason = e?.details?.message || e?.message || 'Unknown error';
+      setPlayer(preSellPlayer);
       addLog('ð¨ SALE FAILED: ' + reason);
       return false;
     }
