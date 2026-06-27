@@ -144,6 +144,13 @@ export const usePlayerActions = (
     const healAmt = Math.floor(totalStats.maxHp * spec.mult);
     playSFX(SOUNDS.useHeal);
 
+    // Snapshot pre-heal state for rollback if cloud function fails
+    const preHealPlayer = {
+      ...player,
+      inventory: player.inventory ? { ...player.inventory } : undefined,
+      potions: player.potions
+    };
+
     // 1. Optimistic Local State Update (keeps UI responsive during intense combat)
     setPlayer(prev => {
       if (!prev) return prev;
@@ -171,7 +178,7 @@ export const usePlayerActions = (
     // Flush the HEALED HP immediately so pending monster-damage writes can't race
     // and overwrite the cloud function's healing result.
     const healedHp = Math.min(totalStats.maxHp, player.hp + healAmt);
-    syncPlayer({ hp: healedHp }, true);
+    // Only commit HP after cloud function confirms potion usage — prevents free heals
 
     try {
       const callAction = httpsCallable(functions, 'secureGameAction');
@@ -180,12 +187,17 @@ export const usePlayerActions = (
         payload: { selection, maxHp: totalStats.maxHp }
       });
       const data = result.data || {};
-      if (!data.success) {
+      if (data.success) {
+        syncPlayer({ hp: healedHp }, true);
+      } else {
+        setPlayer(preHealPlayer);
+        loadoutRef.current.potions[selection] = loadoutPotionCount;
         console.warn("Backend failed to confirm potion usage:", data.message);
       }
     } catch (e) {
-      console.error("Failed to commit potion usage securely:", e);
-      addLog("ðŸš¨ UPLINK ERROR: Potion consumption could not be verified.");
+      setPlayer(preHealPlayer);
+      loadoutRef.current.potions[selection] = loadoutPotionCount;
+      addLog("🚨 UPLINK ERROR: Potion consumption could not be verified.");
     }
   }, [player, totalStats.maxHp, setPlayer, syncPlayer, addLog, playSFX, SOUNDS, functions]);
 
@@ -1690,14 +1702,13 @@ export const usePlayerActions = (
     };
 
     try {
-      // Deduct sparks immediately (blocking sync)
-      await syncPlayer(sparkUpdates, true); 
-      
+      // Call faucet first — deduct sparks only on success to prevent permanent loss
       const claimFaucet = httpsCallable(functions, 'claimFaucetReward');
       const result = await claimFaucet({ targetWalletAddress: player.walletAddress });
       const data = result.data;
       
       if (data.success) {
+        await syncPlayer(sparkUpdates, true);
         addLog(`ðŸŽ AETHER REWARD: ${data.message}`);
         playSFX(SOUNDS.obtainLoot);
         if (setFaucetResult) {

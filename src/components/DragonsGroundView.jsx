@@ -273,8 +273,9 @@ export const DragonsGroundView = React.memo(() => {
         setMessage({ type: 'info', text: 'GEMX absorbed the crystal energy.' });
       }
 
-      const updates = { 
-        gemx: { ...gemx, level: newLevel, crystalsFed: newCrystalsFed } 
+      const updates = {
+        'gemx.level': newLevel,
+        'gemx.crystalsFed': newCrystalsFed
       };
       
       updates[`inventory.${crystalKey}`] = deleteField();
@@ -308,8 +309,9 @@ export const DragonsGroundView = React.memo(() => {
       setMessage({ type: 'info', text: 'Dragon devoured the fruit!' });
     }
 
-    const updates = { 
-      dragon: { ...dragonStats, level: newLevel, fruitsFed: newFruitsFed } 
+    const updates = {
+      'dragon.level': newLevel,
+      'dragon.fruitsFed': newFruitsFed
     };
     
     if (fruitKey) {
