@@ -143,7 +143,7 @@ export const InventoryView = React.memo(() => {
      
      const pools = [];
      if (player.autoScrolls > 0) {
-        pools.push({ id: `auto_scroll_pool`, name: 'Auto-Hunt Energy', type: 'Consumable', category: 'Consumable', count: player.autoScrolls, isEquipped: false, icon: '🪄', desc: 'Unified reservoir of auto-hunt minutes.', master: { type: 'Consumable' } });
+        pools.push({ id: `auto_scroll_pool`, name: 'Auto-Hunt Energy', type: 'Consumable', category: 'Consumable', count: player.autoScrolls, isEquipped: false, icon: '🤖', desc: 'Unified reservoir of auto-hunt minutes.', master: { type: 'Consumable' } });
      }
      if (player.potions > 0) {
         pools.push({ id: `hp_potion_pool`, name: 'Standard HP Potion', type: 'Consumable', category: 'Consumable', count: player.potions, isEquipped: false, icon: '🧪', desc: 'Standard biological recovery unit.', master: { type: 'Consumable' } });

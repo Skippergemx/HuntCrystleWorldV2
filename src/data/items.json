@@ -1,8 +1,8 @@
 [
   { "id": "hp_potion", "name": "Small Potion", "cost": 50, "sellValue": 20, "reqLvl": 1, "type": "Consumable", "category": "Consumable", "description": "Restores 10% Max HP." },
   { "id": "auto_scroll", "name": "Auto-Hunt Scroll", "cost": 300, "sellValue": 120, "reqLvl": 1, "icon": "🤖", "type": "Consumable", "category": "Consumable", "description": "1 min Auto Pilot." },
-  { "id": "mega_hp_potion", "name": "Mega Potion", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
-  { "id": "ultra_hp_potion", "name": "Ultra Potion", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
+  { "id": "mega_hp_potion", "name": "Mega Potion", "icon": "🧪", "sellValue": 100, "type": "Consumable", "category": "Consumable", "restore": 0.5, "description": "Advanced mix. Restores 50% Max HP." },
+  { "id": "ultra_hp_potion", "name": "Ultra Potion", "icon": "⚗️", "sellValue": 500, "type": "Consumable", "category": "Consumable", "restore": 1.0, "description": "Ultimate tonic. Full HP recovery." },
   { "id": "auto_scroll_3m", "name": "Auto-Hunt (3m)", "sellValue": 350, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 180000, "description": "3 minutes of autonomous hunting." },
   { "id": "auto_scroll_6m", "name": "Auto-Hunt (6m)", "sellValue": 700, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 360000, "description": "6 minutes of autonomous hunting." },
   { "id": "auto_scroll_9m", "name": "Auto-Hunt (9m)", "sellValue": 1000, "icon": "🤖", "type": "Consumable", "category": "Consumable", "duration": 540000, "description": "9 minutes of autonomous hunting." },

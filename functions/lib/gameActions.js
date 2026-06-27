@@ -1247,23 +1247,36 @@ const extractBaseId = (itemId) => {
     const baseId = tsStripped !== itemId ? tsStripped : itemId.replace(/_[a-z0-9]{4}$/i, '').replace(/_\d+$/, '');
     return baseId.replace(/_RET$/, '');
 };
-// Helper: look up sell value by extracting the canonical base ID
-const getSellValue = (itemId) => {
+// Helper: look up sell value by extracting the canonical base ID.
+// Falls back to the inventory item's own sellValue if not in the catalog —
+// items placed by the server (loot drops, purchases, quest rewards) are trustworthy.
+const getSellValue = (itemId, itemData) => {
     const baseId = extractBaseId(itemId);
     console.log(`[getSellValue] itemId: "${itemId}", baseId: "${baseId}"`);
     const entry = ITEM_CATALOG[baseId] ?? ITEM_CATALOG[itemId];
     console.log(`[getSellValue] entry found:`, !!entry, entry ? JSON.stringify(entry) : 'null');
-    if (!entry)
-        return 0;
-    if (entry.sellValue !== undefined) {
-        console.log(`[getSellValue] returning sellValue: ${entry.sellValue}`);
-        return entry.sellValue;
+    if (entry) {
+        if (entry.sellValue !== undefined) {
+            console.log(`[getSellValue] returning catalog sellValue: ${entry.sellValue}`);
+            return entry.sellValue;
+        }
+        if (entry.cost !== undefined) {
+            console.log(`[getSellValue] returning catalog cost fallback: ${Math.floor(entry.cost * 0.4)}`);
+            return Math.floor(entry.cost * 0.4);
+        }
     }
-    if (entry.cost !== undefined) {
-        console.log(`[getSellValue] returning cost fallback: ${Math.floor(entry.cost * 0.4)}`);
-        return Math.floor(entry.cost * 0.4);
+    // Fallback: use the inventory item's own data (server-written, trustworthy)
+    if (itemData) {
+        if (itemData.sellValue !== undefined) {
+            console.log(`[getSellValue] falling back to inventory item sellValue: ${itemData.sellValue}`);
+            return itemData.sellValue;
+        }
+        if (itemData.cost !== undefined) {
+            console.log(`[getSellValue] falling back to inventory item cost: ${Math.floor(itemData.cost * 0.4)}`);
+            return Math.floor(itemData.cost * 0.4);
+        }
     }
-    console.log(`[getSellValue] no value/cost found, returning 0`);
+    console.log(`[getSellValue] no value found, returning 0`);
     return 0;
 };
 const getCatalogEntry = (itemId) => {
@@ -1517,8 +1530,8 @@ const handleSecureGameAction = async (request, db) => {
             console.log(`[SELL_ITEM] targetItem found:`, !!targetItem, targetItem ? JSON.stringify(targetItem) : 'null');
             if (!targetItem)
                 throw new https_1.HttpsError('not-found', 'Item not in inventory.');
-            // Look up canonical sell value from server catalog
-            const trueSellValue = getSellValue(targetItem.id || itemId);
+            // Look up canonical sell value from server catalog (with inventory item fallback)
+            const trueSellValue = getSellValue(targetItem.id || itemId, targetItem);
             console.log(`[SELL_ITEM] trueSellValue resolved: ${trueSellValue}`);
             if (trueSellValue <= 0)
                 throw new https_1.HttpsError('failed-precondition', 'This item cannot be sold.');
