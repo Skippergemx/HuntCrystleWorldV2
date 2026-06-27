@@ -28,11 +28,11 @@ export const InventoryView = React.memo(() => {
   const [search, setSearch] = useState('');
 
   const [floaters, setFloaters] = useState([]);
-  const showFloater = (e, text) => {
+  const showFloater = (e, text, isError = false) => {
     const id = Date.now() + Math.random();
     const x = e.clientX;
     const y = e.clientY;
-    setFloaters(prev => [...prev, { id, text, x, y }]);
+    setFloaters(prev => [...prev, { id, text, x, y, isError }]);
     setTimeout(() => {
       setFloaters(prev => prev.filter(f => f.id !== id));
     }, 1500);
@@ -427,6 +427,7 @@ export const InventoryView = React.memo(() => {
                                             e.persist();
                                             const val = await sellItem(item.id, 1);
                                             if (val) showFloater(e, `+${val} GX`);
+                                            else showFloater(e, 'SALE FAILED', true);
                                          }}
                                          className="px-3 py-1.5 bg-black text-white hover:bg-white hover:text-black text-[9px] font-black uppercase italic border-[3px] border-white hover:border-black transition-all shadow-[4px_4px_0px_0px_black] hover:shadow-[4px_4px_0px_0px_var(--neon-lime)] active:shadow-none active:translate-y-1 bungee"
                                        >Sell 1</button>
@@ -435,6 +436,7 @@ export const InventoryView = React.memo(() => {
                                              e.persist();
                                              const val = await sellItem(item.id, item.count);
                                              if (val) showFloater(e, `+${val} GX`);
+                                             else showFloater(e, 'SALE FAILED', true);
                                            }}
                                            className="px-3 py-1.5 bg-[var(--neon-lime)] text-black hover:bg-white text-[9px] font-black uppercase italic border-[3px] border-black transition-all shadow-[4px_4px_0px_0px_black] active:shadow-none active:translate-y-1 bungee"
                                          >Sell All</button>
@@ -598,7 +600,7 @@ export const InventoryView = React.memo(() => {
 
       {createPortal(
         floaters.map(f => (
-          <div key={f.id} className="pointer-events-none fixed z-[9999] text-[var(--neon-lime)] font-black italic text-lg drop-shadow-[0_0_8px_rgba(0,0,0,1)] bungee animate-float-up"
+          <div key={f.id} className={`pointer-events-none fixed z-[9999] font-black italic text-lg drop-shadow-[0_0_8px_rgba(0,0,0,1)] bungee animate-float-up ${f.isError ? 'text-red-400' : 'text-[var(--neon-lime)]'}`}
                style={{ left: f.x, top: f.y, transform: 'translate(-50%, -100%)' }}>
             {f.text}
           </div>
