@@ -332,10 +332,10 @@ export const InventoryView = React.memo(() => {
                     const rarity = master.rarity || item.rarity || 'Common';
                     
                     let basePrice = 0;
-                    if (master && master.cost) {
-                      basePrice = Math.floor(master.cost * 0.4);
-                    } else if (master && master.sellValue !== undefined) {
+                    if (master && master.sellValue !== undefined) {
                       basePrice = master.sellValue;
+                    } else if (master && master.cost) {
+                      basePrice = Math.floor(master.cost * 0.4);
                     } else {
                       basePrice = item.sellValue || Math.floor((item.cost || 0) * 0.4);
                     }

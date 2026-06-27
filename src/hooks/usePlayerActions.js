@@ -319,10 +319,12 @@ export const usePlayerActions = (
     const master = ITEMS.find(i => i.id === itemBaseId) || item;
     
     let value = 0;
-    if (master.cost) {
+    if (master.sellValue !== undefined) {
+      value = master.sellValue;
+    } else if (master.cost) {
       value = Math.floor(master.cost * 0.4);
     } else {
-      value = master.sellValue || item.sellValue || 0;
+      value = item.sellValue || 0;
     }
 
     const totalValue = value * qty;
