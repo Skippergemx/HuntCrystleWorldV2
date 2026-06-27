@@ -31,6 +31,154 @@ import { useGame } from '../contexts/GameContext';
 
 const ARTICLES_DATA = [
   {
+    id: 'dwg-pitch-deck',
+    date: '2026-06-27',
+    author: 'Commander Gemx',
+    authorAvatar: 24,
+    title: 'Dungeons With Gems: The Idle Dungeon Crawler Built for Busy Gamers',
+    subtitle: 'Set it. Forget it. Collect loot that converts to real NFTs and ERC-20 tokens. A pitch deck for the Web3 idle RPG that respects your time and rewards your hustle.',
+    category: 'PITCH DECK',
+    type: 'article',
+    tag: 'FEATURED',
+    color: 'amber',
+    readingTime: '7 min',
+    content: [
+      {
+        type: 'heading',
+        text: 'The Problem: Gamers Don\'t Have Time to Game'
+      },
+      {
+        type: 'paragraph',
+        text: 'You love gaming. You grew up on RPGs, dungeon crawlers, and loot-driven progression loops. But now? You have a job. A commute. Responsibilities. The 40-hour raid schedules and twitch-reflex boss fights don\'t fit into your life anymore. Most Web3 games demand even more — constant wallet approvals, gas fees on every action, and grinding mechanics that feel like a second job. The industry forgot about the busy gamer. We didn\'t.'
+      },
+      {
+        type: 'heading',
+        text: 'Enter Dungeons With Gems: The Set-and-Forget Dungeon Crawler'
+      },
+      {
+        type: 'paragraph',
+        text: 'Dungeons With Gems (DWG) is a Web3-native idle RPG that plays itself while you live your life. Deploy your Hunter into a dungeon sector, activate an Auto-Scroll, and walk away. The game\'s deterministic combat engine resolves every encounter — strikes, dodges, critical hits, skill activations, loot drops — without you touching a single button. Come back hours later to a satchel full of gear, a stack of Hunt Sparks, and a pile of GX credits ready to spend or convert.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/battlegamescreenshot.png',
+        caption: 'The Combat Terminal: Your Hunter fights autonomously while the deterministic engine resolves every tick.'
+      },
+      {
+        type: 'heading',
+        text: 'How the Idle Engine Works'
+      },
+      {
+        type: 'paragraph',
+        text: 'Combat in DWG is not real-time — it\'s a ticking state machine running at one-second intervals. Every tick, the engine calculates your Hunter\'s STR-based strike against the monster, checks your AGI for a dodge on the retaliation, applies elemental bonuses from your Sync-Drive skill, and resolves any Champion abilities like Ambush or Desperation. The entire pipeline is deterministic: the same stats against the same enemy on the same floor will always produce the same mathematically verifiable outcome. This makes every victory provable — and every reward legitimate.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Auto-Scrolls are the game\'s signature mechanic. Pop one, and your Hunter fights continuously — clearing floor after floor, collecting XP, GX, gear, and sparks. The 15% exponential scaling model ensures deeper floors deliver proportionally bigger rewards: FloorValue = BaseValue × (1.15 ^ FloorNumber). Push far enough, and the numbers get serious.'
+      },
+      {
+        type: 'heading',
+        text: 'Loot That Actually Matters: The NFT Bridge'
+      },
+      {
+        type: 'paragraph',
+        text: 'Here\'s where DWG separates itself from every other idle game on the market. Your dungeon loot converts to real, on-chain assets. Hunt Sparks — Rare-tier artifacts dropped by Bosses (100% rate), Elite Champions (20%), and normal monsters (2%) — are your bridge from in-game progression to on-chain value. Collect 4 Hunt Sparks, head to the Crystle Town Exchange Terminal, and burn them for 0.01 $HUNT or 0.1 $DWGX — delivered directly to your wallet via a secure, atomic Cloud Function transaction.'
+      },
+      {
+        type: 'image',
+        src: '/assets/monsters/Neon Slums/Azure Glider.jpg',
+        caption: 'Boss-tier enemies like the Azure Glider guarantee a Hunt Spark on every defeat — your ticket to on-chain tokens.'
+      },
+      {
+        type: 'paragraph',
+        text: 'But sparks are just the beginning. DWG features a full NFT ecosystem on-chain. The Trilith Gemx Collection rewards players with ERC-1155 tokens for completing onboarding (Trilith Sapphire Gemx) and hitting Level 10 (Trilith Emerald Gemx). Hunt Buildings — ERC-1155 NFTs — unlock the Hunt Town passive settlement where citizens roam and drop resources around the clock. Every NFT is verifiable on-chain via a block explorer, and every claim is processed through atomic server-side transactions that prevent double-spending or slot exhaustion.'
+      },
+      {
+        type: 'heading',
+        text: 'The Dual-Currency Economy: GX and Crystle Shards'
+      },
+      {
+        type: 'paragraph',
+        text: 'DWG runs on a closed-loop dual-currency economy designed for sustainability. GX is the workhorse — earned through combat, iLearn quizzes, XP Overflow at Level 100, and passive Hunt Town drops. It flows out through intentional sinks: Potion and Scroll purchases, Forge crafting attempts, Laboratory upgrades, and the player-run Marketplace. Crystle Shards are the premium currency, reserved for high-tier transactions and special events.'
+      },
+      {
+        type: 'paragraph',
+        text: 'The economy is capped and balanced. Hunters max at Level 100, at which point all further XP converts to GX at a 1:0.5 ratio — turning every dungeon run into a direct wealth-generation loop. The Forge crafting system ties your DEX stat directly to economic efficiency: Success Probability = 50% + (DEX / 2), capped at 95%. This means character builds have real economic consequences — a high-DEX crafter is a more profitable crafter.'
+      },
+      {
+        type: 'heading',
+        text: 'Passive Income: Earn While You Sleep'
+      },
+      {
+        type: 'paragraph',
+        text: 'DWG\'s passive economy doesn\'t stop at auto-combat. Hunt Town is a persistent settlement where citizens spawn, roam, and drop Hunt Sparks and GX tokens continuously — no combat required, no clicking to start the flow. Your Hunt Building NFT determines your citizen capacity (5 per level, up to 20 at Level 4), and drop rates are boosted during launch events. Dragons Ground lets you feed fruits to your dragon companion, leveling it up for permanent stat bonuses that carry into every combat encounter. Two passive streams, zero active play required.'
+      },
+      {
+        type: 'image',
+        src: '/assets/huntbuildings/Level 4 Hunt Building.png',
+        caption: 'A Level 4 Hunt Building supports 20 roaming citizens — your 24/7 passive drop engine.'
+      },
+      {
+        type: 'heading',
+        text: 'Beyond Idle: A Full Metaverse Ecosystem'
+      },
+      {
+        type: 'paragraph',
+        text: 'While the idle core is the backbone, DWG is a complete metaverse. The Forge lets you craft and upgrade gear with risk/reward probability mechanics. The Laboratory enables tactical research and stat optimization. The Tavern hosts your party — Mates, Pets, and Dragons — each contributing unique combat interventions. Syndicate Wars and Naga Wars transform solo play into global cooperative raids against World Bosses. Caster Town is a live multiplayer social hub where up to 50 hunters roam a shared grid, leave speech bubbles, and build community — no NFTs required, no combat, just presence.'
+      },
+      {
+        type: 'heading',
+        text: 'Built for the Open Web: Chain-Agnostic and Scalable'
+      },
+      {
+        type: 'paragraph',
+        text: 'DWG is built to be chain-agnostic and deployable on any EVM-compatible L2. Google OAuth and wallet-based authentication provide frictionless onboarding for web users. All on-chain assets are designed for Arbitrum (L2), keeping gas costs near zero and transactions fast. Firebase Firestore handles real-time state sync for inventory, progression, and marketplace listings, with Cloud Functions enforcing server-side validation on every critical action — selling, claiming, leveling up, and token exchanges.'
+      },
+      {
+        type: 'image',
+        src: '/assets/gamescreenshot/mainmenuscreenshot.png',
+        caption: 'The Main Menu: Your launchpad into dungeons, settlements, social hubs, and the on-chain economy.'
+      },
+      {
+        type: 'heading',
+        text: 'The Pitch: Why Dungeons With Gems?'
+      },
+      {
+        type: 'paragraph',
+        text: '1. IDLE-FIRST DESIGN. The game plays itself. Auto-Scrolls, passive settlements, and deterministic combat mean progression never stops — even when you do. This is not a grind disguised as idle. This is genuine set-and-forget.'
+      },
+      {
+        type: 'paragraph',
+        text: '2. REAL ASSET CONVERSION. Every Hunt Spark, every boss kill, every dungeon run feeds into a pipeline that ends with on-chain tokens in your wallet. 4 sparks = 0.01 $HUNT or 0.1 $DWGX. No middlemen. No vouchers. Direct on-chain transfers.'
+      },
+      {
+        type: 'paragraph',
+        text: '3. NFT UTILITY, NOT SPECULATION. NFTs in DWG are not JPEGs — they are economic engines. Hunt Buildings generate passive income. Gemx tokens mark milestones. Every NFT has a function, a purpose, and a measurable impact on your Hunter\'s progression.'
+      },
+      {
+        type: 'paragraph',
+        text: '4. SUSTAINABLE TOKENOMICS. 1M $DWGX max supply. 50% on bonding curve. 11% locked inside Liquid Container NFTs (each with a hard floor of 50-100 DWGX). 39% in treasury reserve for future rewards and IP development. A real economy with real scarcity.'
+      },
+      {
+        type: 'paragraph',
+        text: '5. SOCIAL BY DEFAULT. Caster Town connects hunters in real time. The game runs in any browser, on any device — play at your desk, on your phone, or wherever you have a connection. Syndicate Wars turn solo progression into community competition. DWG is not an isolated single-player experience — it\'s a living grid.'
+      },
+      {
+        type: 'heading',
+        text: 'The Ask'
+      },
+      {
+        type: 'paragraph',
+        text: 'Dungeons With Gems is in its MVP phase — live, playable, and already producing. The deterministic combat engine runs. The NFT bridge delivers real on-chain tokens. The passive Hunt Town economy is operational. But this is just the foundation. We are seeking funding support to expand DWG into a full-blown metaverse idle game: deeper dungeon sectors, more NFT utility classes, expanded social hubs, cross-chain deployment, mobile-native clients, and a rich narrative layer that turns the grid into a living world. If you are an investor, a grant program, an Arbitrum ecosystem fund, or a partner who believes in the future of set-and-forget Web3 gaming — let\'s build the next chapter together.'
+      },
+      {
+        type: 'paragraph',
+        text: 'Visit metaverse.dungeonswithgems.quest. Deploy your Hunter. Pop a scroll. Walk away. The grid does the rest.'
+      }
+    ],
+    media: '/assets/gamescreenshot/battlegamescreenshot.png'
+  },
+  {
     id: 'dwg-caster-town-launch',
     date: '2026-05-29',
     author: 'Commander Gemx',
