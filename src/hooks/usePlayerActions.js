@@ -366,7 +366,8 @@ export const usePlayerActions = (
     } catch (e) {
       console.error(e);
       if (clearOptimisticUpdates) clearOptimisticUpdates();
-      addLog("ðŸš¨ UPLINK ERROR: Sale failed.");
+      const reason = e?.details?.message || e?.message || 'Unknown error';
+      addLog('ð¨ SALE FAILED: ' + reason);
       return false;
     }
   }, [player, ITEMS, syncPlayer, playSFX, SOUNDS, functions, addOptimisticUpdate, clearOptimisticUpdates]);
