@@ -116,13 +116,13 @@ export const InventoryView = React.memo(() => {
      const nameToId = {};
      ITEMS.forEach(i => { if (i.name) nameToId[i.name.toLowerCase()] = i.id; });
 
-     Object.values(player.inventory || {}).forEach(i => {
+     Object.entries(player.inventory || {}).forEach(([key, i]) => {
        if (!i || typeof i !== 'object') return;
        const baseId = (i.name && nameToId[i.name.toLowerCase()]) || i.id?.replace(/_([a-z0-9]+)+$/, '') || i.name;
        const master = getMasterData(i);
        
        if (!unequippedFirsts[baseId]) {
-         unequippedFirsts[baseId] = { ...i, isEquipped: false, master };
+         unequippedFirsts[baseId] = { ...i, _invKey: key, isEquipped: false, master };
        }
        unequippedCounts[baseId] = (unequippedCounts[baseId] || 0) + 1;
      });
@@ -425,7 +425,7 @@ export const InventoryView = React.memo(() => {
                                     <>
                                        <button onClick={async (e) => {
                                             e.persist();
-                                            const val = await sellItem(item.id, 1);
+                                            const val = await sellItem(item._invKey || item.id, 1);
                                             if (val) showFloater(e, `+${val} GX`);
                                             else showFloater(e, 'SALE FAILED', true);
                                          }}
@@ -434,7 +434,7 @@ export const InventoryView = React.memo(() => {
                                        {item.count > 1 && (
                                          <button onClick={async (e) => {
                                              e.persist();
-                                             const val = await sellItem(item.id, item.count);
+                                             const val = await sellItem(item._invKey || item.id, item.count);
                                              if (val) showFloater(e, `+${val} GX`);
                                              else showFloater(e, 'SALE FAILED', true);
                                            }}
