@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs, limit, runTransaction, deleteField } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, where, getDocs, limit, runTransaction, deleteField, increment } from 'firebase/firestore';
 
 import { httpsCallable } from 'firebase/functions';
 
@@ -37,7 +37,7 @@ export const useMarketplace = (user, player, syncPlayer, addLog, playSFX, SOUNDS
         const { success, total } = result.data || { success: false, total: 0 };
 
         if (success && total > 0) {
-          syncPlayer({ tokens: (player.tokens || 0) + total });
+          syncPlayer({ tokens: increment(total) });
           addLog(`💸 MARKET UPLINK: +${total.toLocaleString()} GX secured from your sales!`);
           playSFX(SOUNDS.obtainLoot);
         }

@@ -927,7 +927,7 @@ export const usePlayerActions = (
         settings: { open: true, minLevel: 1 }
       });
       
-      syncPlayer({ tokens: player.tokens - 50000, guildId: guildId, guildRole: 'LEADER' });
+      syncPlayer({ tokens: increment(-50000), guildId: guildId, guildRole: 'LEADER' });
       addLog(`ðŸ® SYNDICATE FORMED: Welcome, Leader of ${name}!`);
       playSFX(SOUNDS.obtainLoot);
     } catch (e) {
@@ -1015,7 +1015,7 @@ export const usePlayerActions = (
     try {
       const guildRef = doc(db, 'guilds', player.guildId);
       await updateDoc(guildRef, { labLevel: increment(1), gxVault: increment(10000) });
-      syncPlayer({ tokens: player.tokens - 10000 });
+      syncPlayer({ tokens: increment(-10000) });
       addLog("ðŸ§ª LAB UPGRADE SUCCESS: Syndicate global combat power increased by 5%.");
       playSFX(SOUNDS.obtainLevel);
     } catch (e) {
@@ -1452,7 +1452,7 @@ export const usePlayerActions = (
     const currentSlots = [...(player.townQuestSlots || [])].filter(id => id !== cooldownId);
     syncPlayer({ 
        townQuestSlots: currentSlots,
-       tokens: player.tokens - fee
+       tokens: increment(-fee)
     }, true);
     
     addLog("âš¡ FAST TRACK: Dispatched new prospect instantly!");
