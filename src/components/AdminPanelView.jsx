@@ -140,6 +140,25 @@ export const AdminPanelView = React.memo(() => {
     pendingConfirm: players.filter(p => (p.welcomeNftClaimed && !p.welcomeNftTxHash) || (p.level10NftClaimed && !p.level10NftTxHash)).length,
     totalSapphire: 20,
     totalEmerald: 20,
+    // Level milestone rewards (10-100)
+    rubyClaimed: players.filter(p => {
+      const lr = p.levelRewards || {};
+      return [20, 60, 70].some(l => lr[String(l)]?.claimed === true);
+    }).length,
+    quartzClaimed: players.filter(p => {
+      const lr = p.levelRewards || {};
+      return [30, 80].some(l => lr[String(l)]?.claimed === true);
+    }).length,
+    sapphireLvlClaimed: players.filter(p => {
+      const lr = p.levelRewards || {};
+      return [40, 90].some(l => lr[String(l)]?.claimed === true);
+    }).length,
+    emeraldLvlClaimed: players.filter(p => {
+      const lr = p.levelRewards || {};
+      return [50, 100].some(l => lr[String(l)]?.claimed === true);
+    }).length,
+    totalRuby: 60, // 20 supply * 3 milestones (20, 60, 70) — or just show 20
+    totalQuartz: 40,
   }), [players]);
   const paginatedPlayers = filteredPlayers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -2153,25 +2172,45 @@ export const AdminPanelView = React.memo(() => {
           </div>
 
           {/* ── Summary Stats Bar ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {/* Sapphire */}
             <div className="bg-cyan-950/30 border-2 border-cyan-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(6,182,212,0.1)]">
               <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center border border-cyan-500/40 shrink-0">
                 <Gem size={18} className="text-cyan-400" />
               </div>
               <div>
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sapphire Claimed</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sapphire (Welcome)</p>
                 <p className="text-xl font-black text-cyan-400 italic">{nftStats.sapphireClaimed}<span className="text-xs text-cyan-400/40">/{nftStats.totalSapphire}</span></p>
               </div>
             </div>
-            {/* Emerald */}
+            {/* Emerald (Level 10) */}
             <div className="bg-emerald-950/30 border-2 border-emerald-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(16,185,129,0.1)]">
               <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/40 shrink-0">
                 <Gem size={18} className="text-emerald-400" />
               </div>
               <div>
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Emerald Claimed</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Emerald (Lv.10)</p>
                 <p className="text-xl font-black text-emerald-400 italic">{nftStats.emeraldClaimed}<span className="text-xs text-emerald-400/40">/{nftStats.totalEmerald}</span></p>
+              </div>
+            </div>
+            {/* Ruby */}
+            <div className="bg-red-950/30 border-2 border-red-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(239,68,68,0.1)]">
+              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center border border-red-500/40 shrink-0">
+                <Gem size={18} className="text-red-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ruby (Lv.20/60/70)</p>
+                <p className="text-xl font-black text-red-400 italic">{nftStats.rubyClaimed}<span className="text-xs text-red-400/40">/{nftStats.totalRuby}</span></p>
+              </div>
+            </div>
+            {/* Quartz */}
+            <div className="bg-violet-950/30 border-2 border-violet-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(139,92,246,0.1)]">
+              <div className="w-10 h-10 bg-violet-500/20 rounded-lg flex items-center justify-center border border-violet-500/40 shrink-0">
+                <Gem size={18} className="text-violet-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Quartz (Lv.30/80)</p>
+                <p className="text-xl font-black text-violet-400 italic">{nftStats.quartzClaimed}<span className="text-xs text-violet-400/40">/{nftStats.totalQuartz}</span></p>
               </div>
             </div>
             {/* Reserved */}

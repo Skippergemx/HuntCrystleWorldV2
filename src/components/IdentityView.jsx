@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles, LogOut, Gem } from 'lucide-react';
+import { User, Wallet, Link, Unlink, ShieldCheck, Globe, AlertTriangle, Smartphone, ExternalLink, Check, Sparkles, LogOut, Gem, RefreshCw } from 'lucide-react';
 import { deleteField } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
 import { Header, AvatarMedia } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { usePlayerNftBalance } from '../hooks/usePlayerNftBalance';
+import { useRemainingNfts } from '../hooks/useRemainingNfts';
 
 export const IdentityView = React.memo(({ onLogout }) => {
-  const { player, syncPlayer, adventure, addLog, openGuide, wallet, linkWallet } = useGame();
+  const { player, syncPlayer, adventure, addLog, openGuide, wallet, linkWallet, functions } = useGame();
   const { setView } = adventure;
   const [showRedirectHelp, setShowRedirectHelp] = useState(false);
   const [isLinking, setIsLinking] = useState(false);
@@ -16,6 +18,32 @@ export const IdentityView = React.memo(({ onLogout }) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+
+  const [welcomeClaimState, setWelcomeClaimState] = useState('idle'); // idle | claiming | claimed | exhausted | error
+  const { remaining } = useRemainingNfts();
+
+  const claimWelcomeGift = useCallback(async () => {
+    if (!functions || !player?.walletAddress) return;
+    setWelcomeClaimState('claiming');
+    try {
+      const claimFn = httpsCallable(functions, 'claimWelcomeNft');
+      const result = await claimFn({ targetWalletAddress: player.walletAddress });
+      if (result.data.success) {
+        setWelcomeClaimState('claimed');
+        addLog(`\uD83C\uDF81 WELCOME GIFT: ${result.data.message}`);
+      } else {
+        throw new Error(result.data.message || 'Claim returned unsuccessful');
+      }
+    } catch (e) {
+      const msg = e.details?.message || e.message || 'Welcome NFT claim failed';
+      if (msg.includes('exhausted') || msg.includes('already been claimed')) {
+        setWelcomeClaimState('exhausted');
+      } else {
+        setWelcomeClaimState('error');
+      }
+      addLog(`\u26A0\uFE0F WELCOME NFT: ${msg}`);
+    }
+  }, [functions, player?.walletAddress, addLog]);
 
   const nftBalance = usePlayerNftBalance(player?.walletAddress);
   const emeraldBalance = usePlayerNftBalance(player?.walletAddress, {
@@ -309,11 +337,54 @@ export const IdentityView = React.memo(({ onLogout }) => {
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse flex-shrink-0"></div>
                 <p className="text-[7px] font-bold text-amber-400 uppercase italic">Sapphire — awaiting on-chain confirmation</p>
               </div>
+            ) : welcomeClaimState === 'claimed' ? (
+              /* Claimed via manual button */
+              <div className="bg-emerald-950/20 border-2 border-emerald-500/30 rounded-2xl p-3 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></div>
+                <p className="text-[7px] font-bold text-emerald-400 uppercase italic">Sapphire claimed! Awaiting on-chain confirmation.</p>
+              </div>
             ) : (
-              /* No wallet linked or no NFT — subtle empty state */
-              <div className="bg-slate-900/50 border-2 border-dashed border-slate-800 rounded-2xl p-3 flex items-center gap-2">
-                <Gem size={12} className="text-slate-700 flex-shrink-0" />
-                <p className="text-[7px] font-bold text-slate-600 uppercase italic">No Sapphire found. The Quartermaster may have a gift for new Hunters.</p>
+              /* Wallet linked but not yet claimed — show claim CTA */
+              <div className="relative overflow-hidden bg-gradient-to-br from-cyan-950/30 to-slate-900 border-2 border-cyan-500/20 rounded-2xl p-4 shadow-[0_0_15px_rgba(6,182,212,0.08)]">
+                <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #06b6d4 1px, transparent 1px)', backgroundSize: '6px 6px' }}></div>
+                <div className="relative z-10 flex items-center gap-3 mb-3">
+                  <div className="relative flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-cyan-500/15 border-2 border-cyan-500/40 flex items-center justify-center">
+                      <Gem size={22} className="text-cyan-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-[9px] font-black text-cyan-400 uppercase italic tracking-tighter leading-tight">Trilith Sapphire Gemx</h4>
+                    <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Welcome Gift Available</p>
+                    {remaining !== null && (
+                      <p className="text-[7px] font-black text-cyan-600 uppercase tracking-widest mt-0.5">
+                        <Gem size={8} className="inline mr-0.5 -mt-0.5" />
+                        {remaining} of 20 remaining
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {welcomeClaimState === 'claiming' ? (
+                  <button disabled className="w-full py-2 rounded-xl bg-slate-800 text-slate-500 font-black uppercase italic text-[9px] border-2 border-slate-700 flex items-center justify-center gap-2">
+                    <span className="w-3 h-3 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"></span>
+                    CLAIMING...
+                  </button>
+                ) : welcomeClaimState === 'error' ? (
+                  <div className="flex gap-2">
+                    <button onClick={claimWelcomeGift} className="flex-1 py-2 rounded-xl bg-amber-500 text-black font-black uppercase italic text-[9px] border-[3px] border-black flex items-center justify-center gap-1.5 hover:bg-amber-400 transition-colors">
+                      <RefreshCw size={10} />
+                      RETRY
+                    </button>
+                  </div>
+                ) : welcomeClaimState === 'exhausted' ? (
+                  <p className="text-[7px] font-bold text-amber-500 uppercase italic text-center">All welcome gifts have been claimed.</p>
+                ) : (
+                  <button onClick={claimWelcomeGift} className="w-full py-2 rounded-xl bg-cyan-500 text-black font-black uppercase italic text-[9px] border-[3px] border-black flex items-center justify-center gap-2 hover:bg-cyan-400 transition-colors shadow-[3px_3px_0_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none">
+                    <Gem size={12} />
+                    CLAIM YOUR GIFT
+                  </button>
+                )}
               </div>
             )}
 
@@ -368,6 +439,81 @@ export const IdentityView = React.memo(({ onLogout }) => {
                 </p>
               </div>
             ) : null}
+
+            {/* === Higher Level Rewards (20—100) === */}
+            {(() => {
+              if (!player.levelRewards) return null;
+              const rewardLevels = [20, 30, 40, 50, 60, 70, 80, 90, 100];
+              const levelConfig = {
+                20: { name: 'Trilith Ruby Gemx', color: 'red', label: 'Level 20 Milestone' },
+                30: { name: 'Trilith Quartz Gemx', color: 'violet', label: 'Level 30 Milestone' },
+                40: { name: 'Trilith Sapphire Gemx', color: 'blue', label: 'Level 40 Milestone' },
+                50: { name: 'Trilith Emerald Gemx', color: 'emerald', label: 'Level 50 Milestone' },
+                60: { name: 'Trilith Ruby Gemx', color: 'red', label: 'Level 60 Milestone' },
+                70: { name: 'Trilith Ruby Gemx', color: 'red', label: 'Level 70 Milestone' },
+                80: { name: 'Trilith Quartz Gemx', color: 'violet', label: 'Level 80 Milestone' },
+                90: { name: 'Trilith Sapphire Gemx', color: 'blue', label: 'Level 90 Milestone' },
+                100: { name: 'Trilith Emerald Gemx', color: 'emerald', label: 'Level 100 Milestone' },
+              };
+              const colorStyles = {
+                red: { from: 'from-red-950/40', border: 'border-red-500/30', iconBg: 'bg-red-500/20', iconBorder: 'border-red-500', iconText: 'text-red-300', textName: 'text-red-400', txColor: 'text-red-600 hover:text-red-400', badgeBg: 'bg-red-500/15', badgeBorder: 'border-red-500/30', badgeText: 'text-red-400', reservedBg: 'bg-red-950/20', reservedBorder: 'border-red-500/20', reservedText: 'text-red-400', ping: 'bg-red-400/20' },
+                violet: { from: 'from-violet-950/40', border: 'border-violet-500/30', iconBg: 'bg-violet-500/20', iconBorder: 'border-violet-500', iconText: 'text-violet-300', textName: 'text-violet-400', txColor: 'text-violet-600 hover:text-violet-400', badgeBg: 'bg-violet-500/15', badgeBorder: 'border-violet-500/30', badgeText: 'text-violet-400', reservedBg: 'bg-violet-950/20', reservedBorder: 'border-violet-500/20', reservedText: 'text-violet-400', ping: 'bg-violet-400/20' },
+                blue: { from: 'from-blue-950/40', border: 'border-blue-500/30', iconBg: 'bg-blue-500/20', iconBorder: 'border-blue-500', iconText: 'text-blue-300', textName: 'text-blue-400', txColor: 'text-blue-600 hover:text-blue-400', badgeBg: 'bg-blue-500/15', badgeBorder: 'border-blue-500/30', badgeText: 'text-blue-400', reservedBg: 'bg-blue-950/20', reservedBorder: 'border-blue-500/20', reservedText: 'text-blue-400', ping: 'bg-blue-400/20' },
+                emerald: { from: 'from-emerald-950/40', border: 'border-emerald-500/30', iconBg: 'bg-emerald-500/20', iconBorder: 'border-emerald-500', iconText: 'text-emerald-300', textName: 'text-emerald-400', txColor: 'text-emerald-600 hover:text-emerald-400', badgeBg: 'bg-emerald-500/15', badgeBorder: 'border-emerald-500/30', badgeText: 'text-emerald-400', reservedBg: 'bg-emerald-950/20', reservedBorder: 'border-emerald-500/20', reservedText: 'text-emerald-400', ping: 'bg-emerald-400/20' },
+              };
+              return rewardLevels.map(level => {
+                const r = player.levelRewards[String(level)];
+                if (!r) return null;
+                const cfg = levelConfig[level];
+                if (!cfg) return null;
+                const cs = colorStyles[cfg.color] || colorStyles.emerald;
+                const txHash = r.txHash;
+
+                if (r.claimed && txHash) {
+                  return (
+                    <div key={level} className={`relative overflow-hidden bg-gradient-to-br ${cs.from} to-slate-900 border-2 ${cs.border} rounded-2xl p-4 mt-2 shadow-[0_0_20px_rgba(16,185,129,0.15)]`}>
+                      <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)', backgroundSize: '6px 6px' }}></div>
+                      <div className="relative z-10 flex items-center gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className={`absolute inset-0 rounded-xl ${cs.ping} animate-ping`} style={{ animationDuration: '3s' }}></div>
+                          <div className={`relative w-12 h-12 rounded-xl ${cs.iconBg} border-2 ${cs.iconBorder} flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.3)]`}>
+                            <Gem size={22} className={cs.iconText} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className={`text-[9px] font-black ${cs.textName} uppercase italic tracking-tighter leading-tight`}>{cfg.name}</h4>
+                          <p className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">{cfg.label}</p>
+                          {txHash && (
+                            <a
+                              href={`https://basescan.org/tx/${txHash}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center gap-1 text-[7px] font-black ${cs.txColor} uppercase tracking-wider transition-colors mt-1`}
+                            >
+                              View TX <ExternalLink size={9} />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (r.claimed || r.reserved) {
+                  // Claimed without tx hash (awaiting confirm) or reserved
+                  return (
+                    <div key={level} className={`${cs.reservedBg} border-2 ${cs.reservedBorder} rounded-2xl p-3 mt-2 flex items-center gap-2`}>
+                      <div className={`w-2 h-2 rounded-full ${cs.reservedText} animate-pulse flex-shrink-0`}></div>
+                      <p className={`text-[7px] font-bold ${cs.reservedText} uppercase italic`}>
+                        {r.claimed ? `${cfg.name} claimed — awaiting on-chain confirmation` : `${cfg.name} reserved — link wallet to claim`}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return null;
+              });
+            })()}
           </div>
         )}
 

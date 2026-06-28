@@ -27,10 +27,11 @@ import { usePlayerActions } from '../hooks/usePlayerActions';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useWallet } from '../hooks/useWallet';
 
+import { httpsCallable } from 'firebase/functions';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
-import { useLevel10Reward } from '../hooks/useLevel10Reward';
+import { useLevelRewards } from '../hooks/useLevelRewards';
 import { LoadingScreen } from '../components/LoadingScreen';
-import Level10Celebration from '../components/Level10Celebration';
+import LevelRewardCelebration from '../components/Level10Celebration';
 
 export const GameContext = createContext(null);
 
@@ -114,8 +115,51 @@ export const GameProvider = ({ children, user }) => {
   const market = useMarketplace(user, player, syncPlayer, addLog, audio.playSFX, SOUNDS, db, functions, setPlayer);
   const wallet = useWallet(addLog);
 
-  // Level 10 Emerald Gemx reward detection
-  const { level10Reward, dismissLevel10, retryClaim } = useLevel10Reward(player, functions, addLog, syncPlayer);
+  // Level milestone Gemx reward detection
+  const { activeReward, dismissReward, retryReward } = useLevelRewards(player, functions, addLog, syncPlayer);
+
+  // --- DEFERRED WELCOME NFT CLAIM ---
+  // Catches players who skipped the wallet prompt during onboarding.
+  // When a wallet is linked later (via IdentityView or Global Security Sentry),
+  // this auto-triggers the welcome Sapphire Gemx claim.
+  const welcomeDeferredRef = useRef(false);
+  const [welcomeNftDeferredStatus, setWelcomeNftDeferredStatus] = useState('idle');
+
+  useEffect(() => {
+    if (!player || !functions) return;
+    if (player.welcomeNftClaimed === true) return;
+    if (!player.walletAddress) return;
+    if (welcomeDeferredRef.current) return;
+
+    welcomeDeferredRef.current = true;
+
+    const claimWelcome = async () => {
+      setWelcomeNftDeferredStatus('claiming');
+      try {
+        const claimFn = httpsCallable(functions, 'claimWelcomeNft');
+        const result = await claimFn({ targetWalletAddress: player.walletAddress });
+        if (result.data.success) {
+          setWelcomeNftDeferredStatus('claimed');
+          addLog(`🎁 WELCOME GIFT: ${result.data.message}`);
+        } else {
+          throw new Error(result.data.message || 'Claim returned unsuccessful');
+        }
+      } catch (e) {
+        const msg = e.details?.message || e.message || 'Welcome NFT claim failed';
+        if (msg.includes('exhausted') || msg.includes('already been claimed')) {
+          setWelcomeNftDeferredStatus('exhausted');
+          addLog(`⚠️ WELCOME NFT: All Sapphire Gemx have been claimed.`);
+        } else {
+          setWelcomeNftDeferredStatus('error');
+          addLog(`⚠️ WELCOME NFT: ${msg}`);
+          // Allow retry on transient errors
+          welcomeDeferredRef.current = false;
+        }
+      }
+    };
+
+    claimWelcome();
+  }, [player?.walletAddress, player?.welcomeNftClaimed, functions, addLog]);
 
   const combat = useCombat(
     user, player, syncPlayer, 
@@ -345,7 +389,7 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport,
     lowPerfMode, setLowPerfMode, inventoryCounts,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES, SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS,
-    BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS, level10Reward
+    BOSS, BOSS_MEDIA_FILES, SOUNDS, ELEMENTAL_SKILLS, activeReward
   }), [
     user, player, syncPlayer, logs, addLog, currentTime, db, appId, functions,
     showGuide, setShowGuide, guideType, setGuideType, bossAvatarIdx, setBossAvatarIdx,
@@ -358,13 +402,13 @@ export const GameProvider = ({ children, user }) => {
     globalError, setGlobalError, submitErrorReport, lowPerfMode, setLowPerfMode,
     TAVERN_MATES, MONSTERS, ITEMS, LOOTS, EQUIPMENT, MAPS, FRUITS, CRYSTLE_RECIPES,
     SHOP_ITEMS, LAB_RECIPES, PETS_METADATA, FOODS, TOWN_QUESTS, BOSS, BOSS_MEDIA_FILES,
-    SOUNDS, ELEMENTAL_SKILLS, inventoryCounts, level10Reward
+    SOUNDS, ELEMENTAL_SKILLS, inventoryCounts, activeReward
   ]);
 
   return (
     <GameContext.Provider value={engine}>
       {(loadingPlayer || !player) ? <LoadingScreen /> : children}
-      <Level10Celebration reward={level10Reward} onDismiss={dismissLevel10} onRetry={retryClaim} />
+      <LevelRewardCelebration activeReward={activeReward} onDismiss={dismissReward} onRetry={retryReward} />
     </GameContext.Provider>
   );
 };

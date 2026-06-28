@@ -260,15 +260,46 @@ export const claimWelcomeNft = onCall(
     const userRef = db.collection('players').doc(uid);
     const configRef = db.collection('config').doc('welcomeNft');
 
-    // Phase 1: Atomic Reservation in Firestore
+    // Phase 0: Resolve private key and check on-chain supply FIRST
+    let privateKey: string;
+    try {
+      privateKey = faucetPrivateKeySecret.value();
+    } catch (e) {
+      throw new HttpsError('internal', "Welcome NFT configuration error.");
+    }
+    if (!privateKey) throw new HttpsError("internal", "Offline");
+    if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
+
+    const { provider: _provider, wallet, ethers } = getEthersConnection(privateKey);
+    if (!ethers.isAddress(targetWalletAddress)) {
+      throw new HttpsError('invalid-argument', 'Invalid target wallet address');
+    }
+
+    const nftContractAddress = "0x182D92921c49ca5cf9bc53c013dE735446507dE1";
+    const tokenId = 0;
+    const amount = 1n;
+
+    const ERC1155_ABI = [
+      "function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)",
+      "function balanceOf(address account, uint256 id) view returns (uint256)"
+    ];
+
+    const nftContract = new ethers.Contract(nftContractAddress, ERC1155_ABI, wallet);
+
+    // Check on-chain balance BEFORE reserving in Firestore.
+    // The faucet's on-chain balance is the true supply cap;
+    // the Firestore counter is just an admin dashboard convenience.
+    // This prevents desync where Firestore shows slots remaining but the
+    // faucet is actually empty (e.g. after a tx.wait() timeout that
+    // rolled back the reservation but the token already left).
+    const backendBalance = await nftContract.balanceOf(wallet.address, tokenId);
+    if (backendBalance < amount) {
+      throw new HttpsError('resource-exhausted', 'Insufficient Trilith Sapphire Gemx tokens in treasury.');
+    }
+
+    // Phase 1: Atomic Reservation in Firestore (double-claim prevention only)
     try {
       await db.runTransaction(async (transaction) => {
-        const configSnap = await transaction.get(configRef);
-        const nftCount = configSnap.exists ? (configSnap.data()?.nftCount || 0) : 0;
-        if (nftCount >= 20) {
-          throw new HttpsError('resource-exhausted', 'All 20 welcome NFTs have already been claimed.');
-        }
-
         const userSnap = await transaction.get(userRef);
         if (!userSnap.exists) {
           throw new HttpsError('not-found', 'Player data not found.');
@@ -294,39 +325,8 @@ export const claimWelcomeNft = onCall(
       throw new HttpsError('internal', e.message || 'Reservation failed.');
     }
 
-    let privateKey: string;
-    try {
-      privateKey = faucetPrivateKeySecret.value();
-    } catch (e) {
-      throw new HttpsError('internal', "Welcome NFT configuration error.");
-    }
-    if (!privateKey) throw new HttpsError("internal", "Offline");
-    if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
-
     // Phase 2: On-Chain ERC-1155 Transfer
     try {
-      const { provider: _provider, wallet, ethers } = getEthersConnection(privateKey);
-      if (!ethers.isAddress(targetWalletAddress)) {
-        throw new HttpsError('invalid-argument', 'Invalid target wallet address');
-      }
-
-      const nftContractAddress = "0x182D92921c49ca5cf9bc53c013dE735446507dE1";
-      const tokenId = 0;
-      // ERC-1155 uses raw token counts, NOT wei-scaled amounts
-      const amount = 1n;
-
-      const ERC1155_ABI = [
-        "function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)",
-        "function balanceOf(address account, uint256 id) view returns (uint256)"
-      ];
-
-      const nftContract = new ethers.Contract(nftContractAddress, ERC1155_ABI, wallet);
-
-      const backendBalance = await nftContract.balanceOf(wallet.address, tokenId);
-      if (backendBalance < amount) {
-        throw new HttpsError('resource-exhausted', 'Insufficient Trilith Sapphire Gemx tokens in treasury.');
-      }
-
       const tx = await nftContract.safeTransferFrom(wallet.address, targetWalletAddress, tokenId, amount, "0x");
       await tx.wait();
 
@@ -343,7 +343,7 @@ export const claimWelcomeNft = onCall(
     } catch (error: any) {
       console.error("Welcome NFT Transfer Failure, initiating rollback...", error);
 
-      // SAFE ROLLBACK: Direct writes (no transaction) — more reliable for undoing our own reservation
+      // SAFE ROLLBACK: Direct writes — more reliable for undoing our own reservation
       try {
         await userRef.update({
           welcomeNftClaimed: false,
@@ -392,14 +392,63 @@ export const claimLevel10Nft = onCall(
       throw new HttpsError('already-exists', 'You have already claimed your Level 10 Emerald Gemx.');
     }
 
+    // Phase 0: If a wallet is provided, check on-chain supply BEFORE any Firestore changes.
+    // This prevents the same desync bug as the welcome NFT — the faucet's on-chain balance
+    // is the true supply cap; the Firestore counter is just for the admin dashboard.
+    let privateKey: string | null = null;
+    let wallet: any = null;
+    let ethers: any = null;
+    let nftContract: any = null;
+    const tokenId = 0;
+    const amount = 1n;
+
+    if (targetWalletAddress) {
+      try {
+        privateKey = faucetPrivateKeySecret.value();
+      } catch (e) {
+        throw new HttpsError('internal', "Level 10 NFT configuration error.");
+      }
+      if (!privateKey) throw new HttpsError("internal", "Offline");
+      if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
+
+      const conn = getEthersConnection(privateKey);
+      wallet = conn.wallet;
+      ethers = conn.ethers;
+
+      if (!ethers.isAddress(targetWalletAddress)) {
+        throw new HttpsError('invalid-argument', 'Invalid target wallet address');
+      }
+
+      const ERC1155_ABI = [
+        "function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)",
+        "function balanceOf(address account, uint256 id) view returns (uint256)"
+      ];
+
+      nftContract = new ethers.Contract(EMERALD_CONTRACT, ERC1155_ABI, wallet);
+
+      const backendBalance = await nftContract.balanceOf(wallet.address, tokenId);
+      if (backendBalance < amount) {
+        throw new HttpsError('resource-exhausted', 'Insufficient Trilith Emerald Gemx tokens in treasury.');
+      }
+
+      // Validate wallet
+      if (!userDataPre.walletAddress || userDataPre.walletAddress.toLowerCase() !== targetWalletAddress.toLowerCase()) {
+        throw new HttpsError('failed-precondition', 'Target wallet must match your linked profile wallet.');
+      }
+    }
+
     // Phase 1: Atomic reservation (skip if already reserved)
     if (userDataPre.level10NftReserved !== true) {
       try {
         await db.runTransaction(async (transaction) => {
-          const configSnap = await transaction.get(configRef);
-          const nftCount = configSnap.exists ? (configSnap.data()?.nftCount || 0) : 0;
-          if (nftCount >= SUPPLY_CAP) {
-            throw new HttpsError('resource-exhausted', `All ${SUPPLY_CAP} Level 10 Emerald Gemx have already been reserved.`);
+          // When a wallet is present, on-chain balance is the supply gate.
+          // When no wallet, we still use the Firestore counter for the reservation-only path.
+          if (!targetWalletAddress) {
+            const configSnap = await transaction.get(configRef);
+            const nftCount = configSnap.exists ? (configSnap.data()?.nftCount || 0) : 0;
+            if (nftCount >= SUPPLY_CAP) {
+              throw new HttpsError('resource-exhausted', `All ${SUPPLY_CAP} Level 10 Emerald Gemx have already been reserved.`);
+            }
           }
 
           const userSnap = await transaction.get(userRef);
@@ -435,43 +484,8 @@ export const claimLevel10Nft = onCall(
       };
     }
 
-    // Validate wallet
-    if (!userDataPre.walletAddress || userDataPre.walletAddress.toLowerCase() !== targetWalletAddress.toLowerCase()) {
-      throw new HttpsError('failed-precondition', 'Target wallet must match your linked profile wallet.');
-    }
-
-    let privateKey: string;
-    try {
-      privateKey = faucetPrivateKeySecret.value();
-    } catch (e) {
-      throw new HttpsError('internal', "Level 10 NFT configuration error.");
-    }
-    if (!privateKey) throw new HttpsError("internal", "Offline");
-    if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
-
     // Phase 2: On-Chain ERC-1155 Transfer
     try {
-      const { provider: _provider, wallet, ethers } = getEthersConnection(privateKey);
-      if (!ethers.isAddress(targetWalletAddress)) {
-        throw new HttpsError('invalid-argument', 'Invalid target wallet address');
-      }
-
-      const tokenId = 0;
-      // ERC-1155 uses raw token counts, NOT wei-scaled amounts
-      const amount = 1n;
-
-      const ERC1155_ABI = [
-        "function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)",
-        "function balanceOf(address account, uint256 id) view returns (uint256)"
-      ];
-
-      const nftContract = new ethers.Contract(EMERALD_CONTRACT, ERC1155_ABI, wallet);
-
-      const backendBalance = await nftContract.balanceOf(wallet.address, tokenId);
-      if (backendBalance < amount) {
-        throw new HttpsError('resource-exhausted', 'Insufficient Trilith Emerald Gemx tokens in treasury.');
-      }
-
       const tx = await nftContract.safeTransferFrom(wallet.address, targetWalletAddress, tokenId, amount, "0x");
       await tx.wait();
 
@@ -504,6 +518,218 @@ export const claimLevel10Nft = onCall(
 
       if (error instanceof HttpsError) throw error;
       throw new HttpsError('internal', `Level 10 transfer failed: ${error.message || "Network Error"}`);
+    }
+  }
+);
+
+// ===== LEVEL REWARDS (10-100) =====
+const LEVEL_REWARDS: Record<number, { contract: string; name: string; tokenSymbol: string }> = {
+  10: { contract: "0xE6961d4b515D018d5b1C4c91790ef8B5573a0615", name: "Trilith Emerald Gemx", tokenSymbol: "TRIEM" },
+  20: { contract: "0x02450E8aa329Db0A06EA0f8C852Ae00Cd1Dd5959", name: "Trilith Ruby Gemx", tokenSymbol: "TRIRUBGEMX" },
+  30: { contract: "0x137d6Df9522286e6B3d596D7c5f8584A07bf2987", name: "Trilith Quartz Gemx", tokenSymbol: "TRIQUGEMX" },
+  40: { contract: "0x182D92921c49ca5cf9bc53c013dE735446507dE1", name: "Trilith Sapphire Gemx", tokenSymbol: "TRISAPG" },
+  50: { contract: "0xE6961d4b515D018d5b1C4c91790ef8B5573a0615", name: "Trilith Emerald Gemx", tokenSymbol: "TRIEM" },
+  60: { contract: "0x02450E8aa329Db0A06EA0f8C852Ae00Cd1Dd5959", name: "Trilith Ruby Gemx", tokenSymbol: "TRIRUBGEMX" },
+  70: { contract: "0x02450E8aa329Db0A06EA0f8C852Ae00Cd1Dd5959", name: "Trilith Ruby Gemx", tokenSymbol: "TRIRUBGEMX" },
+  80: { contract: "0x137d6Df9522286e6B3d596D7c5f8584A07bf2987", name: "Trilith Quartz Gemx", tokenSymbol: "TRIQUGEMX" },
+  90: { contract: "0x182D92921c49ca5cf9bc53c013dE735446507dE1", name: "Trilith Sapphire Gemx", tokenSymbol: "TRISAPG" },
+  100: { contract: "0xE6961d4b515D018d5b1C4c91790ef8B5573a0615", name: "Trilith Emerald Gemx", tokenSymbol: "TRIEM" },
+};
+
+/**
+ * claimLevelReward — distributes the correct Tri Gemx token for each 10-level milestone.
+ * Supports two-phase flow:
+ *   - No wallet: reservation only (slot held until wallet linked)
+ *   - Wallet present: reservation + on-chain transfer
+ */
+export const claimLevelReward = onCall(
+  { secrets: [faucetPrivateKeySecret], enforceAppCheck: true },
+  async (request) => {
+    if (!request.auth || !request.auth.uid) {
+      throw new HttpsError('unauthenticated', 'You must be logged in to claim.');
+    }
+
+    const { targetWalletAddress, rewardLevel } = request.data;
+    if (rewardLevel === undefined || rewardLevel === null) {
+      throw new HttpsError('invalid-argument', 'Missing rewardLevel parameter.');
+    }
+
+    const levelConfig = LEVEL_REWARDS[rewardLevel as number];
+    if (!levelConfig) {
+      throw new HttpsError('invalid-argument', `Invalid reward level: ${rewardLevel}. Must be a 10-level milestone.`);
+    }
+
+    const uid = request.auth.uid;
+    const db = getDb();
+    const userRef = db.collection('players').doc(uid);
+    const tokenId = 0;
+    const amount = 1n;
+
+    // Check player data (non-transactional read first)
+    const userSnapPre = await userRef.get();
+    if (!userSnapPre.exists) {
+      throw new HttpsError('not-found', 'Player data not found.');
+    }
+    const userDataPre = userSnapPre.data() || {};
+
+    // Check player level requirement
+    if (!userDataPre.level || userDataPre.level < rewardLevel) {
+      throw new HttpsError('failed-precondition', `You must reach Level ${rewardLevel} to claim this reward.`);
+    }
+
+    // Check if already claimed (new system)
+    const levelRewardData = userDataPre.levelRewards?.[String(rewardLevel)];
+    if (levelRewardData?.claimed === true) {
+      throw new HttpsError('already-exists', `You have already claimed your Level ${rewardLevel} ${levelConfig.tokenSymbol} Gemx.`);
+    }
+    // Special backward compat for level 10
+    if (rewardLevel === 10 && userDataPre.level10NftClaimed === true) {
+      throw new HttpsError('already-exists', 'You have already claimed your Level 10 Emerald Gemx.');
+    }
+
+    // Phase 0: If wallet provided, check on-chain supply BEFORE Firestore
+    let wallet: any = null;
+    let ethers: any = null;
+    let nftContract: any = null;
+
+    if (targetWalletAddress) {
+      let privateKey: string;
+      try {
+        privateKey = faucetPrivateKeySecret.value();
+      } catch (e) {
+        throw new HttpsError('internal', `Level ${rewardLevel} NFT configuration error.`);
+      }
+      if (!privateKey) throw new HttpsError("internal", "Offline");
+      if (!privateKey.startsWith("0x")) privateKey = "0x" + privateKey;
+
+      const conn = getEthersConnection(privateKey);
+      wallet = conn.wallet;
+      ethers = conn.ethers;
+
+      if (!ethers.isAddress(targetWalletAddress)) {
+        throw new HttpsError('invalid-argument', 'Invalid target wallet address');
+      }
+
+      const ERC1155_ABI = [
+        "function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes data)",
+        "function balanceOf(address account, uint256 id) view returns (uint256)"
+      ];
+
+      nftContract = new ethers.Contract(levelConfig.contract, ERC1155_ABI, wallet);
+
+      const backendBalance = await nftContract.balanceOf(wallet.address, tokenId);
+      if (backendBalance < amount) {
+        throw new HttpsError('resource-exhausted', `Insufficient ${levelConfig.name} tokens in treasury.`);
+      }
+
+      // Validate wallet matches profile
+      if (!userDataPre.walletAddress || userDataPre.walletAddress.toLowerCase() !== targetWalletAddress.toLowerCase()) {
+        throw new HttpsError('failed-precondition', 'Target wallet must match your linked profile wallet.');
+      }
+    }
+
+    // Phase 1: Atomic reservation in Firestore
+    const rewardPath = `levelRewards.${rewardLevel}`;
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        if (!userSnap.exists) {
+          throw new HttpsError('not-found', 'Player data not found.');
+        }
+        const userData = userSnap.data() || {};
+
+        // Double-check no concurrent claim
+        const existingReward = userData.levelRewards?.[String(rewardLevel)];
+        if (existingReward?.claimed === true || existingReward?.reserved === true) {
+          throw new HttpsError('already-exists', `Level ${rewardLevel} reward already processed.`);
+        }
+        if (rewardLevel === 10 && (userData.level10NftClaimed === true || userData.level10NftReserved === true)) {
+          throw new HttpsError('already-exists', 'Level 10 reward already processed via legacy system.');
+        }
+
+        if (targetWalletAddress) {
+          // Full claim with wallet
+          transaction.update(userRef, {
+            [`${rewardPath}.claimed`]: true,
+            [`${rewardPath}.claimedAt`]: admin.firestore.FieldValue.serverTimestamp(),
+            [`${rewardPath}.token`]: levelConfig.tokenSymbol,
+            // Legacy backward compat for level 10
+            ...(rewardLevel === 10 ? {
+              level10NftClaimed: true,
+              level10NftClaimedAt: admin.firestore.FieldValue.serverTimestamp()
+            } : {})
+          });
+        } else {
+          // Reservation only (no wallet yet)
+          transaction.update(userRef, {
+            [`${rewardPath}.reserved`]: true,
+            [`${rewardPath}.reservedAt`]: admin.firestore.FieldValue.serverTimestamp(),
+            [`${rewardPath}.token`]: levelConfig.tokenSymbol,
+            // Legacy backward compat for level 10
+            ...(rewardLevel === 10 ? {
+              level10NftReserved: true,
+              level10NftReservedAt: admin.firestore.FieldValue.serverTimestamp()
+            } : {})
+          });
+        }
+      });
+    } catch (e: any) {
+      if (e instanceof HttpsError) throw e;
+      throw new HttpsError('internal', e.message || `Level ${rewardLevel} reservation failed.`);
+    }
+
+    // If no wallet, return early (reservation only)
+    if (!targetWalletAddress) {
+      return {
+        success: true,
+        reserved: true,
+        message: `Level ${rewardLevel} ${levelConfig.tokenSymbol} Gemx reserved. Link a wallet to receive your reward.`,
+        token: levelConfig.tokenSymbol,
+        level: rewardLevel
+      };
+    }
+
+    // Phase 2: On-Chain ERC-1155 Transfer
+    try {
+      const tx = await nftContract.safeTransferFrom(wallet.address, targetWalletAddress, tokenId, amount, "0x");
+      await tx.wait();
+
+      await userRef.update({
+        [`${rewardPath}.txHash`]: tx.hash,
+        [`${rewardPath}.claimedAt`]: admin.firestore.FieldValue.serverTimestamp(),
+        // Legacy backward compat for level 10
+        ...(rewardLevel === 10 ? { level10NftTxHash: tx.hash } : {})
+      });
+
+      return {
+        success: true,
+        message: `${levelConfig.name} transmitted — Level ${rewardLevel} milestone rewarded!`,
+        txHash: tx.hash,
+        token: levelConfig.tokenSymbol,
+        level: rewardLevel
+      };
+
+    } catch (error: any) {
+      console.error(`Level ${rewardLevel} NFT Transfer Failure, initiating rollback...`, error);
+
+      // SAFE ROLLBACK
+      try {
+        await userRef.update({
+          [`${rewardPath}.claimed`]: false,
+          [`${rewardPath}.claimedAt`]: admin.firestore.FieldValue.delete(),
+          ...(rewardLevel === 10 ? {
+            level10NftClaimed: false,
+            level10NftClaimedAt: admin.firestore.FieldValue.delete()
+          } : {})
+        });
+        console.log(`Level ${rewardLevel} rollback successful.`);
+      } catch (rollbackErr) {
+        console.error(`Level ${rewardLevel} rollback failed:`, rollbackErr);
+      }
+
+      if (error instanceof HttpsError) throw error;
+      throw new HttpsError('internal', `Level ${rewardLevel} transfer failed: ${error.message || "Network Error"}`);
     }
   }
 );

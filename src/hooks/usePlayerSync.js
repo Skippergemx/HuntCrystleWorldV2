@@ -178,7 +178,8 @@ export const usePlayerSync = (user, db, appId) => {
               welcomeCompleted: false,
               welcomeNftClaimed: false,
               level10NftReserved: false,
-              level10NftClaimed: false
+              level10NftClaimed: false,
+              levelRewards: {}
             };
             setActiveDocId(user?.uid || 'dev_local');
             setPlayer(genesisProfile);
