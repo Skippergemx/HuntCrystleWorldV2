@@ -148,7 +148,7 @@ const GroundRenderArea = React.memo(({ gemxLevel, FRUITS, onCollectFruit }) => {
 });
 
 export const DragonsGroundView = React.memo(() => {
-  const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, actions, openGuide } = useGame();
+  const { player, syncPlayer, adventure, gameLoop, FRUITS, addLog, actions, openGuide, audio, SOUNDS } = useGame();
   const { setView } = adventure;
   const { dragonTimeLeft } = gameLoop;
   const { summonDragon } = actions;
@@ -330,7 +330,7 @@ export const DragonsGroundView = React.memo(() => {
 
     if (currentSlots >= maxSlots) {
       setShowOverburdenModal(true);
-      if (playSFX) playSFX(SOUNDS.skillTrigger);
+      if (audio.playSFX) audio.playSFX(SOUNDS.skillTrigger);
       return;
     }
 

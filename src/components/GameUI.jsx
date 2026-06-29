@@ -250,7 +250,7 @@ export const CitizenMedia = React.memo(({ num, className }) => {
 
 export const SquadHUD = React.memo(({ player, dragonTimeLeft = 0, TAVERN_MATES, orientation = 'vertical', isBuffActive = false, isPetActive = false }) => {
   const isHorizontal = orientation === 'horizontal';
-  const hasDragon = dragonTimeLeft > 100 || (player?.dragon?.summonUntil && player.dragon.summonUntil > Date.now());
+  const hasDragon = dragonTimeLeft > 0 || (player?.dragon?.summonUntil && player.dragon.summonUntil > Date.now());
   
   return (
     <div className={`flex ${isHorizontal ? 'flex-row items-center gap-1.5 md:gap-2' : 'flex-col justify-center gap-1.5 md:gap-3'} shrink-0 py-1 scale-[0.8] md:scale-[0.9] z-20`}>

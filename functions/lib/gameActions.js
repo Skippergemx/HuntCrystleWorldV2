@@ -164,7 +164,8 @@ const ITEM_CATALOG = {
         "reqLvl": 25
     },
     "crystle_shard": {
-        "sellValue": 10,
+        "sellValue": 500,
+        "scrapValue": 5000,
         "rarity": "Common",
         "type": "Material",
         "category": "Loot"
@@ -740,68 +741,148 @@ const ITEM_CATALOG = {
         "category": "Loot"
     },
     "dragon_apple": {
-        "cost": 200,
+        "cost": 2000,
         "sellValue": 50,
         "rarity": "Common",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 1
+        "reqLvl": 1,
+        "exp": 1
     },
     "ember_grapes": {
-        "cost": 200,
+        "cost": 2000,
         "sellValue": 50,
         "rarity": "Common",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 1
+        "reqLvl": 1,
+        "exp": 1
     },
     "sky_berry": {
-        "cost": 500,
+        "cost": 5000,
         "sellValue": 100,
         "rarity": "Uncommon",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 10
+        "reqLvl": 10,
+        "exp": 2
     },
     "void_cherry": {
-        "cost": 500,
+        "cost": 5000,
         "sellValue": 100,
         "rarity": "Uncommon",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 10
+        "reqLvl": 10,
+        "exp": 2
     },
     "golden_peach": {
-        "cost": 2000,
+        "cost": 20000,
         "sellValue": 500,
         "rarity": "Rare",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 20
+        "reqLvl": 20,
+        "exp": 5
     },
     "plasma_lemon": {
-        "cost": 2000,
+        "cost": 20000,
         "sellValue": 500,
         "rarity": "Rare",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 20
+        "reqLvl": 20,
+        "exp": 5
     },
     "neon_orange": {
-        "cost": 5000,
+        "cost": 50000,
         "sellValue": 1200,
         "rarity": "Epic",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 30
+        "reqLvl": 30,
+        "exp": 10
     },
     "crystle_pear": {
-        "cost": 25000,
+        "cost": 250000,
         "sellValue": 5000,
         "rarity": "Legendary",
         "type": "Fruit",
         "category": "Fruit",
-        "reqLvl": 40
+        "reqLvl": 40,
+        "exp": 25
+    },
+    "grilled_steak": {
+        "cost": 5000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 20
+    },
+    "techno_ramen": {
+        "cost": 4500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 18
+    },
+    "canyon_jerky": {
+        "cost": 6000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 25
+    },
+    "focus_brew": {
+        "cost": 5000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 20
+    },
+    "neon_bubble_tea": {
+        "cost": 4500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 18
+    },
+    "precision_bento": {
+        "cost": 6000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 25
+    },
+    "energy_shot": {
+        "cost": 5000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 20
+    },
+    "turbo_smoothie": {
+        "cost": 4500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 18
+    },
+    "street_taco": {
+        "cost": 6000,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 25
+    },
+    "power_curry": {
+        "cost": 8500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 30
+    },
+    "hearty_gruel": {
+        "cost": 8500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 30
+    },
+    "void_sushi": {
+        "cost": 8500,
+        "type": "Consumable",
+        "category": "Food",
+        "reqLvl": 30
     },
     "taming_hydro": {
         "cost": 2500,
@@ -1330,7 +1411,8 @@ const handleSecureGameAction = async (request, db) => {
                         mult = 80;
                     if (rarity === 'legendary')
                         mult = 150;
-                    cost = catalogEntry.sellValue * mult;
+                    const baseValue = catalogEntry.scrapValue ?? catalogEntry.sellValue;
+                    cost = baseValue * mult;
                 }
             }
             if (cost === undefined)

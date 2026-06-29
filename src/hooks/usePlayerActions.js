@@ -283,7 +283,7 @@ export const usePlayerActions = (
         payload: { cost, summonUntil } 
       });
       if (result.data?.success) {
-        addLog(`✨ Dragon Power Summoned! (+${dragonLevel * 5} ALL STATS)`);
+        addLog(`✨ Dragon Power Summoned! (+${dragonLevel * 15} ALL STATS)`);
         playSFX(SOUNDS.obtainLoot);
       } else {
         setPlayer(preSummonPlayer);
@@ -304,8 +304,8 @@ export const usePlayerActions = (
     const extractBaseId = (id) => {
       if (!id) return '';
       const tsStripped = id.replace(/_\d{10,}.*$/, '');
-      if (tsStripped !== id) return tsStripped;
-      return id.replace(/_[a-z0-9]{4}$/i, '').replace(/_\d+$/, '');
+      if (tsStripped !== id) return tsStripped.replace(/_RET$/, '');
+      return id.replace(/_[a-z0-9]{4}$/i, '').replace(/_\d+$/, '').replace(/_RET$/, '');
     };
 
     const itemBaseId = extractBaseId(item.id || itemId);
