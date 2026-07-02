@@ -5,6 +5,7 @@ const API_KEY = import.meta.env.VITE_GARDEN_API_KEY || '';
 
 const MAX_CALLS_PER_SESSION = 15; // 6 quiz calls + 9 plant watering calls
 const COOLDOWN_MS = 5000; // 5 seconds between calls (short enough to not block quiz flow)
+const DAILY_HINT_COOLDOWN_MS = 30000; // 30s between daily hint calls (independent of garden session)
 
 /**
  * Extract the best JSON object from raw LLM output.
@@ -92,6 +93,41 @@ const PLANT_FALLBACKS = {
     "The earth remembers every gentle hand.",
     "Together we weave a tapestry of green.",
   ],
+};
+
+// Fallback gemstone stories — rotated deterministically by day when API is unavailable
+const DAILY_HINT_FALLBACKS = [
+  "An old gem-cutter in Crystle Town found a gem that weeps at midnight. He claimed it remembers the hands that mined it — a thousand years of longing, trapped in amber light.",
+  "A young hunter discovered a violet gem inside a slain beast. It pulsed with warmth, and that night, she dreamed of a mountain that had never been climbed.",
+  "The scholar Elara spent years studying a single cracked gem. When it finally spoke, it revealed the location of a library buried beneath the dunes — its words written in dust and starlight.",
+  "A wandering merchant traded his finest wares for a dull grey stone. The townsfolk laughed — until the stone began to glow with every lie spoken nearby. He never lost a deal again.",
+  "Deep in the mines, a boy named Kael found a gem that hummed when danger approached. He became the youngest scout in the guild, guided by a song only he could hear.",
+  "The gem-smith Mira forged a ring from a shattered star-stone. The wearer could see invisible threads binding all things — fate, they called it, but she called it responsibility.",
+  "A thief stole a jewel from the town shrine and found it burned his skin. He returned it at dawn, and the gem forgave him — but the scar remained, a reminder etched in light.",
+  "Two sisters found twin gems in a dried-up riverbed. Apart, the stones were cold. Together, they hummed in harmony, knitting a bond not even distance could break.",
+  "The Oracle placed a gem in a young hunter's palm and said: 'This stone has cried for three centuries. Dry its tears, and it will show you the way home.'",
+  "A gem discovered in the eastern quarry held a single frozen tear. Legend says it belongs to a guardian who wept when the first gem was mined from the earth.",
+  "A farmer turned over a stone in his field and found a gem pulsing like a heart. He planted his crops around it, and that season, the harvest was legendary.",
+  "The pirate queen Vexara wore a gem that could smell gold from a league away. She retired rich, but the stone grew quiet — it missed the thrill of the chase.",
+  "A child traded her most beloved toy for a pebble that sparkled. Years later, she learned the pebble was a dragon's tooth-gem, and it had chosen her all along.",
+  "The hermit of the northern ridge kept a single gem in his hut. Visitors said it whispered advice in a voice like crumbling stone. He never spoke, but the gem spoke for him.",
+  "A warrior placed a gem in the hilt of his blade. Each enemy struck became transparent for a moment, revealing their hidden fears. He won battles without drawing blood.",
+  "A gem found in the belly of a fish contained a miniature map. The ink was made of crushed starlight, and the destination shifted every time the moon rose.",
+  "The queen of a fallen kingdom sealed her memories inside a gem. A wandering scholar found it and spent a lifetime watching a stranger's life unfold in dreams.",
+  "A goblin trader bit a gem to test its worth and tasted honey. He kept it ever since, convinced it held the sweetness of a summer that never ended.",
+  "A lonely gem sat at the bottom of a well for centuries, reflecting the moon every night. When a drought came, the village found the well was still full — of liquid light.",
+  "The last gem-crafter of an ancient lineage held a stone that had not yet revealed its purpose. 'Patience,' he told it each morning. One day, it finally glowed.",
+];
+
+/**
+ * Pick a deterministic fallback hint based on the current date.
+ * Ensures variety day-to-day without needing the API.
+ */
+const getDailyFallbackHint = () => {
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  const hint = DAILY_HINT_FALLBACKS[dayOfYear % DAILY_HINT_FALLBACKS.length];
+  return { hint };
 };
 
 /**
@@ -188,6 +224,7 @@ export const useGardenAI = () => {
   const [aiCallsRemaining, setAiCallsRemaining] = useState(MAX_CALLS_PER_SESSION);
   const sessionCallsRef = useRef(0);
   const lastRequestTimeRef = useRef(0);
+  const dailyHintLastRequestRef = useRef(0); // independent cooldown for daily hint
   const plantCooldownRef = useRef(0); // separate cooldown for plant watering
   const usedFallbacksRef = useRef({ sunny: [], spike: [], willow: [] }); // track used fallbacks per plant
   const enrichmentPoolRef = useRef({}); // API responses that pass validation, served occasionally
@@ -756,6 +793,78 @@ Respond ONLY with this JSON (no other text):
   }, []);
 
   /**
+   * Generate a daily gemstone story for the main menu — a short tale about
+   * characters and their connection to magical gemstones.
+   * Uses its own cooldown, independent of Garden OS session limits.
+   * Returns { hint: string } or null on failure.
+   */
+  const generateDailyHint = useCallback(async (playerName) => {
+    if (!API_KEY) return getDailyFallbackHint();
+
+    const now = Date.now();
+    if (now - dailyHintLastRequestRef.current < DAILY_HINT_COOLDOWN_MS) return null;
+    dailyHintLastRequestRef.current = now;
+
+    try {
+      const displayName = playerName || 'Hunter';
+
+      const systemPrompt = `You are the Gemstone Chronicler — an ancient storyteller who narrates short tales about human characters and the magical gemstones of Dungeons With Gems.
+
+RULES:
+- Output ONLY a JSON object. No reasoning, no planning, no bullet points, no markdown.
+- Never use markdown formatting (no *, no **, no backticks).
+- Write a tale (5-8 sentences, 150-250 words) about a character and their connection to a gemstone.
+- Make it immersive and vivid — a proper campfire story, not a summary.
+- Include sensory details: how the gem feels, sounds, or glows.
+- The character can be a hunter, a merchant, a scholar, a wanderer, or a gem-crafter.
+- The gemstone can grant power, hold ancient memories, cause mischief, or reveal a secret.
+- End with a sense of wonder, consequence, or discovery.
+- Make it feel like a fireside tale — myth, legend, or folktale from the gem world.`;
+
+      const userPrompt = `Write a gemstone tale (5-8 sentences, 150-250 words) for ${displayName} about a human character and a magical gemstone in the world of Dungeons With Gems. Make it vivid and immersive — a proper campfire story with sensory detail.
+
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly one key: "hint".`;
+
+      const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
+          contents: [{ parts: [{ text: userPrompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 700
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text();
+        console.warn('Daily Hint: API error', response.status, errorBody);
+        return getDailyFallbackHint();
+      }
+
+      const json = await response.json();
+      const parts = json.candidates?.[0]?.content?.parts || [];
+      const responsePart = parts.find(p => !p.thought) || parts[0];
+      const rawContent = responsePart?.text;
+      if (!rawContent) return getDailyFallbackHint();
+
+      console.log('Daily Hint: Raw (first 150):', rawContent.slice(0, 150));
+
+      const parsed = extractBestJSON(rawContent);
+      if (!parsed?.hint || parsed.hint.length < 10) return getDailyFallbackHint();
+
+      return { hint: parsed.hint };
+    } catch (e) {
+      console.warn('Daily Hint: Generation failed:', e);
+      return getDailyFallbackHint();
+    }
+  }, []);
+
+  /**
    * Reset session counters (call when entering Garden OS view).
    */
   const resetSession = useCallback(() => {
@@ -769,6 +878,7 @@ Respond ONLY with this JSON (no other text):
     generateSessionSummary,
     generateQuestionBatch,
     generateReflectionStory,
+    generateDailyHint,
     waterPlant,
     resetSession,
     isAnalyzing,

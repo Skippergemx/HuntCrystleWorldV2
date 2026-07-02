@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Globe, ShieldAlert, RefreshCw, Users, Trash2, CheckCircle, AlertCircle, Search, X, Activity, TrendingUp, Sparkles, Flame, Target, Wallet, Copy, FileText, Tag, Send, CheckCircle2, Droplets, ExternalLink, DollarSign, BarChart3, ShoppingBag, Hammer, Microscope, Gem } from 'lucide-react';
 import { createPublicClient, http, formatEther, formatUnits } from 'viem';
 import { base } from 'viem/chains';
-import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField } from 'firebase/firestore';
+import { collection, getDocs, writeBatch, doc, deleteDoc, getDoc, setDoc, query, collectionGroup, updateDoc, deleteField, limit } from 'firebase/firestore';
 import { useGame } from '../contexts/GameContext';
 import { Header } from './GameUI';
 
@@ -86,7 +86,7 @@ const ERC1155_BALANCE_ABI = [{
 }];
 
 export const AdminPanelView = React.memo(() => {
-  const { db, appId, user, adventure } = useGame();
+  const { db, appId, user, adventure, ITEMS, CRYSTLE_RECIPES, LAB_RECIPES } = useGame();
   const { setView } = adventure;
   const userEmail = user?.email || user?.uid;
 
@@ -102,9 +102,21 @@ export const AdminPanelView = React.memo(() => {
   const faucetAddress = "0x8dca8d7B35004630F460B85F70d1189795CDe6Fc";
   const [treasuryBalances, setTreasuryBalances] = useState(null); // { ETH: '0.1234', DWGX: '500.00', ... }
   const [viewAllWallets, setViewAllWallets] = useState(false);
+  const [showUnboundOnly, setShowUnboundOnly] = useState(false);
   const itemsPerPage = 10;
 
   const isAdmin = userEmail === 'skippergemx@gmail.com';
+
+  // Chunked batch executor to stay under Firestore's 500-op limit
+  const BATCH_LIMIT = 400;
+  const commitInBatches = useCallback(async (batchFns) => {
+    for (let i = 0; i < batchFns.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(db);
+      const chunk = batchFns.slice(i, Math.min(i + BATCH_LIMIT, batchFns.length));
+      chunk.forEach(fn => fn(batch));
+      await batch.commit();
+    }
+  }, [db]);
 
   const filteredPlayers = useMemo(() => {
     const search = searchQuery.toLowerCase();
@@ -123,7 +135,8 @@ export const AdminPanelView = React.memo(() => {
   const nftPlayers = useMemo(() => {
     const search = searchQuery.toLowerCase();
     return players.filter(p => {
-      const hasNftData = p.welcomeNftClaimed || p.level10NftClaimed || p.level10NftReserved || p.walletAddress;
+      const hasLevelRewards = p.levelRewards && Object.values(p.levelRewards).some(r => r?.claimed);
+      const hasNftData = p.welcomeNftClaimed || p.level10NftClaimed || p.level10NftReserved || hasLevelRewards || p.walletAddress;
       if (!hasNftData) return false;
       if (!search) return true;
       return (p.name?.toLowerCase().includes(search)) ||
@@ -157,8 +170,10 @@ export const AdminPanelView = React.memo(() => {
       const lr = p.levelRewards || {};
       return [50, 100].some(l => lr[String(l)]?.claimed === true);
     }).length,
-    totalRuby: 60, // 20 supply * 3 milestones (20, 60, 70) — or just show 20
+    totalRuby: 20, // Unique players who can claim at least one Ruby milestone (20/60/70) — supply cap is 20 per gem type
     totalQuartz: 40,
+    totalSapphireLvl: 40, // Level milestone Sapphire (40/90)
+    totalEmeraldLvl: 40, // Level milestone Emerald (50/100)
   }), [players]);
   const paginatedPlayers = filteredPlayers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -203,19 +218,7 @@ export const AdminPanelView = React.memo(() => {
     }
   };
 
-  const fetchFaucetBalance = useCallback(async () => {
-    try {
-      const publicClient = createPublicClient({
-        chain: base,
-        transport: http()
-      });
-      const balance = await publicClient.getBalance({ address: faucetAddress });
-      setFaucetBalance(formatEther(balance));
-    } catch (e) {
-      console.error("Faucet Scan Error:", e);
-    }
-  }, [faucetAddress]);
-
+  // fetchFaucetBalance removed — faucet ETH is now derived from treasuryBalances via useEffect
   const fetchTreasuryBalances = useCallback(async () => {
     try {
       const publicClient = createPublicClient({
@@ -266,12 +269,24 @@ export const AdminPanelView = React.memo(() => {
     }
   }, [faucetAddress]);
 
+  // faucetBalance is now derived from treasuryBalances to avoid a redundant RPC call
+  useEffect(() => {
+    if (treasuryBalances?.ETH) {
+      setFaucetBalance(treasuryBalances.ETH);
+    }
+  }, [treasuryBalances]);
+
   useEffect(() => {
     if (isAdmin && activeTab === 'system') {
-      fetchFaucetBalance();
       fetchTreasuryBalances();
     }
-  }, [isAdmin, activeTab, fetchFaucetBalance, fetchTreasuryBalances]);
+  }, [isAdmin, activeTab, fetchTreasuryBalances]);
+
+  // Reset search and page when switching tabs (prevents cross-tab contamination)
+  useEffect(() => {
+    setSearchQuery('');
+    setCurrentPage(1);
+  }, [activeTab]);
 
   const resetLeaderboard = async () => {
     if (!window.confirm("COMMENCE GENESIS WIPE: This will reset ALL V2 players to Level 1, clear all inventories, and set GX balances to 100. This is the ultimate reset. Proceed?")) return;
@@ -279,7 +294,7 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const batch = writeBatch(db);
+      const batchFns = [];
       
       // Reset All V2 Profiles in 'players' collection
       players.forEach(p => {
@@ -306,14 +321,14 @@ export const AdminPanelView = React.memo(() => {
           gemx: { level: 1, crystalsFed: 0 },
           dragon: { level: 1, fruitsFed: 0 }
         };
-        batch.update(profileRef, cleanSlate);
+        batchFns.push((b) => b.update(profileRef, cleanSlate));
       });
 
       // Clear V2 Marketplace
       const marketSnap = await getDocs(collection(db, 'marketplace'));
-      marketSnap.forEach(d => batch.delete(d.ref));
+      marketSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
 
-      await batch.commit();
+      await commitInBatches(batchFns);
       setMessage({ type: 'success', text: `Genesis Wipe Successful: ${players.length} hunters returned to the void. Ranks and Marketplace cleared.` });
       await fetchStats();
     } catch (e) {
@@ -331,16 +346,16 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const batch = writeBatch(db);
+      const batchFns = [];
       
       // 1. Wipe root 'players' collection
       const playersSnap = await getDocs(collection(db, 'players'));
-      playersSnap.forEach(d => batch.delete(d.ref));
+      playersSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
       console.log(`System V2: Purged ${playersSnap.size} root player profiles.`);
 
       // 2. Wipe root 'users' collection (Legacy)
       const usersSnap = await getDocs(collection(db, 'users'));
-      usersSnap.forEach(d => batch.delete(d.ref));
+      usersSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
       console.log(`System V2: Purged ${usersSnap.size} root legacy user documents.`);
 
       // 3. Wipe 'artifacts' tree (Recursive cleanup for current and legacy app IDs)
@@ -348,18 +363,18 @@ export const AdminPanelView = React.memo(() => {
       for (const id of possibleAppIds) {
         // Artifact Leaderboard
         const lbSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'leaderboard'));
-        lbSnap.forEach(d => batch.delete(d.ref));
+        lbSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
         
         // Artifact Marketplace
         const mktSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'marketplace'));
-        mktSnap.forEach(d => batch.delete(d.ref));
+        mktSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
 
         // Artifact Chat
         const chatSnap = await getDocs(collection(db, 'artifacts', id, 'public', 'data', 'pvp_chat'));
-        chatSnap.forEach(d => batch.delete(d.ref));
+        chatSnap.forEach(d => batchFns.push((b) => b.delete(d.ref)));
       }
 
-      await batch.commit();
+      await commitInBatches(batchFns);
       setMessage({ type: 'success', text: "DATABASE PURGE COMPLETE: The sectors are clean. Re-initializing Genesis Protocol v2.0." });
       await fetchStats();
     } catch (e) {
@@ -389,7 +404,7 @@ export const AdminPanelView = React.memo(() => {
   const fetchErrorReports = async () => {
     setLoading(true);
     try {
-      const reportsSnap = await getDocs(query(collection(db, 'error_reports')));
+      const reportsSnap = await getDocs(query(collection(db, 'error_reports'), limit(100)));
       const reports = [];
       reportsSnap.forEach(d => reports.push({ id: d.id, ...d.data() }));
       setErrorReports(reports.sort((a,b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
@@ -418,21 +433,21 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const batch = writeBatch(db);
+      const batchFns = [];
       let migrationCount = 0;
       players.forEach(p => {
         if (!p.maxDepthFloor || !p.maxDepthScore) {
           const profileRef = doc(db, 'players', p.id);
           const depthLvl = p.maxDepth || 1;
-          batch.update(profileRef, {
+          batchFns.push((b) => b.update(profileRef, {
             maxDepthFloor: depthLvl,
             maxDepthScore: depthLvl * 10000
-          });
+          }));
           migrationCount++;
         }
       });
       if (migrationCount > 0) {
-        await batch.commit();
+        await commitInBatches(batchFns);
         setMessage({ type: 'success', text: `Ranking Schema Healed: Migrated ${migrationCount} players to the V3 Depth Score format.` });
         await fetchStats();
       } else {
@@ -451,7 +466,7 @@ export const AdminPanelView = React.memo(() => {
     setLoading(true);
     setMessage(null);
     try {
-      const batch = writeBatch(db);
+      const batchFns = [];
       let fixedCount = 0;
       let totalMinutesMigrated = 0;
 
@@ -474,14 +489,14 @@ export const AdminPanelView = React.memo(() => {
         if (foundLegacy) {
            updates.autoScrolls = (p.autoScrolls || 0) + minutesToGain;
            const profileRef = doc(db, 'players', p.id);
-           batch.update(profileRef, updates);
+           batchFns.push((b) => b.update(profileRef, updates));
            fixedCount++;
            totalMinutesMigrated += minutesToGain;
         }
       });
 
       if (fixedCount > 0) {
-        await batch.commit();
+        await commitInBatches(batchFns);
         setMessage({ type: 'success', text: `REPAIR COMPLETE: Sanitized ${fixedCount} hunters. Consolidated ${totalMinutesMigrated} minutes into unified pools.` });
         await fetchStats();
       } else {
@@ -512,7 +527,7 @@ export const AdminPanelView = React.memo(() => {
         level: Number(level),
         tokens: Number(tokens),
         totalBossDamage: Number(totalBossDamage),
-        maxDepthFloor: Number(maxDepthFloor || editingPlayer.maxDepth || 1),
+        maxDepthFloor: Number(maxDepthFloor ?? editingPlayer.maxDepth ?? 1),
         maxDepthMapName: maxDepthMapName || null,
         walletAddress: walletAddress || null,
         tonWalletAddress: editingPlayer.tonWalletAddress || null
@@ -586,6 +601,11 @@ export const AdminPanelView = React.memo(() => {
   const migratePlayerData = async () => {
     if (!migrationSource || !migrationTarget) {
       setMessage({ type: 'error', text: 'Migration Blocked: Source and Target UIDs required.' });
+      return;
+    }
+
+    if (migrationSource === migrationTarget) {
+      setMessage({ type: 'error', text: 'Migration Blocked: Source and Target UIDs cannot be identical.' });
       return;
     }
 
@@ -703,7 +723,7 @@ export const AdminPanelView = React.memo(() => {
                   <label className="text-[10px] font-black text-slate-500 uppercase">Peak Floor</label>
                   <input 
                     type="number" 
-                    value={editingPlayer.maxDepthFloor || editingPlayer.maxDepth || 1}
+                    value={editingPlayer.maxDepthFloor ?? editingPlayer.maxDepth ?? 1}
                     onChange={e => setEditingPlayer({...editingPlayer, maxDepthFloor: e.target.value})}
                     className="w-full bg-black border-2 border-slate-800 p-2 text-white font-black italic text-sm focus:border-cyan-500 outline-none"
                   />
@@ -966,6 +986,14 @@ export const AdminPanelView = React.memo(() => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-cyan-600 pl-4">
             <h2 className="text-xl font-black text-white uppercase italic">Player Registry</h2>
             <div className="flex gap-2 w-full md:w-auto">
+              <button 
+                onClick={fetchStats}
+                disabled={loading}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-black uppercase italic text-[10px] border border-slate-700 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
               <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                   <input 
@@ -988,6 +1016,7 @@ export const AdminPanelView = React.memo(() => {
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GX Balance</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Boss DMG</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Depth</th>
+                  <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">NFT Status</th>
                   <th className="py-4 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Actions</th>
                 </tr>
               </thead>
@@ -1060,8 +1089,40 @@ export const AdminPanelView = React.memo(() => {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex flex-col">
-                              <span className="text-sm font-black text-blue-400 italic">FLR {player.maxDepthFloor || player.maxDepth || 1}</span>
+                              <span className="text-sm font-black text-blue-400 italic">FLR {player.maxDepthFloor ?? player.maxDepth ?? '—'}</span>
                               {player.maxDepthMapName && <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mt-0.5">{player.maxDepthMapName}</span>}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            <div className="flex flex-wrap gap-1 items-center justify-center">
+                              {player.welcomeNftClaimed === true && (
+                                <span className="px-1.5 py-0.5 bg-cyan-950/50 border border-cyan-500/40 rounded text-[7px] font-black text-cyan-400 uppercase leading-none">S</span>
+                              )}
+                              {player.level10NftClaimed === true && (
+                                <span className="px-1.5 py-0.5 bg-emerald-950/50 border border-emerald-500/40 rounded text-[7px] font-black text-emerald-400 uppercase leading-none">E</span>
+                              )}
+                              {player.level10NftReserved === true && !player.level10NftClaimed && (
+                                <span className="px-1.5 py-0.5 bg-amber-950/50 border border-amber-500/40 rounded text-[7px] font-black text-amber-400 uppercase leading-none">E⛁</span>
+                              )}
+                              {(() => {
+                                const lr = player.levelRewards || {};
+                                const r = [20,60,70].some(l => lr[String(l)]?.claimed);
+                                const q = [30,80].some(l => lr[String(l)]?.claimed);
+                                const sl = [40,90].some(l => lr[String(l)]?.claimed);
+                                const el = [50,100].some(l => lr[String(l)]?.claimed);
+                                if (!r && !q && !sl && !el) return null;
+                                return (
+                                  <>
+                                    {r && <span className="px-1.5 py-0.5 bg-red-950/50 border border-red-500/40 rounded text-[7px] font-black text-red-400 uppercase leading-none">R</span>}
+                                    {q && <span className="px-1.5 py-0.5 bg-violet-950/50 border border-violet-500/40 rounded text-[7px] font-black text-violet-400 uppercase leading-none">Q</span>}
+                                    {sl && <span className="px-1.5 py-0.5 bg-sky-950/50 border border-sky-500/40 rounded text-[7px] font-black text-sky-400 uppercase leading-none">S2</span>}
+                                    {el && <span className="px-1.5 py-0.5 bg-teal-950/50 border border-teal-500/40 rounded text-[7px] font-black text-teal-400 uppercase leading-none">E2</span>}
+                                  </>
+                                );
+                              })()}
+                              {!player.welcomeNftClaimed && !player.level10NftClaimed && !player.level10NftReserved && !((() => {const lr=player.levelRewards||{};return [20,60,70,30,80,40,90,50,100].some(l=>lr[String(l)]?.claimed);})()) && (
+                                <span className="text-[7px] text-slate-700 font-bold italic">—</span>
+                              )}
                             </div>
                           </td>
                           <td className="py-4 px-4 text-center">
@@ -1076,7 +1137,7 @@ export const AdminPanelView = React.memo(() => {
                       ))}
                       {paginatedPlayers.length === 0 && (
                         <tr>
-                          <td colSpan="7" className="py-12 text-center text-slate-600 font-black uppercase italic tracking-widest">Sector Empty: No Hunters Detected</td>
+                          <td colSpan="8" className="py-12 text-center text-slate-600 font-black uppercase italic tracking-widest">Sector Empty: No Hunters Detected</td>
                         </tr>
                       )}
                     </>
@@ -1152,6 +1213,12 @@ export const AdminPanelView = React.memo(() => {
                  {viewAllWallets ? 'Paginate' : 'Show All Units'}
                </button>
                <button 
+                 onClick={() => { setShowUnboundOnly(!showUnboundOnly); setCurrentPage(1); }}
+                 className={`px-4 py-2 border-2 font-black uppercase italic text-[10px] transition-all ${showUnboundOnly ? 'bg-red-600 text-white border-red-800' : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-red-500'}`}
+               >
+                 {showUnboundOnly ? 'Show All' : 'Unbound Only'}
+               </button>
+               <button 
                  onClick={() => {
                    const evm = players.filter(p => p.walletAddress).map(p => `EVM: ${p.walletAddress} (${p.name || p.id})`);
                    const ton = players.filter(p => p.tonWalletAddress).map(p => `TON: ${p.tonWalletAddress} (${p.name || p.id})`);
@@ -1199,9 +1266,10 @@ export const AdminPanelView = React.memo(() => {
               <tbody className="space-y-4">
                 {(() => {
                   const displaySet = viewAllWallets ? filteredPlayers : paginatedPlayers;
+                  const displaySetFiltered = showUnboundOnly ? displaySet.filter(p => !p.walletAddress && !p.tonWalletAddress) : displaySet;
                   return (
                     <>
-                      {displaySet.map((player) => (
+                      {displaySetFiltered.map((player) => (
                         <tr key={player.id} className="bg-slate-900/40 border-2 border-slate-800 hover:border-amber-500/50 transition-all group">
                           <td className="py-4 px-4 text-left rounded-l-xl">
                             <div className="flex items-center gap-3">
@@ -1429,10 +1497,10 @@ export const AdminPanelView = React.memo(() => {
                      </div>
                   </div>
                   <button 
-                    onClick={fetchFaucetBalance}
+                    onClick={fetchTreasuryBalances}
                     className="p-3 bg-black border-2 border-slate-800 text-slate-400 hover:text-white hover:border-emerald-500 transition-all rounded-xl"
                   >
-                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    <RefreshCw size={18} />
                   </button>
                </div>
 
@@ -1496,7 +1564,7 @@ export const AdminPanelView = React.memo(() => {
                     onClick={fetchTreasuryBalances}
                     className="p-3 bg-black border-2 border-slate-800 text-slate-400 hover:text-white hover:border-amber-500 transition-all rounded-xl"
                   >
-                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    <RefreshCw size={18} />
                   </button>
                </div>
 
@@ -1764,7 +1832,6 @@ export const AdminPanelView = React.memo(() => {
                        </thead>
                        <tbody className="divide-y divide-slate-900 bg-black/40">
                           {(() => {
-                             const { ITEMS, CRYSTLE_RECIPES, LAB_RECIPES } = useGame();
                              const allEquips = ITEMS.filter(i => i.category === 'Equipment').sort((a,b) => {
                                 const aPower = Object.values(a.stats || {}).reduce((acc, v) => acc + v, 0);
                                 const bPower = Object.values(b.stats || {}).reduce((acc, v) => acc + v, 0);
@@ -2172,7 +2239,7 @@ export const AdminPanelView = React.memo(() => {
           </div>
 
           {/* ── Summary Stats Bar ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {/* Sapphire */}
             <div className="bg-cyan-950/30 border-2 border-cyan-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(6,182,212,0.1)]">
               <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center border border-cyan-500/40 shrink-0">
@@ -2233,6 +2300,26 @@ export const AdminPanelView = React.memo(() => {
                 <p className="text-xl font-black text-purple-400 italic">{nftStats.pendingConfirm}</p>
               </div>
             </div>
+            {/* Sapphire (Lv.40/90) */}
+            <div className="bg-sky-950/30 border-2 border-sky-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(14,165,233,0.1)]">
+              <div className="w-10 h-10 bg-sky-500/20 rounded-lg flex items-center justify-center border border-sky-500/40 shrink-0">
+                <Gem size={18} className="text-sky-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sapphire (Lv.40/90)</p>
+                <p className="text-xl font-black text-sky-400 italic">{nftStats.sapphireLvlClaimed}<span className="text-xs text-sky-400/40">/{nftStats.totalSapphireLvl}</span></p>
+              </div>
+            </div>
+            {/* Emerald (Lv.50/100) */}
+            <div className="bg-teal-950/30 border-2 border-teal-500/30 p-4 rounded-xl flex items-center gap-3 shadow-[3px_3px_0_rgba(20,184,166,0.1)]">
+              <div className="w-10 h-10 bg-teal-500/20 rounded-lg flex items-center justify-center border border-teal-500/40 shrink-0">
+                <Gem size={18} className="text-teal-400" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Emerald (Lv.50/100)</p>
+                <p className="text-xl font-black text-teal-400 italic">{nftStats.emeraldLvlClaimed}<span className="text-xs text-teal-400/40">/{nftStats.totalEmeraldLvl}</span></p>
+              </div>
+            </div>
           </div>
 
           {/* ── Search ── */}
@@ -2261,15 +2348,24 @@ export const AdminPanelView = React.memo(() => {
                       <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Wallet</th>
                       <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🔷 Sapphire</th>
                       <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🟢 Emerald</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🔴 Ruby</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">💠 Quartz</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🔷 Sapphire Lv</th>
+                      <th className="py-3 px-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">🟢 Emerald Lv</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
                     {nftPlayers.map((player) => {
+                      const lr = player.levelRewards || {};
                       const sapphireClaimed = player.welcomeNftClaimed === true;
                       const sapphireTx = player.welcomeNftTxHash;
                       const emeraldClaimed = player.level10NftClaimed === true;
                       const emeraldReserved = player.level10NftReserved === true;
                       const emeraldTx = player.level10NftTxHash;
+                      const rubyClaimed = [20, 60, 70].some(l => lr[String(l)]?.claimed === true);
+                      const quartzClaimed = [30, 80].some(l => lr[String(l)]?.claimed === true);
+                      const sapphireLvlClaimed = [40, 90].some(l => lr[String(l)]?.claimed === true);
+                      const emeraldLvlClaimed = [50, 100].some(l => lr[String(l)]?.claimed === true);
                       const hasWallet = !!player.walletAddress;
 
                       return (
@@ -2342,6 +2438,42 @@ export const AdminPanelView = React.memo(() => {
                               <span className="text-[9px] text-slate-600 font-bold italic">—</span>
                             )}
                           </td>
+                          <td className="py-3 px-4 text-center">
+                            {rubyClaimed ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-[9px] font-black text-red-400 uppercase">
+                                <CheckCircle size={10} /> Claimed
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {quartzClaimed ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-950/40 border border-violet-500/30 rounded text-[9px] font-black text-violet-400 uppercase">
+                                <CheckCircle size={10} /> Claimed
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {sapphireLvlClaimed ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-950/40 border border-sky-500/30 rounded text-[9px] font-black text-sky-400 uppercase">
+                                <CheckCircle size={10} /> Claimed
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {emeraldLvlClaimed ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-950/40 border border-teal-500/30 rounded text-[9px] font-black text-teal-400 uppercase">
+                                <CheckCircle size={10} /> Claimed
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-600 font-bold italic">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })}
@@ -2357,6 +2489,11 @@ export const AdminPanelView = React.memo(() => {
                   const emeraldClaimed = player.level10NftClaimed === true;
                   const emeraldReserved = player.level10NftReserved === true;
                   const emeraldTx = player.level10NftTxHash;
+                  const lr = player.levelRewards || {};
+                  const rubyClaimed = [20, 60, 70].some(l => lr[String(l)]?.claimed === true);
+                  const quartzClaimed = [30, 80].some(l => lr[String(l)]?.claimed === true);
+                  const sapphireLvlClaimed = [40, 90].some(l => lr[String(l)]?.claimed === true);
+                  const emeraldLvlClaimed = [50, 100].some(l => lr[String(l)]?.claimed === true);
                   const hasWallet = !!player.walletAddress;
 
                   return (
@@ -2394,9 +2531,9 @@ export const AdminPanelView = React.memo(() => {
                       )}
 
                       {/* Status Badges Row */}
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Sapphire</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">🔷 Sapphire</p>
                           {sapphireClaimed ? (
                             <div className="flex items-center gap-1">
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-950/40 border border-cyan-500/30 rounded text-[8px] font-black text-cyan-400 uppercase">
@@ -2412,8 +2549,8 @@ export const AdminPanelView = React.memo(() => {
                             <span className="text-[8px] text-slate-600 font-bold italic">Not claimed</span>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">Emerald</p>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">🟢 Emerald</p>
                           {emeraldClaimed ? (
                             <div className="flex items-center gap-1">
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/40 border border-emerald-500/30 rounded text-[8px] font-black text-emerald-400 uppercase">
@@ -2431,6 +2568,46 @@ export const AdminPanelView = React.memo(() => {
                             </span>
                           ) : (
                             <span className="text-[8px] text-slate-600 font-bold italic">Not eligible</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">🔴 Ruby</p>
+                          {rubyClaimed ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-950/40 border border-red-500/30 rounded text-[8px] font-black text-red-400 uppercase">
+                              <CheckCircle size={9} /> Claimed
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">—</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">💠 Quartz</p>
+                          {quartzClaimed ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-950/40 border border-violet-500/30 rounded text-[8px] font-black text-violet-400 uppercase">
+                              <CheckCircle size={9} /> Claimed
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">—</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">🔷 Sap. Lv</p>
+                          {sapphireLvlClaimed ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-950/40 border border-sky-500/30 rounded text-[8px] font-black text-sky-400 uppercase">
+                              <CheckCircle size={9} /> Claimed
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">—</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[7px] font-black text-slate-500 uppercase tracking-widest mb-1">🟢 Em. Lv</p>
+                          {emeraldLvlClaimed ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-teal-950/40 border border-teal-500/30 rounded text-[8px] font-black text-teal-400 uppercase">
+                              <CheckCircle size={9} /> Claimed
+                            </span>
+                          ) : (
+                            <span className="text-[8px] text-slate-600 font-bold italic">—</span>
                           )}
                         </div>
                       </div>

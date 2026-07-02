@@ -115,8 +115,9 @@ export const AdminPlaygroundView = () => {
       }
     } catch (e) {
       console.error(e);
-      setErrorMessage(e.message || 'Verification Rejection.');
-      addLog(`🔧 SANDBOX ERROR: ${e.message || 'Upgrade Rejection.'}`);
+      const errMsg = typeof e?.message === 'string' ? e.message : JSON.stringify(e);
+      setErrorMessage(errMsg || 'Verification Rejection.');
+      addLog(`🔧 SANDBOX ERROR: ${errMsg || 'Upgrade Rejection.'}`);
     } finally {
       setIsUpgrading(false);
     }

@@ -28,7 +28,6 @@ import {
   Users,
   Newspaper,
   PieChart,
-  Building,
   Flower2,
 } from 'lucide-react';
 import { 
@@ -41,6 +40,8 @@ import {
 } from './GameUI';
 import { useGame } from '../contexts/GameContext';
 import { useCompanionBanter } from '../hooks/useCompanionBanter';
+import { useGardenAI } from '../hooks/useGardenAI';
+import CasterTownPresenceCard from './CasterTownPresenceCard';
 
 const CharacterBadge = ({ player, penaltyRemaining, petsMeta, lowPerfMode, tavernMates }) => {
   const [displayedMsg, setDisplayedMsg] = React.useState("");
@@ -251,12 +252,13 @@ const MissionBriefing = ({ player, setView }) => {
         {/* Subtle grid texture */}
         <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #000 1.5px, transparent 1.5px)', backgroundSize: '16px 16px' }} />
       </div>
+
     </div>
   );
 };
 
 export const MenuView = React.memo(() => {
-  const { adventure, gameLoop, syncPlayer, openGuide, user, player, PETS_METADATA, TAVERN_MATES, lowPerfMode, setLowPerfMode } = useGame();
+  const { adventure, gameLoop, syncPlayer, openGuide, user, player, db, PETS_METADATA, TAVERN_MATES, lowPerfMode, setLowPerfMode } = useGame();
   const { setView } = adventure;
   const { penaltyRemaining, autoTimeLeft } = gameLoop;
   const isPenalized = penaltyRemaining > 0;
@@ -265,6 +267,9 @@ export const MenuView = React.memo(() => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [isHintLoading, setIsHintLoading] = useState(false);
+  const [fullStory, setFullStory] = useState(null);
+  const { generateDailyHint } = useGardenAI();
 
   useEffect(() => {
     const isHidden = localStorage.getItem('hide_menu_tutorial') === 'true';
@@ -273,6 +278,30 @@ export const MenuView = React.memo(() => {
       setTutorialStep(0);
     }
   }, []);
+
+  // ── Gemstone Chronicle: auto-generate once per day (or migrate old short hints) ──
+  useEffect(() => {
+    if (!player?.uid) return;
+    const hint = player.dailyFlavorHint;
+    const today = new Date().toDateString();
+    const hintDate = hint?.generatedAt ? new Date(hint.generatedAt).toDateString() : null;
+    const isOldShortHint = hint?.hint && hint.hint.length < 300;
+    // Skip only if we have a fresh long story from today
+    if (hintDate === today && !isOldShortHint) return;
+
+    setIsHintLoading(true);
+    generateDailyHint(player?.name || 'Hunter').then((newHint) => {
+      if (newHint?.hint) {
+        syncPlayer({
+          dailyFlavorHint: {
+            hint: newHint.hint,
+            generatedAt: Date.now(),
+          },
+        }, true);
+      }
+      setIsHintLoading(false);
+    });
+  }, [player?.uid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tutorialSteps = [
     {
@@ -283,7 +312,7 @@ export const MenuView = React.memo(() => {
       hint: "Objective: Clear floors to fill your inventory with scrap and gems."
     },
     {
-      title: "2. EXCHANGE: CRYSTLE TOWN",
+      title: "2. EXCHANGE: NPC QUEST",
       npc: 18,
       visualType: 'town',
       text: "Step two: CRYSTLE TOWN. Use your collected materials to complete citizen quests. This is your primary protocol for EARNING ETH rewards.",
@@ -311,7 +340,6 @@ export const MenuView = React.memo(() => {
   const SECONDARY_TOKENS = [
     { onClick: () => setView('crystle_town'), icon: <span className="text-2xl">🏙️</span>, title: "TOWN", color: "bg-amber-800", npcNum: 18 },
     { onClick: () => setView('dragons_ground'), icon: <Trees size={28} />, title: "DRAGONS GROUND", color: "bg-emerald-700", npcNum: 14 },
-        { onClick: () => setView('hunt_town'), icon: <span className="text-2xl">🏘️</span>, title: "HUNT TOWN", color: "bg-amber-700", npcNum: 18 },
     { onClick: () => setView('ilearn'), icon: <Brain size={28} />, title: "LEARN", color: "bg-blue-800", npcNum: 22 },
   ];
   const UTILITY_LINKS = [
@@ -358,7 +386,56 @@ export const MenuView = React.memo(() => {
       {/* SCROLLABLE MAIN BODY */}
       <div className="flex-1 flex flex-col items-center p-8 md:p-16 relative z-10 overflow-y-auto overflow-x-hidden custom-scrollbar pb-40 pt-10">
          
-         <MissionBriefing player={player} setView={setView} />
+         {/* ── Gemstone Chronicle ── */}
+         <div className="w-full max-w-4xl mx-auto mb-6 animate-in slide-in-from-top duration-1000">
+            <div className="bg-amber-50 border-[4px] border-black rounded-2xl p-4 shadow-[6px_6px_0px_0px_black] transform rotate-0.5 hover:rotate-0 transition-all group">
+               <div className="halftone-overlay absolute inset-0 opacity-10 pointer-events-none rounded-2xl" />
+               <div className="absolute -top-2 left-1/4 w-16 h-4 bg-black/5 border-x-2 border-black/5 rotate-1 z-20 backdrop-blur-sm pointer-events-none" />
+               <div className="relative z-10 flex items-center gap-4">
+                  <div className="shrink-0 w-10 h-10 bg-amber-700 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center transform -rotate-1 group-hover:rotate-0 transition-all">
+                     <span className="text-lg">📖</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] font-black bg-amber-800 text-white px-2 py-0.5 rounded tracking-[0.15em] uppercase italic leading-none">Gemstone Chronicle</span>
+                        <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">STORY TELLER</span>
+                     </div>
+                     {player?.dailyFlavorHint?.hint ? (
+                        <>
+                           <p className="text-sm font-black text-slate-900 leading-snug tracking-wide">
+                              {(() => {
+                                const text = player.dailyFlavorHint.hint;
+                                if (!text || text.length <= 150) return text;
+                                const trunc = text.slice(0, 147);
+                                const lastSpace = trunc.lastIndexOf(' ');
+                                return (lastSpace > 60 ? trunc.slice(0, lastSpace) : trunc) + '...';
+                              })()}
+                           </p>
+                           {player.dailyFlavorHint.hint.length > 150 && (
+                              <button
+                                onClick={() => setFullStory(player.dailyFlavorHint.hint)}
+                                className="mt-1.5 text-[10px] font-black text-amber-700 hover:text-amber-900 uppercase italic tracking-wider underline decoration-2 underline-offset-2 decoration-amber-700/30 hover:decoration-amber-900/50 transition-all"
+                              >
+                                Read Full Tale →
+                              </button>
+                           )}
+                        </>
+                     ) : isHintLoading ? (
+                        <div className="flex items-center gap-2">
+                           <div className="h-5 bg-amber-200 rounded animate-pulse flex-1" />
+                           <span className="text-[10px] text-amber-800 italic animate-pulse font-black uppercase">Weaving...</span>
+                        </div>
+                     ) : (
+                        <p className="text-sm font-black text-amber-600/60 tracking-wide">
+                           The Chronicler Is Weaving a New Tale...
+                        </p>
+                     )}
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <CasterTownPresenceCard db={db} user={user} player={player} onEnter={() => setView('caster_town')} />
 
          {/* THE CORE TRINITY (Responsive Flex) */}
          <div className="flex flex-col md:flex-row items-center justify-center gap-10 md:gap-6 lg:gap-8 w-full max-w-6xl mx-auto">
@@ -391,7 +468,7 @@ export const MenuView = React.memo(() => {
                {!isPenalized && <div className="absolute inset-x-0 bottom-4 flex justify-center"><div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-ping" /></div>}
             </div>
 
-            {/* 2. CRYSTLE TOWN QUEST */}
+            {/* 2. NPC QUEST */}
             <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('crystle_town')}>
                <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_var(--neon-cyan)] hover:shadow-[12px_12px_0px_0px_var(--neon-lime)] hover:-translate-y-2 active:scale-95 transform rotate-2 group-hover:rotate-0 overflow-hidden relative">
                   <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
@@ -411,7 +488,7 @@ export const MenuView = React.memo(() => {
                         <span className="text-xl drop-shadow-md">🏘️</span>
                      </div>
                      <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full flex flex-col items-center">
-                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none text-center bungee">CRYSTLE TOWN</h3>
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none text-center bungee">NPC QUEST</h3>
                      </div>
                   </div>
                </div>
@@ -451,12 +528,11 @@ export const MenuView = React.memo(() => {
                 <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-800 italic">Operations & Logistics</span>
                 <div className="w-12 h-[2px] bg-black opacity-10" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full max-w-xl mx-auto justify-items-center">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full max-w-xl mx-auto justify-items-center">
                {[
                  { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS & GEAR', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
                  { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
-                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' },
-                 { id: 'hunt_town', icon: <Building className="text-white" size={18} />, label: 'HUNT TOWN', sub: 'HUNT', color: 'bg-[var(--neon-pink)]', npc: 18, grad: 'from-black/90' }
+                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
                ].map((token, i) => (
                   <button
                     key={token.id}
@@ -492,24 +568,6 @@ export const MenuView = React.memo(() => {
             </div>
             <div className="flex items-center justify-center gap-4 md:gap-8 w-full max-w-xl mx-auto">
               <button
-                onClick={() => setView('caster_town')}
-                className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_var(--neon-cyan)] rounded-xl rotate-1 relative overflow-hidden"
-              >
-                  <div className="absolute inset-0 z-0">
-                     <CitizenMedia num={13} className="w-full h-full object-cover grayscale-[0.2] transition-transform group-hover:scale-110 duration-700" />
-                     <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
-                  </div>
-                  <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
-                     <div className="w-10 h-10 flex items-center justify-center bg-purple-500 border-[3px] border-black shadow-[4px_4px_0px_0px_black] rounded-lg transition-all group-hover:rotate-6">
-                        <Users className="text-white" size={18} />
-                     </div>
-                     <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full">
-                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">CASTER TOWN</div>
-                     </div>
-                  </div>
-              </button>
-
-              <button
                 onClick={() => setView('garden_os')}
                 className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_#10b981] rounded-xl -rotate-1 relative overflow-hidden"
               >
@@ -528,6 +586,8 @@ export const MenuView = React.memo(() => {
               </button>
             </div>
          </div>
+
+         <MissionBriefing player={player} setView={setView} />
 
       {/* SYSTEM UTILITY FOOTER */}
       <div className="bg-black border-t-[4px] border-white p-3 md:p-4 flex items-center justify-center gap-3 md:gap-6 relative z-30 shadow-[0_-10px_30px_rgba(0,0,0,0.8)]">
@@ -604,6 +664,51 @@ export const MenuView = React.memo(() => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Gemstone Chronicle Full Story Modal ── */}
+      {fullStory && createPortal(
+        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setFullStory(null)}>
+          <div className="relative w-full max-w-lg bg-amber-50 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_black] p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Close X button */}
+            <button
+              onClick={() => setFullStory(null)}
+              className="absolute -top-3 -right-3 w-8 h-8 bg-black text-white rounded-full border-[2px] border-white font-black text-sm flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-red-600 transition-all z-10"
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="shrink-0 w-10 h-10 bg-amber-700 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center">
+                <span className="text-lg">📖</span>
+              </div>
+              <div>
+                <span className="text-[9px] font-black bg-amber-800 text-white px-2 py-0.5 rounded tracking-[0.15em] uppercase italic leading-none">Gemstone Chronicle</span>
+                <p className="text-[8px] font-black text-amber-700 uppercase tracking-widest mt-0.5">FULL TALE</p>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-[3px] bg-black/10 rounded-full mb-4" />
+
+            {/* Story content */}
+            <div className="bg-white border-[3px] border-black rounded-xl p-5 shadow-inner">
+              <p className="text-sm font-bold text-slate-900 leading-relaxed">
+                {fullStory}
+              </p>
+            </div>
+
+            {/* Close button */}
+            <button
+              onClick={() => setFullStory(null)}
+              className="mt-4 w-full py-3 bg-black text-white rounded-xl border-[3px] border-black font-black uppercase italic text-xs shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-amber-800 transition-all active:translate-y-0.5 active:translate-x-0.5 active:shadow-none"
+            >
+              Close Tale
+            </button>
           </div>
         </div>,
         document.body
