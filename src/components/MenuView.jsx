@@ -684,51 +684,59 @@ export const MenuView = React.memo(() => {
 
       {/* ── Gemstone Chronicle Full Story Modal ── */}
       {fullStory && createPortal(
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setFullStory(null)}>
-          <div className="relative w-full max-w-lg bg-amber-50 border-[4px] border-black rounded-2xl shadow-[8px_8px_0px_0px_black] p-6 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Close X button */}
-            <button
-              onClick={() => setFullStory(null)}
-              className="absolute -top-3 -right-3 w-8 h-8 bg-black text-white rounded-full border-[2px] border-white font-black text-sm flex items-center justify-center shadow-[3px_3px_0_rgba(0,0,0,1)] hover:bg-red-600 transition-all z-10"
-            >
-              ✕
-            </button>
-
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="shrink-0 w-10 h-10 bg-amber-700 rounded-xl border-[3px] border-black shadow-[4px_4px_0_rgba(0,0,0,1)] flex items-center justify-center">
-                <span className="text-lg">📖</span>
+        <div className="fixed inset-0 z-[9999] bg-amber-950/30 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setFullStory(null)}>
+          <div className="relative w-full max-w-2xl bg-amber-50 border-[3px] border-amber-900/20 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.1)] p-8 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Header row */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="shrink-0 w-10 h-10 bg-amber-700 rounded-xl border-[2px] border-amber-900/20 shadow-[3px_3px_0_rgba(0,0,0,0.08)] flex items-center justify-center">
+                  <span className="text-lg">💎</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-black bg-amber-800 text-white px-2 py-0.5 rounded tracking-[0.15em] uppercase italic leading-none">Gemstone Chronicle</span>
+                  <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest mt-0.5">A TALE FROM THE CHRONICLER</p>
+                </div>
               </div>
-              <div>
-                <span className="text-[9px] font-black bg-amber-800 text-white px-2 py-0.5 rounded tracking-[0.15em] uppercase italic leading-none">Gemstone Chronicle</span>
-                <p className="text-[8px] font-black text-amber-700 uppercase tracking-widest mt-0.5">FULL TALE</p>
-              </div>
+              <button
+                onClick={() => setFullStory(null)}
+                className="w-7 h-7 bg-amber-200/70 hover:bg-amber-300 text-amber-800 rounded-full font-black text-xs flex items-center justify-center transition-colors"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Divider */}
-            <div className="h-[3px] bg-black/10 rounded-full mb-3" />
+            {/* Decorative rule */}
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex-1 border-t-2 border-dashed border-amber-300/50" />
+              <span className="text-amber-500 text-xs">💎 ✨ 💎</span>
+              <div className="flex-1 border-t-2 border-dashed border-amber-300/50" />
+            </div>
 
-            {/* Story title in modal */}
+            {/* Story title */}
             {fullStory.title && (
-              <p className="text-xs font-black text-amber-800 uppercase italic mb-3 tracking-wide">
+              <p className="text-sm font-black text-amber-800 uppercase italic mb-4 tracking-wide">
                 &ldquo;{fullStory.title}&rdquo;
               </p>
             )}
 
-            {/* Story content */}
-            <div className="bg-white border-[3px] border-black rounded-xl p-5 shadow-inner">
-              <p className="text-sm font-bold text-slate-900 leading-relaxed whitespace-pre-line">
-                {fullStory.story || fullStory}
+            {/* Story content with gradient background and drop cap */}
+            <div className="bg-gradient-to-b from-amber-100/30 to-white rounded-xl p-6 border border-amber-200/50">
+              <p className="text-sm md:text-base text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                <span className="float-left text-5xl font-black text-amber-700 leading-[0.8] mr-3 pt-1" style={{ fontFamily: "'Bungee', cursive" }}>{(fullStory.story || fullStory || 'T')[0]}</span>
+                {(fullStory.story || fullStory || '').slice(1)}
               </p>
             </div>
 
             {/* Close button */}
-            <button
-              onClick={() => setFullStory(null)}
-              className="mt-4 w-full py-3 bg-black text-white rounded-xl border-[3px] border-black font-black uppercase italic text-xs shadow-[4px_4px_0_rgba(0,0,0,1)] hover:bg-amber-800 transition-all active:translate-y-0.5 active:translate-x-0.5 active:shadow-none"
-            >
-              Close Tale
-            </button>
+            <div className="mt-6 flex items-center justify-center">
+              <button
+                onClick={() => setFullStory(null)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-amber-700 hover:text-amber-900 uppercase tracking-wider transition-colors group"
+              >
+                <span className="group-hover:-translate-x-0.5 transition-transform inline-block">←</span>
+                Close Tale
+              </button>
+            </div>
           </div>
         </div>,
         document.body
