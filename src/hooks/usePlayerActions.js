@@ -1826,8 +1826,8 @@ export const usePlayerActions = (
     }
   }, [functions, addLog, playSFX, SOUNDS]);
 
-  // â”€â”€ GARDEN OS: Complete a virtue question and deliver rewards â”€â”€
-  const GARDEN_FOOD_POOL = [
+  // â”€â”€ OASIS GROUND: Complete a virtue question and deliver rewards â”€â”€
+  const OASIS_FOOD_POOL = [
     { id: 'grilled_steak', reqLvl: 20 },
     { id: 'techno_ramen', reqLvl: 18 },
     { id: 'focus_brew', reqLvl: 20 },
@@ -1923,7 +1923,7 @@ export const usePlayerActions = (
       }
 
       if (!selectedFood) {
-        const eligible = GARDEN_FOOD_POOL.filter(f => playerLevel >= f.reqLvl);
+        const eligible = OASIS_FOOD_POOL.filter(f => playerLevel >= f.reqLvl);
         if (eligible.length > 0) {
           const pick = eligible[Math.floor(Math.random() * eligible.length)];
           selectedFood = FOODS.find(f => f.id === pick.id);
@@ -1954,10 +1954,10 @@ export const usePlayerActions = (
     // Log rewards
     if (rewards.length > 0) {
       const rewardNames = rewards.map(r => `${r.icon} ${r.name}`).join(', ');
-      addLog(`ðŸŒ± GARDEN OS: ${rewardNames} harvested!`);
+      addLog(`ðŸŒ± OASIS GROUND: ${rewardNames} harvested!`);
       playSFX(SOUNDS.obtainLoot);
     } else {
-      addLog(`ðŸŒ± GARDEN OS: Reflection complete. The garden observes your choices.`);
+      addLog(`ðŸŒ± OASIS GROUND: Reflection complete. The garden observes your choices.`);
     }
 
     return { rewards, questionId, rewardTier };

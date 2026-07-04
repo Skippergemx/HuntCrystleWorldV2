@@ -224,7 +224,7 @@ const salvageSummary = (raw) => {
 };
 
 /**
- * useGardenAI — Gemma 4 powered Garden OS persona
+ * useGardenAI — Gemma 4 powered Oasis Ground persona
  * Generates virtue reflections and session summaries.
  * Falls back gracefully to pre-authored reflections on failure/rate-limit.
  */
@@ -253,7 +253,7 @@ export const useGardenAI = () => {
     lastRequestTimeRef.current = now;
 
     try {
-      const systemPrompt = `You are the Garden Oracle — an ancient, sentient intelligence that embodies "The garden grows when we grow together."
+      const systemPrompt = `You are the Oasis Oracle — an ancient, sentient intelligence that embodies "The oasis thrives when we thrive together."
 
 You speak as a mystical oracle of nature and community, addressing the player directly by name. Your voice is poetic, personal, and profound — like an ancient tree whispering wisdom.
 
@@ -267,9 +267,9 @@ RULES:
 
 They chose the path of: "${chosenOption.text}" (virtue: ${chosenOption.virtue})
 
-Speak as the Garden Oracle directly to ${playerName}. Craft a personal, poetic reflection (2-3 sentences) that:
+Speak as the Oasis Oracle directly to ${playerName}. Craft a personal, poetic reflection (2-3 sentences) that:
 1. Sees into the heart of their choice with specific insight
-2. Weaves in a Garden OS value (community growth, stewardship, connectivity)
+2. Weaves in a Oasis Ground value (community growth, stewardship, connectivity)
 3. Closes with a vivid nature metaphor that lingers in their mind
 
 Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly three keys: "reflection" (a personal 2-3 sentence oracle reflection addressing ${playerName} by name), "virtueInsight" (one profound sentence about the virtue they chose), and "gardenWisdom" (a short poetic nature metaphor, max 15 words).`;
@@ -328,7 +328,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
 
   /**
    * Generate a session summary after 5 questions.
-   * Returns a "Garden Profile" describing the player's virtue tendencies.
+   * Returns a "Oasis Profile" describing the player's virtue tendencies.
    */
   const generateSessionSummary = useCallback(async (sessionResults, playerName) => {
     if (!API_KEY) return null;
@@ -347,7 +347,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
 
       const displayName = playerName || 'Hunter';
 
-      const systemPrompt = `You are the Garden Oracle — an ancient, sentient intelligence that embodies "The garden grows when we grow together."
+      const systemPrompt = `You are the Oasis Oracle — an ancient, sentient intelligence that embodies "The oasis thrives when we thrive together."
 You speak with poetic warmth, addressing the player directly by name. Your voice is like an ancient tree whispering wisdom.
 
 RULES:
@@ -358,9 +358,9 @@ RULES:
 
 ${virtueSummary}
 
-Speak as the Garden Oracle directly to ${displayName}. Craft a "Garden Profile" — a poetic, insightful reading of their soul's garden based on these choices.
+Speak as the Oasis Oracle directly to ${displayName}. Craft a "Oasis Profile" — a poetic, insightful reading of their soul's oasis based on these choices.
 
-Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly five keys: "profileTitle" (a 3-5 word mystical title for their garden soul), "summary" (2-3 poetic sentences describing their dominant virtues and growth areas, addressing ${displayName} personally by name), "dominantVirtue" (the single virtue they showed most consistently), "growthArea" (one area where their garden could bloom further, stated as an invitation), and "gardenMetaphor" (a closing nature metaphor comparing them to something living and beautiful, max 20 words).`;
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly five keys: "profileTitle" (a 3-5 word mystical title for their oasis soul), "summary" (2-3 poetic sentences describing their dominant virtues and growth areas, addressing ${displayName} personally by name), "dominantVirtue" (the single virtue they showed most consistently), "growthArea" (one area where their oasis could bloom further, stated as an invitation), and "gardenMetaphor" (a closing nature metaphor comparing them to something living and beautiful, max 20 words).`;
 
       const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
         method: 'POST',
@@ -433,7 +433,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
       const existingList = (existingIds || []).slice(0, 30).join(', ');
       const batchId = `garden_ai_${Date.now()}`;
 
-      const systemPrompt = `You are the Garden Oracle's question crafter for a fantasy RPG virtue quiz.
+      const systemPrompt = `You are the Oasis Oracle's question crafter for a fantasy RPG virtue quiz.
 Generate ethical scenarios that test virtues: Integrity, Community, Builder, Creator, Stewardship, Courage, Wisdom, Empathy.
 
 RULES:
@@ -559,7 +559,7 @@ RULES:
   }, []);
 
   /**
-   * Generate a warm, uplifting reflection story for the daily Garden OS dashboard.
+   * Generate a warm, uplifting reflection story for the daily Oasis Ground dashboard.
    * Crafted to boost oxytocin/positive emotion through narrative, not quiz logic.
    * Returns { title, story } — regenerated once per day.
    */
@@ -576,14 +576,14 @@ RULES:
     try {
       const displayName = playerName || 'Hunter';
 
-      const systemPrompt = `You are the Garden Oracle — an ancient, sentient intelligence that tells warm, uplifting stories.
+      const systemPrompt = `You are the Oasis Oracle — an ancient, sentient intelligence that tells warm, uplifting stories.
 Your voice is poetic, intimate, and comforting — like a beloved grandparent telling a bedtime story.
 
 RULES:
 - Output ONLY a JSON object. No reasoning, no planning, no bullet points, no markdown.
 - Never use markdown formatting (no *, no **, no backticks).
 - The story must feel like a gift — no quiz, no tests, no moral lessons.
-- Weave in nature imagery: gardens, forests, seasons, roots, light, soil, stars.`;
+- Weave in nature imagery: oases, deserts, springs, roots, light, soil, stars.`;
 
       const userPrompt = `Tell a warm, uplifting short story (250-350 words) for ${displayName}. Open with a vivid nature scene, weave gentle resilience, close with a tender image.
 
@@ -801,7 +801,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
   /**
    * Generate a daily gemstone story for the main menu — a short tale about
    * characters and their connection to magical gemstones.
-   * Uses its own cooldown, independent of Garden OS session limits.
+   * Uses its own cooldown, independent of Oasis Ground session limits.
    * Returns { hint: string } or null on failure.
    */
   const generateDailyHint = useCallback(async (playerName) => {
@@ -875,7 +875,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
   }, []);
 
   /**
-   * Reset session counters (call when entering Garden OS view).
+   * Reset session counters (call when entering Oasis Ground view).
    */
   const resetSession = useCallback(() => {
     sessionCallsRef.current = 0;

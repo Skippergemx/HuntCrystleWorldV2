@@ -593,7 +593,7 @@ export const MenuView = React.memo(() => {
                         <Flower2 className="text-white" size={18} />
                      </div>
                      <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full">
-                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">GARDEN OS</div>
+                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">OASIS GROUND</div>
                      </div>
                   </div>
               </button>
