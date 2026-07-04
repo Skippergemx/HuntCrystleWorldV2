@@ -1007,13 +1007,6 @@ export const GardenOSView = React.memo(() => {
             </div>
           </div>
 
-          {/* ── CTA Section ── */}
-          <div className="garden-fade-6 w-full flex flex-col items-center gap-3">
-            <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
-              <p className="text-sm text-slate-700 font-black uppercase italic">Quizzes Disabled</p>
-              <p className="text-xs text-slate-500 mt-1">Story and plants still available.</p>
-            </div>
-          </div>
 
           {/* ── Secondary Actions ── */}
           <div className="garden-fade-7 w-full flex flex-col items-center gap-2 mt-4">
