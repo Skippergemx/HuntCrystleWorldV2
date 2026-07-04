@@ -269,6 +269,9 @@ export const MenuView = React.memo(() => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [fullStory, setFullStory] = useState(null);
+  // Local override for the hint text — set immediately on generation
+  // so the UI isn't subject to Firestore sync timing races.
+  const [currentHint, setCurrentHint] = useState(null);
   const { generateDailyHint } = useGardenAI();
 
   useEffect(() => {
@@ -292,6 +295,7 @@ export const MenuView = React.memo(() => {
     setIsHintLoading(true);
     generateDailyHint(player?.name || 'Hunter').then((newHint) => {
       if (newHint?.hint) {
+        setCurrentHint(newHint.hint);
         syncPlayer({
           dailyFlavorHint: {
             hint: newHint.hint,
@@ -400,36 +404,35 @@ export const MenuView = React.memo(() => {
                         <span className="text-[9px] font-black bg-amber-800 text-white px-2 py-0.5 rounded tracking-[0.15em] uppercase italic leading-none">Gemstone Chronicle</span>
                         <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">STORY TELLER</span>
                      </div>
-                     {player?.dailyFlavorHint?.hint ? (
-                        <>
+                     {(() => {
+                       const hintText = currentHint || player?.dailyFlavorHint?.hint;
+                       if (!hintText && isHintLoading) {
+                         return <div className="flex items-center gap-2"><div className="h-5 bg-amber-200 rounded animate-pulse flex-1" /><span className="text-[10px] text-amber-800 italic animate-pulse font-black uppercase">Weaving...</span></div>;
+                       }
+                       if (!hintText) {
+                         return <p className="text-sm font-black text-amber-600/60 tracking-wide">The Chronicler Is Weaving a New Tale...</p>;
+                       }
+                       return (
+                         <>
                            <p className="text-sm font-black text-slate-900 leading-snug tracking-wide">
                               {(() => {
-                                const text = player.dailyFlavorHint.hint;
-                                if (!text || text.length <= 150) return text;
-                                const trunc = text.slice(0, 147);
+                                if (!hintText || hintText.length <= 150) return hintText;
+                                const trunc = hintText.slice(0, 147);
                                 const lastSpace = trunc.lastIndexOf(' ');
                                 return (lastSpace > 60 ? trunc.slice(0, lastSpace) : trunc) + '...';
                               })()}
                            </p>
-                           {player.dailyFlavorHint.hint.length > 150 && (
+                           {hintText.length > 150 && (
                               <button
-                                onClick={() => setFullStory(player.dailyFlavorHint.hint)}
+                                onClick={() => setFullStory(hintText)}
                                 className="mt-1.5 text-[10px] font-black text-amber-700 hover:text-amber-900 uppercase italic tracking-wider underline decoration-2 underline-offset-2 decoration-amber-700/30 hover:decoration-amber-900/50 transition-all"
                               >
                                 Read Full Tale →
                               </button>
                            )}
-                        </>
-                     ) : isHintLoading ? (
-                        <div className="flex items-center gap-2">
-                           <div className="h-5 bg-amber-200 rounded animate-pulse flex-1" />
-                           <span className="text-[10px] text-amber-800 italic animate-pulse font-black uppercase">Weaving...</span>
-                        </div>
-                     ) : (
-                        <p className="text-sm font-black text-amber-600/60 tracking-wide">
-                           The Chronicler Is Weaving a New Tale...
-                        </p>
-                     )}
+                         </>
+                       );
+                     })()}
                   </div>
                </div>
             </div>

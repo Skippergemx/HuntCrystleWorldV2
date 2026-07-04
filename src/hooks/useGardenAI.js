@@ -813,7 +813,9 @@ Respond ONLY with this JSON (no other text):
 RULES:
 - Output ONLY a JSON object. No reasoning, no planning, no bullet points, no markdown.
 - Never use markdown formatting (no *, no **, no backticks).
-- Write a tale (5-8 sentences, 150-250 words) about a character and their connection to a gemstone.
+- Write a tale (10-20 sentences) about a character and their connection to a gemstone.
+- Break the tale into 2-4 short paragraphs for readability.
+- Do NOT output fewer than 5 sentences. Fewer than 5 sentences is a failure.
 - Make it immersive and vivid — a proper campfire story, not a summary.
 - Include sensory details: how the gem feels, sounds, or glows.
 - The character can be a hunter, a merchant, a scholar, a wanderer, or a gem-crafter.
@@ -821,7 +823,9 @@ RULES:
 - End with a sense of wonder, consequence, or discovery.
 - Make it feel like a fireside tale — myth, legend, or folktale from the gem world.`;
 
-      const userPrompt = `Write a gemstone tale (5-8 sentences, 150-250 words) for ${displayName} about a human character and a magical gemstone in the world of Dungeons With Gems. Make it vivid and immersive — a proper campfire story with sensory detail.
+      const userPrompt = `Write a gemstone tale (10-20 sentences, broken into 2-4 paragraphs) for ${displayName} about a human character and a magical gemstone in the world of Dungeons With Gems. Make it vivid and immersive — a proper campfire story with sensory detail.
+
+Do NOT output fewer than 5 sentences — that is unacceptable.
 
 Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly one key: "hint".`;
 
@@ -835,7 +839,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
           contents: [{ parts: [{ text: userPrompt }] }],
           generationConfig: {
             temperature: 0.8,
-            maxOutputTokens: 700
+            maxOutputTokens: 1500
           }
         })
       });
