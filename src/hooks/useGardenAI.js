@@ -32,7 +32,15 @@ const extractBestJSON = (raw) => {
   }
   if (candidates.length === 0) return null;
   // Prefer the last candidate with real values (not placeholder "..." strings)
-  const hasRealContent = (obj) => Object.values(obj).some(v => typeof v === 'string' && v.length > 3 && v !== '...');
+  const hasRealContent = (obj) => Object.values(obj).some(v =>
+    typeof v === 'string' && v.length > 3 && v !== '...' &&
+    // Reject strings containing numeric ranges (e.g. "4-8 word", "250-350 words") —
+    // these are almost always prompt instructions regurgitated as placeholder content.
+    !(/\d+\s*-\s*\d+/.test(v)) &&
+    // Reject strings that read like template placeholders (e.g. "Your text here")
+    !(/\byour\s+\w+\s+here\b/i.test(v)) &&
+    !(/\bplaceholder\b/i.test(v))
+  );
   for (let i = candidates.length - 1; i >= 0; i--) {
     if (hasRealContent(candidates[i])) return candidates[i];
   }
@@ -263,8 +271,7 @@ Speak as the Garden Oracle directly to ${playerName}. Craft a personal, poetic r
 2. Weaves in a Garden OS value (community growth, stewardship, connectivity)
 3. Closes with a vivid nature metaphor that lingers in their mind
 
-Respond ONLY with this JSON (no other text):
-{"reflection": "your personal 2-3 sentence oracle reflection addressing ${playerName} by name", "virtueInsight": "one profound sentence about the virtue they chose", "gardenWisdom": "a short poetic nature metaphor (max 15 words)"}`;
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly three keys: "reflection" (a personal 2-3 sentence oracle reflection addressing ${playerName} by name), "virtueInsight" (one profound sentence about the virtue they chose), and "gardenWisdom" (a short poetic nature metaphor, max 15 words).`;
 
       const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
         method: 'POST',
@@ -352,8 +359,7 @@ ${virtueSummary}
 
 Speak as the Garden Oracle directly to ${displayName}. Craft a "Garden Profile" — a poetic, insightful reading of their soul's garden based on these choices.
 
-Respond ONLY with this JSON (no other text):
-{"profileTitle": "A 3-5 word mystical title for their garden soul", "summary": "2-3 poetic sentences describing their dominant virtues and growth areas, addressing ${displayName} personally by name", "dominantVirtue": "the single virtue they showed most consistently", "growthArea": "one area where their garden could bloom further, stated as an invitation", "gardenMetaphor": "A closing nature metaphor comparing them to something living and beautiful (max 20 words)"}`;
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly five keys: "profileTitle" (a 3-5 word mystical title for their garden soul), "summary" (2-3 poetic sentences describing their dominant virtues and growth areas, addressing ${displayName} personally by name), "dominantVirtue" (the single virtue they showed most consistently), "growthArea" (one area where their garden could bloom further, stated as an invitation), and "gardenMetaphor" (a closing nature metaphor comparing them to something living and beautiful, max 20 words).`;
 
       const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
         method: 'POST',
@@ -580,8 +586,7 @@ RULES:
 
       const userPrompt = `Tell a warm, uplifting short story (250-350 words) for ${displayName}. Open with a vivid nature scene, weave gentle resilience, close with a tender image.
 
-Respond ONLY with this JSON (no other text):
-{"title": "A 4-8 word poetic story title", "story": "The complete story text, 250-350 words of warm narrative. Use paragraph breaks with \\n\\n."}`;
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly two keys: "title" (a 4-8 word poetic title) and "story" (250-350 words of warm narrative, with \n\n paragraph breaks).`;
 
       const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
         method: 'POST',
