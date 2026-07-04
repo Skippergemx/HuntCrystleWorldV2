@@ -1009,41 +1009,10 @@ export const GardenOSView = React.memo(() => {
 
           {/* ── CTA Section ── */}
           <div className="garden-fade-6 w-full flex flex-col items-center gap-3">
-            {sessionSize <= 0 ? (
-              <>
-                <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
-                  <p className="text-sm text-slate-700 font-black uppercase italic">All Questions Tended</p>
-                  <p className="text-xs text-slate-500 mt-1">The garden will bloom again soon.</p>
-                </div>
-                <button
-                  onClick={handleRefreshGarden}
-                  disabled={!canAffordRefresh}
-                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 disabled:opacity-40 disabled:hover:translate-y-0 disabled:cursor-not-allowed`}
-                >
-                  <span className="text-lg">🌱</span>
-                  <span>Refresh Oasis</span>
-                  <span className="ml-1 px-2 py-0.5 bg-black/20 rounded text-xs">{OASIS_REFRESH_COST.toLocaleString()} GX</span>
-                </button>
-                {!canAffordRefresh && (
-                  <p className="text-[10px] text-red-600 font-bold">Insufficient GX. You need {OASIS_REFRESH_COST.toLocaleString()} GX to refresh.</p>
-                )}
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={handleStartQuiz}
-                  className={`${BUTTON_PRIMARY} w-full max-w-xs py-5 flex items-center justify-center gap-2 group`}
-                  style={{ animation: 'oracleGlow 3s ease-in-out infinite' }}
-                >
-                  <span className="text-lg">🌿</span>
-                  <span>Tend the Garden</span>
-                  <ChevronDown size={16} className="animate-bounce" />
-                </button>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">
-                  {sessionSize} question{sessionSize !== 1 ? 's' : ''} await
-                </p>
-              </>
-            )}
+            <div className="text-center mb-2 bg-white border-[3px] border-black rounded-xl p-4 shadow-[4px_4px_0_rgba(0,0,0,1)] transform -rotate-1">
+              <p className="text-sm text-slate-700 font-black uppercase italic">Quizzes Disabled</p>
+              <p className="text-xs text-slate-500 mt-1">Story and plants still available.</p>
+            </div>
           </div>
 
           {/* ── Secondary Actions ── */}
