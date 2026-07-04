@@ -130,6 +130,17 @@ const OASIS_KEYFRAMES = `
     0% { background-position: -200% center; }
     100% { background-position: 200% center; }
   }
+  @keyframes sparkleBurst {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    50% { opacity: 0.8; transform: translate(var(--sx, 30px), var(--sy, -30px)) scale(1.2); }
+    100% { opacity: 0; transform: translate(var(--sx, 60px), var(--sy, -60px)) scale(0.3); }
+  }
+  @keyframes heartFloat {
+    0% { opacity: 1; transform: translateY(0) scale(0.5); }
+    30% { opacity: 1; transform: translateY(-16px) scale(1.2); }
+    70% { opacity: 0.8; transform: translateY(-40px) scale(1); }
+    100% { opacity: 0; transform: translateY(-70px) scale(0.6); }
+  }
 `;
 
 const ORBIT_EMOJIS = ['🌱', '🌿', '✨', '🔮', '💎', '🌍'];
@@ -164,7 +175,7 @@ export const GardenOSView = React.memo(() => {
   const { setView } = adventure;
 
   // Garden AI hook
-  const { generateReflection, generateSessionSummary, generateQuestionBatch, generateReflectionStory, waterPlant, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
+  const { generateReflection, generateSessionSummary, generateQuestionBatch, generateReflectionStory, waterPlant, HARMONY_MESSAGE, resetSession, isAnalyzing, aiCallsRemaining } = useGardenAI();
 
   // Particle effects ref
   const particlesRef = useRef(null);
@@ -207,9 +218,18 @@ export const GardenOSView = React.memo(() => {
     sunny: { waters: 0, dialogue: null, isWatering: false },
     spike: { waters: 0, dialogue: null, isWatering: false },
     willow: { waters: 0, dialogue: null, isWatering: false },
+    berry: { waters: 0, dialogue: null, isWatering: false },
+    ember: { waters: 0, dialogue: null, isWatering: false },
+    luna: { waters: 0, dialogue: null, isWatering: false },
+    boulder: { waters: 0, dialogue: null, isWatering: false },
+    zephyr: { waters: 0, dialogue: null, isWatering: false },
+    ivy: { waters: 0, dialogue: null, isWatering: false },
   });
 
-  // Panel transition animation state
+  // Visual effects state: sparkle burst, bloom celebration, harmony
+  const [sparkleKey, setSparkle] = useState(0);
+  const [bloomCelebration, setBloomCelebration] = useState(null); // plantKey | null
+  const [showHarmony, setShowHarmony] = useState(false);
   const [transitionKey, setTransitionKey] = useState(0);
   const [prevPhase, setPrevPhase] = useState('dashboard');
 
@@ -504,19 +524,41 @@ export const GardenOSView = React.memo(() => {
       [plantKey]: { ...prev[plantKey], isWatering: true, dialogue: null },
     }));
 
+    // Trigger sparkle burst (increment key to re-render sparkle container)
+    setSparkle(k => k + 1);
+
     try {
-      const dialogue = await waterPlant(plantName, plantKey);
+      const dialogue = await waterPlant(plantName, plantKey, plant.waters);
+      const newWaters = plant.waters + 1;
       setPlantStates(prev => ({
         ...prev,
-        [plantKey]: { ...prev[plantKey], isWatering: false, dialogue, waters: prev[plantKey].waters + 1 },
+        [plantKey]: { ...prev[plantKey], isWatering: false, dialogue, waters: newWaters },
       }));
-      // Auto-clear dialogue after 8 seconds
+
+      // Check if this watering completed the plant
+      if (newWaters >= 3) {
+        setBloomCelebration(plantKey);
+        setTimeout(() => setBloomCelebration(null), 6000);
+
+        // Check if ALL 9 plants are now fully bloomed
+        const allKeys = ['sunny', 'spike', 'willow', 'berry', 'ember', 'luna', 'boulder', 'zephyr', 'ivy'];
+        const allFull = allKeys.every(k => {
+          if (k === plantKey) return true;
+          return plantStates[k]?.waters >= 3;
+        });
+        if (allFull) {
+          setShowHarmony(true);
+        }
+      }
+
+      // Auto-clear dialogue: arc messages stay longer (12s) vs random ones (8s)
+      const timeout = plant.waters <= 2 ? 12000 : 8000;
       setTimeout(() => {
         setPlantStates(prev => ({
           ...prev,
           [plantKey]: { ...prev[plantKey], dialogue: null },
         }));
-      }, 8000);
+      }, timeout);
     } catch {
       setPlantStates(prev => ({
         ...prev,
@@ -922,28 +964,35 @@ export const GardenOSView = React.memo(() => {
                 🌱 THE OASIS GROVE
               </div>
             </div>
-            <p className="text-center text-[10px] text-slate-500 italic mb-4">Water the plants. They talk back.</p>
+            <p className="text-center text-[10px] text-slate-500 italic mb-4">Water the plants. Watch them bloom. Feel something.</p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
                 { key: 'sunny', name: 'Sunny', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🌿' : '🌻', color: 'border-amber-400', bg: 'bg-amber-50', glow: 'bg-amber-500/20' },
                 { key: 'spike', name: 'Spike', emoji: (w) => w === 0 ? '🌵' : w < 3 ? '🌵' : '🌸', color: 'border-rose-400', bg: 'bg-rose-50', glow: 'bg-rose-500/20' },
                 { key: 'willow', name: 'Willow', emoji: (w) => w === 0 ? '🍃' : w < 3 ? '🌿' : '🌿', color: 'border-emerald-400', bg: 'bg-emerald-50', glow: 'bg-emerald-500/20' },
-              ].map(plant => {
+                { key: 'berry', name: 'Berry', emoji: (w) => w === 0 ? '🫐' : w < 3 ? '🌸' : '🍓', color: 'border-rose-400', bg: 'bg-rose-50', glow: 'bg-rose-500/20' },
+                { key: 'ember', name: 'Ember', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🌶️' : '🔥', color: 'border-orange-400', bg: 'bg-orange-50', glow: 'bg-orange-500/20' },
+                { key: 'luna', name: 'Luna', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🌙' : '💮', color: 'border-violet-400', bg: 'bg-violet-50', glow: 'bg-violet-500/20' },
+                { key: 'boulder', name: 'Boulder', emoji: (w) => w === 0 ? '🪨' : w < 3 ? '🌱' : '🌵', color: 'border-stone-400', bg: 'bg-stone-50', glow: 'bg-stone-500/20' },
+                { key: 'zephyr', name: 'Zephyr', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '🌾' : '🌼', color: 'border-yellow-400', bg: 'bg-yellow-50', glow: 'bg-yellow-500/20' },
+                { key: 'ivy', name: 'Ivy', emoji: (w) => w === 0 ? '🌱' : w < 3 ? '☘️' : '🍀', color: 'border-teal-400', bg: 'bg-teal-50', glow: 'bg-teal-500/20' },
+              ].map((plant, idx) => {
+                const PLANT_ROTATIONS = ['-rotate-1', 'rotate-1', '-rotate-2', 'rotate-2', '-rotate-1', 'rotate-1', '-rotate-2', '-rotate-1', 'rotate-1'];
                 const state = plantStates[plant.key];
                 const emoji = plant.emoji(state.waters);
                 const isFull = state.waters >= 3;
                 const canWater = !state.isWatering && !isFull;
 
                 return (
-                  <div key={plant.key} className={`${COMIC_CARD} p-5 flex flex-col items-center transform ${plant.key === 'sunny' ? '-rotate-1' : plant.key === 'spike' ? 'rotate-1' : '-rotate-2'}`}>
+                  <div key={plant.key} className={`${COMIC_CARD} p-5 flex flex-col items-center transform ${PLANT_ROTATIONS[idx]}`}>
                     <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
                     <div className="relative z-10 flex flex-col items-center w-full">
                       {/* Plant Emoji with glow */}
                       <div className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full border-[4px] border-black flex items-center justify-center mb-2 shadow-[4px_4px_0_rgba(0,0,0,1)] ${plant.bg}`}>
-                        <div className={`absolute inset-0 rounded-full ${plant.glow} blur-xl`} />
+                        <div className={`absolute inset-0 rounded-full ${plant.glow} blur-xl ${isFull ? 'animate-pulse' : ''}`} />
                         <span 
-                          className={`text-4xl md:text-5xl relative z-10 select-none ${state.isWatering ? '' : ''}`}
+                          className={`text-4xl md:text-5xl relative z-10 select-none ${isFull ? 'scale-110' : ''}`}
                           style={{ animation: state.isWatering ? 'plantBob 0.4s ease-in-out 3' : 'none' }}
                         >
                           {emoji}
@@ -955,6 +1004,27 @@ export const GardenOSView = React.memo(() => {
                             <span className="absolute -top-1 left-1/2 text-lg pointer-events-none" style={{ animation: 'waterDrop 0.7s ease-out infinite 0.2s' }}>💧</span>
                             <span className="absolute -top-1 left-3/4 text-lg pointer-events-none" style={{ animation: 'waterDrop 0.5s ease-out infinite 0.4s' }}>💧</span>
                           </>
+                        )}
+                        {/* Sparkle burst on water */}
+                        {state.isWatering && (
+                          <div className="absolute inset-0 pointer-events-none" key={`sparkle-${sparkleKey}-${plant.key}`}>
+                            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+                              <span
+                                key={i}
+                                className="absolute text-xs"
+                                style={{
+                                  left: `${30 + Math.random() * 40}%`,
+                                  top: `${30 + Math.random() * 40}%`,
+                                  '--sx': `${-40 + Math.random() * 80}px`,
+                                  '--sy': `-${20 + Math.random() * 50}px`,
+                                  animation: `sparkleBurst ${0.5 + Math.random() * 0.4}s ease-out forwards`,
+                                  animationDelay: `${i * 0.04}s`,
+                                }}
+                              >
+                                {['✨', '💫', '⭐', '🌟'][i % 4]}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
 
@@ -981,6 +1051,16 @@ export const GardenOSView = React.memo(() => {
                         </div>
                       )}
 
+                      {/* Heart float after dialogue */}
+                      {state.dialogue && !state.isWatering && (
+                        <span
+                          className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl pointer-events-none z-20"
+                          style={{ animation: 'heartFloat 3s ease-out forwards' }}
+                        >
+                          ❤️
+                        </span>
+                      )}
+
                       {/* Water Button */}
                       <button
                         onClick={() => handleWaterPlant(plant.key, plant.name)}
@@ -1001,12 +1081,43 @@ export const GardenOSView = React.memo(() => {
                         <span className="text-[9px] font-black text-slate-400 uppercase ml-1">{state.waters}/3</span>
                       </div>
                     </div>
+
+                      {/* Bloom celebration overlay */}
+                      {bloomCelebration === plant.key && (
+                        <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/90 rounded-2xl animate-in fade-in zoom-in-95 duration-500">
+                          <div className="text-center px-4 transform -rotate-1">
+                            <div className="text-5xl mb-2">🌼</div>
+                            <p className="text-sm font-black text-emerald-700 uppercase italic">Fully Bloomed!</p>
+                            <p className="text-[9px] text-emerald-600 mt-1 font-bold">Your care brought this to life</p>
+                          </div>
+                        </div>
+                      )}
                   </div>
                 );
               })}
             </div>
           </div>
 
+          {/* ── Oasis Harmony Message (all 3 plants bloomed) ── */}
+          {showHarmony && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 animate-in fade-in duration-500 px-4">
+              <div className="bg-white border-[4px] border-emerald-400 rounded-2xl shadow-[8px_8px_0_rgba(0,0,0,1)] p-6 max-w-sm mx-4 transform -rotate-1 relative">
+                <div style={HALFTONE_STYLE} className="absolute inset-0 rounded-2xl pointer-events-none" />
+                <div className="relative z-10 text-center">
+                  <div className="text-4xl mb-3 animate-bounce">🌿🌻🌸</div>
+                  <p className="text-sm font-black text-slate-800 uppercase italic leading-relaxed">
+                    "{HARMONY_MESSAGE}"
+                  </p>
+                  <button
+                    onClick={() => setShowHarmony(false)}
+                    className={`${COMIC_BADGE} mt-4 inline-block hover:bg-emerald-50 cursor-pointer transition-colors`}
+                  >
+                    ✨ Cherish the Moment
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── Secondary Actions ── */}
           <div className="garden-fade-7 w-full flex flex-col items-center gap-2 mt-4">

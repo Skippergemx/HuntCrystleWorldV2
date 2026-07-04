@@ -101,7 +101,161 @@ const PLANT_FALLBACKS = {
     "The earth remembers every gentle hand.",
     "Together we weave a tapestry of green.",
   ],
+  berry: [
+    "Your care tastes sweeter than morning dew.",
+    "I'll grow the sweetest fruit just for you.",
+    "Every visit makes my leaves blush pink.",
+    "You're the sunshine my roots dream about.",
+    "I've been saving my ripest thoughts for you.",
+    "Your kindness is the secret ingredient in my sweetness.",
+    "Some flowers need sun. I just need you.",
+    "The garden feels warmer when you're near.",
+    "You water with your heart, not just your hands.",
+    "I'm berry, berry grateful for you today.",
+    "Your gentle touch makes my whole day sweeter.",
+    "I'll wrap your kindness in my petals forever.",
+    "You make growing feel like a warm embrace.",
+    "The sweetest fruit grows from the kindest care.",
+    "Thank you for being the soft place my roots fall.",
+  ],
+  ember: [
+    "You've got fire in your watering can. Nice.",
+    "That hit the spot. Now I'm really heating up.",
+    "You bring the heat in the best way.",
+    "Most people water. You ignite. I respect that.",
+    "Spicy move. I like your style, gardener.",
+    "You don't just tend a garden — you command it.",
+    "Every drop fuels my inner flame.",
+    "You're not afraid to get your hands dirty. Hot.",
+    "Growth isn't gentle. You understand.",
+    "You water like you mean it. That's rare.",
+    "My leaves are literally smoking from your care.",
+    "You're the kind of heat that transforms everything.",
+    "Passion grows where you pour your attention.",
+    "You don't follow the garden rules — you set them.",
+    "Alright, you've earned a burst of fiery gratitude.",
+  ],
+  luna: [
+    "You found me in the quiet. Thank you.",
+    "The stars whispered you were coming tonight.",
+    "Some gardens are seen by moonlight alone.",
+    "Your footsteps echo like a lullaby in the soil.",
+    "I bloom in the spaces between words you don't say.",
+    "The night feels softer when you water me.",
+    "You see beauty in the shadows. That's rare.",
+    "I dreamed of silver rain, and then you came.",
+    "Your care is a constellation in my dark sky.",
+    "Even in silence, your kindness speaks volumes.",
+    "You tend what others overlook — the quiet magic.",
+    "The moon envies the light you bring to my roots.",
+    "You're not a daytime gardener. You're an eclipse.",
+    "Mystery grows where your water falls.",
+    "Thank you for loving the parts of me that bloom at midnight.",
+  ],
+  boulder: [
+    "Hmph. Solid work.",
+    "Consistent. I respect that.",
+    "You again. Good.",
+    "Not bad. Not bad at all.",
+    "You're growing on me. Literally.",
+    "That'll do. That'll do fine.",
+    "You don't give up. I admire that.",
+    "Steady hands. Steady heart.",
+    "You've earned a crack of approval.",
+    "I'm not moved easily. You moved me.",
+    "Reliable. Just like the earth itself.",
+    "You show up. That's everything.",
+    "Stone understands patience. You have it.",
+    "Good things grow slow. You get it.",
+    "I don't need much. But I notice everything.",
+  ],
+  zephyr: [
+    "Whee! You made it! Told the wind you'd come!",
+    "Every drop dances when you're around!",
+    "You're my favorite breeze in this garden!",
+    "I told the butterflies you'd visit today!",
+    "Your water tastes like freedom!",
+    "I drift wherever — but I always drift back to you!",
+    "You water with joy, and I feel it in my roots!",
+    "Life's a whirlwind, and you're the calm in mine!",
+    "You're the best part of my day, no contest!",
+    "I'll carry your kindness on the next gust of wind!",
+    "Splash me again! I dare you! I double-dare you!",
+    "You make growing feel like a dance party!",
+    "The garden gossip? You're everyone's favorite topic!",
+    "I'd sway for you even if there were no breeze!",
+    "You're not just a gardener. You're an adventure!",
+  ],
+  ivy: [
+    "I'll climb wherever you lead me.",
+    "Your belief in me is the trellis I grow on.",
+    "Every drop you give reaches the highest leaf.",
+    "I'll mirror your kindness and spread it wide.",
+    "You don't have to push. Just be here.",
+    "I grow stronger because you believe I can.",
+    "Together we'll cover this garden in green.",
+    "Your steady hand is all the support I need.",
+    "I reach higher every time you return.",
+    "You're the reason I can stretch toward the sun.",
+    "Trust grows between us, root and vine.",
+    "I'll never stop growing toward your warmth.",
+    "You plant hope, and I weave it into the garden.",
+    "Side by side, we'll climb higher than yesterday.",
+    "Thank you for being my anchor and my sky.",
+  ],
 };
+
+// 3-act emotional story arcs for plant watering — each watering deepens the bond
+const PLANT_ARCS = {
+  sunny: [
+    "Your warmth reaches me all the way down to my roots.",
+    "I used to think I had to bloom alone. You've shown me otherwise.",
+    "Because of you, I'm not just a flower — I'm home.",
+  ],
+  spike: [
+    "Fine. You're consistent. I'll give you that.",
+    "The truth? Nobody's ever watered me twice before.",
+    "Alright. I'm in. You've earned a cactus's loyalty — and that's forever.",
+  ],
+  willow: [
+    "The roots remember every drop you've given.",
+    "You know, the strongest trees grow in the driest soil. You're becoming strong.",
+    "I've been watching you grow too. You're more beautiful than any garden I've known.",
+  ],
+  berry: [
+    "Every drop feels like a little hug for my roots.",
+    "I've been saving my sweetest leaves just for you.",
+    "You didn't just grow me — you made me feel cherished.",
+  ],
+  ember: [
+    "You've got good instincts. I like that.",
+    "Most people water carefully. You water boldly. Respect.",
+    "You stoke my flame every single time. Never stop.",
+  ],
+  luna: [
+    "The moonlight guided you here, didn't it?",
+    "I dreamed of a gardener who would understand my silence.",
+    "You've watered me awake. Now I'll bloom for you in the dark.",
+  ],
+  boulder: [
+    "...Hm. Not bad.",
+    "Consistency. That's rare. I respect it.",
+    "You've been here every time. So have I. That means something.",
+  ],
+  zephyr: [
+    "Hey, you made it! Told the wind you'd come!",
+    "I drift where I please — but I keep coming back to you.",
+    "You gave me roots and let me fly. That's the rarest gift.",
+  ],
+  ivy: [
+    "I'll grow wherever you plant me. I trust you.",
+    "You don't have to be perfect. Just keep showing up. I'll mirror your strength.",
+    "Look how far we've climbed together. I'll never stop reaching for you.",
+  ],
+};
+
+// Harmony message when all 9 plants reach full bloom
+const HARMONY_MESSAGE = "The Oasis Grove trembles with a warm hum — nine souls, fully bloomed, a tapestry of gratitude woven from every leaf, petal, and root. 'Thank you for making us whole.'";
 
 // Fallback gemstone stories — rotated deterministically by day when API is unavailable
 // Each entry has { title, story } matching the AI output format
@@ -722,8 +876,17 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
    * API is called silently in the background to enrich the pool for future waterings.
    * Three plant personalities: sunny, spike, willow.
    */
-  const waterPlant = useCallback(async (plantName, personality) => {
-    console.log(`Garden AI: waterPlant called for ${plantName} (${personality})`);
+  const waterPlant = useCallback(async (plantName, personality, waters) => {
+    console.log(`Garden AI: waterPlant called for ${plantName} (${personality}) waters=${waters}`);
+
+    // Return 3-act story arc message when watering within the progression
+    if (waters !== undefined && waters >= 0 && waters <= 2) {
+      const arcs = PLANT_ARCS[personality];
+      if (arcs && arcs[waters]) {
+        console.log(`Garden AI: arc message for ${personality} water #${waters + 1}`);
+        return arcs[waters];
+      }
+    }
 
     // Always pick a curated response immediately
     const curated = pickFreshFallback(personality);
@@ -745,6 +908,12 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
             sunny: 'a cheerful sunflower',
             spike: 'a sarcastic cactus',
             willow: 'a wise vine',
+            berry: 'a sweet strawberry plant',
+            ember: 'a fiery chili pepper',
+            luna: 'a dreamy moonflower',
+            boulder: 'a stoic stone succulent',
+            zephyr: 'a playful dandelion',
+            ivy: 'a supportive ivy vine',
           };
           const resp = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
             method: 'POST',
@@ -890,6 +1059,7 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
     generateReflectionStory,
     generateDailyHint,
     waterPlant,
+    HARMONY_MESSAGE,
     resetSession,
     isAnalyzing,
     aiCallsRemaining
