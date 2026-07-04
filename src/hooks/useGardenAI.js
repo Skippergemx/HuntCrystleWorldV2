@@ -104,27 +104,28 @@ const PLANT_FALLBACKS = {
 };
 
 // Fallback gemstone stories — rotated deterministically by day when API is unavailable
+// Each entry has { title, story } matching the AI output format
 const DAILY_HINT_FALLBACKS = [
-  "An old gem-cutter in Crystle Town found a gem that weeps at midnight. He claimed it remembers the hands that mined it — a thousand years of longing, trapped in amber light.",
-  "A young hunter discovered a violet gem inside a slain beast. It pulsed with warmth, and that night, she dreamed of a mountain that had never been climbed.",
-  "The scholar Elara spent years studying a single cracked gem. When it finally spoke, it revealed the location of a library buried beneath the dunes — its words written in dust and starlight.",
-  "A wandering merchant traded his finest wares for a dull grey stone. The townsfolk laughed — until the stone began to glow with every lie spoken nearby. He never lost a deal again.",
-  "Deep in the mines, a boy named Kael found a gem that hummed when danger approached. He became the youngest scout in the guild, guided by a song only he could hear.",
-  "The gem-smith Mira forged a ring from a shattered star-stone. The wearer could see invisible threads binding all things — fate, they called it, but she called it responsibility.",
-  "A thief stole a jewel from the town shrine and found it burned his skin. He returned it at dawn, and the gem forgave him — but the scar remained, a reminder etched in light.",
-  "Two sisters found twin gems in a dried-up riverbed. Apart, the stones were cold. Together, they hummed in harmony, knitting a bond not even distance could break.",
-  "The Oracle placed a gem in a young hunter's palm and said: 'This stone has cried for three centuries. Dry its tears, and it will show you the way home.'",
-  "A gem discovered in the eastern quarry held a single frozen tear. Legend says it belongs to a guardian who wept when the first gem was mined from the earth.",
-  "A farmer turned over a stone in his field and found a gem pulsing like a heart. He planted his crops around it, and that season, the harvest was legendary.",
-  "The pirate queen Vexara wore a gem that could smell gold from a league away. She retired rich, but the stone grew quiet — it missed the thrill of the chase.",
-  "A child traded her most beloved toy for a pebble that sparkled. Years later, she learned the pebble was a dragon's tooth-gem, and it had chosen her all along.",
-  "The hermit of the northern ridge kept a single gem in his hut. Visitors said it whispered advice in a voice like crumbling stone. He never spoke, but the gem spoke for him.",
-  "A warrior placed a gem in the hilt of his blade. Each enemy struck became transparent for a moment, revealing their hidden fears. He won battles without drawing blood.",
-  "A gem found in the belly of a fish contained a miniature map. The ink was made of crushed starlight, and the destination shifted every time the moon rose.",
-  "The queen of a fallen kingdom sealed her memories inside a gem. A wandering scholar found it and spent a lifetime watching a stranger's life unfold in dreams.",
-  "A goblin trader bit a gem to test its worth and tasted honey. He kept it ever since, convinced it held the sweetness of a summer that never ended.",
-  "A lonely gem sat at the bottom of a well for centuries, reflecting the moon every night. When a drought came, the village found the well was still full — of liquid light.",
-  "The last gem-crafter of an ancient lineage held a stone that had not yet revealed its purpose. 'Patience,' he told it each morning. One day, it finally glowed.",
+  { title: 'The Midnight Weeper', story: 'An old gem-cutter in Crystle Town found a gem that weeps at midnight. He claimed it remembers the hands that mined it — a thousand years of longing, trapped in amber light.' },
+  { title: 'The Violet Vision', story: 'A young hunter discovered a violet gem inside a slain beast. It pulsed with warmth, and that night, she dreamed of a mountain that had never been climbed.' },
+  { title: 'The Speaking Fragment', story: 'The scholar Elara spent years studying a single cracked gem. When it finally spoke, it revealed the location of a library buried beneath the dunes — its words written in dust and starlight.' },
+  { title: 'The Honest Stone', story: 'A wandering merchant traded his finest wares for a dull grey stone. The townsfolk laughed — until the stone began to glow with every lie spoken nearby. He never lost a deal again.' },
+  { title: 'The Humming Guide', story: 'Deep in the mines, a boy named Kael found a gem that hummed when danger approached. He became the youngest scout in the guild, guided by a song only he could hear.' },
+  { title: 'The Star-Stone Ring', story: 'The gem-smith Mira forged a ring from a shattered star-stone. The wearer could see invisible threads binding all things — fate, they called it, but she called it responsibility.' },
+  { title: 'The Burning Jewel', story: 'A thief stole a jewel from the town shrine and found it burned his skin. He returned it at dawn, and the gem forgave him — but the scar remained, a reminder etched in light.' },
+  { title: 'The Twin Gems', story: 'Two sisters found twin gems in a dried-up riverbed. Apart, the stones were cold. Together, they hummed in harmony, knitting a bond not even distance could break.' },
+  { title: 'The Weeping Oracle', story: 'The Oracle placed a gem in a young hunter\'s palm and said: \'This stone has cried for three centuries. Dry its tears, and it will show you the way home.\'' },
+  { title: 'The Frozen Tear', story: 'A gem discovered in the eastern quarry held a single frozen tear. Legend says it belongs to a guardian who wept when the first gem was mined from the earth.' },
+  { title: 'The Heart Stone', story: 'A farmer turned over a stone in his field and found a gem pulsing like a heart. He planted his crops around it, and that season, the harvest was legendary.' },
+  { title: 'The Smell of Gold', story: 'The pirate queen Vexara wore a gem that could smell gold from a league away. She retired rich, but the stone grew quiet — it missed the thrill of the chase.' },
+  { title: 'The Dragon\'s Tooth', story: 'A child traded her most beloved toy for a pebble that sparkled. Years later, she learned the pebble was a dragon\'s tooth-gem, and it had chosen her all along.' },
+  { title: 'The Whispering Gem', story: 'The hermit of the northern ridge kept a single gem in his hut. Visitors said it whispered advice in a voice like crumbling stone. He never spoke, but the gem spoke for him.' },
+  { title: 'The Blade of Truth', story: 'A warrior placed a gem in the hilt of his blade. Each enemy struck became transparent for a moment, revealing their hidden fears. He won battles without drawing blood.' },
+  { title: 'The Fish Map', story: 'A gem found in the belly of a fish contained a miniature map. The ink was made of crushed starlight, and the destination shifted every time the moon rose.' },
+  { title: 'The Memory Gem', story: 'The queen of a fallen kingdom sealed her memories inside a gem. A wandering scholar found it and spent a lifetime watching a stranger\'s life unfold in dreams.' },
+  { title: 'The Honey Taste', story: 'A goblin trader bit a gem to test its worth and tasted honey. He kept it ever since, convinced it held the sweetness of a summer that never ended.' },
+  { title: 'The Moon Well', story: 'A lonely gem sat at the bottom of a well for centuries, reflecting the moon every night. When a drought came, the village found the well was still full — of liquid light.' },
+  { title: 'The Patient Stone', story: 'The last gem-crafter of an ancient lineage held a stone that had not yet revealed its purpose. \'Patience,\' he told it each morning. One day, it finally glowed.' },
 ];
 
 /**
@@ -134,8 +135,8 @@ const DAILY_HINT_FALLBACKS = [
 const getDailyFallbackHint = () => {
   const now = new Date();
   const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-  const hint = DAILY_HINT_FALLBACKS[dayOfYear % DAILY_HINT_FALLBACKS.length];
-  return { hint };
+  const entry = DAILY_HINT_FALLBACKS[dayOfYear % DAILY_HINT_FALLBACKS.length];
+  return { title: entry.title, story: entry.story };
 };
 
 /**
@@ -832,7 +833,7 @@ RULES:
 
 Do NOT output fewer than 5 sentences — that is unacceptable.
 
-Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly one key: "hint".`;
+Respond ONLY with a raw JSON object. No markdown, no code fences, no other text. The JSON must have exactly two keys: "title" (a 3-8 word poetic title for the tale) and "story" (the complete tale).`;
 
       const response = await fetch(`${GEMMA_API}?key=${API_KEY}`, {
         method: 'POST',
@@ -864,9 +865,9 @@ Respond ONLY with a raw JSON object. No markdown, no code fences, no other text.
       console.log('Daily Hint: Raw (first 150):', rawContent.slice(0, 150));
 
       const parsed = extractBestJSON(rawContent);
-      if (!parsed?.hint || parsed.hint.length < 10) return getDailyFallbackHint();
+      if (!parsed?.title || !parsed?.story || parsed.story.length < 50) return getDailyFallbackHint();
 
-      return { hint: parsed.hint };
+      return { title: parsed.title, story: parsed.story };
     } catch (e) {
       console.warn('Daily Hint: Generation failed:', e);
       return getDailyFallbackHint();

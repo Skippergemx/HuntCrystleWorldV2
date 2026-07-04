@@ -269,9 +269,9 @@ export const MenuView = React.memo(() => {
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isHintLoading, setIsHintLoading] = useState(false);
   const [fullStory, setFullStory] = useState(null);
-  // Local override for the hint text — set immediately on generation
+  // Local override for the chronicle tale — set immediately on generation
   // so the UI isn't subject to Firestore sync timing races.
-  const [currentHint, setCurrentHint] = useState(null);
+  const [currentChronicle, setCurrentChronicle] = useState(null);
   const { generateDailyHint } = useGardenAI();
 
   useEffect(() => {
@@ -288,17 +288,19 @@ export const MenuView = React.memo(() => {
     const hint = player.dailyFlavorHint;
     const today = new Date().toDateString();
     const hintDate = hint?.generatedAt ? new Date(hint.generatedAt).toDateString() : null;
-    const isOldShortHint = hint?.hint && hint.hint.length < 300;
+    const existingStory = hint?.story || hint?.hint || '';
+    const isOldShortHint = existingStory.length < 300;
     // Skip only if we have a fresh long story from today
     if (hintDate === today && !isOldShortHint) return;
 
     setIsHintLoading(true);
     generateDailyHint(player?.name || 'Hunter').then((newHint) => {
-      if (newHint?.hint) {
-        setCurrentHint(newHint.hint);
+      if (newHint?.story) {
+        setCurrentChronicle({ title: newHint.title, story: newHint.story });
         syncPlayer({
           dailyFlavorHint: {
-            hint: newHint.hint,
+            title: newHint.title || '',
+            story: newHint.story,
             generatedAt: Date.now(),
           },
         }, true);
@@ -405,30 +407,38 @@ export const MenuView = React.memo(() => {
                         <span className="text-[9px] font-black text-amber-700 uppercase tracking-widest">STORY TELLER</span>
                      </div>
                      {(() => {
-                       const hintText = currentHint || player?.dailyFlavorHint?.hint;
-                       if (!hintText && isHintLoading) {
+                       const tale = currentChronicle || player?.dailyFlavorHint;
+                       const title = tale?.title || null;
+                       const storyText = tale?.story || tale?.hint || '';
+                       if (!storyText && isHintLoading) {
                          return <div className="flex items-center gap-2"><div className="h-5 bg-amber-200 rounded animate-pulse flex-1" /><span className="text-[10px] text-amber-800 italic animate-pulse font-black uppercase">Weaving...</span></div>;
                        }
-                       if (!hintText) {
+                       if (!storyText) {
                          return <p className="text-sm font-black text-amber-600/60 tracking-wide">The Chronicler Is Weaving a New Tale...</p>;
                        }
                        return (
                          <>
-                           <p className="text-sm font-black text-slate-900 leading-snug tracking-wide">
-                              {(() => {
-                                if (!hintText || hintText.length <= 150) return hintText;
-                                const trunc = hintText.slice(0, 147);
-                                const lastSpace = trunc.lastIndexOf(' ');
-                                return (lastSpace > 60 ? trunc.slice(0, lastSpace) : trunc) + '...';
-                              })()}
-                           </p>
-                           {hintText.length > 150 && (
-                              <button
-                                onClick={() => setFullStory(hintText)}
-                                className="mt-1.5 text-[10px] font-black text-amber-700 hover:text-amber-900 uppercase italic tracking-wider underline decoration-2 underline-offset-2 decoration-amber-700/30 hover:decoration-amber-900/50 transition-all"
-                              >
-                                Read Full Tale →
-                              </button>
+                           {title && (
+                             <p className="text-[11px] text-amber-800 font-black uppercase italic mb-2 tracking-wide">
+                               &ldquo;{title}&rdquo;
+                             </p>
+                           )}
+                           <div className="bg-amber-100/40 rounded-xl border-2 border-amber-300/60 p-4 max-h-32 overflow-y-auto relative">
+                             <p className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+                               <span className="float-left text-4xl font-black text-amber-700 leading-[0.8] mr-2 pt-1" style={{ fontFamily: "'Bungee', cursive" }}>{storyText.charAt(0)}</span>
+                               {storyText.slice(1).substring(0, 200)}
+                               {storyText.length > 200 ? '...' : ''}
+                             </p>
+                             {/* Gradient fade at bottom */}
+                             <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-amber-50/90 to-transparent pointer-events-none rounded-b-xl" />
+                           </div>
+                           {storyText.length > 200 && (
+                             <button
+                               onClick={() => setFullStory({ title, story: storyText })}
+                               className="mt-2 text-[10px] font-black text-amber-700 hover:text-amber-900 uppercase italic tracking-wider underline decoration-2 underline-offset-2 decoration-amber-700/30 hover:decoration-amber-900/50 transition-all"
+                             >
+                               Read Full Tale →
+                             </button>
                            )}
                          </>
                        );
@@ -696,12 +706,19 @@ export const MenuView = React.memo(() => {
             </div>
 
             {/* Divider */}
-            <div className="h-[3px] bg-black/10 rounded-full mb-4" />
+            <div className="h-[3px] bg-black/10 rounded-full mb-3" />
+
+            {/* Story title in modal */}
+            {fullStory.title && (
+              <p className="text-xs font-black text-amber-800 uppercase italic mb-3 tracking-wide">
+                &ldquo;{fullStory.title}&rdquo;
+              </p>
+            )}
 
             {/* Story content */}
             <div className="bg-white border-[3px] border-black rounded-xl p-5 shadow-inner">
-              <p className="text-sm font-bold text-slate-900 leading-relaxed">
-                {fullStory}
+              <p className="text-sm font-bold text-slate-900 leading-relaxed whitespace-pre-line">
+                {fullStory.story || fullStory}
               </p>
             </div>
 
