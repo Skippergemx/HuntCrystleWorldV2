@@ -507,27 +507,27 @@ export const MenuView = React.memo(() => {
                </div>
             </div>
 
-            {/* 3. iLEARN QUEST */}
-            <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('ilearn')}>
-               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_var(--neon-lime)] hover:shadow-[12px_12px_0px_0px_var(--neon-pink)] hover:-translate-y-2 active:scale-95 transform -rotate-2 group-hover:rotate-0 overflow-hidden relative">
+            {/* 3. OASIS GROUND */}
+            <div className="relative group cursor-pointer animate-in fly-in-bottom duration-500 flex flex-col items-center" onClick={() => setView('garden_os')}>
+               <div className="w-40 md:w-44 lg:w-52 aspect-[9/16] bg-black rounded-2xl border-[4px] border-white transition-all shadow-[8px_8px_0px_0px_#10b981] hover:shadow-[12px_12px_0px_0px_var(--neon-lime)] hover:-translate-y-2 active:scale-95 transform rotate-1 group-hover:rotate-0 overflow-hidden relative">
                   <div className="halftone-overlay absolute inset-0 opacity-20 pointer-events-none"></div>
                   {/* Step Badge */}
-                  <div className="absolute top-4 -left-8 bg-[var(--neon-lime)] text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest bungee">Step 03</div>
+                  <div className="absolute top-4 -left-8 bg-emerald-500 text-black px-8 py-1 font-black text-[9px] -rotate-45 border-b-2 border-black z-20 shadow-lg uppercase italic tracking-widest bungee">Step 03</div>
 
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black/10 border-x-2 border-black/5 rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black/10 border-x-2 border-black/5 -rotate-1 z-50 backdrop-blur-sm pointer-events-none" />
                   
                   {/* FULL ART PREVIEW */}
                   <div className="absolute inset-0 z-0">
-                     <CitizenMedia num={22} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
+                     <CitizenMedia num={25} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
                      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                   </div>
    
                   <div className="absolute inset-x-2 bottom-3 z-10 flex flex-col items-center gap-1.5">
-                     <div className="p-3 bg-[var(--neon-lime)] rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_black] transform rotate-6 mb-1 group-hover:rotate-0 transition-all">
-                        <span className="text-xl drop-shadow-md">🧠</span>
+                     <div className="p-3 bg-emerald-500 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_black] transform -rotate-3 mb-1 group-hover:rotate-0 transition-all">
+                        <Flower2 className="text-white drop-shadow-md" size={22} />
                      </div>
-                     <div className={`bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] -rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center`}>
-                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap bungee">ILEARN QUEST</h3>
+                     <div className="bg-white border-[2px] border-black py-1.5 px-3 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full text-center">
+                        <h3 className="text-[10px] md:text-xs font-[1000] text-black uppercase italic tracking-tighter leading-none whitespace-nowrap bungee">OASIS GROUND</h3>
                      </div>
                   </div>
                </div>
@@ -541,11 +541,12 @@ export const MenuView = React.memo(() => {
                 <span className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-800 italic">Operations & Logistics</span>
                 <div className="w-12 h-[2px] bg-black opacity-10" />
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6 w-full max-w-xl mx-auto justify-items-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 w-full max-w-xl mx-auto justify-items-center">
                {[
                  { id: 'biometric_core', icon: <Activity className="text-white" size={18} />, label: 'STATS & GEAR', sub: 'STATS', color: 'bg-[var(--neon-cyan)]', npc: 10, grad: 'from-black/90' },
                  { id: 'crystle_bazaar', icon: <ShoppingCart className="text-white" size={18} />, label: 'BAZAAR', sub: 'BAZAAR', color: 'bg-[var(--neon-pink)]', npc: 11, grad: 'from-black/90' },
-                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' }
+                 { id: 'dragons_ground', icon: <Trees className="text-white" size={18} />, label: 'DRAGONS GROUND', sub: 'DRAGONS', color: 'bg-[var(--neon-lime)]', npc: 14, grad: 'from-black/90' },
+                 { id: 'ilearn_quest', icon: <Brain className="text-white" size={18} />, label: 'ILEARN QUEST', sub: 'ILEARN', color: 'bg-[var(--neon-pink)]', npc: 22, grad: 'from-black/90' }
                ].map((token, i) => (
                   <button
                     key={token.id}
@@ -570,34 +571,6 @@ export const MenuView = React.memo(() => {
                ))}
             </div>
           </div>
-         </div>
-
-         {/* SOCIAL HUB ROW */}
-         <div className="mt-10 md:mt-14 flex flex-col items-center gap-8 animate-in fade-in duration-1000" style={{ animationDelay: '300ms' }}>
-            <div className="flex items-center gap-2">
-                <div className="w-12 h-[2px] bg-purple-500/30" />
-                <span className="text-[10px] font-black uppercase tracking-[0.6em] text-purple-400 italic">Social Hub</span>
-                <div className="w-12 h-[2px] bg-purple-500/30" />
-            </div>
-            <div className="flex items-center justify-center gap-4 md:gap-8 w-full max-w-xl mx-auto">
-              <button
-                onClick={() => setView('garden_os')}
-                className="group flex flex-col items-center transition-all hover:-translate-y-2 active:scale-95 w-28 md:w-36 aspect-[9/16] bg-black border-[4px] border-white shadow-[6px_6px_0px_0px_#10b981] rounded-xl -rotate-1 relative overflow-hidden"
-              >
-                  <div className="absolute inset-0 z-0">
-                     <CitizenMedia num={25} className="w-full h-full object-cover grayscale-[0.2] transition-transform group-hover:scale-110 duration-700" />
-                     <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-90" />
-                  </div>
-                  <div className="mt-auto relative z-10 w-full flex flex-col items-center pb-3 px-1.5 gap-2">
-                     <div className="w-10 h-10 flex items-center justify-center bg-emerald-500 border-[3px] border-black shadow-[4px_4px_0px_0px_black] rounded-lg transition-all group-hover:rotate-6">
-                        <Flower2 className="text-white" size={18} />
-                     </div>
-                     <div className="bg-white border-[2px] border-black py-1 px-1.5 shadow-[4px_4px_0px_0px_black] rotate-1 transform group-hover:rotate-0 transition-transform w-full">
-                        <div className="text-[8px] md:text-[10px] font-black text-black uppercase italic leading-none text-center break-words bungee">OASIS GROUND</div>
-                     </div>
-                  </div>
-              </button>
-            </div>
          </div>
 
          <MissionBriefing player={player} setView={setView} />
